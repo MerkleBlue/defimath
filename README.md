@@ -22,7 +22,7 @@ We can use the following rules to simplify lookup in the tables:
 1. Risk-free rate can be applied to strike price before lookup, by doing new_strike = strike / e ^ rate * time
 see https://optioncreator.com/st7im8w and https://optioncreator.com/steaphh
 2. Strike and Spot price can be expressed as a ratio, by doing ratio = spot / strike. This is one dimension of the table. We know that if we for example multiply both spot and strike by 2, we get the same option price multiplied with 2. 
-3. Time to expiration and volatility are connected. If we multiply time to expiration by 4, and divide volatility by 2, we get the same option price. This is the second dimension of the table.
+3. Time to expiration and volatility are connected. If we multiply time to expiration by 4, and divide volatility by 2, we get the same option price. This means that if we populate a dimension with time only for a fixed volatility, then we can always find the time in the table by finding the ration between input volatility and fixed volatility, square that ratio, and then find the time by multiplying input time with squared ratio. This is the second dimension of the table.
 see: https://optioncreator.com/sty6x02
 
 # Sample Hardhat Project
