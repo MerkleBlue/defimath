@@ -5,6 +5,7 @@
 
 
 # misc
+/testfiles
 /artifacts
 /cache
 .DS_Store
