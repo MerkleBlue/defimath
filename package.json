@@ -3,5 +3,9 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.22.13"
+  },
+  "dependencies": {
+    "black-scholes": "^1.1.0",
+    "moment": "^2.30.1"
   }
 }
