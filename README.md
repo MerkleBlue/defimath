@@ -25,6 +25,8 @@ see https://optioncreator.com/st7im8w and https://optioncreator.com/steaphh
 3. Time to expiration and volatility are connected. If we multiply time to expiration by 4, and divide volatility by 2, we get the same option price. This means that if we populate a dimension with time only for a fixed volatility, then we can always find the time in the table by finding the ration between input volatility and fixed volatility, square that ratio, and then find the time by multiplying input time with squared ratio. This is the second dimension of the table.
 see: https://optioncreator.com/sty6x02
 
+Additionally, call-put parity allows us that we only use one table with call options to calculate put price using: call + strike = future + put
+
 # Sample Hardhat Project
 
 This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
@@ -40,4 +42,6 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 npx hardhat clean
 npx hardhat compile
 npx hardhat coverage
+npx hardhat test poc/blackscholes/BlackScholesJS.test.mjs 
+node poc/blackscholes/generateLookupTable.mjs
 ```
