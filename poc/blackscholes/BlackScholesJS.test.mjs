@@ -31,10 +31,57 @@ describe("BlackScholesJS", function () {
     });
 
     it("gets call price", async function () {
-      const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.2, "call");
-      const actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * DAY, 0.60, 0.2);
+      let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
+      let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * DAY, 0.60, 0.05);
 
       console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+
+      expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
+      actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * DAY, 0.80, 0.07);
+
+      console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+    });
+
+    it("gets multiple call prices", async function () {
+      console.log("Testing range")
+      let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+      for(let exp = 50; exp < 80; exp += 1) {
+        for (let strike = 850; strike < 1100; strike += 10) {
+          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+            for (let rate = 0; rate < 0.05; rate += 0.02) {
+              // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
+              let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
+              let actual = blackScholesJS.getCallPrice(1000, strike, exp * DAY, vol, rate);
+
+              let error = (Math.abs(actual - expected) / expected * 100);
+              console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+              totalError += error;
+              count++;
+              if (maxError < error && expected > 0.01) {
+                maxError = error;
+                console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+                maxErrorParams = {
+                  exp, strike, vol, rate, actual, expected
+                }
+              }
+            }
+
+          }
+        }
+      }
+
+      console.log("Total tests: " + count);
+      console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
+      console.log("Max error: " + maxError.toFixed(8) + "%");
+      console.log("Max error params: ", maxErrorParams);
+
+
+      // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+
+      // expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
+      // actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * DAY, 0.80, 0.07);
+
+      // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
     });
   });
 });
