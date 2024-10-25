@@ -5,6 +5,10 @@ pragma solidity ^0.8.27;
 import "hardhat/console.sol";
 
 contract BlackScholesPOC {
+    uint256 internal constant TWO_POW_64 = 2 ** 64;
+    uint256 internal constant TWO_POW_128 = 2 ** 128;
+    uint256 internal constant TWO_POW_192 = 2 ** 192;
+
     struct Range {
         uint64 num1;
         uint64 num2;
@@ -35,7 +39,7 @@ contract BlackScholesPOC {
         // fill the map
         for (uint32 i = 0; i < lenA; i++) {
             for (uint32 j = 0; j < lenB; j++) {
-                rangeMapU[uint40(i) * 1e6 + uint40(j)] = 5 * 1e54 + 6 * 1e36 + 7 * 1e18 + 8;
+                rangeMapU[uint40(i) * 1e6 + uint40(j)] = 5 * 2 ** 192 + 6 * 2 ** 128 + 7 * 2 ** 64 + 8;
             }
         }
     }
@@ -75,11 +79,17 @@ contract BlackScholesPOC {
             // access array element
             uint256 range = rangeMapU[index1 * 1e6 + index2];
 
-            uint256 num1 = range / 1e54;
-            uint256 num2 = range / 1e36 - num1 * 1e18;
-            uint256 num3 = range / 1e18 - num1 * 1e36 - num2 * 1e18;
-            uint256 num4 = range - num1 * 1e54 - num2 * 1e36 - num3 * 1e18;
-            // uint64 num4 = range.num4;
+
+            // uint256 startGas;
+            // uint256 endGas;
+            // console.log("Method 2");
+            // startGas = gasleft();
+            uint256 num1 = range / TWO_POW_192;
+            uint256 num2 = uint64(range / TWO_POW_128);
+            uint256 num3 = uint64(range / TWO_POW_64);
+            uint256 num4 = uint64(range);
+            // endGas = gasleft();
+            // console.log("gas used: %d", startGas - endGas);
 
             // calcualate price
             price = num1 + num2 + num3 + num4;
