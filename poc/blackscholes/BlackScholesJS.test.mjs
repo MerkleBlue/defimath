@@ -1,7 +1,7 @@
 
 import { assert, expect } from "chai";
 import bs from "black-scholes";
-import { BlackScholesJS } from "./BlackScholesJS.mjs";
+import { BlackScholesJS, EXPIRATION_MAX, EXPIRATION_MIN, EXPIRATION_STEP, S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
 import { generateLookupTable } from "./generateLookupTable.mjs";
 
 const DAY = 24 * 60 * 60;
@@ -71,6 +71,7 @@ describe("BlackScholesJS", function () {
       }
 
       console.log("Total tests: " + count);
+      console.log("Table size: ", Math.round((S_S_RATIO_MAX - S_S_RATIO_MIN) / S_S_RATIO_STEP) - 1, "x", Math.round((EXPIRATION_MAX - EXPIRATION_MIN) / EXPIRATION_STEP) - 1);
       console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
       console.log("Max error: " + maxError.toFixed(8) + "%");
       console.log("Max error params: ", maxErrorParams);

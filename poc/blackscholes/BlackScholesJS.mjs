@@ -3,14 +3,14 @@ export const SPOT_FIXED = 100;
 export const VOL_FIXED = 1;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
-// ratio between spot and strike (spot: 100$, strike: $80 - $120)
+// ratio between spot and strike (spot: 100$, strike: $60 - $140)
 export const S_S_RATIO_MIN = 0.6;
 export const S_S_RATIO_MAX = 1.4;
-export const S_S_RATIO_STEP = 0.1;
+export const S_S_RATIO_STEP = 0.05;
 
 export const EXPIRATION_MIN = 10; // * SECONDS_IN_DAY;
 export const EXPIRATION_MAX = 100; //  * SECONDS_IN_DAY;
-export const EXPIRATION_STEP = 10; //  * SECONDS_IN_DAY;
+export const EXPIRATION_STEP = 5; //  * SECONDS_IN_DAY;
 
 export class BlackScholesJS {
 
