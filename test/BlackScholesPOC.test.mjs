@@ -20,15 +20,27 @@ describe("BlackScholesPOC (contract)", function () {
       console.log(bs.target)
     });
 
-    it("gets call price", async function () {
+    it("gets call price map", async function () {
       const { bs } = await loadFixture(deploy);
 
-      const callPrice = await bs.getCallPrice(100, 100, 1000, 1);
-      console.log(callPrice);
+      const callPriceMap = await bs.getCallPriceMap(100, 100, 1000, 1, 1);
+      console.log(callPriceMap);
 
-      const estGas = await bs.getCallPrice.estimateGas(100, 100, 1000, 1);
-      console.log("Gas spent:", parseInt(estGas) - 21000);
+      const estGas2 = await bs.getCallPriceMap.estimateGas(100, 100, 1000, 1, 1);
+      console.log("Gas spent map:", parseInt(estGas2) - 21000);
     });
+
+    // it("gets call price array", async function () {
+    //   const { bs } = await loadFixture(deploy);
+
+    //   const callPrice = await bs.getCallPrice(100, 100, 1000, 1, 1);
+    //   console.log(callPrice);
+
+    //   const estGas1 = await bs.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
+    //   console.log("Gas spent array:", parseInt(estGas1) - 21000);
+    // });
+
+
 
     // it("Should fail if the unlockTime is not in the future", async function () {
     //   // We don't use the fixture here because we want a different deployment

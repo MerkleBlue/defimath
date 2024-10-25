@@ -12,29 +12,57 @@ contract BlackScholesPOC {
         uint64 num4;
     }
 
-    Range [] public ranges;
+    // Range [] private rangeArray;
+
+    mapping(uint40 => Range) private rangeMap;
 
 
     constructor() {
         uint32 length = 100;
+        // // fill the array
+        // for (uint32 i = 0; i < length; i++) {
+        //     rangeArray.push(Range({
+        //         num1: i + 1,
+        //         num2: i + 1,
+        //         num3: i + 1,
+        //         num4: i + 1
+        //     }));
+        // }
+
+        // fill the map
         for (uint32 i = 0; i < length; i++) {
-            ranges.push(Range({
+            rangeMap[uint40(i)] = Range({
                 num1: i + 1,
                 num2: i + 1,
                 num3: i + 1,
                 num4: i + 1
-            }));
+            });
         }
     }
 
-    function getCallPrice(
+    // function getCallPrice(
+    //     uint128 spot,
+    //     uint128 strike,
+    //     uint32 timeToExpirySec,
+    //     uint80 volatility,
+    //     uint32 riskFreeRate
+    // ) external view returns (uint256 price) {
+    //     // access array element
+    //     Range memory range = rangeArray[4];
+
+    //     // calcualate price
+    //     price = range.num1;
+    // }
+
+    function getCallPriceMap(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
-        uint80 volatility
+        uint80 volatility,
+        uint32 riskFreeRate
     ) external view returns (uint256 price) {
         // access array element
-        Range memory range = ranges[4];
+        Range memory range = rangeMap[4];
 
         // calcualate price
         price = range.num1;
