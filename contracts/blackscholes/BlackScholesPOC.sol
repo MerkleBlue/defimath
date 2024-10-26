@@ -9,14 +9,7 @@ contract BlackScholesPOC {
     uint256 internal constant TWO_POW_128 = 2 ** 128;
     uint256 internal constant TWO_POW_192 = 2 ** 192;
 
-    struct Range {
-        uint64 num1;
-        uint64 num2;
-        uint64 num3;
-        uint64 num4;
-    }
-
-    // single mapping is faster than map of map 
+    // single mapping is faster than map of map, uint is faster than struct
     mapping(uint40 => uint256) private rangeMapU;
 
     constructor() {
@@ -30,7 +23,7 @@ contract BlackScholesPOC {
         }
     }
 
-    function getCallPriceMapU(
+    function getCallPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
