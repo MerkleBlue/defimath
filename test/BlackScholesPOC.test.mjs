@@ -20,16 +20,6 @@ describe("BlackScholesPOC (contract)", function () {
       console.log(bs.target)
     });
 
-    it("gets call price map", async function () {
-      const { bs } = await loadFixture(deploy);
-
-      const callPriceMap = await bs.getCallPriceMap(100, 100, 1000, 1, 1);
-      console.log(callPriceMap);
-
-      const estGas2 = await bs.getCallPriceMap.estimateGas(100, 100, 1000, 1, 1);
-      console.log("Gas spent map:", parseInt(estGas2) - 21000);
-    });
-
     it("gets call price map U", async function () {
       const { bs } = await loadFixture(deploy);
 

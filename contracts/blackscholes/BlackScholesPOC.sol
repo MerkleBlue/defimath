@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 // Uncomment this line to use console.log
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract BlackScholesPOC {
     uint256 internal constant TWO_POW_64 = 2 ** 64;
@@ -17,8 +17,6 @@ contract BlackScholesPOC {
     }
 
     // single mapping is faster than map of map 
-    mapping(uint40 => Range) private rangeMap;
-
     mapping(uint40 => uint256) private rangeMapU;
 
     constructor() {
@@ -27,40 +25,8 @@ contract BlackScholesPOC {
         // fill the map
         for (uint32 i = 0; i < lenA; i++) {
             for (uint32 j = 0; j < lenB; j++) {
-                rangeMap[uint40(i) * 1e6 + uint40(j)] = Range({
-                    num1: 5,
-                    num2: 6,
-                    num3: 7,
-                    num4: 8
-                });
+                rangeMapU[uint40(i) * 1e6 + uint40(j)] = 5 * TWO_POW_192 + 6 * TWO_POW_128 + 7 * TWO_POW_64 + 8;
             }
-        }
-
-        // fill the map
-        for (uint32 i = 0; i < lenA; i++) {
-            for (uint32 j = 0; j < lenB; j++) {
-                rangeMapU[uint40(i) * 1e6 + uint40(j)] = 5 * 2 ** 192 + 6 * 2 ** 128 + 7 * 2 ** 64 + 8;
-            }
-        }
-    }
-
-    function getCallPriceMap(
-        uint128 spot,
-        uint128 strike,
-        uint32 timeToExpirySec,
-        uint80 volatility,
-        uint32 riskFreeRate
-    ) external view returns (uint256 price) {
-        unchecked {
-            // calculate indexes
-            uint40 index1 = 4;
-            uint40 index2 = 6;
-
-            // access array element
-            Range storage range = rangeMap[index1 * 1e6 + index2];
-
-            // calcualate price
-            price = range.num1 + range.num2 + range.num3 + range.num4;
         }
     }
 
