@@ -10,14 +10,13 @@ describe("BlackScholesJS", function () {
 
   let blackScholesJS;
 
-  // before each test
-  beforeEach(() => {
-    const lookupTable = generateLookupTable();
-    blackScholesJS = new BlackScholesJS(lookupTable);
-  });
-
-
   describe("Future", function () {
+    // before each test
+    beforeEach(() => {
+      const lookupTable = generateLookupTable();
+      blackScholesJS = new BlackScholesJS(lookupTable);
+    });
+
     it("calculates future price with 1 year expiration", async function () {
 
       let futurePrice = blackScholesJS.getFuturePrice(100, 0.02, 365 * DAY);
@@ -83,6 +82,63 @@ describe("BlackScholesJS", function () {
       // actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * DAY, 0.80, 0.07);
 
       // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+    });
+  });
+
+  describe.only("Time indexes", function () {
+    // before each test
+    beforeEach(() => {
+      blackScholesJS = new BlackScholesJS();
+    });
+
+    function getActualExpected(time) {
+      const actual = blackScholesJS.getIndex(time);
+      // check index against log2, which we don't have in JS
+      const major = Math.floor(Math.log2(time));
+      const minor = Math.floor((time - 2 ** major) / 2 ** (major - 3));
+      const expected = major * 10 + minor;
+      return { actual, expected };
+    }
+
+    it("calculates index for time [0, 2^3)", async function () {
+      assert.equal(blackScholesJS.getIndex(0), 0);
+      assert.equal(blackScholesJS.getIndex(1), 1);
+      assert.equal(blackScholesJS.getIndex(2), 2);
+      assert.equal(blackScholesJS.getIndex(3), 3);
+      assert.equal(blackScholesJS.getIndex(4), 4);
+      assert.equal(blackScholesJS.getIndex(5), 5);
+      assert.equal(blackScholesJS.getIndex(6), 6);
+      assert.equal(blackScholesJS.getIndex(7), 7);
+    });
+
+    it("calculates index for time [2^3, 2^16)", async function () {
+      let count = 0;
+      for (let time = 8; time < 2 ** 16; time++) {
+        const { actual, expected } = getActualExpected(time);
+        assert.equal(actual, expected);
+        count++;
+      }
+      console.log("values tested: ", count);
+    });
+
+    it("calculates index for time [2^16, 2^24)", async function () {
+      let count = 0;
+      for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8) {
+        const { actual, expected } = getActualExpected(time);
+        assert.equal(actual, expected);
+        count++;
+      }
+      console.log("values tested: ", count);
+    });
+
+    it("calculates index for time [2^24, 2^32]", async function () {
+      let count = 0;
+      for (let time = 2 ** 24; time <= 2 ** 32; time += 2 ** 16) {
+        const { actual, expected } = getActualExpected(time);
+        assert.equal(actual, expected);
+        count++;
+      }
+      console.log("values tested: ", count);
     });
   });
 });

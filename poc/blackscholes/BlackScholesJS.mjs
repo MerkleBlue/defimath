@@ -78,5 +78,41 @@ export class BlackScholesJS {
 
   }
 
+  getIndex(value) {
+    if (value < 8) {
+      return value;
+    }
 
+    const major = this.findMajor(value);
+    const minor = this.findMinor(value, major);
+
+    return major * 10 + minor;
+
+  }
+
+  findMajor(value) {
+    let min = 2;
+    let max = 32;
+    let result = -1;
+
+    // todo: optimize later, makes 5 loops always
+    while (min <= max) {
+      const mid = Math.floor((min + max) / 2);
+      const power = 2 ** mid;
+
+      if (power <= value) {
+          result = mid;    // mid is a valid candidate
+          min = mid + 1;   // search for a larger power
+      } else {
+          max = mid - 1;   // search for a smaller power
+      }
+    }
+
+    return result;
+  }
+
+  findMinor(value, power) {
+    // console.log(value - 2 ** power);
+    return Math.floor((value - 2 ** power) / (2 ** (power - 3)));
+  }
 }
