@@ -1,5 +1,5 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
-import  expect from "chai";
+import { assert, expect } from "chai";
 
 describe("BlackScholesPOC (contract)", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -30,14 +30,11 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent map:", parseInt(estGas2) - 21000);
     });
 
-    it("test gas", async function () {
+    it.only("test gas", async function () {
       const { bs } = await loadFixture(deploy);
 
       const callPriceMap = await bs.testGas();
       console.log(callPriceMap);
-
-      // const estGas2 = await bs.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
-      // console.log("Gas spent map:", parseInt(estGas2) - 21000);
     });
 
     // it("gets call price array", async function () {
@@ -62,72 +59,49 @@ describe("BlackScholesPOC (contract)", function () {
     // });
   });
 
-  describe("Deployment", function () {
+  describe.only("Time indexes", function () {
+    // // before each test
+    // beforeEach(() => {
+    //   blackScholesJS = new BlackScholesJS();
+    // });
+
+    async function getActualExpected(bs, time) {
+      const actual = await bs.getIndex(time);
+      // check index against log2, which we don't have in JS
+      const major = Math.floor(Math.log2(time));
+      const minor = Math.floor((time - 2 ** major) / 2 ** (major - 3));
+      const expected = major * 10 + minor;
+      return { actual, expected };
+    }
+
+    it("gas spent", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      await bs.getIndexGas(1000);
+    });
+
+    it("calculates index for time [0, 2^3)", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      assert.equal(await bs.getIndex(0), 0);
+      assert.equal(await bs.getIndex(1), 1);
+      assert.equal(await bs.getIndex(2), 2);
+      assert.equal(await bs.getIndex(3), 3);
+      assert.equal(await bs.getIndex(4), 4);
+      assert.equal(await bs.getIndex(5), 5);
+      assert.equal(await bs.getIndex(6), 6);
+      assert.equal(await bs.getIndex(7), 7);
+    });
+
+    it("calculates index for time [2^3, 2^16)", async function () {
+      const { bs } = await loadFixture(deploy);
+      let count = 0;
+      for (let time = 8; time < 2 ** 16; time++) {
+        const { actual, expected } = await getActualExpected(bs, time);
+        assert.equal(actual, expected);
+        count++;
+      }
+      console.log("values tested: ", count);
+    });
   });
-
-  // describe("Withdrawals", function () {
-  //   describe("Validations", function () {
-  //     it("Should revert with the right error if called too soon", async function () {
-  //       const { lock } = await loadFixture(deploy);
-
-  //       await expect(lock.withdraw()).to.be.revertedWith(
-  //         "You can't withdraw yet"
-  //       );
-  //     });
-
-  //     it("Should revert with the right error if called from another account", async function () {
-  //       const { lock, unlockTime, otherAccount } = await loadFixture(
-  //         deploy
-  //       );
-
-  //       // We can increase the time in Hardhat Network
-  //       await time.increaseTo(unlockTime);
-
-  //       // We use lock.connect() to send a transaction from another account
-  //       await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-  //         "You aren't the owner"
-  //       );
-  //     });
-
-  //     it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-  //       const { lock, unlockTime } = await loadFixture(
-  //         deploy
-  //       );
-
-  //       // Transactions are sent using the first signer by default
-  //       await time.increaseTo(unlockTime);
-
-  //       await expect(lock.withdraw()).not.to.be.reverted;
-  //     });
-  //   });
-
-  //   describe("Events", function () {
-  //     it("Should emit an event on withdrawals", async function () {
-  //       const { lock, unlockTime, lockedAmount } = await loadFixture(
-  //         deploy
-  //       );
-
-  //       await time.increaseTo(unlockTime);
-
-  //       await expect(lock.withdraw())
-  //         .to.emit(lock, "Withdrawal")
-  //         .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-  //     });
-  //   });
-
-  //   describe("Transfers", function () {
-  //     it("Should transfer the funds to the owner", async function () {
-  //       const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-  //         deploy
-  //       );
-
-  //       await time.increaseTo(unlockTime);
-
-  //       await expect(lock.withdraw()).to.changeEtherBalances(
-  //         [owner, lock],
-  //         [lockedAmount, -lockedAmount]
-  //       );
-  //     });
-  //   });
-  // });
 });
