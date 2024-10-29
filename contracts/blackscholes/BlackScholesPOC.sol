@@ -42,22 +42,15 @@ contract BlackScholesPOC {
             // we use Pade approximation for exp(x)
             // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
             uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
-            // console.log("timeToExpiryYears: %d", timeToExpiryYears);
-            uint256 rate18 = uint256(rate);// * 1e14;
-            // console.log("rate18: %d", rate18);
-            uint256 x = rate18 * timeToExpiryYears / 1e4;
-            // console.log("x: %d", x);
+            uint256 x = rate * timeToExpiryYears / 1e4;
 
             // todo: check x is not more than 0.2
 
             uint256 numerator = (x + 3e18) ** 2 / 1e18 + 3e18;
-            // console.log("numerator: %d", numerator);
 
             uint256 denominator = (3e18 - x) ** 2 / 1e18 + 3e18;
-            // console.log("denominator: %d", denominator);
 
             uint256 futurePrice = spot * numerator / denominator;
-            // console.log("futurePrice: %d", futurePrice);
 
             return futurePrice;
         }
