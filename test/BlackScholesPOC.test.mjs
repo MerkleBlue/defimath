@@ -31,7 +31,7 @@ describe("BlackScholesPOC (contract)", function () {
       return futurePrice;
     }
 
-    it.only("gas spent", async function () {
+    it("gas spent", async function () {
       const { bs } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
@@ -45,12 +45,72 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent [avg]: ", parseInt(totalGas / count));
     });
 
-    it.only("calculates future price", async function () {
+    it("calculates future price for lowest time and rate", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      const expected = getFuturePrice(100, 1, 0.0001);
+      const actual = (await bs.getFuturePrice(tokens(100), 1, 1)).toString() / 1e18;
+      const error = (Math.abs(actual - expected) / expected * 100);
+      console.log("Worst case: error:", error.toFixed(12) + "%, rate, ", "actual: " + actual.toFixed(12), "expected: " + expected.toFixed(12));
+      assert.isBelow(error, 0.0001); // is below 0.0001%
+    });
+
+    it("calculates future price [0s, 10m]", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+      for (let rate = 0; rate <= 0.001; rate += 0.0001) {
+        for (let secs = 0; secs <= 600; secs += 1) {
+          const expected = getFuturePrice(100, secs, rate);
+          const actual = (await bs.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
+          const error = (Math.abs(actual - expected) / expected * 100);
+          // console.log("expected:", expected.toFixed(6), "actual:", actual.toFixed(6), "error:", error.toFixed(4), "%");
+          totalError += error;
+          count++;
+          if (maxError < error) {
+            maxError = error;
+            maxErrorParams = {
+              rate, secs, actual, expected
+            }
+          }
+        }
+      }
+      const { rate, secs, actual, expected } = maxErrorParams;
+      console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      assert.isBelow(maxError, 0.0001); // is below 0.0001%
+    });
+
+    it("calculates future price [10m, 1d]", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+      for (let rate = 0; rate <= 0.5; rate += 0.05) {
+        for (let secs = 600; secs <= 1440 * 60; secs += 120) {
+          const expected = getFuturePrice(100, secs, rate);
+          const actual = (await bs.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
+          const error = (Math.abs(actual - expected) / expected * 100);
+          // console.log("expected:", expected.toFixed(6), "actual:", actual.toFixed(6), "error:", error.toFixed(4), "%");
+          totalError += error;
+          count++;
+          if (maxError < error) {
+            maxError = error;
+            maxErrorParams = {
+              rate, secs, actual, expected
+            }
+          }
+        }
+      }
+      const { rate, secs, actual, expected } = maxErrorParams;
+      console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      assert.isBelow(maxError, 0.0001); // is below 0.0001%
+    });
+
+    it("calculates future price [1d, 730d]", async function () {
       const { bs } = await loadFixture(deploy);
 
       let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
       for (let rate = 0; rate <= 0.1; rate += 0.01) {
-        for (let days = 0; days <= 2 * 365; days += 1) {
+        for (let days = 1; days <= 2 * 365; days += 1) {
           const expected = getFuturePrice(100, days * SECONDS_IN_DAY, rate);
           const actual = (await bs.getFuturePrice(tokens(100), days * SECONDS_IN_DAY, Math.round(rate * 10_000))).toString() / 1e18;
           const error = (Math.abs(actual - expected) / expected * 100);
@@ -66,10 +126,9 @@ describe("BlackScholesPOC (contract)", function () {
         }
       }
       const { rate, days, actual, expected } = maxErrorParams;
-      console.log("Worst case: rate", rate.toFixed(3), "expiration:", days.toFixed(0), "error:", maxError.toFixed(6) + "%", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", days.toFixed(0) + "d", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      assert.isBelow(maxError, 0.0001); // is below 0.0001%
     });
-
-
   });
 
   describe("Deployment", function () {

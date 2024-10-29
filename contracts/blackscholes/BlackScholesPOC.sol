@@ -40,19 +40,18 @@ contract BlackScholesPOC {
     function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint32 rate) public pure returns (uint256) {
         unchecked {
             // we use Pade approximation for exp(x)
-            // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
-            uint256 x = rate * timeToExpiryYears / 1e4;
+            // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+            // uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
+            // uint256 x = rate * timeToExpiryYears / 1e13;
+
+            uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
 
             // todo: check x is not more than 0.2
 
-            uint256 numerator = (x + 3e18) ** 2 / 1e18 + 3e18;
+            uint256 numerator = (x + 3e9) ** 2 + 3e18;
+            uint256 denominator = (3e9 - x) ** 2 + 3e18;
 
-            uint256 denominator = (3e18 - x) ** 2 / 1e18 + 3e18;
-
-            uint256 futurePrice = spot * numerator / denominator;
-
-            return futurePrice;
+            return numerator * spot / denominator;
         }
     }
 
