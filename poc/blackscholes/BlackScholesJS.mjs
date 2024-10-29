@@ -18,10 +18,18 @@ export class BlackScholesJS {
     this.lookupTable = lookupTable;
   }
 
+  // NOTE: rate: 20% and time: 1 year gives max error of 0.000045%
+  // same for rate: 10% and time: 2 years
+  // So basically, if rate * years < 0.2, we are good, if not, use other method maybe?
   getFuturePrice(spot, rate, timeToExpirySec) {
-    // future = spot * e^(rT)
+    // we use Pade approximation for exp(x)
+    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
     const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
-    const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
+    const x = rate * timeToExpiryYears;
+    const numerator = (x + 3) ** 2 + 3;
+    const denominator = (x - 3) ** 2 + 3;
+    const futurePrice = spot * (numerator / denominator);
+
     return futurePrice;
   }
 

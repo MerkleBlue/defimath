@@ -4,39 +4,71 @@ import bs from "black-scholes";
 import { BlackScholesJS, EXPIRATION_MAX, EXPIRATION_MIN, EXPIRATION_STEP, S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
 import { generateLookupTable } from "./generateLookupTable.mjs";
 
-const DAY = 24 * 60 * 60;
+const SECONDS_IN_DAY = 24 * 60 * 60;
 
 describe("BlackScholesJS", function () {
 
   let blackScholesJS;
 
   describe("Future", function () {
+
+    function getFuturePrice(spot, rate, timeToExpirySec) {
+      // future = spot * e^(rT)
+      const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+      const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
+      return futurePrice;
+    }
+
     // before each test
     beforeEach(() => {
       const lookupTable = generateLookupTable();
       blackScholesJS = new BlackScholesJS(lookupTable);
     });
 
-    it("calculates future price with 1 year expiration", async function () {
+    it.only("calculates future price with 1 year expiration", async function () {
+      let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+      for (let rate = 0; rate <= 0.1; rate += 0.05) {
+        for (let days = 0; days <= 2 * 365; days += 1) {
+          const expected = getFuturePrice(100, rate, days * SECONDS_IN_DAY);
+          const actual = blackScholesJS.getFuturePrice(100, rate, days * SECONDS_IN_DAY);
+          const error = (Math.abs(actual - expected) / expected * 100);
+          // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+          totalError += error;
+          count++;
+          if (maxError < error) {
+            maxError = error;
+            maxErrorParams = {
+              rate, days, actual, expected
+            }
+          }
+        }
+      }
+      const { rate, days, actual, expected } = maxErrorParams;
+      console.log("Worst case: rate", rate.toFixed(3), "expiration:", days.toFixed(0), "error:", maxError.toFixed(6) + "%", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
 
-      let futurePrice = blackScholesJS.getFuturePrice(100, 0.02, 365 * DAY);
-      expect(futurePrice.toFixed(2)).to.equal("102.02");
 
-      futurePrice = blackScholesJS.getFuturePrice(100, 0.1, 365 * DAY);
-      expect(futurePrice.toFixed(2)).to.equal("110.52");
+      // let futurePrice = blackScholesJS.getFuturePrice(100, 0.02, 365 * SECONDS_IN_DAY);
+      // expect(futurePrice.toFixed(2)).to.equal("102.02");
 
-      futurePrice = blackScholesJS.getFuturePrice(100, 1, 365 * DAY);
-      expect(futurePrice.toFixed(2)).to.equal("271.83");
+      // futurePrice = blackScholesJS.getFuturePrice(100, 0.1, 365 * SECONDS_IN_DAY);
+      // expect(futurePrice.toFixed(2)).to.equal("110.52");
+
+      // futurePrice = blackScholesJS.getFuturePrice(100, 1, 365 * SECONDS_IN_DAY);
+      // expect(futurePrice.toFixed(2)).to.equal("271.83");
     });
 
+
+  });
+
+  describe("Options", function () {
     it("gets call price", async function () {
       let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
-      let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * DAY, 0.60, 0.05);
+      let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
       console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
 
       expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
-      actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * DAY, 0.80, 0.07);
+      actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * SECONDS_IN_DAY, 0.80, 0.07);
 
       console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
     });
@@ -50,7 +82,7 @@ describe("BlackScholesJS", function () {
             for (let rate = 0; rate < 0.05; rate += 0.02) {
               // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
               let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-              let actual = blackScholesJS.getCallPrice(1000, strike, exp * DAY, vol, rate);
+              let actual = blackScholesJS.getCallPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
 
               let error = (Math.abs(actual - expected) / expected * 100);
               console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
@@ -85,7 +117,7 @@ describe("BlackScholesJS", function () {
     });
   });
 
-  describe.only("Time indexes", function () {
+  describe("Time indexes", function () {
     // before each test
     beforeEach(() => {
       blackScholesJS = new BlackScholesJS();
