@@ -10,6 +10,8 @@ contract BlackScholesPOC {
     uint256 internal constant TWO_POW_128 = 2 ** 128;
     uint256 internal constant TWO_POW_192 = 2 ** 192;
 
+    uint256 internal constant SECONDS_IN_YEAR = 31536000;
+
     // single mapping is faster than map of map, uint is faster than struct
     mapping(uint40 => uint256) private rangeMap;
 
@@ -21,6 +23,43 @@ contract BlackScholesPOC {
             for (uint32 j = 0; j < lenB; j++) {
                 rangeMap[uint40(i) * 1e6 + uint40(j)] = 5 * TWO_POW_192 + 6 * TWO_POW_128 + 7 * TWO_POW_64 + 8;
             }
+        }
+    }
+
+    function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint32 rate) public view returns (uint256) {
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        uint256 index = getFuturePrice(spot, timeToExpirySec, rate);
+
+        endGas = gasleft();
+        return startGas - endGas;
+    }
+
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint32 rate) public pure returns (uint256) {
+        unchecked {
+            // we use Pade approximation for exp(x)
+            // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+            uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
+            // console.log("timeToExpiryYears: %d", timeToExpiryYears);
+            uint256 rate18 = uint256(rate);// * 1e14;
+            // console.log("rate18: %d", rate18);
+            uint256 x = rate18 * timeToExpiryYears / 1e4;
+            // console.log("x: %d", x);
+
+            // todo: check x is not more than 0.2
+
+            uint256 numerator = (x + 3e18) ** 2 / 1e18 + 3e18;
+            // console.log("numerator: %d", numerator);
+
+            uint256 denominator = (3e18 - x) ** 2 / 1e18 + 3e18;
+            // console.log("denominator: %d", denominator);
+
+            uint256 futurePrice = spot * numerator / denominator;
+            // console.log("futurePrice: %d", futurePrice);
+
+            return futurePrice;
         }
     }
 

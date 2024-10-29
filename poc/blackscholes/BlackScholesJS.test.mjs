@@ -12,7 +12,7 @@ describe("BlackScholesJS", function () {
 
   describe("Future", function () {
 
-    function getFuturePrice(spot, rate, timeToExpirySec) {
+    function getFuturePrice(spot, timeToExpirySec, rate) {
       // future = spot * e^(rT)
       const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
       const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
@@ -29,8 +29,8 @@ describe("BlackScholesJS", function () {
       let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
       for (let rate = 0; rate <= 0.1; rate += 0.05) {
         for (let days = 0; days <= 2 * 365; days += 1) {
-          const expected = getFuturePrice(100, rate, days * SECONDS_IN_DAY);
-          const actual = blackScholesJS.getFuturePrice(100, rate, days * SECONDS_IN_DAY);
+          const expected = getFuturePrice(100, days * SECONDS_IN_DAY, rate);
+          const actual = blackScholesJS.getFuturePrice(100, days * SECONDS_IN_DAY, rate);
           const error = (Math.abs(actual - expected) / expected * 100);
           // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
           totalError += error;

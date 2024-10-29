@@ -1,5 +1,13 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert, expect } from "chai";
+import hre from "hardhat";
+
+const SECONDS_IN_DAY = 24 * 60 * 60;
+
+function tokens(value) {
+
+  return hre.ethers.parseUnits(value.toString(), 18).toString();
+}
 
 describe("BlackScholesPOC (contract)", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -13,6 +21,56 @@ describe("BlackScholesPOC (contract)", function () {
 
     return { owner, bs };
   }
+
+  describe.only("Future", function () {
+
+    function getFuturePrice(spot, timeToExpirySec, rate) {
+      // future = spot * e^(rT)
+      const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+      const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
+      return futurePrice;
+    }
+
+    it.only("gas spent", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      let totalGas = 0, count = 0;
+      for (let rate = 0; rate <= 0.1; rate += 0.01) {
+        for (let days = 0; days <= 2 * 365; days += 1) {
+          const gasUsed = await bs.getFuturePriceMeasureGas(tokens(100), days * SECONDS_IN_DAY, Math.round(rate * 10_000));
+          totalGas += parseInt(gasUsed);
+          count++;
+        }
+      }
+      console.log("Gas spent [avg]: ", parseInt(totalGas / count));
+    });
+
+    it.only("calculates future price", async function () {
+      const { bs } = await loadFixture(deploy);
+
+      let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+      for (let rate = 0; rate <= 0.1; rate += 0.01) {
+        for (let days = 0; days <= 2 * 365; days += 1) {
+          const expected = getFuturePrice(100, days * SECONDS_IN_DAY, rate);
+          const actual = (await bs.getFuturePrice(tokens(100), days * SECONDS_IN_DAY, Math.round(rate * 10_000))).toString() / 1e18;
+          const error = (Math.abs(actual - expected) / expected * 100);
+          // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+          totalError += error;
+          count++;
+          if (maxError < error) {
+            maxError = error;
+            maxErrorParams = {
+              rate, days, actual, expected
+            }
+          }
+        }
+      }
+      const { rate, days, actual, expected } = maxErrorParams;
+      console.log("Worst case: rate", rate.toFixed(3), "expiration:", days.toFixed(0), "error:", maxError.toFixed(6) + "%", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+    });
+
+
+  });
 
   describe("Deployment", function () {
     it("deploys contract", async function () {
@@ -47,24 +105,9 @@ describe("BlackScholesPOC (contract)", function () {
     //   console.log("Gas spent array:", parseInt(estGas1) - 21000);
     // });
 
-
-
-    // it("Should fail if the unlockTime is not in the future", async function () {
-    //   // We don't use the fixture here because we want a different deployment
-    //   const latestTime = await time.latest();
-    //   const Lock = await ethers.getContractFactory("Lock");
-    //   await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
-    //     "Unlock time should be in the future"
-    //   );
-    // });
   });
 
-  describe.only("Time indexes", function () {
-    // // before each test
-    // beforeEach(() => {
-    //   blackScholesJS = new BlackScholesJS();
-    // });
-
+  describe("Time indexes", function () {
     async function getActualExpected(bs, time) {
       const actual = await bs.getIndex(time);
       // check index against log2, which we don't have in JS
@@ -74,7 +117,7 @@ describe("BlackScholesPOC (contract)", function () {
       return { actual, expected };
     }
 
-    it.only("gas spent", async function () {
+    it("gas spent", async function () {
       const { bs } = await loadFixture(deploy);
 
       let count = 0;
@@ -85,7 +128,6 @@ describe("BlackScholesPOC (contract)", function () {
         count++;
       }
       console.log("Gas spent [avg]: ", parseInt(totalGas / count));
-
     });
 
     it("calculates index for time [0, 2^3)", async function () {
