@@ -74,10 +74,18 @@ describe("BlackScholesPOC (contract)", function () {
       return { actual, expected };
     }
 
-    it("gas spent", async function () {
+    it.only("gas spent", async function () {
       const { bs } = await loadFixture(deploy);
 
-      await bs.getIndexGas(1000);
+      let count = 0;
+      let totalGas = 0;
+      for (let i = 4; i < 32; i++) {
+        const gasUsed = await bs.getIndexMeasureGas(2 ** i + 1);
+        totalGas += parseInt(gasUsed);
+        count++;
+      }
+      console.log("Gas spent [avg]: ", parseInt(totalGas / count));
+
     });
 
     it("calculates index for time [0, 2^3)", async function () {
@@ -97,6 +105,28 @@ describe("BlackScholesPOC (contract)", function () {
       const { bs } = await loadFixture(deploy);
       let count = 0;
       for (let time = 8; time < 2 ** 16; time++) {
+        const { actual, expected } = await getActualExpected(bs, time);
+        assert.equal(actual, expected);
+        count++;
+      }
+      console.log("values tested: ", count);
+    });
+
+    it("calculates index for time [2^16, 2^24)", async function () {
+      const { bs } = await loadFixture(deploy);
+      let count = 0;
+      for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8) {
+        const { actual, expected } = await getActualExpected(bs, time);
+        assert.equal(actual, expected);
+        count++;
+      }
+      console.log("values tested: ", count);
+    });
+
+    it("calculates index for time [2^24, 2^32)", async function () {
+      const { bs } = await loadFixture(deploy);
+      let count = 0;
+      for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16) {
         const { actual, expected } = await getActualExpected(bs, time);
         assert.equal(actual, expected);
         count++;

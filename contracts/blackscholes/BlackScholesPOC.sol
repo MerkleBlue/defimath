@@ -56,57 +56,142 @@ contract BlackScholesPOC {
         }
     }
 
-    function getIndexGas(uint256 value) public view returns (uint256) {
+    function getIndexMeasureGas(uint256 value) public view returns (uint256) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        unchecked {
-            uint256 index = getIndex(value);
-        }
+        uint256 index = getIndex(value);
 
         endGas = gasleft();
-        console.log("gas used: %d", startGas - endGas);
+        return startGas - endGas;
     }
 
     function getIndex(uint256 value) public pure returns (uint256) {
         unchecked {
-            if (value <= 8) {
+            if (value <= 7) {
                 return value;
             }
 
             // find major
-            uint256 min = 2;
-            uint256 max = 32;
-            uint256 major = 0;
-
-            uint256 mid;
-            uint256 power;
-            while (min <= max) {
-                mid = (min + max) / 2;
-                power = 2 ** mid;
-
-                if (power <= value) {
-                    major = mid; // mid is a valid candidate
-                    min = mid + 1; // search for a larger power
+            uint256 major = 3;
+            if (value >= 0x10000) { // 16
+                if (value >= 0x1000000) { // 24
+                    if (value >= 0x10000000) { // 28
+                        if (value >= 0x40000000) { // 30
+                            if (value >= 0x80000000) { // 31
+                                major = 31;
+                            } else {
+                                major = 30;
+                            }
+                        } else {
+                            if (value >= 0x20000000) { // 29
+                                major = 29;
+                            } else {
+                                major = 28;
+                            }
+                        }
+                    } else {
+                        if (value >= 0x4000000) { // 26
+                            if (value >= 0x8000000) { // 27
+                                major = 27;
+                            } else {
+                                major = 26;
+                            }
+                        } else {
+                            if (value >= 0x2000000) { // 25
+                                major = 25;
+                            } else {
+                                major = 24;
+                            }
+                        }
+                    }
                 } else {
-                    max = mid - 1; // search for a smaller power
+                    if (value >= 0x100000) { // 20
+                        if (value >= 0x400000) { // 22
+                            if (value >= 0x800000) { // 23
+                                major = 23;
+                            } else {
+                                major = 22;
+                            }
+                        } else {
+                            if (value >= 0x200000) { // 21
+                                major = 21;
+                            } else {
+                                major = 20;
+                            }
+                        }
+                    } else {
+                        if (value >= 0x40000) { // 18
+                            if (value >= 0x80000) { // 19
+                                major = 19;
+                            } else {
+                                major = 18;
+                            }
+                        } else {
+                            if (value >= 0x20000) { // 17
+                                major = 17;
+                            } else {
+                                major = 16;
+                            }
+                        }
+                    }
                 }
-            }
+            } else {
+                if (value >= 0x100) { // 8
+                    if (value >= 0x1000) { // 12
+                        if (value >= 0x4000) { // 14
+                            if (value >= 0x8000) { // 15
+                                major = 15;
+                            } else {
+                                major = 14;
+                            }
+                        } else {
+                            if (value >= 0x2000) { // 13
+                                major = 13;
+                            } else {
+                                major = 12;
+                            }
+                        }
+                    } else {
+                        if (value >= 0x400) { // 10
+                            if (value >= 0x800) { // 11
+                                major = 11;
+                            } else {
+                                major = 10;
+                            }
+                        } else {
+                            if (value >= 0x200) { // 9
+                                major = 9;
+                            } else {
+                                major = 8;
+                            }
+                        }
+                    }
+                } else {
+                    if (value >= 0x10) { // 4
+                        if (value >= 0x40) { // 6
+                            if (value >= 0x80) { // 7
+                                major = 7;
+                            } else {
+                                major = 6;
+                            }
+                        } else {
+                            if (value >= 0x20) { // 5
+                                major = 5;
+                            } else {
+                                major = 4;
+                            }
+                        }
+                    } 
+                }
+            } 
 
-            // // find major 2
-            // uint256 major = 5;
-            // if (0x8 >= value) major = 3; // 274
-            // if (0x10 >= value) major = 4; // 297
-            // if (0x20 >= value) major = 5; // 297
+            // find minor
+            uint256 twoToTheMajorMinus3 = 2 ** (major - 3);
+            uint256 minor = (value - twoToTheMajorMinus3 * 8) / twoToTheMajorMinus3;
 
-
-
-            // find minor 
-            uint256 twoToPowerMinus3 = 2 ** (major - 3);
-            uint256 minor = (value - twoToPowerMinus3 * 8) / twoToPowerMinus3;
-
-            return major * 10 + minor;
+            return 10 * major + minor;
         }
     }
 

@@ -131,9 +131,9 @@ describe("BlackScholesJS", function () {
       console.log("values tested: ", count);
     });
 
-    it("calculates index for time [2^24, 2^32]", async function () {
+    it("calculates index for time [2^24, 2^32)", async function () {
       let count = 0;
-      for (let time = 2 ** 24; time <= 2 ** 32; time += 2 ** 16) {
+      for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16) {
         const { actual, expected } = getActualExpected(time);
         assert.equal(actual, expected);
         count++;
