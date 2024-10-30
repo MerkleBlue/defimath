@@ -26,24 +26,16 @@ contract BlackScholesPOC {
         }
     }
 
-    function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint16 rate) public view returns (uint256) {
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        getFuturePrice(spot, timeToExpirySec, rate);
-
-        endGas = gasleft();
-        return startGas - endGas;
-    }
-
     function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
         unchecked {
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+
+            // NOTE: this is slower than below
             // uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
             // uint256 x = rate * timeToExpiryYears / 1e13;
 
+            // NOTE: this is faster than the above 
             uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
 
             // todo: check x is not more than 0.2
@@ -96,18 +88,9 @@ contract BlackScholesPOC {
         }
     }
 
-    function getIndexMeasureGas(uint256 value) public view returns (uint256) {
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
 
-        getIndex(value);
 
-        endGas = gasleft();
-        return startGas - endGas;
-    }
-
-    function getIndex(uint256 value) public pure returns (uint256) {
+    function getTimeIndex(uint256 value) public pure returns (uint256) {
         unchecked {
             if (value <= 7) {
                 return value;
@@ -235,7 +218,32 @@ contract BlackScholesPOC {
         }
     }
 
-    function testGas() external view returns (uint256) {
+    // todo: delete
+    function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint16 rate) public view returns (uint256) {
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        getFuturePrice(spot, timeToExpirySec, rate);
+
+        endGas = gasleft();
+        return startGas - endGas;
+    }
+
+    // todo: delete
+    function getTimeIndexMeasureGas(uint256 value) public view returns (uint256) {
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        getTimeIndex(value);
+
+        endGas = gasleft();
+        return startGas - endGas;
+    }
+
+    // todo: delete
+    function measureGas() external view returns (uint256) {
         unchecked {
             // calculate indexes
             uint40 index1 = 4;
