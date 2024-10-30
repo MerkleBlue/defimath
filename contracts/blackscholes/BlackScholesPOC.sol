@@ -26,18 +26,18 @@ contract BlackScholesPOC {
         }
     }
 
-    function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint32 rate) public view returns (uint256) {
+    function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint16 rate) public view returns (uint256) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        uint256 index = getFuturePrice(spot, timeToExpirySec, rate);
+        getFuturePrice(spot, timeToExpirySec, rate);
 
         endGas = gasleft();
         return startGas - endGas;
     }
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint32 rate) public pure returns (uint256) {
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
         unchecked {
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
@@ -60,9 +60,17 @@ contract BlackScholesPOC {
         uint128 strike,
         uint32 timeToExpirySec,
         uint80 volatility,
-        uint32 riskFreeRate
+        uint16 rate
     ) external view returns (uint256 price) {
         unchecked {
+            // calculate future price
+            uint256 future = getFuturePrice(spot, timeToExpirySec, rate);
+
+            uint256 ssRatio = future * 1e18 / strike;
+
+            uint256 timeMultiplier = (1e29 / volatility) ** 2;
+
+
             // calculate indexes
             uint40 index1 = 4;
             uint40 index2 = 6;
@@ -75,6 +83,7 @@ contract BlackScholesPOC {
             // uint256 endGas;
             // console.log("Method 2");
             // startGas = gasleft();
+            // maybe we can overflow here to get the first 64 bits
             uint256 num1 = range / TWO_POW_192;
             uint256 num2 = uint64(range / TWO_POW_128);
             uint256 num3 = uint64(range / TWO_POW_64);
@@ -92,7 +101,7 @@ contract BlackScholesPOC {
         uint256 endGas;
         startGas = gasleft();
 
-        uint256 index = getIndex(value);
+        getIndex(value);
 
         endGas = gasleft();
         return startGas - endGas;
@@ -226,7 +235,7 @@ contract BlackScholesPOC {
         }
     }
 
-    function testGas() external view returns (uint256 price) {
+    function testGas() external view returns (uint256) {
         unchecked {
             // calculate indexes
             uint40 index1 = 4;
@@ -291,35 +300,20 @@ contract BlackScholesPOC {
                 startGas = gasleft();
                 
                 // 137 gas
-                // uint256 twoToPowerMinus3 = 2 ** (power - 3);
-                // uint256 res1 = (value - twoToPowerMinus3 * 8) / twoToPowerMinus3;
-                
-                uint256 result;
-                assembly {
-                    let powerValue := exp(2, power)
-                    let powerMinusThreeValue := exp(2, sub(power, 3))
-                    
-                    // Perform (value - powerValue) / powerMinusThreeValue
-                    result := div(sub(value, powerValue), powerMinusThreeValue)
-                }
-
-
-                // uint res1 = 180000 / 90; // (2 ** (power - 3));
+                uint256 twoToPowerMinus3 = 2 ** (power - 3);
+                uint256 res1 = (value - twoToPowerMinus3 * 8) / twoToPowerMinus3;
                 endGas = gasleft();
-                console.log("gas used complex  : %d", startGas - endGas); 
-                // console.log("result  : %d", num1 ** num2);     
+                console.log("gas used complex  : %d %d", startGas - endGas, res1);   
             }
 
             {
-                uint256 num1 = 12030312;
-                uint256 num2 = 12423;
                 startGas = gasleft();
                 TickMath.getTickAtSqrtRatio(429512873900003);
                 endGas = gasleft();
-                console.log("gas used TickMath.getTickAtSqrtRatio  : %d", startGas - endGas); 
-                // console.log("result  : %d", num1 - num2);     
+                console.log("gas used TickMath.getTickAtSqrtRatio  : %d", startGas - endGas);  
             }
             
+            return 0;
         }
     }
 }

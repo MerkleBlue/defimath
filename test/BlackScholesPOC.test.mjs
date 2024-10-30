@@ -22,8 +22,14 @@ describe("BlackScholesPOC (contract)", function () {
     return { owner, bs };
   }
 
-  describe.only("Future", function () {
+  describe("Deployment", function () {
+    it("deploys contract", async function () {
+      const { bs } = await loadFixture(deploy);
+      console.log(bs.target)
+    });
+  });
 
+  describe("Future", function () {
     function getFuturePrice(spot, timeToExpirySec, rate) {
       // future = spot * e^(rT)
       const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
@@ -132,12 +138,7 @@ describe("BlackScholesPOC (contract)", function () {
   });
 
   describe("Deployment", function () {
-    it("deploys contract", async function () {
-      const { bs } = await loadFixture(deploy);
-      console.log(bs.target)
-    });
-
-    it("gets call price map", async function () {
+    it("getsCallPrice", async function () {
       const { bs } = await loadFixture(deploy);
 
       const callPriceMap = await bs.getCallPrice(100, 100, 1000, 1, 1);
@@ -147,7 +148,7 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent map:", parseInt(estGas2) - 21000);
     });
 
-    it.only("test gas", async function () {
+    it("test gas", async function () {
       const { bs } = await loadFixture(deploy);
 
       const callPriceMap = await bs.testGas();
