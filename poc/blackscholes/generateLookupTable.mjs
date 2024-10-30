@@ -11,8 +11,8 @@ export function generateLookupTable() {
 
   const lookupTable = [];
 
-  console.log("spotStrikeRatios", spotStrikeRatios);
-  console.log("expirationDays", expirationDays);
+  // console.log("spotStrikeRatios", spotStrikeRatios);
+  // console.log("expirationDays", expirationDays);
 
   for (let i = 0; i < spotStrikeRatios.length - 1; i++) {
     const expirations = [];
@@ -30,10 +30,10 @@ export function generateLookupTable() {
       const optionPriceAB = bs.blackScholes(spot, strikeA, expirationYearsB, vol, 0, "call");
       const optionPriceBA = bs.blackScholes(spot, strikeB, expirationYearsA, vol, 0, "call");
       const optionPriceBB = bs.blackScholes(spot, strikeB, expirationYearsB, vol, 0, "call");
-      console.log(`strikeA: ${strikeA.toFixed(0)} (ssRatio: ${spotStrikeRatios[i].toFixed(3)}), expirationYearsA: ${expirationYearsA * 365}, optionPriceAA: ${optionPriceAA}`);
-      console.log(`strikeA: ${strikeA.toFixed(0)} (ssRatio: ${spotStrikeRatios[i].toFixed(3)}), expirationYearsB: ${expirationYearsB * 365}, optionPriceAB: ${optionPriceAB}`);
-      console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsA: ${expirationYearsA * 365}, optionPriceBA: ${optionPriceBA}`);
-      console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsB: ${expirationYearsB * 365}, optionPriceBB: ${optionPriceBB}`);
+      // console.log(`strikeA: ${strikeA.toFixed(0)} (ssRatio: ${spotStrikeRatios[i].toFixed(3)}), expirationYearsA: ${expirationYearsA * 365}, optionPriceAA: ${optionPriceAA}`);
+      // console.log(`strikeA: ${strikeA.toFixed(0)} (ssRatio: ${spotStrikeRatios[i].toFixed(3)}), expirationYearsB: ${expirationYearsB * 365}, optionPriceAB: ${optionPriceAB}`);
+      // console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsA: ${expirationYearsA * 365}, optionPriceBA: ${optionPriceBA}`);
+      // console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsB: ${expirationYearsB * 365}, optionPriceBB: ${optionPriceBB}`);
 
       const range = {
         optionPriceAA,

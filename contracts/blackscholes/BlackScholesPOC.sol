@@ -3,7 +3,6 @@ pragma solidity ^0.8.27;
 
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
-import "./TickMath.sol";
 
 contract BlackScholesPOC {
     uint256 internal constant TWO_POW_64 = 2 ** 64;
@@ -319,13 +318,6 @@ contract BlackScholesPOC {
                 uint256 res1 = (value - twoToPowerMinus3 * 8) / twoToPowerMinus3;
                 endGas = gasleft();
                 console.log("gas used complex  : %d %d", startGas - endGas, res1);   
-            }
-
-            {
-                startGas = gasleft();
-                TickMath.getTickAtSqrtRatio(429512873900003);
-                endGas = gasleft();
-                console.log("gas used TickMath.getTickAtSqrtRatio  : %d", startGas - endGas);  
             }
             
             return 0;

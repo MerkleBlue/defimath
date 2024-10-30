@@ -1,11 +1,11 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert, expect } from "chai";
 import hre from "hardhat";
+import { BlackScholesJS } from "../poc/blackscholes/BlackScholesJS.mjs";
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
 function tokens(value) {
-
   return hre.ethers.parseUnits(value.toString(), 18).toString();
 }
 
@@ -252,7 +252,7 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe.only("getSpotStrikeIndex", function () {
+    describe("getSpotStrikeIndex", function () {
       async function getActualExpected(bs, ratio) {
         const actual = parseInt(await bs.getSpotStrikeIndex(tokens(ratio)));
         const expected = Math.floor(ratio * 10);
