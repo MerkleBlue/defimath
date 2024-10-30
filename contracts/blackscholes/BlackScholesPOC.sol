@@ -218,6 +218,13 @@ contract BlackScholesPOC {
         }
     }
 
+    function getSpotStrikeIndex(uint256 ssRatio) public pure returns (uint256) {
+        unchecked {
+            // 0.5 ratio is index 5
+            return ssRatio / 1e17;
+        }
+    }
+
     // todo: delete
     function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint16 rate) public view returns (uint256) {
         uint256 startGas;

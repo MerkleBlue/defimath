@@ -251,6 +251,26 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("values tested: ", count);
       });
     });
+
+    describe.only("getSpotStrikeIndex", function () {
+      async function getActualExpected(bs, ratio) {
+        const actual = parseInt(await bs.getSpotStrikeIndex(tokens(ratio)));
+        const expected = Math.floor(ratio * 10);
+        // console.log("actual:", actual, "expected:", expected);
+        return { actual, expected };
+      }
+
+      it("calculates index for ratio [0.5, 2]", async function () {
+        const { bs } = await loadFixture(deploy);
+        let count = 0;
+        for (let ssRatio = 0.5; ssRatio <= 2.0001; ssRatio += 0.05) {
+          const { actual, expected } = await getActualExpected(bs, ssRatio);
+          assert.equal(actual, expected);
+          count++;
+        }
+        console.log("values tested: ", count);
+      });
+    });
   });
 });
 
