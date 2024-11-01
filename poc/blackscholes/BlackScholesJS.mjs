@@ -112,8 +112,15 @@ export class BlackScholesJS {
   }
 
   getIndexFromSpotStrikeRatio(ratio) {
-    const roundedRatio = Math.floor(ratio * 100 / (S_S_RATIO_STEP * 100)) * S_S_RATIO_STEP;
-    //console.log("ratio", ratio, roundedRatio, Math.floor(ratio / S_S_RATIO_STEP), ratio / S_S_RATIO_STEP)
+    const multiplier = ratio / S_S_RATIO_STEP;
+    let roundedRatio = Math.floor(multiplier) * S_S_RATIO_STEP;
+    // console.log("ratio", ratio, roundedRatio, Math.floor(ratio / S_S_RATIO_STEP), ratio / S_S_RATIO_STEP);
+
+    // NOTE: floating point precision issue, so we need to check if very close to the upper edge
+    if (Math.floor(multiplier) !== Math.floor(multiplier + 0.000001)) {
+      roundedRatio = Math.floor(multiplier + 0.000000001) * S_S_RATIO_STEP;
+    }
+
     return Math.round(roundedRatio * 100);
   }
 

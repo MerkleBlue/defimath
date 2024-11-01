@@ -223,6 +223,21 @@ describe("BlackScholesJS", function () {
         }
         console.log("values tested: ", count);
       });
+
+      it("calculates index for specific ratios", async function () {
+        const actual1 = blackScholesJS.getIndexFromSpotStrikeRatio(0.999999);
+        assert.equal(actual1, 95);
+
+        const actual2 = blackScholesJS.getIndexFromSpotStrikeRatio(1 - 1e-6);
+        assert.equal(actual2, 95);
+
+        const actual3 = blackScholesJS.getIndexFromSpotStrikeRatio(1 - 1e-9);
+        assert.equal(actual3, 95);
+
+        // this is where it rounds up to 100
+        const actual4 = blackScholesJS.getIndexFromSpotStrikeRatio(1 - 1e-12);
+        assert.equal(actual4, 100);
+      });
     });
   });
 });
