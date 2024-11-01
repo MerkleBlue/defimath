@@ -255,7 +255,7 @@ describe("BlackScholesPOC (contract)", function () {
     describe("getIndexFromSpotStrikeRatio", function () {
       async function getActualExpected(bs, ratio) {
         const actual = parseInt(await bs.getIndexFromSpotStrikeRatio(tokens(ratio)));
-        const expected = Math.floor(ratio * 10);
+        const expected = Math.floor(ratio * 100);
         // console.log("actual:", actual, "expected:", expected);
         return { actual, expected };
       }
