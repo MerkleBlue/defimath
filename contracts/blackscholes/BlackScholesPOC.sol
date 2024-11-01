@@ -89,7 +89,7 @@ contract BlackScholesPOC {
 
 
 
-    function getTimeIndex(uint256 value) public pure returns (uint256) {
+    function getIndexFromTime(uint256 value) public pure returns (uint256) {
         unchecked {
             if (value <= 7) {
                 return value;
@@ -217,10 +217,10 @@ contract BlackScholesPOC {
         }
     }
 
-    function getSpotStrikeIndex(uint256 ssRatio) public pure returns (uint256) {
+    function getIndexFromSpotStrikeRatio(uint256 spotStrikeRatio) public pure returns (uint256) {
         unchecked {
             // 0.5 ratio is index 5
-            return ssRatio / 1e17;
+            return spotStrikeRatio / 1e17;
         }
     }
 
@@ -237,12 +237,12 @@ contract BlackScholesPOC {
     }
 
     // todo: delete
-    function getTimeIndexMeasureGas(uint256 value) public view returns (uint256) {
+    function getIndexFromTimeMeasureGas(uint256 value) public view returns (uint256) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        getTimeIndex(value);
+        getIndexFromTime(value);
 
         endGas = gasleft();
         return startGas - endGas;

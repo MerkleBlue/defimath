@@ -43,13 +43,13 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent:", parseInt(estGas3) - 21000);
     });
 
-    it("getTimeIndex gas", async function () {
+    it("getIndexFromTime gas", async function () {
       const { bs } = await loadFixture(deploy);
 
       let count = 0;
       let totalGas = 0;
       for (let i = 4; i < 32; i++) {
-        const gasUsed = await bs.getTimeIndexMeasureGas(2 ** i + 1);
+        const gasUsed = await bs.getIndexFromTimeMeasureGas(2 ** i + 1);
         totalGas += parseInt(gasUsed);
         count++;
       }
@@ -195,9 +195,9 @@ describe("BlackScholesPOC (contract)", function () {
 
     });
 
-    describe("getTimeIndex", function () {
+    describe("getIndexFromTime", function () {
       async function getActualExpected(bs, time) {
-        const actual = await bs.getTimeIndex(time);
+        const actual = await bs.getIndexFromTime(time);
         // check index against log2, which we don't have in JS
         const major = Math.floor(Math.log2(time));
         const minor = Math.floor((time - 2 ** major) / 2 ** (major - 3));
@@ -208,14 +208,14 @@ describe("BlackScholesPOC (contract)", function () {
       it("calculates index for time [0, 2^3)", async function () {
         const { bs } = await loadFixture(deploy);
 
-        assert.equal(await bs.getTimeIndex(0), 0);
-        assert.equal(await bs.getTimeIndex(1), 1);
-        assert.equal(await bs.getTimeIndex(2), 2);
-        assert.equal(await bs.getTimeIndex(3), 3);
-        assert.equal(await bs.getTimeIndex(4), 4);
-        assert.equal(await bs.getTimeIndex(5), 5);
-        assert.equal(await bs.getTimeIndex(6), 6);
-        assert.equal(await bs.getTimeIndex(7), 7);
+        assert.equal(await bs.getIndexFromTime(0), 0);
+        assert.equal(await bs.getIndexFromTime(1), 1);
+        assert.equal(await bs.getIndexFromTime(2), 2);
+        assert.equal(await bs.getIndexFromTime(3), 3);
+        assert.equal(await bs.getIndexFromTime(4), 4);
+        assert.equal(await bs.getIndexFromTime(5), 5);
+        assert.equal(await bs.getIndexFromTime(6), 6);
+        assert.equal(await bs.getIndexFromTime(7), 7);
       });
 
       it("calculates index for time [2^3, 2^16)", async function () {
@@ -252,9 +252,9 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe("getSpotStrikeIndex", function () {
+    describe("getIndexFromSpotStrikeRatio", function () {
       async function getActualExpected(bs, ratio) {
-        const actual = parseInt(await bs.getSpotStrikeIndex(tokens(ratio)));
+        const actual = parseInt(await bs.getIndexFromSpotStrikeRatio(tokens(ratio)));
         const expected = Math.floor(ratio * 10);
         // console.log("actual:", actual, "expected:", expected);
         return { actual, expected };
