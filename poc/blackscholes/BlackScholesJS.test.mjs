@@ -142,11 +142,16 @@ describe("BlackScholesJS", function () {
           }
         }
 
+        const avgError = totalError / count;
+
         console.log("Total tests: " + count);
         console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-        console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
+        console.log("Avg error: " + (avgError).toFixed(8) + "%");
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
+
+        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
     });
 
