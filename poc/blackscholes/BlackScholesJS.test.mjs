@@ -1,15 +1,15 @@
 
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import bs from "black-scholes";
-import { BlackScholesJS, EXPIRATION_MAX, EXPIRATION_MIN, EXPIRATION_STEP, S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
-import { generateLookupTable } from "./generateLookupTable.mjs";
+import { BlackScholesJS, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
+import { generateLookupTable, generateLookupTable2 } from "./generateLookupTable.mjs";
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
 describe("BlackScholesJS", function () {
   // before each test
   beforeEach(() => {
-    const lookupTable = generateLookupTable();
+    const lookupTable = generateLookupTable2(new BlackScholesJS());
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
@@ -108,12 +108,12 @@ describe("BlackScholesJS", function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
-        // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
 
         expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
         actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * SECONDS_IN_DAY, 0.80, 0.07);
 
-        // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
       });
 
       it("gets multiple call prices", async function () {
@@ -143,7 +143,7 @@ describe("BlackScholesJS", function () {
         }
 
         console.log("Total tests: " + count);
-        console.log("Table size: ", Math.round((S_S_RATIO_MAX - S_S_RATIO_MIN) / S_S_RATIO_STEP) - 1, "x", Math.round((EXPIRATION_MAX - EXPIRATION_MIN) / EXPIRATION_STEP) - 1);
+        console.log("Table size: TBD"); //, Math.round((S_S_RATIO_MAX - S_S_RATIO_MIN) / S_S_RATIO_STEP) - 1, "x", Math.round((EXPIRATION_MAX - EXPIRATION_MIN) / EXPIRATION_STEP) - 1);
         console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
@@ -158,9 +158,9 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getTimeIndex", function () {
+    describe("getIndexFromTime", function () {
       function getActualExpected(time) {
-        const actual = blackScholesJS.getTimeIndex(time);
+        const actual = blackScholesJS.getIndexFromTime(time);
         // check index against log2, which we don't have in JS
         const major = Math.floor(Math.log2(time));
         const minor = Math.floor((time - 2 ** major) / 2 ** (major - 3));
@@ -169,14 +169,14 @@ describe("BlackScholesJS", function () {
       }
 
       it("calculates index for time [0, 2^3)", async function () {
-        assert.equal(blackScholesJS.getTimeIndex(0), 0);
-        assert.equal(blackScholesJS.getTimeIndex(1), 1);
-        assert.equal(blackScholesJS.getTimeIndex(2), 2);
-        assert.equal(blackScholesJS.getTimeIndex(3), 3);
-        assert.equal(blackScholesJS.getTimeIndex(4), 4);
-        assert.equal(blackScholesJS.getTimeIndex(5), 5);
-        assert.equal(blackScholesJS.getTimeIndex(6), 6);
-        assert.equal(blackScholesJS.getTimeIndex(7), 7);
+        assert.equal(blackScholesJS.getIndexFromTime(0), 0);
+        assert.equal(blackScholesJS.getIndexFromTime(1), 1);
+        assert.equal(blackScholesJS.getIndexFromTime(2), 2);
+        assert.equal(blackScholesJS.getIndexFromTime(3), 3);
+        assert.equal(blackScholesJS.getIndexFromTime(4), 4);
+        assert.equal(blackScholesJS.getIndexFromTime(5), 5);
+        assert.equal(blackScholesJS.getIndexFromTime(6), 6);
+        assert.equal(blackScholesJS.getIndexFromTime(7), 7);
       });
 
       it("calculates index for time [2^3, 2^16)", async function () {
@@ -210,18 +210,14 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getSpotStrikeIndex", function () {
-      async function getActualExpected(ratio) {
-        const actual = blackScholesJS.getSpotStrikeIndex(ratio);
-        const expected = Math.floor(ratio * 10);
-        // console.log("actual:", actual, "expected:", expected);
-        return { actual, expected };
-      }
-
+    describe("getIndexFromSpotStrikeRatio", function () {
       it("calculates index for ratio [0.5, 2]", async function () {
         let count = 0;
-        for (let ssRatio = 0.5; ssRatio <= 2.0001; ssRatio += 0.05) {
-          const { actual, expected } = await getActualExpected(ssRatio);
+        for (let index = 50; index <= 200; index += 1) {
+          const ratio = index / 100;
+          const indexStep = Math.round(S_S_RATIO_STEP * 100);
+          const actual = blackScholesJS.getIndexFromSpotStrikeRatio(ratio);
+          const expected = Math.floor(index / indexStep) * indexStep;
           assert.equal(actual, expected);
           count++;
         }
