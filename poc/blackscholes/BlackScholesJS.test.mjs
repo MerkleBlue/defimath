@@ -143,18 +143,10 @@ describe("BlackScholesJS", function () {
         }
 
         console.log("Total tests: " + count);
-        console.log("Table size: TBD"); //, Math.round((S_S_RATIO_MAX - S_S_RATIO_MIN) / S_S_RATIO_STEP) - 1, "x", Math.round((EXPIRATION_MAX - EXPIRATION_MIN) / EXPIRATION_STEP) - 1);
+        console.log("Map size: ", blackScholesJS.lookupTable.size);
         console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
-
-
-        // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
-
-        // expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
-        // actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * DAY, 0.80, 0.07);
-
-        // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
       });
     });
 
