@@ -143,7 +143,7 @@ describe("BlackScholesJS", function () {
         }
 
         console.log("Total tests: " + count);
-        console.log("Map size: ", blackScholesJS.lookupTable.size);
+        console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
         console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);

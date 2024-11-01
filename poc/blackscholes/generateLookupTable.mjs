@@ -5,7 +5,7 @@ export function generateLookupTable(blackScholesJS) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
-  // first dimension is spot strike ratio
+  // first dimension is spot strike ratio, second is expiration times
   const spotStrikeRatios = generatesStrikeSpotRatioPoints(S_S_RATIO_MIN, S_S_RATIO_MAX, S_S_RATIO_STEP);
   const expirationSecs = generateTimePoints();
 
