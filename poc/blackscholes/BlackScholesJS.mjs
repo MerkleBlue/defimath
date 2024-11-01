@@ -133,7 +133,6 @@ export class BlackScholesJS {
     let max = 32;
     let result = -1;
 
-    // todo: optimize later, makes 5 loops always
     while (min <= max) {
       const mid = Math.floor((min + max) / 2);
       const power = 2 ** mid;

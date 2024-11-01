@@ -2,14 +2,14 @@
 import { assert } from "chai";
 import bs from "black-scholes";
 import { BlackScholesJS, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
-import { generateLookupTable, generateLookupTable2 } from "./generateLookupTable.mjs";
+import { generateLookupTable } from "./generateLookupTable.mjs";
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
 describe("BlackScholesJS", function () {
   // before each test
   beforeEach(() => {
-    const lookupTable = generateLookupTable2(new BlackScholesJS());
+    const lookupTable = generateLookupTable(new BlackScholesJS());
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
