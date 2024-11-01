@@ -31,62 +31,38 @@ export class BlackScholesJS {
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallPrice(spot, strike, timeToExpirySec, vol, rate) {
-    // set the spot scale first
+    // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
 
+    // step 2: scale future and strike, and get the spot-strike ratio
     const futureScaled = this.getFuturePrice(SPOT_FIXED, rate, timeToExpirySec);
-    // console.log("futurePrice", futureScaled);
-
     const strikeScaled = strike / spotScale;
-    // console.log("strikeScaled", strikeScaled);
+    const spotStrikeRatio = futureScaled / strikeScaled;
 
-    const strikeDiscounted = strikeScaled * (SPOT_FIXED / futureScaled);
-    // console.log("strikeDiscounted", strikeDiscounted);
-
-    const spotStrikeRatio = SPOT_FIXED / strikeDiscounted;
-    // console.log("spotStrikeRatio", spotStrikeRatio);
-
-    // set the expiration based on vol scale
+    // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
-    // const timeToExpiryDaysScaled = timeToExpirySecScaled / SECONDS_IN_DAY;
-    // console.log("timeToExpirySec", timeToExpirySec, "in years", timeToExpirySec / (365 * 24 * 60 * 60));
-    // console.log("timeToExpirySecScaled", timeToExpirySecScaled, "in years", timeToExpirySecScaled / (365 * 24 * 60 * 60));
-    // console.log("timeToExpiryDaysScaled", timeToExpiryDaysScaled);
 
-    // find closest record in lookup table
-    const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio); //  Math.floor((spotStrikeRatio - S_S_RATIO_MIN) / S_S_RATIO_STEP);
-    // console.log("spotStrikeRatioIndex: ", spotStrikeRatioIndex);
+    // step 4: find indexes and then element from lookup table
+    const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
+    const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
+    const element = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
 
-    const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled); // Math.floor((timeToExpiryDaysScaled - EXPIRATION_MIN) / EXPIRATION_STEP);
-    // console.log("timeToExpiryIndex", timeToExpiryIndex);
-
-    const range = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex); // [spotStrikeRatioIndex][timeToExpiryIndex];
-    // console.log(spot, strike, timeToExpirySec, vol, rate, spotStrikeRatioIndex, timeToExpiryIndex, "index: ", spotStrikeRatioIndex * 1000 + timeToExpiryIndex, range !== undefined ? "found" : "not found");
-
-    // interpolate the option price
-    //const strikeStep = S_S_RATIO_STEP;
+    // step 5: interpolate the option price using linear interpolation
     const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
     const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
-    // console.log("spotStrikeWeight", spotStrikeWeight);
-
 
     const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
-    // console.log("timeToExpiryWeight", timeToExpiryWeight);
 
-    // console.log("range", range);
-
-    const wPriceA = range.optionPriceAA * (1 - timeToExpiryWeight) + range.optionPriceAB * timeToExpiryWeight;
-    const wPriceB = range.optionPriceBA * (1 - timeToExpiryWeight) + range.optionPriceBB * timeToExpiryWeight;
-    // console.log("wPriceA", wPriceA, "wPriceB", wPriceB);
+    const wPriceA = element.optionPriceAA * (1 - timeToExpiryWeight) + element.optionPriceAB * timeToExpiryWeight;
+    const wPriceB = element.optionPriceBA * (1 - timeToExpiryWeight) + element.optionPriceBB * timeToExpiryWeight;
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
-    // console.log("finalPrice", finalPrice);
 
+    // finally, scale the price back to the original spot
     return finalPrice * spotScale;
-
   }
 
   getIndexFromTime(timeToExpirySec) {
