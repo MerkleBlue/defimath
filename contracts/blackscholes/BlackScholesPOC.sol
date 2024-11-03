@@ -250,7 +250,7 @@ contract BlackScholesPOC {
     function getIndexFromSpotStrikeRatio(uint256 spotStrikeRatio) public pure returns (uint256) {
         unchecked {
             // 0.5 ratio is index 50
-            return spotStrikeRatio / 1e16;
+            return (spotStrikeRatio / 5e16) * 5;
         }
     }
 

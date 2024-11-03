@@ -1,7 +1,7 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert, expect } from "chai";
 import hre from "hardhat";
-import { BlackScholesJS } from "../poc/blackscholes/BlackScholesJS.mjs";
+import { BlackScholesJS, S_S_RATIO_STEP } from "../poc/blackscholes/BlackScholesJS.mjs";
 import { generateLookupTable } from "../poc/blackscholes/generateLookupTable.mjs";
 import bs from "black-scholes";
 
@@ -276,7 +276,7 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe("getIndexFromSpotStrikeRatio", function () {
+    describe("getIndexFromSpotStrikeRatioOLD", function () {
       async function getActualExpected(blackScholesPOC, ratio) {
         const actual = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(ratio)));
         const expected = Math.floor(ratio * 100);
@@ -293,6 +293,37 @@ describe("BlackScholesPOC (contract)", function () {
           count++;
         }
         console.log("values tested: ", count);
+      });
+    });
+
+    describe("getIndexFromSpotStrikeRatio", function () {
+      it("calculates index for ratio [0.5, 2]", async function () {
+        const { blackScholesPOC } = await loadFixture(deploy);
+        let count = 0;
+        for (let index = 50; index <= 200; index += 1) {
+          const ratio = index / 100;
+          const indexStep = Math.round(S_S_RATIO_STEP * 100);
+          const actual = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(ratio)));
+          const expected = Math.floor(index / indexStep) * indexStep;
+          assert.equal(actual, expected);
+          count++;
+        }
+        console.log("values tested: ", count);
+      });
+
+      it("calculates index for specific ratios", async function () {
+        const { blackScholesPOC } = await loadFixture(deploy);
+        const actual1 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(0.999999)));
+        assert.equal(actual1, 95);
+
+        const actual2 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(1 - 1e-6)));
+        assert.equal(actual2, 95);
+
+        const actual3 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(1 - 1e-9)));
+        assert.equal(actual3, 95);
+
+        const actual4 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(1 - 1e-12)));
+        assert.equal(actual4, 95);
       });
     });
   });
