@@ -46,7 +46,7 @@ describe("BlackScholesPOC (contract)", function () {
   });
 
   describe("performance", function () {
-    it("getCallPrice gas", async function () {
+    it.only("getCallPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       // const callPriceMap = await blackScholesPOC.getCallPrice(100, 100, 1000, 1, 1);
@@ -195,7 +195,7 @@ describe("BlackScholesPOC (contract)", function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = await blackScholesPOC.getCallPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
 
-        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
 
       // it("getsCallPrice", async function () {

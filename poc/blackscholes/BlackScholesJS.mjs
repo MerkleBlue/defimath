@@ -49,6 +49,7 @@ export class BlackScholesJS {
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     console.log("spotStrikeRatioIndex:", spotStrikeRatioIndex, "timeToExpiryIndex:", timeToExpiryIndex);
     const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
+    console.log("cell: ", cell.optionPriceAA);
 
     // step 5: interpolate the option price using linear interpolation
     const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);

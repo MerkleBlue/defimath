@@ -69,17 +69,17 @@ contract BlackScholesPOC {
     ) external view returns (uint256 price) {
         unchecked {
             // step 1: set the overall scale first
-            uint256 spotScale = spot * 1e18 / SPOT_FIXED;
+            uint256 spotScale = uint256(spot) * 1e18 / SPOT_FIXED;
 
             // step 2: calculate future and spot-strike ratio
             uint256 future = getFuturePrice(spot, timeToExpirySec, rate);
             uint256 spotStrikeRatio = future * 1e18 / strike;
-            console.log("spotStrikeRatio: %d", spotStrikeRatio);
+            // console.log("spotStrikeRatio: %d", spotStrikeRatio);
 
             // step 3: set the expiration based on volatility
             uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
             uint256 timeToExpirySecScaled = uint32(timeToExpirySec) * (volRatio ** 2) / 1e36;
-            console.log("timeToExpirySecScaled: %d", timeToExpirySecScaled);
+            // console.log("timeToExpirySecScaled: %d", timeToExpirySecScaled);
             // OLD CODE
             // uint256 timeMultiplier = (1e29 / volatility) ** 2;
             // console.log("timeMultiplier: %d", timeMultiplier);
@@ -87,33 +87,38 @@ contract BlackScholesPOC {
             // step 4: find indexes and then element from lookup table
             uint256 spotStrikeRatioIndex = getIndexFromSpotStrikeRatio(spotStrikeRatio);
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
-            console.log("spotStrikeRatioIndex: %d", spotStrikeRatioIndex, "timeToExpiryIndex: %d", timeToExpiryIndex);
-            // const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
+            // console.log("spotStrikeRatioIndex: %d", spotStrikeRatioIndex, "timeToExpiryIndex:", timeToExpiryIndex);
+            uint256 cell = lookupTable[uint40(spotStrikeRatioIndex * 1000 + timeToExpiryIndex)];
 
 
-            // calculate indexes
-            // uint40 index1 = 4;
-            // uint40 index2 = 6;
+            // // calculate indexes
+            // // uint40 index1 = 4;
+            // // uint40 index2 = 6;
 
-            // access array element
-            uint256 range = lookupTable[100267];
-            console.log("range: %d", range);
+            // // access array element
+            // uint256 range = lookupTable[100267];
+            // console.log("cell: %d", cell);
+            // console.log("spotScale: %d", spotScale);
+            // console.log("final price %d", cell * 10 * spotScale / 1e18);
 
 
-            // uint256 startGas;
-            // uint256 endGas;
-            // console.log("Method 2");
-            // startGas = gasleft();
-            // maybe we can overflow here to get the first 64 bits
-            uint256 num1 = range / TWO_POW_192;
-            uint256 num2 = uint64(range / TWO_POW_128);
-            uint256 num3 = uint64(range / TWO_POW_64);
-            uint256 num4 = uint64(range);
-            // endGas = gasleft();
-            // console.log("gas used: %d", startGas - endGas);
+            price = cell * 10 * spotScale / 1e18;
 
-            // calcualate price
-            price = num1 + num2 + num3 + num4;
+
+            // // uint256 startGas;
+            // // uint256 endGas;
+            // // console.log("Method 2");
+            // // startGas = gasleft();
+            // // NOTE: this is fast, maybe we can overflow here to get the first 64 bits
+            // uint256 num1 = range / TWO_POW_192;
+            // uint256 num2 = uint64(range / TWO_POW_128);
+            // uint256 num3 = uint64(range / TWO_POW_64);
+            // uint256 num4 = uint64(range);
+            // // endGas = gasleft();
+            // // console.log("gas used: %d", startGas - endGas);
+
+            // // calcualate price
+            // price = num1 + num2 + num3 + num4;
         }
     }
 
