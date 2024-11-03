@@ -37,19 +37,16 @@ export class BlackScholesJS {
     // step 2: calculate future and spot-strike ratio
     const future = this.getFuturePrice(spot, rate, timeToExpirySec);
     const spotStrikeRatio = future / strike;
-    console.log("spotStrikeRatio:", spotStrikeRatio);
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
-    console.log(timeToExpirySecScaled);
 
     // step 4: find indexes and then element from lookup table
     const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-    console.log("spotStrikeRatioIndex:", spotStrikeRatioIndex, "timeToExpiryIndex:", timeToExpiryIndex);
     const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
-    console.log("cell: ", cell.optionPriceAA);
+    console.log("cell: ", cell);
 
     // step 5: interpolate the option price using linear interpolation
     const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
