@@ -11,16 +11,30 @@ contract BlackScholesPOC {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
+    uint256 internal constant SPOT_FIXED = 1e20; // $100
+    uint256 internal constant VOL_FIXED = 1e18; // 100%
+
     // single mapping is faster than map of map, uint is faster than struct
-    mapping(uint40 => uint256) private rangeMap;
+    mapping(uint40 => uint256) private lookupTable;
 
     constructor() {
-        uint32 lenA = 10;
-        uint32 lenB = 10;
-        // fill the map
-        for (uint32 i = 0; i < lenA; i++) {
-            for (uint32 j = 0; j < lenB; j++) {
-                rangeMap[uint40(i) * 1e6 + uint40(j)] = 5 * TWO_POW_192 + 6 * TWO_POW_128 + 7 * TWO_POW_64 + 8;
+        // uint32 lenA = 10;
+        // uint32 lenB = 10;
+        // // fill the map
+        // for (uint32 i = 0; i < lenA; i++) {
+        //     for (uint32 j = 0; j < lenB; j++) {
+        //         lookupTable[uint40(i) * 1e6 + uint40(j)] = 5 * TWO_POW_192 + 6 * TWO_POW_128 + 7 * TWO_POW_64 + 8;
+        //     }
+        // }
+    }
+
+    // todo: access management 
+    function setLookupTableElements(uint40 [] calldata indexes, uint256 [] calldata data) external {
+        for (uint256 i = 0; i < indexes.length; i++) {
+            // update is not allowed
+            // NOTE: todo: some values can be 0, so we need a flag that tells us if the value is set
+            if (lookupTable[indexes[i]] == 0) {
+                lookupTable[indexes[i]] = data[i];
             }
         }
     }
@@ -54,20 +68,36 @@ contract BlackScholesPOC {
         uint16 rate
     ) external view returns (uint256 price) {
         unchecked {
-            // calculate future price
+            // step 1: set the overall scale first
+            uint256 spotScale = spot * 1e18 / SPOT_FIXED;
+
+            // step 2: calculate future and spot-strike ratio
             uint256 future = getFuturePrice(spot, timeToExpirySec, rate);
+            uint256 spotStrikeRatio = future * 1e18 / strike;
+            console.log("spotStrikeRatio: %d", spotStrikeRatio);
 
-            uint256 ssRatio = future * 1e18 / strike;
+            // step 3: set the expiration based on volatility
+            uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
+            uint256 timeToExpirySecScaled = uint32(timeToExpirySec) * (volRatio ** 2) / 1e36;
+            console.log("timeToExpirySecScaled: %d", timeToExpirySecScaled);
+            // OLD CODE
+            // uint256 timeMultiplier = (1e29 / volatility) ** 2;
+            // console.log("timeMultiplier: %d", timeMultiplier);
 
-            uint256 timeMultiplier = (1e29 / volatility) ** 2;
+            // step 4: find indexes and then element from lookup table
+            uint256 spotStrikeRatioIndex = getIndexFromSpotStrikeRatio(spotStrikeRatio);
+            uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
+            console.log("spotStrikeRatioIndex: %d", spotStrikeRatioIndex, "timeToExpiryIndex: %d", timeToExpiryIndex);
+            // const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
 
 
             // calculate indexes
-            uint40 index1 = 4;
-            uint40 index2 = 6;
+            // uint40 index1 = 4;
+            // uint40 index2 = 6;
 
             // access array element
-            uint256 range = rangeMap[index1 * 1e6 + index2];
+            uint256 range = lookupTable[100267];
+            console.log("range: %d", range);
 
 
             // uint256 startGas;
@@ -256,7 +286,7 @@ contract BlackScholesPOC {
             uint40 index2 = 6;
 
             // access array element
-            uint256 range = rangeMap[index1 * 1e6 + index2];
+            uint256 range = lookupTable[index1 * 1e6 + index2];
 
 
             uint256 startGas;

@@ -34,19 +34,21 @@ export class BlackScholesJS {
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
 
-    // step 2: scale future and strike, and get the spot-strike ratio
-    const futureScaled = this.getFuturePrice(SPOT_FIXED, rate, timeToExpirySec);
-    const strikeScaled = strike / spotScale;
-    const spotStrikeRatio = futureScaled / strikeScaled;
+    // step 2: calculate future and spot-strike ratio
+    const future = this.getFuturePrice(spot, rate, timeToExpirySec);
+    const spotStrikeRatio = future / strike;
+    console.log("spotStrikeRatio:", spotStrikeRatio);
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+    console.log(timeToExpirySecScaled);
 
     // step 4: find indexes and then element from lookup table
     const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-    const element = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
+    console.log("spotStrikeRatioIndex:", spotStrikeRatioIndex, "timeToExpiryIndex:", timeToExpiryIndex);
+    const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
 
     // step 5: interpolate the option price using linear interpolation
     const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
@@ -56,8 +58,8 @@ export class BlackScholesJS {
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
 
-    const wPriceA = element.optionPriceAA * (1 - timeToExpiryWeight) + element.optionPriceAB * timeToExpiryWeight;
-    const wPriceB = element.optionPriceBA * (1 - timeToExpiryWeight) + element.optionPriceBB * timeToExpiryWeight;
+    const wPriceA = cell.optionPriceAA * (1 - timeToExpiryWeight) + cell.optionPriceAB * timeToExpiryWeight;
+    const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
 

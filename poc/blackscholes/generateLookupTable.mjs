@@ -10,11 +10,13 @@ export function generateLookupTable(blackScholesJS) {
   const expirationSecs = generateTimePoints();
 
   const lookupTable = new Map();
+  const rows = [];
 
   // console.log("spotStrikeRatios", spotStrikeRatios);
   // console.log("expirationSecs", expirationSecs);
 
   for (let i = 0; i < spotStrikeRatios.length - 1; i++) {
+    const row = [];
     for (let j = 0; j < expirationSecs.length - 1; j++) {
       // for each element calculate Black Scholes
       const spot = 100;
@@ -34,21 +36,28 @@ export function generateLookupTable(blackScholesJS) {
       // console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsA: ${expirationYearsA * 365}, optionPriceBA: ${optionPriceBA}`);
       // console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsB: ${expirationYearsB * 365}, optionPriceBB: ${optionPriceBB}`);
 
-      const range = {
+      const element = {
         optionPriceAA,
         optionPriceAB,
         optionPriceBA,
         optionPriceBB
       };
 
+      // pack for JS lookup table
       const index = blackScholesJS.getIndexFromSpotStrikeRatio(spotStrikeRatios[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
-      lookupTable.set(index, range);
+      lookupTable.set(index, element);
+
+      // pack for SOL lookup table
+      const elementForSOL = (parseInt(optionPriceAA * 1e17)).toString(); //  + (parseInt(optionPriceAB * 1e17)).toString() + (parseInt(optionPriceBA * 1e17)).toString() + (parseInt(optionPriceBB * 1e17)).toString();
+      // console.log(elementForSOL);
+      row.push( { index, element: elementForSOL } );
     }
+    rows.push(row);
   }
 
   // console.log(lookupTable);
 
-  return lookupTable;
+  return { lookupTable, rows };
 }
 
 function generatesStrikeSpotRatioPoints(startPoint, endPoint, stepSize) {

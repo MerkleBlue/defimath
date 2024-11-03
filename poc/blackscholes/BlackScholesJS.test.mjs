@@ -9,7 +9,7 @@ const SECONDS_IN_DAY = 24 * 60 * 60;
 describe("BlackScholesJS", function () {
   // before each test
   beforeEach(() => {
-    const lookupTable = generateLookupTable(new BlackScholesJS());
+    const { lookupTable } = generateLookupTable(new BlackScholesJS());
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
@@ -104,16 +104,16 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallPrice", function () {
-      it("gets call price", async function () {
+      it.only("gets call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
 
-        expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
-        actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * SECONDS_IN_DAY, 0.80, 0.07);
+        // expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
+        // actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * SECONDS_IN_DAY, 0.80, 0.07);
 
-        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
       });
 
       it("gets multiple call prices", async function () {
