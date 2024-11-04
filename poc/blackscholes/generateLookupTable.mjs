@@ -48,8 +48,13 @@ export function generateLookupTable(blackScholesJS) {
       lookupTable.set(index, element);
 
       // pack for SOL lookup table
-      const elementForSOL = (parseInt(optionPriceAA * 1e17)).toString(); //  + (parseInt(optionPriceAB * 1e17)).toString() + (parseInt(optionPriceBA * 1e17)).toString() + (parseInt(optionPriceBB * 1e17)).toString();
-      // console.log(elementForSOL);
+      // const elementForSOL = (parseInt(optionPriceAA * 1e17)).toString(); //  + (parseInt(optionPriceAB * 1e17)).toString() + (parseInt(optionPriceBA * 1e17)).toString() + (parseInt(optionPriceBB * 1e17)).toString();
+
+      const optionPriceAABigInt = BigInt(parseInt(optionPriceAA * 1e17));
+      const optionPriceABBigInt = BigInt(parseInt(optionPriceAB * 1e17));
+      const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
+      const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
+      const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + optionPriceABBigInt * BigInt(2 ** 128) + optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
       row.push( { index, element: elementForSOL } );
     }
     rows.push(row);

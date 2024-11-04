@@ -46,20 +46,27 @@ export class BlackScholesJS {
     const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
-    console.log("cell: ", cell);
 
     // step 5: interpolate the option price using linear interpolation
     const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
+    // console.log("spotStrikeRatioFromIndex: ", spotStrikeRatioFromIndex);
     const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
+    // console.log("spotStrikeWeight: ", spotStrikeWeight);
 
     const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
+    // console.log("expirationStep: ", expirationStep);
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
+    // console.log("timeToExpiryFromIndex: ", timeToExpiryFromIndex);
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
+    // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
     const wPriceA = cell.optionPriceAA * (1 - timeToExpiryWeight) + cell.optionPriceAB * timeToExpiryWeight;
+    // console.log("wPriceA:", wPriceA);
     const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
+    // console.log("wPriceB:", wPriceB);
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
+    // console.log("finalPrice:", finalPrice);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;

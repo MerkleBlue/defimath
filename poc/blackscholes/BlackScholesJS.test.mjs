@@ -103,8 +103,8 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getCallPrice", function () {
-      it.only("gets call price", async function () {
+    describe.only("getCallPrice", function () {
+      it("gets call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 

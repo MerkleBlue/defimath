@@ -52,11 +52,11 @@ describe("BlackScholesPOC (contract)", function () {
       // const callPriceMap = await blackScholesPOC.getCallPrice(100, 100, 1000, 1, 1);
       // console.log(callPriceMap);
 
-      const estGas2 = await blackScholesPOC.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
+      const estGas2 = await blackScholesPOC.getCallPrice.estimateGas(tokens(100), tokens(100), 10000, tokens(1), 500);
       console.log("Gas spent:", parseInt(estGas2) - 21000);
 
-      const estGas3 = await blackScholesPOC.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
-      console.log("Gas spent:", parseInt(estGas3) - 21000);
+      // const estGas3 = await blackScholesPOC.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
+      // console.log("Gas spent:", parseInt(estGas3) - 21000);
     });
 
     it("getIndexFromTime gas", async function () {
@@ -190,7 +190,7 @@ describe("BlackScholesPOC (contract)", function () {
     });
 
     describe.only("getCallPrice", function () {
-      it.only("gets call price", async function () {
+      it("gets call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = await blackScholesPOC.getCallPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
@@ -198,25 +198,44 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
 
-      // it("getsCallPrice", async function () {
-      //   const { blackScholesPOC } = await loadFixture(deploy);
+      it("gets multiple call prices", async function () {
+        const { blackScholesPOC } = await loadFixture(deploy);
+        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+        for(let exp = 50; exp < 80; exp += 1) {
+          for (let strike = 850; strike < 1100; strike += 10) {
+            for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+              for (let rate = 0; rate < 0.05; rate += 0.02) {
+                // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
+                let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
+                let actual = (await blackScholesPOC.getCallPrice(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
 
-      //   const callPriceMap = await blackScholesPOC.getCallPrice(100, 100, 1000, 1, 1);
-      //   console.log(callPriceMap);
-      // });
+                let error = (Math.abs(actual - expected) / expected * 100);
+                // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+                totalError += error;
+                count++;
+                if (maxError < error && expected > 0.01) {
+                  maxError = error;
+                  // console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+                  maxErrorParams = {
+                    exp, strike, vol, rate, actual, expected
+                  }
+                }
+              }
+            }
+          }
+        }
 
+        const avgError = totalError / count;
 
+        console.log("Total tests: " + count);
+        // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Avg error: " + (avgError).toFixed(8) + "%");
+        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Max error params: ", maxErrorParams);
 
-      // it("gets call price array", async function () {
-      //   const { blackScholesPOC } = await loadFixture(deploy);
-
-      //   const callPrice = await blackScholesPOC.getCallPrice(100, 100, 1000, 1, 1);
-      //   console.log(callPrice);
-
-      //   const estGas1 = await blackScholesPOC.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
-      //   console.log("Gas spent array:", parseInt(estGas1) - 21000);
-      // });
-
+        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+      });
     });
 
     describe("getIndexFromTime", function () {

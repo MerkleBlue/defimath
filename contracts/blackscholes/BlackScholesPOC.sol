@@ -90,35 +90,39 @@ contract BlackScholesPOC {
             // console.log("spotStrikeRatioIndex: %d", spotStrikeRatioIndex, "timeToExpiryIndex:", timeToExpiryIndex);
             uint256 cell = lookupTable[uint40(spotStrikeRatioIndex * 1000 + timeToExpiryIndex)];
 
+            // step 5: interpolate the option price using linear interpolation
+            uint256 spotStrikeRatioFromIndex = spotStrikeRatioIndex * 1e16;
+            // console.log("spotStrikeRatioFromIndex: %d", spotStrikeRatioFromIndex);
+            uint256 spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) * 1e18 / 5e16;
+            // console.log("spotStrikeWeight: %d", spotStrikeWeight);
 
-            // // calculate indexes
-            // // uint40 index1 = 4;
-            // // uint40 index2 = 6;
+            uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
+            // console.log("expirationStep: %d", expirationStep);
+            uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
+            // console.log("timeToExpirySecScaled: %d", timeToExpirySecScaled);
+            // console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
+            uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
+            // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
-            // // access array element
-            // uint256 range = lookupTable[100267];
-            // console.log("cell: %d", cell);
-            // console.log("spotScale: %d", spotScale);
-            // console.log("final price %d", cell * 10 * spotScale / 1e18);
+            uint256 optionPriceAA = cell / TWO_POW_192;
+            uint256 optionPriceAB = uint64(cell / TWO_POW_128);
+            uint256 optionPriceBA = uint64(cell / TWO_POW_64);
+            uint256 optionPriceBB = uint64(cell);
+            // console.log("optionPriceAA %d", optionPriceAA);
+            // console.log("optionPriceAB %d", optionPriceAB);
+            // console.log("optionPriceBA %d", optionPriceBA);
+            // console.log("optionPriceBB %d", optionPriceBB);
 
 
-            price = cell * 10 * spotScale / 1e18;
+            uint256 wPriceA = (optionPriceAA * (1e18 - timeToExpiryWeight) + optionPriceAB * timeToExpiryWeight) / 1e18;
+            // console.log("wPriceA: %d", wPriceA);
+            uint256 wPriceB = (optionPriceBA * (1e18 - timeToExpiryWeight) + optionPriceBB * timeToExpiryWeight) / 1e18;
+            // console.log("wPriceB: %d", wPriceB);
 
+            uint256 finalPrice = (wPriceA * (1e18 - spotStrikeWeight) + wPriceB * spotStrikeWeight) / 1e18;
+            // console.log("finalPrice: %d", finalPrice);
 
-            // // uint256 startGas;
-            // // uint256 endGas;
-            // // console.log("Method 2");
-            // // startGas = gasleft();
-            // // NOTE: this is fast, maybe we can overflow here to get the first 64 bits
-            // uint256 num1 = range / TWO_POW_192;
-            // uint256 num2 = uint64(range / TWO_POW_128);
-            // uint256 num3 = uint64(range / TWO_POW_64);
-            // uint256 num4 = uint64(range);
-            // // endGas = gasleft();
-            // // console.log("gas used: %d", startGas - endGas);
-
-            // // calcualate price
-            // price = num1 + num2 + num3 + num4;
+            price = finalPrice * 10 * spotScale / 1e18;
         }
     }
 
@@ -250,6 +254,17 @@ contract BlackScholesPOC {
 
             return 10 * major + minor;
         }
+    }
+
+    function getTimeFromIndex(uint256 index) private pure returns (uint256) {
+        uint256 major = index / 10;
+        uint256 minor = index % 10;
+
+        if (major < 3) {
+            return minor;
+        }
+
+        return 2 ** major + 2 ** (major - 3) * minor;
     }
 
     function getIndexFromSpotStrikeRatio(uint256 spotStrikeRatio) public pure returns (uint256) {
