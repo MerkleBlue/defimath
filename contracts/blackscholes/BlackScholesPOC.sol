@@ -291,7 +291,6 @@ contract BlackScholesPOC {
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
             uint256 cell = lookupTable[uint40(spotStrikeRatioIndex * 1000 + timeToExpiryIndex)];
 
-
             uint256 optionPriceAA = cell / TWO_POW_192;
             uint256 optionPriceAB = uint64(cell / TWO_POW_128);
             uint256 optionPriceBA = uint64(cell / TWO_POW_64);
@@ -299,10 +298,10 @@ contract BlackScholesPOC {
 
             (uint256 spotStrikeWeight, uint256 timeToExpiryWeight) = getWeights(spotStrikeRatioIndex, spotStrikeRatio, timeToExpiryIndex, timeToExpirySecScaled);
 
-            uint256 wPriceA = (optionPriceAA * (1e18 - timeToExpiryWeight) + optionPriceAB * timeToExpiryWeight) / 1e18;
-            uint256 wPriceB = (optionPriceBA * (1e18 - timeToExpiryWeight) + optionPriceBB * timeToExpiryWeight) / 1e18;
+            uint256 wPriceA36 = optionPriceAA * (1e18 - timeToExpiryWeight) + optionPriceAB * timeToExpiryWeight;
+            uint256 wPriceB36 = optionPriceBA * (1e18 - timeToExpiryWeight) + optionPriceBB * timeToExpiryWeight;
 
-            finalPrice = (wPriceA * (1e18 - spotStrikeWeight) + wPriceB * spotStrikeWeight) / 1e18;
+            finalPrice = (wPriceA36 * (1e18 - spotStrikeWeight) + wPriceB36 * spotStrikeWeight) / 1e36;
         }
     }
 
