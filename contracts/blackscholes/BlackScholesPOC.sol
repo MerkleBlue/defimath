@@ -75,10 +75,11 @@ contract BlackScholesPOC {
             uint256 spotStrikeRatio = getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
 
             // step 3: set the expiration based on volatility
-            // uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
-            uint256 timeToExpirySecScaled = uint32(timeToExpirySec) * ((uint256(volatility) * 1e18 / VOL_FIXED) ** 2) / 1e36;
+            uint256 timeToExpirySecScaled = uint32(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+
             // OLD CODE
             // uint256 timeMultiplier = (1e29 / volatility) ** 2;
+            // uint256 timeToExpirySecScaled = uint32(timeToExpirySec) * timeMultiplier / 1e18;
             // console.log("timeMultiplier: %d", timeMultiplier);
 
             // // step 4: find indexes and then element from lookup table
