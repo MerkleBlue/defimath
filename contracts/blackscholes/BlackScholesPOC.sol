@@ -274,7 +274,7 @@ contract BlackScholesPOC {
     ) private pure returns (uint256 spotStrikeWeight, uint256 timeToExpiryWeight) {
         unchecked {
             uint256 spotStrikeRatioFromIndex = spotStrikeRatioIndex * 1e16;
-            spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) * 1e18 / 5e16;
+            spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) * 20; // 20 if 0.05 is a step
 
             uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
             uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
@@ -300,9 +300,7 @@ contract BlackScholesPOC {
             (uint256 spotStrikeWeight, uint256 timeToExpiryWeight) = getWeights(spotStrikeRatioIndex, spotStrikeRatio, timeToExpiryIndex, timeToExpirySecScaled);
 
             uint256 wPriceA = (optionPriceAA * (1e18 - timeToExpiryWeight) + optionPriceAB * timeToExpiryWeight) / 1e18;
-            // console.log("wPriceA: %d", wPriceA);
             uint256 wPriceB = (optionPriceBA * (1e18 - timeToExpiryWeight) + optionPriceBB * timeToExpiryWeight) / 1e18;
-            // console.log("wPriceB: %d", wPriceB);
 
             finalPrice = (wPriceA * (1e18 - spotStrikeWeight) + wPriceB * spotStrikeWeight) / 1e18;
         }
