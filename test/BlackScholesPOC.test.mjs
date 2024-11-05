@@ -45,21 +45,26 @@ describe("BlackScholesPOC (contract)", function () {
     });
   });
 
-  describe("performance", function () {
+  describe.only("performance", function () {
     it.only("getCallPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
-      // const callPriceMap = await blackScholesPOC.getCallPrice(100, 100, 1000, 1, 1);
-      // console.log(callPriceMap);
-
-      const estGas2 = await blackScholesPOC.getCallPrice.estimateGas(tokens(100), tokens(100), 10000, tokens(1), 500);
-      console.log("Gas spent:", parseInt(estGas2) - 21000);
-
-      // const estGas3 = await blackScholesPOC.getCallPrice.estimateGas(100, 100, 1000, 1, 1);
-      // console.log("Gas spent:", parseInt(estGas3) - 21000);
+      let totalGas = 0, count = 0;
+      for(let exp = 20; exp < 180; exp += 8) {
+        for (let strike = 600; strike < 1400; strike += 80) {
+          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+            for (let rate = 0; rate < 0.05; rate += 0.02) {
+              totalGas += parseInt(await blackScholesPOC.getCallPrice.estimateGas(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
+              count++;
+            }
+          }
+        }
+      }
+      console.log("Total tests: " + count);
+      console.log("Gas spent [avg]:", Math.round(totalGas / count));
     });
 
-    it("getIndexFromTime gas", async function () {
+    it.only("getIndexFromTime gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let count = 0;
@@ -288,26 +293,6 @@ describe("BlackScholesPOC (contract)", function () {
         let count = 0;
         for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16) {
           const { actual, expected } = await getActualExpected(blackScholesPOC, time);
-          assert.equal(actual, expected);
-          count++;
-        }
-        console.log("values tested: ", count);
-      });
-    });
-
-    describe("getIndexFromSpotStrikeRatioOLD", function () {
-      async function getActualExpected(blackScholesPOC, ratio) {
-        const actual = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(ratio)));
-        const expected = Math.floor(ratio * 100);
-        // console.log("actual:", actual, "expected:", expected);
-        return { actual, expected };
-      }
-
-      it("calculates index for ratio [0.5, 2]", async function () {
-        const { blackScholesPOC } = await loadFixture(deploy);
-        let count = 0;
-        for (let ssRatio = 0.5; ssRatio <= 2.0001; ssRatio += 0.05) {
-          const { actual, expected } = await getActualExpected(blackScholesPOC, ssRatio);
           assert.equal(actual, expected);
           count++;
         }
