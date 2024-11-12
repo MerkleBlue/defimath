@@ -43,7 +43,7 @@ export class BlackScholesJS {
   }
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
-  getCallPrice(spot, strike, timeToExpirySec, vol, rate) {
+  getCallOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
 

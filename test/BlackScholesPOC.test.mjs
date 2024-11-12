@@ -46,7 +46,7 @@ describe("BlackScholesPOC (contract)", function () {
   });
 
   describe.only("performance", function () {
-    it("getCallPrice gas", async function () {
+    it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
@@ -54,7 +54,7 @@ describe("BlackScholesPOC (contract)", function () {
         for (let strike = 600; strike < 1400; strike += 80) {
           for (let vol = 0.8; vol < 1.2; vol += 0.08) {
             for (let rate = 0; rate < 0.05; rate += 0.02) {
-              totalGas += parseInt(await blackScholesPOC.getCallPrice.estimateGas(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
+              totalGas += parseInt(await blackScholesPOC.getCallOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
               count++;
             }
           }
@@ -194,11 +194,11 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe("getCallPrice", function () {
+    describe("getCallOptionPrice", function () {
       it("gets call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
-        let actualOptionPrice = await blackScholesPOC.getCallPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
+        let actualOptionPrice = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
@@ -212,7 +212,7 @@ describe("BlackScholesPOC (contract)", function () {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
                 // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
                 let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                let actual = (await blackScholesPOC.getCallPrice(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+                let actual = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
 
                 let error = (Math.abs(actual - expected) / expected * 100);
                 // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");

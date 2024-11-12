@@ -133,15 +133,15 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe.only("getCallPrice", function () {
+    describe.only("getCallOptionPrice", function () {
       it("gets call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
-        let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
+        let actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
 
         // expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
-        // actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * SECONDS_IN_DAY, 0.80, 0.07);
+        // actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 1000, 40 * SECONDS_IN_DAY, 0.80, 0.07);
 
         // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
       });
@@ -154,7 +154,7 @@ describe("BlackScholesJS", function () {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
                 // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
                 let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                let actual = blackScholesJS.getCallPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
+                let actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
 
                 let error = (Math.abs(actual - expected) / expected * 100);
                 // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");

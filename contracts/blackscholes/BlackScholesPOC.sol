@@ -30,7 +30,7 @@ contract BlackScholesPOC {
         }
     }
 
-    function getCallPrice(
+    function getCallOptionPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -79,7 +79,9 @@ contract BlackScholesPOC {
     }
 
     function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
-        return _getFuturePrice(spot, timeToExpirySec, rate);
+        unchecked {
+            return _getFuturePrice(spot, timeToExpirySec, rate);
+        }
     }
 
 
