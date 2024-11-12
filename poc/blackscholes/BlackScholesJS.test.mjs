@@ -3,6 +3,10 @@ import { assert, expect } from "chai";
 import bs from "black-scholes";
 import { BlackScholesJS, EXPIRATION_MAX, EXPIRATION_MIN, EXPIRATION_STEP, S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
 import { generateLookupTable } from "./generateLookupTable.mjs";
+import { mkConfig, generateCsv, asString } from "export-to-csv";
+import { promises as fs } from "fs";
+
+const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
 
 const DAY = 24 * 60 * 60;
 
@@ -18,6 +22,32 @@ describe("BlackScholesJS", function () {
 
 
   describe("Future", function () {
+
+    it("record lookup table to csv file", async function ()  {
+      const filename = `${csvConfig.filename}.csv`;
+      fs.open(filename, "w");
+
+      console.log("lookupTable");
+      for (let i = 0; i < blackScholesJS.lookupTable.length; i++) //blackScholesJS.lookupTable.length
+        for (let j = 0; j < blackScholesJS.lookupTable[i].length; j++){ //blackScholesJS.lookupTable[i].length
+          console.log(`Value at [${i}][${j}] is: ${blackScholesJS.lookupTable[i][j]}`);
+          var range = blackScholesJS.lookupTable[i][j];
+          var csvRange = [{
+            optionPriceAA: range.optionPriceAA,
+            optionPriceAB: range.optionPriceAB,
+            optionPriceBA: range.optionPriceBA,
+            optionPriceBB: range.optionPriceBB,
+            ssratioati : range.ssratioati,
+            exdays : range.exdays,
+            i : i,
+            j : j
+          }];
+          var csv = generateCsv(csvConfig)(csvRange);
+          fs.appendFile(filename, csv);    
+
+        }  
+    });
+
     it("calculates future price with 1 year expiration", async function () {
 
       let futurePrice = blackScholesJS.getFuturePrice(100, 0.02, 365 * DAY);
@@ -34,12 +64,12 @@ describe("BlackScholesJS", function () {
       let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
       let actualOptionPrice = blackScholesJS.getCallPrice(1000, 930, 60 * DAY, 0.60, 0.05);
 
-      console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+      //console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
 
       expectedOptionPrice = bs.blackScholes(1000, 1000, 40 / 365, 0.80, 0.07, "call");
       actualOptionPrice = blackScholesJS.getCallPrice(1000, 1000, 40 * DAY, 0.80, 0.07);
 
-      console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+      //console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
     });
 
     it("gets multiple call prices", async function () {
@@ -54,12 +84,12 @@ describe("BlackScholesJS", function () {
               let actual = blackScholesJS.getCallPrice(1000, strike, exp * DAY, vol, rate);
 
               let error = (Math.abs(actual - expected) / expected * 100);
-              console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+              //console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
               totalError += error;
               count++;
               if (maxError < error && expected > 0.01) {
                 maxError = error;
-                console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+                //console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
                 maxErrorParams = {
                   exp, strike, vol, rate, actual, expected
                 }
@@ -69,13 +99,13 @@ describe("BlackScholesJS", function () {
           }
         }
       }
-
+/*
       console.log("Total tests: " + count);
       console.log("Table size: ", Math.round((S_S_RATIO_MAX - S_S_RATIO_MIN) / S_S_RATIO_STEP) - 1, "x", Math.round((EXPIRATION_MAX - EXPIRATION_MIN) / EXPIRATION_STEP) - 1);
       console.log("Avg error: " + (totalError / count).toFixed(8) + "%");
       console.log("Max error: " + maxError.toFixed(8) + "%");
       console.log("Max error params: ", maxErrorParams);
-
+*/
 
       // console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
 

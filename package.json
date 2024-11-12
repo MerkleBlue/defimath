@@ -5,7 +5,9 @@
     "hardhat": "^2.22.13"
   },
   "dependencies": {
+    "asciichart": "^1.5.25",
     "black-scholes": "^1.1.0",
+    "export-to-csv": "^1.4.0",
     "moment": "^2.30.1"
   }
 }

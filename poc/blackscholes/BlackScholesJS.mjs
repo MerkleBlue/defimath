@@ -1,3 +1,11 @@
+import { mkConfig, generateCsv, asString } from "export-to-csv";
+import { promises as fs } from "fs";
+
+// mkConfig merges your options with the defaults
+// and returns WithDefaults<ConfigOptions>
+const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
+
+
 // fix the spot price in table to $100, and volatilty to 100%
 export const SPOT_FIXED = 100;
 export const VOL_FIXED = 1;
@@ -6,11 +14,11 @@ export const SECONDS_IN_DAY = 24 * 60 * 60;
 // ratio between spot and strike (spot: 100$, strike: $60 - $140)
 export const S_S_RATIO_MIN = 0.6;
 export const S_S_RATIO_MAX = 1.4;
-export const S_S_RATIO_STEP = 0.05;
+export const S_S_RATIO_STEP = 0.025;
 
 export const EXPIRATION_MIN = 10; // * SECONDS_IN_DAY;
-export const EXPIRATION_MAX = 100; //  * SECONDS_IN_DAY;
-export const EXPIRATION_STEP = 5; //  * SECONDS_IN_DAY;
+export const EXPIRATION_MAX = 1000; //  * SECONDS_IN_DAY;
+export const EXPIRATION_STEP = 1.25; //  * SECONDS_IN_DAY;
 
 export class BlackScholesJS {
 
@@ -72,7 +80,23 @@ export class BlackScholesJS {
     // console.log("wPriceA", wPriceA, "wPriceB", wPriceB);
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
-    // console.log("finalPrice", finalPrice);
+    //4 points coordinates: range - 4 option prices
+
+  
+    var csvRange = [{
+      sport_strike_ratio: spotStrikeRatio,
+      time_to_expire_in_days: timeToExpiryDaysScaled,
+      optionPriceAA: range.optionPriceAA,
+      optionPriceAB: range.optionPriceAB,
+      optionPriceBA: range.optionPriceBA,
+      optionPriceBB: range.optionPriceBB
+    }];
+
+
+    const csv = generateCsv(csvConfig)(csvRange);
+    const filename = `${csvConfig.filename}.csv`;
+
+    //fs.appendFile(filename, csv);
 
     return finalPrice * spotScale;
 
