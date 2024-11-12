@@ -216,6 +216,7 @@ describe("BlackScholesJS", function () {
         console.log("values tested: ", count);
       });
 
+
       it("calculates index for time [2^16, 2^24)", async function () {
         let count = 0;
         for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8) {

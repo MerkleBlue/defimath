@@ -36,6 +36,8 @@ export function generateLookupTable(blackScholesJS) {
       // console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsA: ${expirationYearsA * 365}, optionPriceBA: ${optionPriceBA}`);
       // console.log(`strikeB: ${strikeB.toFixed(0)} (ssRatio: ${spotStrikeRatios[i + 1].toFixed(3)}), expirationYearsB: ${expirationYearsB * 365}, optionPriceBB: ${optionPriceBB}`);
 
+      const ssratioati = spotStrikeRatios[i];
+      const exdays = expirationYearsA * 365;
       const element = {
         optionPriceAA,
         optionPriceAB,

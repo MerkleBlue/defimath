@@ -84,11 +84,11 @@ export class BlackScholesJS {
   
     var csvRange = [{
       sport_strike_ratio: spotStrikeRatio,
-      time_to_expire_in_days: timeToExpiryDaysScaled,
-      optionPriceAA: range.optionPriceAA,
-      optionPriceAB: range.optionPriceAB,
-      optionPriceBA: range.optionPriceBA,
-      optionPriceBB: range.optionPriceBB
+      time_to_expire_in_days: timeToExpirySec/(24*60*60),
+      optionPriceAA: cell.optionPriceAA,
+      optionPriceAB: cell.optionPriceAB,
+      optionPriceBA: cell.optionPriceBA,
+      optionPriceBB: cell.optionPriceBB
     }];
 
 
