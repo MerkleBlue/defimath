@@ -30,7 +30,36 @@ contract BlackScholesPOC {
         }
     }
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
+    function getCallPrice(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint80 volatility,
+        uint16 rate
+    ) external view returns (uint256 price) {
+        unchecked {
+            // step 1: set the overall scale first
+            uint256 spotScale = uint256(spot) * 1e18 / SPOT_FIXED;
+
+            // step 2: calculate future and spot-strike ratio
+            uint256 spotStrikeRatio = _getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
+
+            // step 3: set the expiration based on volatility
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+
+            // step 4: interpolate price
+            uint256 finalPrice = interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+
+            price = finalPrice * 10 * spotScale / 1e18;
+        }
+    }
+
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
+        return _getFuturePrice(spot, timeToExpirySec, rate);
+    }
+
+
+    function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
         unchecked {
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
@@ -48,30 +77,6 @@ contract BlackScholesPOC {
             uint256 denominator = (3e9 - x) ** 2 + 3e18;
 
             return numerator * spot / denominator;
-        }
-    }
-
-    function getCallPrice(
-        uint128 spot,
-        uint128 strike,
-        uint32 timeToExpirySec,
-        uint80 volatility,
-        uint16 rate
-    ) external view returns (uint256 price) {
-        unchecked {
-            // step 1: set the overall scale first
-            uint256 spotScale = uint256(spot) * 1e18 / SPOT_FIXED;
-
-            // step 2: calculate future and spot-strike ratio
-            uint256 spotStrikeRatio = getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
-
-            // step 3: set the expiration based on volatility
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
-
-            // step 4: interpolate price
-            uint256 finalPrice = interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
-
-            price = finalPrice * 10 * spotScale / 1e18;
         }
     }
 
@@ -269,7 +274,7 @@ contract BlackScholesPOC {
         uint256 endGas;
         startGas = gasleft();
 
-        getFuturePrice(spot, timeToExpirySec, rate);
+        _getFuturePrice(spot, timeToExpirySec, rate);
 
         endGas = gasleft();
         return startGas - endGas;

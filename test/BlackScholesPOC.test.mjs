@@ -1,5 +1,5 @@
-import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
-import { assert, expect } from "chai";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
+import { assert } from "chai";
 import hre from "hardhat";
 import { BlackScholesJS, S_S_RATIO_STEP } from "../poc/blackscholes/BlackScholesJS.mjs";
 import { generateLookupTable } from "../poc/blackscholes/generateLookupTable.mjs";
@@ -45,8 +45,8 @@ describe("BlackScholesPOC (contract)", function () {
     });
   });
 
-  describe.only("performance", function () {
-    it.only("getCallPrice gas", async function () {
+  describe("performance", function () {
+    it("getCallPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
@@ -64,7 +64,7 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent [avg]:", Math.round(totalGas / count));
     });
 
-    it.only("getIndexFromTime gas", async function () {
+    it("getIndexFromTime gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let count = 0;
@@ -113,7 +113,7 @@ describe("BlackScholesPOC (contract)", function () {
 
         const expected = getFuturePrice(100, 1, 0.0001);
         const actual = (await blackScholesPOC.getFuturePrice(tokens(100), 1, 1)).toString() / 1e18;
-        const error = (Math.ablackScholesPOC(actual - expected) / expected * 100);
+        const error = (Math.abs(actual - expected) / expected * 100);
         console.log("Worst case: error:", error.toFixed(12) + "%, rate, ", "actual: " + actual.toFixed(12), "expected: " + expected.toFixed(12));
         assert.isBelow(error, 0.0001); // is below 0.0001%
       });
@@ -126,7 +126,7 @@ describe("BlackScholesPOC (contract)", function () {
           for (let secs = 0; secs <= 600; secs += 1) {
             const expected = getFuturePrice(100, secs, rate);
             const actual = (await blackScholesPOC.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
-            const error = (Math.ablackScholesPOC(actual - expected) / expected * 100);
+            const error = (Math.abs(actual - expected) / expected * 100);
             // console.log("expected:", expected.toFixed(6), "actual:", actual.toFixed(6), "error:", error.toFixed(4), "%");
             totalError += error;
             count++;
@@ -151,7 +151,7 @@ describe("BlackScholesPOC (contract)", function () {
           for (let secs = 600; secs <= 1440 * 60; secs += 120) {
             const expected = getFuturePrice(100, secs, rate);
             const actual = (await blackScholesPOC.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
-            const error = (Math.ablackScholesPOC(actual - expected) / expected * 100);
+            const error = (Math.abs(actual - expected) / expected * 100);
             // console.log("expected:", expected.toFixed(6), "actual:", actual.toFixed(6), "error:", error.toFixed(4), "%");
             totalError += error;
             count++;
@@ -176,7 +176,7 @@ describe("BlackScholesPOC (contract)", function () {
           for (let days = 1; days <= 2 * 365; days += 1) {
             const expected = getFuturePrice(100, days * SECONDS_IN_DAY, rate);
             const actual = (await blackScholesPOC.getFuturePrice(tokens(100), days * SECONDS_IN_DAY, Math.round(rate * 10_000))).toString() / 1e18;
-            const error = (Math.ablackScholesPOC(actual - expected) / expected * 100);
+            const error = (Math.abs(actual - expected) / expected * 100);
             // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
             totalError += error;
             count++;
@@ -194,7 +194,7 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe.only("getCallPrice", function () {
+    describe("getCallPrice", function () {
       it("gets call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
