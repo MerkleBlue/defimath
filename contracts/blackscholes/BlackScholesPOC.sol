@@ -41,7 +41,7 @@ contract BlackScholesPOC {
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
 
-            // step 2: calculate future and spot-strike ratio
+            // step 2: spot-strike ratio
             uint256 spotStrikeRatio = _getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
 
             // step 3: set the expiration based on volatility
@@ -65,8 +65,9 @@ contract BlackScholesPOC {
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
 
-            // step 2: calculate future and spot-strike ratio
-            uint256 spotStrikeRatio = _getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
+            // step 2: calculate discounted strike and spot-strike ratio
+            uint256 discountedStrike = _getDiscountedStrikePrice(strike, timeToExpirySec, rate);
+            uint256 spotStrikeRatio = uint256(spot) * 1e18 / discountedStrike;
 
             // step 3: set the expiration based on volatility
             uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
@@ -74,7 +75,9 @@ contract BlackScholesPOC {
             // step 4: interpolate price
             uint256 finalPrice = interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
 
-            price = finalPrice * 10 * spotScale / 1e18;
+            uint256 callPrice = finalPrice * 10 * spotScale / 1e18;
+
+            price = callPrice + discountedStrike - spot;
         }
     }
 
@@ -103,6 +106,23 @@ contract BlackScholesPOC {
             uint256 denominator = (3e9 - x) ** 2 + 3e18;
 
             return numerator * spot / denominator;
+        }
+    }
+
+    function _getDiscountedStrikePrice(uint128 strike, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
+        unchecked {
+            // we use Pade approximation for exp(x)
+            // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+
+            // NOTE: this is faster than the above 
+            uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
+
+            // todo: check x is not more than 0.2
+
+            uint256 numerator = (x + 3e9) ** 2 + 3e18;
+            uint256 denominator = (3e9 - x) ** 2 + 3e18;
+
+            return denominator * strike / numerator;
         }
     }
 

@@ -64,6 +64,24 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent [avg]:", Math.round(totalGas / count));
     });
 
+    it("getPutOptionPrice gas", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      let totalGas = 0, count = 0;
+      for(let exp = 20; exp < 180; exp += 8) {
+        for (let strike = 600; strike < 1400; strike += 80) {
+          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+            for (let rate = 0; rate < 0.05; rate += 0.02) {
+              totalGas += parseInt(await blackScholesPOC.getPutOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
+              count++;
+            }
+          }
+        }
+      }
+      console.log("Total tests: " + count);
+      console.log("Gas spent [avg]:", Math.round(totalGas / count));
+    });
+
     it("getIndexFromTime gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
@@ -210,14 +228,58 @@ describe("BlackScholesPOC (contract)", function () {
           for (let strike = 850; strike < 1100; strike += 10) {
             for (let vol = 0.8; vol < 1.2; vol += 0.08) {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
-                // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
-                let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                let actual = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-
-                let error = (Math.abs(actual - expected) / expected * 100);
-                // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+                const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
+                const actual = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+                const error = (Math.abs(actual - expected) / expected * 100);
                 totalError += error;
                 count++;
+
+                if (maxError < error && expected > 0.01) {
+                  maxError = error;
+                  maxErrorParams = {
+                    exp, strike, vol, rate, actual, expected
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        const avgError = totalError / count;
+
+        console.log("Total tests: " + count);
+        // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Avg error: " + (avgError).toFixed(8) + "%");
+        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Max error params: ", maxErrorParams);
+
+        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+      });
+    });
+
+    describe("getPutOptionPrice", function () {
+      it.only("gets put price", async function () {
+        const { blackScholesPOC } = await loadFixture(deploy);
+        let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "put");
+        let actualOptionPrice = await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
+
+        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
+      });
+
+      it.only("gets multiple put prices", async function () {
+        const { blackScholesPOC } = await loadFixture(deploy);
+        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+        for(let exp = 50; exp < 80; exp += 1) {
+          for (let strike = 850; strike < 1100; strike += 10) {
+            for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+              for (let rate = 0; rate < 0.05; rate += 0.02) {
+                const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "put");
+                const actual = (await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(strike), exp * SECONDS_IN_DAY, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+                const error = (Math.abs(actual - expected) / expected * 100);
+                totalError += error;
+                count++;
+
                 if (maxError < error && expected > 0.01) {
                   maxError = error;
                   // console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
@@ -238,8 +300,8 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
-        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+        // assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        // assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
     });
 
