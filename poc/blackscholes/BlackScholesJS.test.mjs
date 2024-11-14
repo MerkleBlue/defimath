@@ -22,7 +22,7 @@ describe("BlackScholesJS", function () {
   describe.only("functionality", function () {
 
 
-    it("record lookup table to csv file", async function ()  {
+    it.only("record lookup table to csv file", async function ()  {
       generateLookupTable(new BlackScholesJS(),true);
       
     });
