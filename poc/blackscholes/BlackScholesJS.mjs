@@ -19,21 +19,6 @@ export class BlackScholesJS {
     this.lookupTable = lookupTable;
   }
 
-  // NOTE: rate: 20% and time: 1 year gives max error of 0.000045%
-  // same for rate: 10% and time: 2 years
-  // So basically, if rate * years < 0.2, we are good, if not, use other method maybe?
-  getFuturePrice(spot, timeToExpirySec, rate) {
-    // we use Pade approximation for exp(x)
-    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
-    const x = rate * timeToExpiryYears;
-    const numerator = (x + 3) ** 2 + 3;
-    const denominator = (x - 3) ** 2 + 3;
-    const futurePrice = spot * (numerator / denominator);
-
-    return futurePrice;
-  }
-
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 1: set the overall scale first
@@ -47,34 +32,80 @@ export class BlackScholesJS {
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
-    // step 4: find indexes and then element from lookup table
+    // step 4: interpolate price
+    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled, timeToExpirySec);
+
+    // finally, scale the price back to the original spot
+    return finalPrice * spotScale;
+  };
+
+  getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
+    // step 1: set the overall scale first
+    const spotScale = spot / SPOT_FIXED;
+
+    // step 2: calculate future and spot-strike ratio
+    const discountedStrike = this.getDiscountedStrikePrice(strike, rate, timeToExpirySec);
+    const spotStrikeRatio = spot / discountedStrike;
+
+    // step 3: set the expiration based on volatility
+    const volRatio = vol / VOL_FIXED;
+    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+
+    // step 4: interpolate price
+    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled, timeToExpirySec);
+
+    // finally, scale the price back to the original spot
+    const callPrice = finalPrice * spotScale;
+
+    return callPrice + discountedStrike - spot;
+  };
+
+  // NOTE: rate: 20% and time: 1 year gives max error of 0.000045%
+  // same for rate: 10% and time: 2 years
+  // So basically, if rate * years < 0.2, we are good, if not, use other method maybe?
+  getFuturePrice(spot, timeToExpirySec, rate) {
+    // we use Pade approximation for exp(x)
+    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    const x = rate * timeToExpiryYears;
+    const numerator = (x + 3) ** 2 + 3;
+    const denominator = (x - 3) ** 2 + 3;
+    const futurePrice = spot * (numerator / denominator);
+
+    return futurePrice;
+  };
+
+  getDiscountedStrikePrice(strike, timeToExpirySec, rate) {
+    // we use Pade approximation for exp(x)
+    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    const x = rate * timeToExpiryYears;
+    const numerator = (x + 3) ** 2 + 3;
+    const denominator = (x - 3) ** 2 + 3;
+    const discountedStrikePrice = strike * (denominator / numerator);
+
+    return discountedStrikePrice;
+  };
+
+  interpolatePrice(spotStrikeRatio, timeToExpirySecScaled, timeToExpirySec) {
     const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
 
     // step 5: interpolate the option price using linear interpolation
     const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
-    // console.log("spotStrikeRatioFromIndex: ", spotStrikeRatioFromIndex);
     const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
-    // console.log("spotStrikeWeight: ", spotStrikeWeight);
 
     const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
-    // console.log("expirationStep: ", expirationStep);
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
-    // console.log("timeToExpiryFromIndex: ", timeToExpiryFromIndex);
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
-    // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
     const wPriceA = cell.optionPriceAA * (1 - timeToExpiryWeight) + cell.optionPriceAB * timeToExpiryWeight;
-    // console.log("wPriceA:", wPriceA);
     const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
-    // console.log("wPriceB:", wPriceB);
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
-    //4 points coordinates: range - 4 option prices
 
-    // finally, scale the price back to the original spot
-    return finalPrice * spotScale;
+    return finalPrice;
   }
 
   getIndexFromTime(timeToExpirySec) {

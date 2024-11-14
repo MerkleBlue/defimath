@@ -19,10 +19,8 @@ describe("BlackScholesJS", function () {
 
   let blackScholesJS;
 
-  describe.only("functionality", function () {
-
-
-    it.only("record lookup table to csv file", async function ()  {
+  describe("functionality", function () {
+    it("record lookup table to csv file", async function ()  {
       generateLookupTable(new BlackScholesJS(),true);
       
     });
@@ -52,7 +50,6 @@ describe("BlackScholesJS", function () {
     });*/
 
     describe("getFuturePrice", function () {
-
       function getFuturePrice(spot, timeToExpirySec, rate) {
         // future = spot * e^(rT)
         const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
@@ -139,7 +136,7 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it("gets call price", async function () {
+      it("gets a single call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
@@ -181,6 +178,51 @@ describe("BlackScholesJS", function () {
         console.log("Max error params: ", maxErrorParams);
 
         assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+      });
+    });
+
+    describe("getPutOptionPrice", function () {
+      it("gets a single put price", async function () {
+        let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "put");
+        let actualOptionPrice = blackScholesJS.getPutOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
+
+        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+      });
+
+      it("gets multiple put prices", async function () {
+        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+        for(let exp = 50; exp < 80; exp += 1) {
+          for (let strike = 850; strike < 1100; strike += 10) {
+            for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+              for (let rate = 0; rate < 0.05; rate += 0.02) {
+                let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "put");
+                let actual = blackScholesJS.getPutOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
+
+                let error = (Math.abs(actual - expected) / expected * 100);
+                totalError += error;
+                count++;
+
+                if (maxError < error && expected > 0.01) {
+                  maxError = error;
+                  maxErrorParams = {
+                    exp, strike, vol, rate, actual, expected
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        const avgError = totalError / count;
+
+        console.log("Total tests: " + count);
+        console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Avg error: " + (avgError).toFixed(8) + "%");
+        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Max error params: ", maxErrorParams);
+
+        assert.isBelow(avgError, 0.027); // avg error is below 0.027%
         assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
     });

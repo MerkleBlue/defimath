@@ -299,7 +299,7 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        assert.isBelow(avgError, 0.027); // avg error is below 0.025%
+        assert.isBelow(avgError, 0.027); // avg error is below 0.027%
         assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
     });
