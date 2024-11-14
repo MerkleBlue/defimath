@@ -13,7 +13,7 @@ const SECONDS_IN_DAY = 24 * 60 * 60;
 describe("BlackScholesJS", function () {
   // before each test
   beforeEach(() => {
-    const { lookupTable } = generateLookupTable(new BlackScholesJS());
+    const { lookupTable } = generateLookupTable(new BlackScholesJS(),false);
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
@@ -21,11 +21,15 @@ describe("BlackScholesJS", function () {
 
   describe("functionality", function () {
     it("record lookup table to csv file", async function ()  {
+      generateLookupTable(new BlackScholesJS(),true);
+      
+    });
+    /*it("record lookup table to csv file", async function ()  {
       const filename = `${csvConfig.filename}.csv`;
       fs.open(filename, "w");
 
       console.log("lookupTable");
-      for (let i = 0; i < blackScholesJS.lookupTable.length; i++) //blackScholesJS.lookupTable.length
+      for (let i = 0; i < blackScholesJS.lookupTable.length; i++) //nemoze mora da se indekxima vadi napolje
         for (let j = 0; j < blackScholesJS.lookupTable[i].length; j++){ //blackScholesJS.lookupTable[i].length
           console.log(`Value at [${i}][${j}] is: ${blackScholesJS.lookupTable[i][j]}`);
           var range = blackScholesJS.lookupTable[i][j];
@@ -43,7 +47,7 @@ describe("BlackScholesJS", function () {
           fs.appendFile(filename, csv);    
 
         }  
-    });
+    });*/
 
     describe("getFuturePrice", function () {
       function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -57,7 +61,7 @@ describe("BlackScholesJS", function () {
         const expected = getFuturePrice(100, 1, 0.0001);
         const actual = blackScholesJS.getFuturePrice(100, 1, 1);
         const error = (Math.abs(actual - expected) / expected * 100);
-        console.log("Worst case: error:", error.toFixed(12) + "%, rate, ", "actual: " + actual.toFixed(12), "expected: " + expected.toFixed(12));
+        //console.log("Worst case: error:", error.toFixed(12) + "%, rate, ", "actual: " + actual.toFixed(12), "expected: " + expected.toFixed(12));
         assert.isBelow(error, 0.0001); // is below 0.0001%
       });
 
@@ -103,7 +107,7 @@ describe("BlackScholesJS", function () {
           }
         }
         const { rate, secs, actual, expected } = maxErrorParams;
-        console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        //console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
         assert.isBelow(maxError, 0.0001); // is below 0.0001%
       });
 
@@ -126,7 +130,7 @@ describe("BlackScholesJS", function () {
           }
         }
         const { rate, days, actual, expected } = maxErrorParams;
-        console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", days.toFixed(0) + "d", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        //console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", days.toFixed(0) + "d", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
         assert.isBelow(maxError, 0.0001); // is below 0.0001%
       });
     });

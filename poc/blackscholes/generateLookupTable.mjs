@@ -1,19 +1,28 @@
 import bs from "black-scholes";
 import { S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
+import { mkConfig, generateCsv, asString } from "export-to-csv";
+import { promises as fs } from "fs";
+const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
 
-export function generateLookupTable(blackScholesJS) {
+export function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
   // first dimension is spot strike ratio, second is expiration times
+  var cvsCounter = 0;
+  const filename = `${csvConfig.filename}.csv`;  
+  if (writeToFile==true){
+    fs.open(filename, "w");                         //only for recording data
+  }
+
   const spotStrikeRatios = generatesStrikeSpotRatioPoints(S_S_RATIO_MIN, S_S_RATIO_MAX, S_S_RATIO_STEP);
   const expirationSecs = generateTimePoints();
 
   const lookupTable = new Map();
   const rows = [];
 
-  // console.log("spotStrikeRatios", spotStrikeRatios);
-  // console.log("expirationSecs", expirationSecs);
+  console.log("spotStrikeRatios", spotStrikeRatios);
+  console.log("expirationSecs", expirationSecs);
 
   for (let i = 0; i < spotStrikeRatios.length - 1; i++) {
     const row = [];
@@ -46,6 +55,41 @@ export function generateLookupTable(blackScholesJS) {
         ssratioati,
         exdays
       };
+
+
+      if (writeToFile==true){
+        const timeChunk  = (expirationSecs[j + 1] - expirationSecs[j])/9;
+        for (let k = 0; k < 10; k++) {
+          
+          const tpmTime = (expirationSecs[j] + k * timeChunk) / (365 * 24 * 60 * 60);
+          const tpmTimePrime = (expirationSecs[j] + (k+1) * timeChunk) / (365 * 24 * 60 * 60);
+
+
+          const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
+          const PriceAB = Math.max(0, bs.blackScholes(spot, strikeA, tpmTimePrime, vol, 0, "call"));
+          const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
+          const PriceBB = Math.max(0, bs.blackScholes(spot, strikeB, tpmTimePrime, vol, 0, "call"));
+
+
+          //dodaj 10 tacaka izmedju posebno obelezenih
+          var csvRange = [{
+                optionPriceAA: PriceAA,
+                optionPriceAB: PriceAB,
+                optionPriceBA: PriceBA,
+                optionPriceBB: PriceBB,
+                ssratioati : ssratioati,
+                exdays : tpmTime/365,
+                i : i,
+                j : j,
+                cvsCounter : cvsCounter
+          }];
+          var csv = generateCsv(csvConfig)(csvRange);
+          fs.appendFile(filename, csv);
+        }
+      }
+      cvsCounter ++;
+
+
 
       // pack for JS lookup table
       const index = blackScholesJS.getIndexFromSpotStrikeRatio(spotStrikeRatios[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
