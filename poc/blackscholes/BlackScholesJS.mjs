@@ -1,11 +1,3 @@
-import { mkConfig, generateCsv, asString } from "export-to-csv";
-import { promises as fs } from "fs";
-
-// mkConfig merges your options with the defaults
-// and returns WithDefaults<ConfigOptions>
-const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
-
-
 // fix the spot price in table to $100, and volatilty to 100%
 export const SPOT_FIXED = 100;
 export const VOL_FIXED = 1;
@@ -80,22 +72,6 @@ export class BlackScholesJS {
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
     //4 points coordinates: range - 4 option prices
-
-  
-    var csvRange = [{
-      sport_strike_ratio: spotStrikeRatio,
-      time_to_expire_in_days: timeToExpirySec/(24*60*60),
-      optionPriceAA: cell.optionPriceAA,
-      optionPriceAB: cell.optionPriceAB,
-      optionPriceBA: cell.optionPriceBA,
-      optionPriceBB: cell.optionPriceBB
-    }];
-
-
-    const csv = generateCsv(csvConfig)(csvRange);
-    const filename = `${csvConfig.filename}.csv`;
-
-    //fs.appendFile(filename, csv);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
