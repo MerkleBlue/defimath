@@ -10,6 +10,8 @@ const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, u
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
+generateLookupTable(new BlackScholesJS(),true);
+
 describe("BlackScholesJS", function () {
   // before each test
   beforeEach(() => {

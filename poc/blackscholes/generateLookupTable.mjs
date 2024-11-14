@@ -1,8 +1,13 @@
 import bs from "black-scholes";
+import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 import { S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
 const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
+
+function quadraticFit([a, b]) {
+  return (x) => a * x * x + b * x;
+}
 
 export function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
@@ -47,16 +52,10 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
 
       const ssratioati = spotStrikeRatios[i];
       const exdays = expirationYearsA * 365;
-      const element = {
-        optionPriceAA,
-        optionPriceAB,
-        optionPriceBA,
-        optionPriceBB,
-        ssratioati,
-        exdays
-      };
-
-
+      
+      var x = new Array(10), y = new Array(10);
+      var a = 0, b = 0;
+    
       if (writeToFile==true){
         const timeChunk  = (expirationSecs[j + 1] - expirationSecs[j])/9;
         for (let k = 0; k < 10; k++) {
@@ -83,10 +82,31 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
                 j : j,
                 cvsCounter : cvsCounter
           }];
+          x[k] = exdays - expirationYearsA * 365;
+          y[k] = PriceAA - optionPriceAA;
           var csv = generateCsv(csvConfig)(csvRange);
           fs.appendFile(filename, csv);
         }
+
+        const initialValues = [0, 0];
+        const result = levenbergMarquardt({ x, y }, quadraticFit, { initialValues });
+        a = initialValues[0];
+        b = initialValues[1];
+
       }
+
+      const element = {
+        optionPriceAA,
+        optionPriceAB,
+        optionPriceBA,
+        optionPriceBB,
+        ssratioati,
+        exdays,
+        a,
+        b
+      };
+
+
       cvsCounter ++;
 
 
