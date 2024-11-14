@@ -12,9 +12,8 @@ function tokens(value) {
 }
 
 describe("BlackScholesPOC (contract)", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
+  let mapSize;
+
   async function deploy() {
     const [owner] = await ethers.getSigners();
 
@@ -23,7 +22,8 @@ describe("BlackScholesPOC (contract)", function () {
     const blackScholesPOC = await BlackScholesPOC.deploy();
 
     // populate lookup table
-    const { rows } = generateLookupTable(new BlackScholesJS());
+    const { lookupTable, rows } = generateLookupTable(new BlackScholesJS());
+    mapSize = lookupTable.size;
     // map indexes from rows to array of indexes
     let totalGas = 0;
     for (let i = 0; i < rows.length; i++) {
@@ -45,7 +45,7 @@ describe("BlackScholesPOC (contract)", function () {
     });
   });
 
-  describe.only("performance", function () {
+  describe("performance", function () {
     it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
@@ -213,7 +213,7 @@ describe("BlackScholesPOC (contract)", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it("gets call price", async function () {
+      it("gets a single call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
@@ -247,8 +247,8 @@ describe("BlackScholesPOC (contract)", function () {
 
         const avgError = totalError / count;
 
-        console.log("Total tests: " + count);
-        // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Total tests: ", count);
+        console.log("Table (map) size: ", mapSize);
         console.log("Avg error: " + (avgError).toFixed(8) + "%");
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
@@ -259,7 +259,7 @@ describe("BlackScholesPOC (contract)", function () {
     });
 
     describe("getPutOptionPrice", function () {
-      it.only("gets put price", async function () {
+      it("gets a single put price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "put");
         let actualOptionPrice = await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
@@ -267,7 +267,7 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
 
-      it.only("gets multiple put prices", async function () {
+      it("gets multiple put prices", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
@@ -282,7 +282,6 @@ describe("BlackScholesPOC (contract)", function () {
 
                 if (maxError < error && expected > 0.01) {
                   maxError = error;
-                  // console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
                   maxErrorParams = {
                     exp, strike, vol, rate, actual, expected
                   }
@@ -294,14 +293,14 @@ describe("BlackScholesPOC (contract)", function () {
 
         const avgError = totalError / count;
 
-        console.log("Total tests: " + count);
-        // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Total tests: ", count);
+        console.log("Table (map) size: ", mapSize);
         console.log("Avg error: " + (avgError).toFixed(8) + "%");
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        // assert.isBelow(avgError, 0.025); // avg error is below 0.025%
-        // assert.isBelow(maxError, 0.25); // max error is below 0.025%
+        assert.isBelow(avgError, 0.027); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
     });
 
