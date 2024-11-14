@@ -104,10 +104,8 @@ export class BlackScholesJS {
     const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
 
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
-    //4 points coordinates: range - 4 option prices
 
-    // finally, scale the price back to the original spot
-    return finalPrice * spotScale;
+    return finalPrice;
   }
 
   getIndexFromTime(timeToExpirySec) {

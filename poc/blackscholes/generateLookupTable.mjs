@@ -21,8 +21,8 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
   const lookupTable = new Map();
   const rows = [];
 
-  console.log("spotStrikeRatios", spotStrikeRatios);
-  console.log("expirationSecs", expirationSecs);
+  // console.log("spotStrikeRatios", spotStrikeRatios);
+  // console.log("expirationSecs", expirationSecs);
 
   for (let i = 0; i < spotStrikeRatios.length - 1; i++) {
     const row = [];
