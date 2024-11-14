@@ -11,7 +11,7 @@ contract BlackScholesPOC {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
-    uint256 internal constant SPOT_FIXED = 1e20; // $100
+    uint256 internal constant SPOT_FIXED = 100; // $100
 
     // single mapping is faster than map of map, uint is faster than struct
     mapping(uint40 => uint256) private lookupTable;
@@ -30,7 +30,65 @@ contract BlackScholesPOC {
         }
     }
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
+    function getCallOptionPrice(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint80 volatility,
+        uint16 rate
+    ) external view returns (uint256 price) {
+        unchecked {
+            // step 1: set the overall scale first
+            uint256 spotScale = uint256(spot) / SPOT_FIXED;
+
+            // step 2: spot-strike ratio
+            uint256 spotStrikeRatio = _getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
+
+            // step 3: set the expiration based on volatility
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+
+            // step 4: interpolate price
+            uint256 finalPrice = interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+
+            price = finalPrice * 10 * spotScale / 1e18;
+        }
+    }
+
+    function getPutOptionPrice(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint80 volatility,
+        uint16 rate
+    ) external view returns (uint256 price) {
+        unchecked {
+            // step 1: set the overall scale first
+            uint256 spotScale = uint256(spot) / SPOT_FIXED;
+
+            // step 2: calculate discounted strike and spot-strike ratio
+            uint256 discountedStrike = _getDiscountedStrikePrice(strike, timeToExpirySec, rate);
+            uint256 spotStrikeRatio = uint256(spot) * 1e18 / discountedStrike;
+
+            // step 3: set the expiration based on volatility
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+
+            // step 4: interpolate price
+            uint256 finalPrice = interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+
+            uint256 callPrice = finalPrice * 10 * spotScale / 1e18;
+
+            price = callPrice + discountedStrike - spot;
+        }
+    }
+
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
+        unchecked {
+            return _getFuturePrice(spot, timeToExpirySec, rate);
+        }
+    }
+
+
+    function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
         unchecked {
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
@@ -51,27 +109,20 @@ contract BlackScholesPOC {
         }
     }
 
-    function getCallPrice(
-        uint128 spot,
-        uint128 strike,
-        uint32 timeToExpirySec,
-        uint80 volatility,
-        uint16 rate
-    ) external view returns (uint256 price) {
+    function _getDiscountedStrikePrice(uint128 strike, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
         unchecked {
-            // step 1: set the overall scale first
-            uint256 spotScale = uint256(spot) * 1e18 / SPOT_FIXED;
+            // we use Pade approximation for exp(x)
+            // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
 
-            // step 2: calculate future and spot-strike ratio
-            uint256 spotStrikeRatio = getFuturePrice(spot, timeToExpirySec, rate) * 1e18 / strike;
+            // NOTE: this is faster than the above 
+            uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
 
-            // step 3: set the expiration based on volatility
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+            // todo: check x is not more than 0.2
 
-            // step 4: interpolate price
-            uint256 finalPrice = interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+            uint256 numerator = (x + 3e9) ** 2 + 3e18;
+            uint256 denominator = (3e9 - x) ** 2 + 3e18;
 
-            price = finalPrice * 10 * spotScale / 1e18;
+            return denominator * strike / numerator;
         }
     }
 
@@ -269,7 +320,7 @@ contract BlackScholesPOC {
         uint256 endGas;
         startGas = gasleft();
 
-        getFuturePrice(spot, timeToExpirySec, rate);
+        _getFuturePrice(spot, timeToExpirySec, rate);
 
         endGas = gasleft();
         return startGas - endGas;
