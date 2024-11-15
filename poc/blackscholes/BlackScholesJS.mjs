@@ -147,8 +147,8 @@ export class BlackScholesJS {
     // const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
 
     const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
-    const interpolatedPriceA = cell.a * (deltaTime ** 2) + cell.b * deltaTime;
-    const interpolatedPriceB = cell.a * (deltaTime ** 2) + cell.b * deltaTime;
+    const interpolatedPriceA = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
+    const interpolatedPriceB = cell.a2 * (deltaTime ** 2) + cell.b2 * deltaTime;
     // console.log("deltaTime", deltaTime, cell);
     // console.log("optionPriceAA", cell.optionPriceAA);
     // console.log("interpolatedPriceA", interpolatedPriceA);
