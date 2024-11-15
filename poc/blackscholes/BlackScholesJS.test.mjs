@@ -159,7 +159,38 @@ describe("BlackScholesJS", function () {
         console.log("expected:", expectedOptionPrice, "actual2:", actualOptionPrice2);
       });
 
-      it.only("gets multiple call prices", async function () {
+      it.only("gets multiple call prices - best case strike", async function () {
+        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+        for(let exp = 50; exp < 80; exp += 1) {
+          for (let vol = 0.8; vol < 1.2; vol += 0.01) {
+            let expected = bs.blackScholes(1000, 1000, exp / 365, vol, 0, "call");
+            let actual = blackScholesJS.getCallOptionPrice2(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
+
+            let error = (Math.abs(actual - expected) / expected * 100);
+            totalError += error;
+            count++;
+            if (maxError < error && expected > 0.01) {
+              maxError = error;
+              maxErrorParams = {
+                exp, vol, actual, expected
+              }
+            }
+          }
+        }
+
+        const avgError = totalError / count;
+
+        console.log("Total tests: " + count);
+        console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Avg error: " + (avgError).toFixed(8) + "%");
+        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Max error params: ", maxErrorParams);
+
+        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+      });
+
+      it("gets multiple call prices", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
           for (let strike = 850; strike < 1100; strike += 10) {

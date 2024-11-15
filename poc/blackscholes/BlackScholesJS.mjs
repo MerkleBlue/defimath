@@ -33,7 +33,7 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice2(spotStrikeRatio, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
