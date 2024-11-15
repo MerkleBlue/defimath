@@ -11,3 +11,4 @@ generated.csv
 /cache
 .DS_Store
 package-lock.json
+*.csv
