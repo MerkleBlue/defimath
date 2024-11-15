@@ -82,7 +82,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
             cvsCounter : cvsCounter
           }];
           x[k] = tpmTime - expirationSecs[j] / (365 * 24 * 60 * 60);
-          y[k] = PriceAA - optionPriceAA;
+          y[k] = PriceAA;
           let csv = generateCsv(csvConfig)(csvRange);
           await fs.appendFile(filename, csv);
         }
@@ -117,7 +117,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
       const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
       const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + optionPriceABBigInt * BigInt(2 ** 128) + optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
-      row.push( { index, element: elementForSOL, a, b } );
+      row.push( { index, element: elementForSOL, a, b, optionPriceAA, optionPriceAB } );
     }
     rows.push(row);
   }

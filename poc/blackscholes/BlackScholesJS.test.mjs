@@ -10,22 +10,26 @@ const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, u
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
-await generateLookupTable(new BlackScholesJS(), true);
+// await generateLookupTable(new BlackScholesJS(), true);
 
 describe("BlackScholesJS", function () {
   // before each test
   beforeEach(async () => {
-    const { lookupTable } = await generateLookupTable(new BlackScholesJS(),false);
+    const { lookupTable } = await generateLookupTable(new BlackScholesJS(), true);
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
   let blackScholesJS;
 
-  describe.only("test ab", async function () {
+  describe("test ab", async function () {
     it("ab", async function ()  {
       const { rows } =  await generateLookupTable(new BlackScholesJS(), true);
       console.log("rows length", rows.length)
-      console.log(rows[10])
+      const oneCell = rows[10][100];
+      console.log("oneCell", oneCell);
+
+      // quadratic interpolation for index: 100145,
+      // console.log(rows[10])
     });
   });
 
@@ -145,11 +149,14 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it("gets a single call price", async function () {
+      it.only("gets a single call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
+        let actualOptionPrice2 = blackScholesJS.getCallOptionPrice2(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
+
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        console.log("expected:", expectedOptionPrice, "actual2:", actualOptionPrice2);
       });
 
       it("gets multiple call prices", async function () {

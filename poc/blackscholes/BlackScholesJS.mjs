@@ -33,11 +33,31 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled, timeToExpirySec);
+    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
   };
+
+  // vol and rate is in decimal format, e.g. 0.1 for 10%
+  getCallOptionPrice2(spot, strike, timeToExpirySec, vol, rate) {
+      // step 1: set the overall scale first
+      const spotScale = spot / SPOT_FIXED;
+  
+      // step 2: calculate future and spot-strike ratio
+      const future = this.getFuturePrice(spot, rate, timeToExpirySec);
+      const spotStrikeRatio = future / strike;
+  
+      // step 3: set the expiration based on volatility
+      const volRatio = vol / VOL_FIXED;
+      const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+  
+      // step 4: interpolate price
+      const finalPrice = this.interpolatePrice2(spotStrikeRatio, timeToExpirySecScaled);
+  
+      // finally, scale the price back to the original spot
+      return finalPrice * spotScale;
+    };
 
   getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 1: set the overall scale first
@@ -52,7 +72,7 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled, timeToExpirySec);
+    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     const callPrice = finalPrice * spotScale;
@@ -87,7 +107,7 @@ export class BlackScholesJS {
     return discountedStrikePrice;
   };
 
-  interpolatePrice(spotStrikeRatio, timeToExpirySecScaled, timeToExpirySec) {
+  interpolatePrice(spotStrikeRatio, timeToExpirySecScaled) {
     const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
@@ -106,6 +126,33 @@ export class BlackScholesJS {
     const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
 
     return finalPrice;
+  }
+
+  interpolatePrice2(spotStrikeRatio, timeToExpirySecScaled) {
+    const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
+    const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
+    const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
+
+    // // step 5: interpolate the option price using linear interpolation
+    // const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
+    // const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
+
+    // const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
+    // const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
+    // const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
+
+    // const wPriceA = cell.optionPriceAA * (1 - timeToExpiryWeight) + cell.optionPriceAB * timeToExpiryWeight;
+    // const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
+
+    // const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
+
+    const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
+    const interpolatedPrice = cell.a * (deltaTime ** 2) + cell.b * deltaTime;
+    console.log("deltaTime", deltaTime, cell);
+    console.log("optionPriceAA", cell.optionPriceAA);
+    console.log("interpolatedPrice", interpolatedPrice);
+
+    return cell.optionPriceAA + interpolatedPrice;
   }
 
   getIndexFromTime(timeToExpirySec) {
