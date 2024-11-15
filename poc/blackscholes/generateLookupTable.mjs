@@ -49,8 +49,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const ssratioati = spotStrikeRatios[i];
       const exdays = expirationYearsA * 365;
       
-      let x = new Array(10), y = new Array(10);
-      let a = 0, b = 0;
+      let x1 = new Array(10), y1 = new Array(10), y2 = new Array(10);
+      let a1 = 0, b1 = 0, a2 = 0, b2 = 0;
     
       if (writeToFile) {
         const timeChunk  = (expirationYearsB - expirationYearsA)/10;
@@ -59,16 +59,23 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           const tpmTime = expirationYearsA + k * timeChunk;
       
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
+          const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
       
-          x[k] = k * timeChunk;
-          y[k] = PriceAA - optionPriceAA;
+          x1[k] = k * timeChunk;
+          y1[k] = PriceAA - optionPriceAA;
+          y2[k] = PriceBA - optionPriceBA;
       
         }
 
         const initialValues = [0, 0];
-        const result = levenbergMarquardt({ x, y }, quadraticFit, { initialValues });
-        a = result.parameterValues[0];
-        b = result.parameterValues[1];
+        var result = levenbergMarquardt({ x: x1, y: y1 }, quadraticFit, { initialValues });
+        a1 = result.parameterValues[0];
+        b1 = result.parameterValues[1];
+
+        result = levenbergMarquardt({ x: x1, y: y2 }, quadraticFit, { initialValues });
+        a2 = result.parameterValues[0];
+        b2 = result.parameterValues[1];
+
         // console.log(result);
 
       }
@@ -80,8 +87,10 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         optionPriceBB,
         ssratioati,
         exdays,
-        a,
-        b
+        a1,
+        b1,
+        a2,
+        b2
       };
       cvsCounter ++;
 
@@ -96,7 +105,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
       const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
       const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + optionPriceABBigInt * BigInt(2 ** 128) + optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
-      row.push( { index, element: elementForSOL, a, b, optionPriceAA, optionPriceAB } );
+      row.push( { index, element: elementForSOL, a1, b1, a2, b2, optionPriceAA, optionPriceAB } );
     }
     rows.push(row);
   }
