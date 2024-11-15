@@ -159,7 +159,7 @@ describe("BlackScholesJS", function () {
         console.log("expected:", expectedOptionPrice, "actual2:", actualOptionPrice2);
       });
 
-      it("gets multiple call prices", async function () {
+      it.only("gets multiple call prices", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
           for (let strike = 850; strike < 1100; strike += 10) {

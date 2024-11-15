@@ -61,7 +61,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
       
           x[k] = k * timeChunk;
-          y[k] = PriceAA;
+          y[k] = PriceAA - optionPriceAA;
       
         }
 
@@ -69,7 +69,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         const result = levenbergMarquardt({ x, y }, quadraticFit, { initialValues });
         a = result.parameterValues[0];
         b = result.parameterValues[1];
-        console.log(result);
+        // console.log(result);
 
       }
 

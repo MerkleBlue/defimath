@@ -33,7 +33,7 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice2(spotStrikeRatio, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
@@ -133,9 +133,9 @@ export class BlackScholesJS {
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
 
-    // // step 5: interpolate the option price using linear interpolation
-    // const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
-    // const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
+    // step 5: interpolate the option price using linear interpolation
+    const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
+    const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
 
     // const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
     // const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
@@ -147,12 +147,18 @@ export class BlackScholesJS {
     // const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
 
     const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
-    const interpolatedPrice = cell.a * (deltaTime ** 2) + cell.b * deltaTime;
-    console.log("deltaTime", deltaTime, cell);
-    console.log("optionPriceAA", cell.optionPriceAA);
-    console.log("interpolatedPrice", interpolatedPrice);
+    const interpolatedPriceA = cell.a * (deltaTime ** 2) + cell.b * deltaTime;
+    const interpolatedPriceB = cell.a * (deltaTime ** 2) + cell.b * deltaTime;
+    // console.log("deltaTime", deltaTime, cell);
+    // console.log("optionPriceAA", cell.optionPriceAA);
+    // console.log("interpolatedPriceA", interpolatedPriceA);
 
-    return cell.optionPriceAA + interpolatedPrice;
+    const wPriceA = cell.optionPriceAA + interpolatedPriceA;
+    const wPriceB = cell.optionPriceBA + interpolatedPriceB;
+
+    const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
+
+    return finalPrice;
   }
 
   getIndexFromTime(timeToExpirySec) {
