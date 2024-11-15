@@ -58,39 +58,23 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       let a = 0, b = 0;
     
       if (writeToFile) {
-        const timeChunk  = (expirationSecs[j + 1] - expirationSecs[j])/9;
+        const timeChunk  = (expirationYearsB - expirationYearsA)/10;
         for (let k = 0; k < 10; k++) {
           
-          const tpmTime = (expirationYearsA + k * timeChunk) / (365 * 24 * 60 * 60);
-          const tpmTimePrime = (expirationYearsA + (k+1) * timeChunk) / (365 * 24 * 60 * 60);
-
+          const tpmTime = expirationYearsA + k * timeChunk;
+      
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
-          const PriceAB = Math.max(0, bs.blackScholes(spot, strikeA, tpmTimePrime, vol, 0, "call"));
-          const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
-          const PriceBB = Math.max(0, bs.blackScholes(spot, strikeB, tpmTimePrime, vol, 0, "call"));
-
-          // dodaj 10 tacaka izmedju posebno obelezenih
-          let csvRange = [{
-            optionPriceAA: PriceAA,
-            optionPriceAB: PriceAB,
-            optionPriceBA: PriceBA,
-            optionPriceBB: PriceBB,
-            ssratioati : ssratioati,
-            exdays : tpmTime/365,
-            i : i,
-            j : j,
-            cvsCounter : cvsCounter
-          }];
-          x[k] = tpmTime - expirationSecs[j] / (365 * 24 * 60 * 60);
+      
+          x[k] = k * timeChunk;
           y[k] = PriceAA;
-          let csv = generateCsv(csvConfig)(csvRange);
-          await fs.appendFile(filename, csv);
+      
         }
 
         const initialValues = [0, 0];
         const result = levenbergMarquardt({ x, y }, quadraticFit, { initialValues });
         a = result.parameterValues[0];
         b = result.parameterValues[1];
+        console.log(result);
 
       }
 
