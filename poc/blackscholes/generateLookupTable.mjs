@@ -91,6 +91,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         const result = levenbergMarquardt({ x, y }, quadraticFit, { initialValues });
         a = initialValues[0];
         b = initialValues[1];
+        console.log(result)
 
       }
 
@@ -117,7 +118,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
       const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
       const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + optionPriceABBigInt * BigInt(2 ** 128) + optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
-      row.push( { index, element: elementForSOL } );
+      row.push( { index, element: elementForSOL, a, b } );
     }
     rows.push(row);
   }

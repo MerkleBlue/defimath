@@ -21,6 +21,14 @@ describe("BlackScholesJS", function () {
 
   let blackScholesJS;
 
+  describe.only("test ab", async function () {
+    it("ab", async function ()  {
+      const { rows } =  await generateLookupTable(new BlackScholesJS(), true);
+      console.log("rows length", rows.length)
+      console.log(rows[10])
+    });
+  });
+
   describe("functionality", async function () {
     it("record lookup table to csv file", async function ()  {
       await generateLookupTable(new BlackScholesJS(),true);
