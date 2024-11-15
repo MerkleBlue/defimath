@@ -61,8 +61,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         const timeChunk  = (expirationSecs[j + 1] - expirationSecs[j])/9;
         for (let k = 0; k < 10; k++) {
           
-          const tpmTime = (expirationSecs[j] + k * timeChunk) / (365 * 24 * 60 * 60);
-          const tpmTimePrime = (expirationSecs[j] + (k+1) * timeChunk) / (365 * 24 * 60 * 60);
+          const tpmTime = (expirationYearsA + k * timeChunk) / (365 * 24 * 60 * 60);
+          const tpmTimePrime = (expirationYearsA + (k+1) * timeChunk) / (365 * 24 * 60 * 60);
 
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
           const PriceAB = Math.max(0, bs.blackScholes(spot, strikeA, tpmTimePrime, vol, 0, "call"));
