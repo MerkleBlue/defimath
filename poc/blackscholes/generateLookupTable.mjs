@@ -81,7 +81,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
             j : j,
             cvsCounter : cvsCounter
           }];
-          x[k] = exdays - expirationYearsA * 365;
+          x[k] = tpmTime - expirationSecs[j] / (365 * 24 * 60 * 60);
           y[k] = PriceAA - optionPriceAA;
           let csv = generateCsv(csvConfig)(csvRange);
           await fs.appendFile(filename, csv);
@@ -89,8 +89,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
         const initialValues = [0, 0];
         const result = levenbergMarquardt({ x, y }, quadraticFit, { initialValues });
-        a = initialValues[0];
-        b = initialValues[1];
+        a = result.parameterValues[0];
+        b = result.parameterValues[1];
 
       }
 
