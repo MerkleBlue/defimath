@@ -22,7 +22,7 @@ describe("BlackScholesPOC (contract)", function () {
     const blackScholesPOC = await BlackScholesPOC.deploy();
 
     // populate lookup table
-    const { lookupTable, rows } = generateLookupTable(new BlackScholesJS());
+    const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS());
     mapSize = lookupTable.size;
     // map indexes from rows to array of indexes
     let totalGas = 0;

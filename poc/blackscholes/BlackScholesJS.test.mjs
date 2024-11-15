@@ -10,21 +10,20 @@ const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, u
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
-generateLookupTable(new BlackScholesJS(),true);
+await generateLookupTable(new BlackScholesJS(), true);
 
 describe("BlackScholesJS", function () {
   // before each test
-  beforeEach(() => {
-    const { lookupTable } = generateLookupTable(new BlackScholesJS(),false);
+  beforeEach(async () => {
+    const { lookupTable } = await generateLookupTable(new BlackScholesJS(),false);
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
   let blackScholesJS;
 
-  describe("functionality", function () {
+  describe("functionality", async function () {
     it("record lookup table to csv file", async function ()  {
-      generateLookupTable(new BlackScholesJS(),true);
-      
+      await generateLookupTable(new BlackScholesJS(),true);
     });
     /*it("record lookup table to csv file", async function ()  {
       const filename = `${csvConfig.filename}.csv`;

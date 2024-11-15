@@ -9,15 +9,16 @@ function quadraticFit([a, b]) {
   return (x) => a * x * x + b * x;
 }
 
-export function generateLookupTable(blackScholesJS, writeToFile) {
+export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
   // first dimension is spot strike ratio, second is expiration times
   var cvsCounter = 0;
+  let fileHandle;
   const filename = `${csvConfig.filename}.csv`;  
-  if (writeToFile==true){
-    fs.open(filename, "w");                         //only for recording data
+  if (writeToFile) {
+    fileHandle = await fs.open(filename, "w");                         //only for recording data
   }
 
   const spotStrikeRatios = generatesStrikeSpotRatioPoints(S_S_RATIO_MIN, S_S_RATIO_MAX, S_S_RATIO_STEP);
@@ -53,39 +54,37 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
       const ssratioati = spotStrikeRatios[i];
       const exdays = expirationYearsA * 365;
       
-      var x = new Array(10), y = new Array(10);
-      var a = 0, b = 0;
+      let x = new Array(10), y = new Array(10);
+      let a = 0, b = 0;
     
-      if (writeToFile==true){
+      if (writeToFile) {
         const timeChunk  = (expirationSecs[j + 1] - expirationSecs[j])/9;
         for (let k = 0; k < 10; k++) {
           
           const tpmTime = (expirationSecs[j] + k * timeChunk) / (365 * 24 * 60 * 60);
           const tpmTimePrime = (expirationSecs[j] + (k+1) * timeChunk) / (365 * 24 * 60 * 60);
 
-
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
           const PriceAB = Math.max(0, bs.blackScholes(spot, strikeA, tpmTimePrime, vol, 0, "call"));
           const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
           const PriceBB = Math.max(0, bs.blackScholes(spot, strikeB, tpmTimePrime, vol, 0, "call"));
 
-
-          //dodaj 10 tacaka izmedju posebno obelezenih
-          var csvRange = [{
-                optionPriceAA: PriceAA,
-                optionPriceAB: PriceAB,
-                optionPriceBA: PriceBA,
-                optionPriceBB: PriceBB,
-                ssratioati : ssratioati,
-                exdays : tpmTime/365,
-                i : i,
-                j : j,
-                cvsCounter : cvsCounter
+          // dodaj 10 tacaka izmedju posebno obelezenih
+          let csvRange = [{
+            optionPriceAA: PriceAA,
+            optionPriceAB: PriceAB,
+            optionPriceBA: PriceBA,
+            optionPriceBB: PriceBB,
+            ssratioati : ssratioati,
+            exdays : tpmTime/365,
+            i : i,
+            j : j,
+            cvsCounter : cvsCounter
           }];
           x[k] = exdays - expirationYearsA * 365;
           y[k] = PriceAA - optionPriceAA;
-          var csv = generateCsv(csvConfig)(csvRange);
-          fs.appendFile(filename, csv);
+          let csv = generateCsv(csvConfig)(csvRange);
+          await fs.appendFile(filename, csv);
         }
 
         const initialValues = [0, 0];
@@ -105,10 +104,7 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
         a,
         b
       };
-
-
       cvsCounter ++;
-
 
 
       // pack for JS lookup table
@@ -116,8 +112,6 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
       lookupTable.set(index, element);
 
       // pack for SOL lookup table
-      // const elementForSOL = (parseInt(optionPriceAA * 1e17)).toString(); //  + (parseInt(optionPriceAB * 1e17)).toString() + (parseInt(optionPriceBA * 1e17)).toString() + (parseInt(optionPriceBB * 1e17)).toString();
-
       const optionPriceAABigInt = BigInt(parseInt(optionPriceAA * 1e17));
       const optionPriceABBigInt = BigInt(parseInt(optionPriceAB * 1e17));
       const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
@@ -126,6 +120,10 @@ export function generateLookupTable(blackScholesJS, writeToFile) {
       row.push( { index, element: elementForSOL } );
     }
     rows.push(row);
+  }
+
+  if (writeToFile) {
+    await fileHandle.close();
   }
 
   // console.log(lookupTable);
