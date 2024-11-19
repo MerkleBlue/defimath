@@ -10,16 +10,17 @@ const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, u
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
+
 // await generateLookupTable(new BlackScholesJS(), true);
 
 describe("BlackScholesJS", function () {
-  // before each test
-  beforeEach(async () => {
+  let blackScholesJS;
+
+  // before all tests, called once
+  before(async () => {
     const { lookupTable } = await generateLookupTable(new BlackScholesJS(), true);
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
-
-  let blackScholesJS;
 
   describe("test ab", async function () {
     it("ab", async function ()  {
@@ -149,7 +150,7 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it.only("gets a single call price", async function () {
+      it("gets a single call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
         let actualOptionPrice2 = blackScholesJS.getCallOptionPrice2(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
@@ -188,6 +189,20 @@ describe("BlackScholesJS", function () {
 
         // assert.isBelow(avgError, 0.025); // avg error is below 0.025%
         // assert.isBelow(maxError, 0.25); // max error is below 0.025%
+      });
+
+      it.only("gets call price - worst error, best strike", async function () {
+        const exp = 52;
+        const vol = 0.8;
+
+        let expected = bs.blackScholes(1000, 1000, exp / 365, vol, 0, "call");
+        let actual = blackScholesJS.getCallOptionPrice2(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
+
+        let error = (Math.abs(actual - expected) / expected * 100);
+
+        console.log("expected", expected, "actual", actual);
+        console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Error: " + (error).toFixed(8) + "%");
       });
 
       it("gets multiple call prices", async function () {

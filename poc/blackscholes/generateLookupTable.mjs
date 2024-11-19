@@ -13,6 +13,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
+  console.log("Generating lookup table...");
+
   // first dimension is spot strike ratio, second is expiration times
   var cvsCounter = 0;
   let fileHandle;
@@ -53,8 +55,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       let a1 = 0, b1 = 0, a2 = 0, b2 = 0;
     
       if (writeToFile) {
-        const timeChunk  = (expirationYearsB - expirationYearsA)/10;
-        for (let k = 0; k < 10; k++) {
+        const fitPoints = 50;
+        const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
+        for (let k = 0; k < fitPoints; k++) {
           
           const tpmTime = expirationYearsA + k * timeChunk;
       
@@ -64,20 +67,25 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           x1[k] = k * timeChunk;
           y1[k] = PriceAA - optionPriceAA;
           y2[k] = PriceBA - optionPriceBA;
-      
         }
 
+        // with 10 fitPoints, 100 iterations, and default errorTolerance:
+        //     Avg error: 0.00140628%, Max error: 0.01834267%
+        // with 50 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
+        //     Avg error: 0.00011560%, Max error: 0.00065469%
+        // with 100 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
+        //     Avg error: 0.00011520%, Max error: 0.00063081%%
+
         const initialValues = [0, 0];
-        var result = levenbergMarquardt({ x: x1, y: y1 }, quadraticFit, { initialValues });
+        // let result = levenbergMarquardt({ x: x1, y: y1 }, quadraticFit, { initialValues });
+        let result = levenbergMarquardt({ x: x1, y: y1 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
         a1 = result.parameterValues[0];
         b1 = result.parameterValues[1];
 
-        result = levenbergMarquardt({ x: x1, y: y2 }, quadraticFit, { initialValues });
+        // result = levenbergMarquardt({ x: x1, y: y2 }, quadraticFit, { initialValues });
+        result = levenbergMarquardt({ x: x1, y: y2 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
         a2 = result.parameterValues[0];
         b2 = result.parameterValues[1];
-
-        // console.log(result);
-
       }
 
       const element = {
@@ -93,7 +101,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         b2
       };
       cvsCounter ++;
-
 
       // pack for JS lookup table
       const index = blackScholesJS.getIndexFromSpotStrikeRatio(spotStrikeRatios[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
