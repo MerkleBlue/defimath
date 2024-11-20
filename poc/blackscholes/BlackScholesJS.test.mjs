@@ -23,9 +23,9 @@ describe("BlackScholesJS", function () {
   });
 
   describe("functionality", async function () {
-    it("record lookup table to csv file", async function ()  {
-      await generateLookupTable(new BlackScholesJS(),true);
-    });
+    // it("record lookup table to csv file", async function ()  {
+    //   await generateLookupTable(new BlackScholesJS(),true);
+    // });
     /*it("record lookup table to csv file", async function ()  {
       const filename = `${csvConfig.filename}.csv`;
       fs.open(filename, "w");
@@ -148,7 +148,7 @@ describe("BlackScholesJS", function () {
         console.log("expected:", expectedOptionPrice, "actual2:", actualOptionPrice2);
       });
 
-      it.only("gets multiple call prices - best case strike", async function () {
+      it("gets multiple call prices - best case strike", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
           for (let vol = 0.8; vol < 1.2; vol += 0.01) {
@@ -175,11 +175,11 @@ describe("BlackScholesJS", function () {
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        // assert.isBelow(avgError, 0.025); // avg error is below 0.025%
-        // assert.isBelow(maxError, 0.25); // max error is below 0.025%
+        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
 
-      it.only("gets call price - worst error, best strike", async function () {
+      it("gets call price - worst error, best strike", async function () {
         const exp = 52;
         const vol = 0.8;
 
