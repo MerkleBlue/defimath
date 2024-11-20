@@ -22,18 +22,6 @@ describe("BlackScholesJS", function () {
     blackScholesJS = new BlackScholesJS(lookupTable);
   });
 
-  describe("test ab", async function () {
-    it("ab", async function ()  {
-      const { rows } =  await generateLookupTable(new BlackScholesJS(), true);
-      console.log("rows length", rows.length)
-      const oneCell = rows[10][100];
-      console.log("oneCell", oneCell);
-
-      // quadratic interpolation for index: 100145,
-      // console.log(rows[10])
-    });
-  });
-
   describe("functionality", async function () {
     it("record lookup table to csv file", async function ()  {
       await generateLookupTable(new BlackScholesJS(),true);
