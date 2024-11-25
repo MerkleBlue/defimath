@@ -189,11 +189,16 @@ export class BlackScholesJS {
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
 
     // step 5: interpolate the option price using linear interpolation
-    const strikeFromIndex = this.getStrikeFromIndex(strikeIndex);
-    const strikeWeight = (strikeScaled - strikeFromIndex) / STRIKE_STEP;
+    // const strikeFromIndex = this.getStrikeFromIndex(strikeIndex);
+    // const strikeWeight = (strikeScaled - strikeFromIndex) / STRIKE_STEP;
 
-    const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
+    const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
+    const deltaTime = (timeToExpirySecScaled - timeToExpiryFromIndex) / (365 * 24 * 60 * 60);
     const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
+
+    const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
+    const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
+    // console.log("timeToExpiryWeight", timeToExpiryWeight);
 
     // console.log("deltaTime", deltaTime);
     // console.log("strikeScaled", strikeScaled, "strikeIndex", strikeIndex, "deltaStrike", deltaStrike);
@@ -211,18 +216,18 @@ export class BlackScholesJS {
     // console.log("interpolatedPrice3", interpolatedPrice3);
     // console.log("interpolatedPrice4", interpolatedPrice4);
 
+    // Method 1: without using wPriceB
     const wPriceA = cell.optionPriceAA + interpolatedPrice1;
     const wPriceB = cell.optionPriceBA + interpolatedPrice2;
     // console.log("wPriceA", wPriceA, "wPriceB", wPriceB, "strikeWeight", strikeWeight);
 
     // todo: this shouldn't be mid, but weighted to time
     // console.log(interpolatedPrice3, interpolatedPrice4);
-    const midStrike = (interpolatedPrice3 + interpolatedPrice4) / 2;
-    // console.log("midStrike", midStrike);
+    const midStrike1 = (interpolatedPrice3 + interpolatedPrice4) / 2;
+    const midStrike2 = interpolatedPrice3 * (1 - timeToExpiryWeight) + interpolatedPrice4 * timeToExpiryWeight;
+    // console.log("midStrike1", midStrike1, "midStrike2", midStrike2);
 
-    const finalPrice = wPriceA + midStrike;
-
-    // const finalPrice = wPriceA * (1 - strikeWeight) + wPriceB * strikeWeight;
+    const finalPrice = wPriceA + midStrike2;
 
     return finalPrice;
   }
