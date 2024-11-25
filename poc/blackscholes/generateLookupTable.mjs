@@ -29,7 +29,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   const lookupTable = new Map();
   const rows = [];
 
-  // console.log("spotStrikeRatios", spotStrikeRatios);
+  // console.log("strikes", strikes);
   // console.log("expirationSecs", expirationSecs);
 
   for (let i = 0; i < strikes.length - 1; i++) {
@@ -51,11 +51,14 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const ssratioati = strikes[i];
       const exdays = expirationYearsA * 365;
       
-      let x1 = new Array(10), y1 = new Array(10), y2 = new Array(10);
-      let a1 = 0, b1 = 0, a2 = 0, b2 = 0;
+      let x12 = new Array(10), x34 = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10);
+      let a1 = 0, b1 = 0, a2 = 0, b2 = 0, a3 = 0, b3 = 0, a4 = 0, b4 = 0;
     
       if (writeToFile) {
         const fitPoints = 50;
+        const initialValues = [0, 0];
+
+        // time points
         const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
         for (let k = 0; k < fitPoints; k++) {
           
@@ -64,28 +67,50 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
           const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
       
-          x1[k] = k * timeChunk;
+          x12[k] = k * timeChunk;
           y1[k] = PriceAA - optionPriceAA;
           y2[k] = PriceBA - optionPriceBA;
         }
 
+        let result = levenbergMarquardt({ x: x12, y: y1 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
+        a1 = result.parameterValues[0];
+        b1 = result.parameterValues[1];
+
+        result = levenbergMarquardt({ x: x12, y: y2 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
+        a2 = result.parameterValues[0];
+        b2 = result.parameterValues[1];
+
+        // strike points
+        const strikeChunk  = (strikeB - strikeA) / fitPoints;
+        for (let k = 0; k < fitPoints; k++) {
+          
+          const tpmStrike = strikeA + k * strikeChunk;
+      
+          const PriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
+          const PriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
+      
+          x34[k] = k * strikeChunk;
+          y3[k] = PriceTA - optionPriceAA;
+          y4[k] = PriceTB - optionPriceAB;
+        }
+
+        // console.log(x34);
+
+        result = levenbergMarquardt({ x: x34, y: y3 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
+        a3 = result.parameterValues[0];
+        b3 = result.parameterValues[1];
+
+        result = levenbergMarquardt({ x: x34, y: y4 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
+        a4 = result.parameterValues[0];
+        b4 = result.parameterValues[1];
+
+        // NOTE:
         // with 10 fitPoints, 100 iterations, and default errorTolerance:
         //     Avg error: 0.00140628%, Max error: 0.01834267%
         // with 50 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
         //     Avg error: 0.00011560%, Max error: 0.00065469%
         // with 100 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
         //     Avg error: 0.00011520%, Max error: 0.00063081%%
-
-        const initialValues = [0, 0];
-        // let result = levenbergMarquardt({ x: x1, y: y1 }, quadraticFit, { initialValues });
-        let result = levenbergMarquardt({ x: x1, y: y1 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        a1 = result.parameterValues[0];
-        b1 = result.parameterValues[1];
-
-        // result = levenbergMarquardt({ x: x1, y: y2 }, quadraticFit, { initialValues });
-        result = levenbergMarquardt({ x: x1, y: y2 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        a2 = result.parameterValues[0];
-        b2 = result.parameterValues[1];
       }
 
       const element = {
@@ -98,9 +123,13 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         a1,
         b1,
         a2,
-        b2
+        b2,
+        a3,
+        b3,
+        a4,
+        b4
       };
-      cvsCounter ++;
+      cvsCounter++;
 
       // pack for JS lookup table
       const index = blackScholesJS.getIndexFromStrike(strikes[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);

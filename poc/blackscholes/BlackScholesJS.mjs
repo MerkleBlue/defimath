@@ -183,6 +183,7 @@ export class BlackScholesJS {
   }
 
   interpolatePriceQuadratic2(strikeScaled, timeToExpirySecScaled) {
+    // console.log("---- interpolatePriceQuadratic2 ----")
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
@@ -192,22 +193,36 @@ export class BlackScholesJS {
     const strikeWeight = (strikeScaled - strikeFromIndex) / STRIKE_STEP;
 
     const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
-    // console.log("spotStrikeWeight", spotStrikeWeight, "deltaTime", deltaTime);
-    // console.log("spotStrikeRatioFromIndex", spotStrikeRatioFromIndex, "timeFromIndex", this.getTimeFromIndex(timeToExpiryIndex));
+    const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
 
-    const interpolatedPriceA = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
-    const interpolatedPriceB = cell.a2 * (deltaTime ** 2) + cell.b2 * deltaTime;
+    // console.log("deltaTime", deltaTime);
+    // console.log("strikeScaled", strikeScaled, "strikeIndex", strikeIndex, "deltaStrike", deltaStrike);
 
-    console.log("cell", cell);
-    // console.log("optionPriceAA", cell.optionPriceAA);
-    console.log("interpolatedPriceA", interpolatedPriceA);
-    console.log("interpolatedPriceB", interpolatedPriceB);
+    const interpolatedPrice1 = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
+    const interpolatedPrice2 = cell.a2 * (deltaTime ** 2) + cell.b2 * deltaTime;
 
-    const wPriceA = cell.optionPriceAA + interpolatedPriceA;
-    const wPriceB = cell.optionPriceBA + interpolatedPriceB;
-    console.log("wPriceA", wPriceA, "wPriceB", wPriceB, "strikeWeight", strikeWeight);
+    const interpolatedPrice3 = cell.a3 * (deltaStrike ** 2) + cell.b3 * deltaStrike;
+    const interpolatedPrice4 = cell.a4 * (deltaStrike ** 2) + cell.b4 * deltaStrike;
 
-    const finalPrice = wPriceA * (1 - strikeWeight) + wPriceB * strikeWeight;
+    // console.log("cell", cell);
+    // // console.log("optionPriceAA", cell.optionPriceAA);
+    // console.log("interpolatedPrice1", interpolatedPrice1);
+    // console.log("interpolatedPrice2", interpolatedPrice2);
+    // console.log("interpolatedPrice3", interpolatedPrice3);
+    // console.log("interpolatedPrice4", interpolatedPrice4);
+
+    const wPriceA = cell.optionPriceAA + interpolatedPrice1;
+    const wPriceB = cell.optionPriceBA + interpolatedPrice2;
+    // console.log("wPriceA", wPriceA, "wPriceB", wPriceB, "strikeWeight", strikeWeight);
+
+    // todo: this shouldn't be mid, but weighted to time
+    // console.log(interpolatedPrice3, interpolatedPrice4);
+    const midStrike = (interpolatedPrice3 + interpolatedPrice4) / 2;
+    // console.log("midStrike", midStrike);
+
+    const finalPrice = wPriceA + midStrike;
+
+    // const finalPrice = wPriceA * (1 - strikeWeight) + wPriceB * strikeWeight;
 
     return finalPrice;
   }
