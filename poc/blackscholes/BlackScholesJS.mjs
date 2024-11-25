@@ -60,6 +60,26 @@ export class BlackScholesJS {
     return finalPrice * spotScale;
   };
 
+  // vol and rate is in decimal format, e.g. 0.1 for 10%
+  getCallOptionPrice3(spot, strike, timeToExpirySec, vol, rate) {
+    // step 1: set the overall scale first
+    const spotScale = spot / SPOT_FIXED;
+
+    // step 2: calculate future and spot-strike ratio
+    const future = this.getFuturePrice(spot, rate, timeToExpirySec);
+    const strikeScaled = (strike / future) * SPOT_FIXED;
+
+    // step 3: set the expiration based on volatility
+    const volRatio = vol / VOL_FIXED;
+    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+
+    // step 4: interpolate price
+    const finalPrice = this.interpolatePriceQuadratic2(strikeScaled, timeToExpirySecScaled);
+
+    // finally, scale the price back to the original spot
+    return finalPrice * spotScale;
+  };
+
   getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
@@ -133,6 +153,36 @@ export class BlackScholesJS {
   }
 
   interpolatePriceQuadratic1(strikeScaled, timeToExpirySecScaled) {
+    const strikeIndex = this.getIndexFromStrike(strikeScaled);
+    const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
+    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
+
+    // step 5: interpolate the option price using linear interpolation
+    const strikeFromIndex = this.getStrikeFromIndex(strikeIndex);
+    const strikeWeight = (strikeScaled - strikeFromIndex) / STRIKE_STEP;
+
+    const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
+    // console.log("spotStrikeWeight", spotStrikeWeight, "deltaTime", deltaTime);
+    // console.log("spotStrikeRatioFromIndex", spotStrikeRatioFromIndex, "timeFromIndex", this.getTimeFromIndex(timeToExpiryIndex));
+
+    const interpolatedPriceA = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
+    const interpolatedPriceB = cell.a2 * (deltaTime ** 2) + cell.b2 * deltaTime;
+
+    console.log("cell", cell);
+    // console.log("optionPriceAA", cell.optionPriceAA);
+    console.log("interpolatedPriceA", interpolatedPriceA);
+    console.log("interpolatedPriceB", interpolatedPriceB);
+
+    const wPriceA = cell.optionPriceAA + interpolatedPriceA;
+    const wPriceB = cell.optionPriceBA + interpolatedPriceB;
+    console.log("wPriceA", wPriceA, "wPriceB", wPriceB, "strikeWeight", strikeWeight);
+
+    const finalPrice = wPriceA * (1 - strikeWeight) + wPriceB * strikeWeight;
+
+    return finalPrice;
+  }
+
+  interpolatePriceQuadratic2(strikeScaled, timeToExpirySecScaled) {
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);

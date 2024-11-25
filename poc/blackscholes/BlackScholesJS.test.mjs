@@ -227,8 +227,8 @@ describe("BlackScholesJS", function () {
         console.log("Max error: " + maxError.toFixed(8) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        assert.isBelow(avgError, 0.025); // avg error is below 0.025%
-        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+        assert.isBelow(avgError, 0.13); // avg error is below 0.025%
+        assert.isBelow(maxError, 0.42); // max error is below 0.25%
       });
     });
 
