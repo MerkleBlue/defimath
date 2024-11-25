@@ -34,7 +34,7 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePriceLinear(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
@@ -42,23 +42,23 @@ export class BlackScholesJS {
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice2(spot, strike, timeToExpirySec, vol, rate) {
-      // step 1: set the overall scale first
-      const spotScale = spot / SPOT_FIXED;
-  
-      // step 2: calculate future and spot-strike ratio
-      const future = this.getFuturePrice(spot, rate, timeToExpirySec);
-      const strikeScaled = (strike / future) * SPOT_FIXED;
-  
-      // step 3: set the expiration based on volatility
-      const volRatio = vol / VOL_FIXED;
-      const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
-  
-      // step 4: interpolate price
-      const finalPrice = this.interpolatePrice2(strikeScaled, timeToExpirySecScaled);
-  
-      // finally, scale the price back to the original spot
-      return finalPrice * spotScale;
-    };
+    // step 1: set the overall scale first
+    const spotScale = spot / SPOT_FIXED;
+
+    // step 2: calculate future and spot-strike ratio
+    const future = this.getFuturePrice(spot, rate, timeToExpirySec);
+    const strikeScaled = (strike / future) * SPOT_FIXED;
+
+    // step 3: set the expiration based on volatility
+    const volRatio = vol / VOL_FIXED;
+    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+
+    // step 4: interpolate price
+    const finalPrice = this.interpolatePriceQuadratic1(strikeScaled, timeToExpirySecScaled);
+
+    // finally, scale the price back to the original spot
+    return finalPrice * spotScale;
+  };
 
   getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 1: set the overall scale first
@@ -73,7 +73,7 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePriceLinear(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     const callPrice = finalPrice * spotScale;
@@ -108,7 +108,7 @@ export class BlackScholesJS {
     return discountedStrikePrice;
   };
 
-  interpolatePrice(strikeScaled, timeToExpirySecScaled) {
+  interpolatePriceLinear(strikeScaled, timeToExpirySecScaled) {
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
@@ -132,7 +132,7 @@ export class BlackScholesJS {
     return finalPrice;
   }
 
-  interpolatePrice2(strikeScaled, timeToExpirySecScaled) {
+  interpolatePriceQuadratic1(strikeScaled, timeToExpirySecScaled) {
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
