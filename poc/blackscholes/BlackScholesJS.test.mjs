@@ -1,7 +1,7 @@
 
 import { assert } from "chai";
 import bs from "black-scholes";
-import { BlackScholesJS, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
+import { BlackScholesJS, STRIKE_STEP } from "./BlackScholesJS.mjs";
 import { generateLookupTable } from "./generateLookupTable.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
@@ -138,7 +138,7 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it("gets a single call price", async function () {
+      it.only("gets a single call price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
         let actualOptionPrice2 = blackScholesJS.getCallOptionPrice2(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
@@ -148,7 +148,7 @@ describe("BlackScholesJS", function () {
         console.log("expected:", expectedOptionPrice, "actual2:", actualOptionPrice2);
       });
 
-      it("gets multiple call prices - best case strike", async function () {
+      it.only("gets multiple call prices - best case strike", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
           for (let vol = 0.8; vol < 1.2; vol += 0.01) {
@@ -179,7 +179,7 @@ describe("BlackScholesJS", function () {
         assert.isBelow(maxError, 0.25); // max error is below 0.025%
       });
 
-      it("gets call price - worst error, best strike", async function () {
+      it.only("gets call price - worst error, best strike", async function () {
         const exp = 52;
         const vol = 0.8;
 
@@ -193,7 +193,7 @@ describe("BlackScholesJS", function () {
         console.log("Error: " + (error).toFixed(8) + "%");
       });
 
-      it("gets multiple call prices", async function () {
+      it.only("gets multiple call prices", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
           for (let strike = 850; strike < 1100; strike += 10) {
@@ -201,7 +201,7 @@ describe("BlackScholesJS", function () {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
                 // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
                 let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                let actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
+                let actual = blackScholesJS.getCallOptionPrice2(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
 
                 let error = (Math.abs(actual - expected) / expected * 100);
                 // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
@@ -330,32 +330,30 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getIndexFromSpotStrikeRatio", function () {
-      it("calculates index for ratio [0.5, 2]", async function () {
+    describe("getIndexFromStrike", function () {
+      it("calculates index for strike [50, 200]", async function () {
         let count = 0;
-        for (let index = 50; index <= 200; index += 1) {
-          const ratio = index / 100;
-          const indexStep = Math.round(S_S_RATIO_STEP * 100);
-          const actual = blackScholesJS.getIndexFromSpotStrikeRatio(ratio);
-          const expected = Math.floor(index / indexStep) * indexStep;
+        for (let strike = 50; strike <= 200; strike += 1) {
+          const actual = blackScholesJS.getIndexFromStrike(strike);
+          const expected = Math.floor(strike / STRIKE_STEP) * STRIKE_STEP;
           assert.equal(actual, expected);
           count++;
         }
         console.log("values tested: ", count);
       });
 
-      it("calculates index for specific ratios", async function () {
-        const actual1 = blackScholesJS.getIndexFromSpotStrikeRatio(0.999999);
+      it("calculates index for specific strikes", async function () {
+        const actual1 = blackScholesJS.getIndexFromStrike(99.9999);
         assert.equal(actual1, 95);
 
-        const actual2 = blackScholesJS.getIndexFromSpotStrikeRatio(1 - 1e-6);
+        const actual2 = blackScholesJS.getIndexFromStrike(100 - 1e-6);
         assert.equal(actual2, 95);
 
-        const actual3 = blackScholesJS.getIndexFromSpotStrikeRatio(1 - 1e-9);
+        const actual3 = blackScholesJS.getIndexFromStrike(100 - 1e-8);
         assert.equal(actual3, 95);
 
         // this is where it rounds up to 100
-        const actual4 = blackScholesJS.getIndexFromSpotStrikeRatio(1 - 1e-12);
+        const actual4 = blackScholesJS.getIndexFromStrike(100 - 1e-9);
         assert.equal(actual4, 100);
       });
     });

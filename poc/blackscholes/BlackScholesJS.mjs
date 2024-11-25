@@ -3,14 +3,14 @@ export const SPOT_FIXED = 100;
 export const VOL_FIXED = 1;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
-// ratio between spot and strike (spot: 100$, strike: $50 - $200)
-export const S_S_RATIO_MIN = 0.5;
-export const S_S_RATIO_MAX = 2;
-export const S_S_RATIO_STEP = 0.05;
+// strike price
+export const STRIKE_MIN = 50;
+export const STRIKE_MAX = 200;
+export const STRIKE_STEP = 5;
 
-export const EXPIRATION_MIN = 10; // * SECONDS_IN_DAY;
-export const EXPIRATION_MAX = 1000; //  * SECONDS_IN_DAY;
-export const EXPIRATION_STEP = 1.25; //  * SECONDS_IN_DAY;
+// export const EXPIRATION_MIN = 10; // * SECONDS_IN_DAY;
+// export const EXPIRATION_MAX = 1000; //  * SECONDS_IN_DAY;
+// export const EXPIRATION_STEP = 1.25; //  * SECONDS_IN_DAY;
 
 
 export class BlackScholesJS {
@@ -26,14 +26,15 @@ export class BlackScholesJS {
 
     // step 2: calculate future and spot-strike ratio
     const future = this.getFuturePrice(spot, rate, timeToExpirySec);
-    const spotStrikeRatio = future / strike;
+    const strikeScaled = (strike / future) * SPOT_FIXED;
+    console.log("future", future, "strike", strike, "strikeScaled", strikeScaled);
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
@@ -46,14 +47,14 @@ export class BlackScholesJS {
   
       // step 2: calculate future and spot-strike ratio
       const future = this.getFuturePrice(spot, rate, timeToExpirySec);
-      const spotStrikeRatio = future / strike;
+      const strikeScaled = (strike / future) * SPOT_FIXED;
   
       // step 3: set the expiration based on volatility
       const volRatio = vol / VOL_FIXED;
       const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
   
       // step 4: interpolate price
-      const finalPrice = this.interpolatePrice2(spotStrikeRatio, timeToExpirySecScaled);
+      const finalPrice = this.interpolatePrice2(strikeScaled, timeToExpirySecScaled);
   
       // finally, scale the price back to the original spot
       return finalPrice * spotScale;
@@ -65,14 +66,14 @@ export class BlackScholesJS {
 
     // step 2: calculate future and spot-strike ratio
     const discountedStrike = this.getDiscountedStrikePrice(strike, rate, timeToExpirySec);
-    const spotStrikeRatio = spot / discountedStrike;
+    const strikeScaled = (discountedStrike / spot) * SPOT_FIXED;
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(spotStrikeRatio, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     const callPrice = finalPrice * spotScale;
@@ -107,14 +108,17 @@ export class BlackScholesJS {
     return discountedStrikePrice;
   };
 
-  interpolatePrice(spotStrikeRatio, timeToExpirySecScaled) {
-    const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
+  interpolatePrice(strikeScaled, timeToExpirySecScaled) {
+    const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-    const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
+    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
+
+    // console.log("strikeScaled", strikeScaled, "strikeIndex", strikeIndex);
+    // console.log(cell);
 
     // step 5: interpolate the option price using linear interpolation
-    const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
-    const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
+    const strikeFromIndex = this.getStrikeFromIndex(strikeIndex);
+    const strikeWeight = (strikeScaled - strikeFromIndex) / STRIKE_STEP;
 
     const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
@@ -123,28 +127,19 @@ export class BlackScholesJS {
     const wPriceA = cell.optionPriceAA * (1 - timeToExpiryWeight) + cell.optionPriceAB * timeToExpiryWeight;
     const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
 
-    const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
+    const finalPrice = wPriceA * (1 - strikeWeight) + wPriceB * strikeWeight;
 
     return finalPrice;
   }
 
-  interpolatePrice2(spotStrikeRatio, timeToExpirySecScaled) {
-    const spotStrikeRatioIndex = this.getIndexFromSpotStrikeRatio(spotStrikeRatio);
+  interpolatePrice2(strikeScaled, timeToExpirySecScaled) {
+    const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-    const cell = this.lookupTable.get(spotStrikeRatioIndex * 1000 + timeToExpiryIndex);
+    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
 
     // step 5: interpolate the option price using linear interpolation
-    const spotStrikeRatioFromIndex = this.getSpotStrikeRatioFromIndex(spotStrikeRatioIndex);
-    const spotStrikeWeight = (spotStrikeRatio - spotStrikeRatioFromIndex) / S_S_RATIO_STEP;
-
-    // const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
-    // const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
-    // const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
-
-    // const wPriceA = cell.optionPriceAA * (1 - timeToExpiryWeight) + cell.optionPriceAB * timeToExpiryWeight;
-    // const wPriceB = cell.optionPriceBA * (1 - timeToExpiryWeight) + cell.optionPriceBB * timeToExpiryWeight;
-
-    // const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
+    const strikeFromIndex = this.getStrikeFromIndex(strikeIndex);
+    const strikeWeight = (strikeScaled - strikeFromIndex) / STRIKE_STEP;
 
     const deltaTime = (timeToExpirySecScaled - this.getTimeFromIndex(timeToExpiryIndex)) / (365 * 24 * 60 * 60);
     // console.log("spotStrikeWeight", spotStrikeWeight, "deltaTime", deltaTime);
@@ -153,15 +148,16 @@ export class BlackScholesJS {
     const interpolatedPriceA = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
     const interpolatedPriceB = cell.a2 * (deltaTime ** 2) + cell.b2 * deltaTime;
 
-    // console.log("cell", cell);
+    console.log("cell", cell);
     // console.log("optionPriceAA", cell.optionPriceAA);
-    // console.log("interpolatedPriceA", interpolatedPriceA);
+    console.log("interpolatedPriceA", interpolatedPriceA);
+    console.log("interpolatedPriceB", interpolatedPriceB);
 
     const wPriceA = cell.optionPriceAA + interpolatedPriceA;
     const wPriceB = cell.optionPriceBA + interpolatedPriceB;
-    // console.log("wPriceA", wPriceA, "wPriceB", wPriceB);
+    console.log("wPriceA", wPriceA, "wPriceB", wPriceB, "strikeWeight", strikeWeight);
 
-    const finalPrice = wPriceA * (1 - spotStrikeWeight) + wPriceB * spotStrikeWeight;
+    const finalPrice = wPriceA * (1 - strikeWeight) + wPriceB * strikeWeight;
 
     return finalPrice;
   }
@@ -188,21 +184,20 @@ export class BlackScholesJS {
     return 2 ** major + 2 ** (major - 3) * minor;
   }
 
-  getIndexFromSpotStrikeRatio(ratio) {
-    const multiplier = ratio / S_S_RATIO_STEP;
-    let roundedRatio = Math.floor(multiplier) * S_S_RATIO_STEP;
-    // console.log("ratio", ratio, roundedRatio, Math.floor(ratio / S_S_RATIO_STEP), ratio / S_S_RATIO_STEP);
+  getIndexFromStrike(strike) {
+    const multiplier = strike / STRIKE_STEP;
+    let roundedRatio = Math.floor(multiplier) * STRIKE_STEP;
 
     // NOTE: floating point precision issue, so we need to check if very close to the upper edge
-    if (Math.floor(multiplier) !== Math.floor(multiplier + 0.000001)) {
-      roundedRatio = Math.floor(multiplier + 0.000000001) * S_S_RATIO_STEP;
+    if (Math.floor(multiplier) !== Math.floor(multiplier + 0.000000001)) {
+      roundedRatio = Math.floor(multiplier + 0.000000001) * STRIKE_STEP;
     }
 
-    return Math.round(roundedRatio * 100);
+    return Math.round(roundedRatio);
   }
 
-  getSpotStrikeRatioFromIndex(index) {
-    return index / 100;
+  getStrikeFromIndex(index) {
+    return index;
   }
 
   findMajor(value) {

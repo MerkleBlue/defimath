@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert } from "chai";
 import hre from "hardhat";
-import { BlackScholesJS, S_S_RATIO_STEP } from "../poc/blackscholes/BlackScholesJS.mjs";
+import { BlackScholesJS, STRIKE_STEP } from "../poc/blackscholes/BlackScholesJS.mjs";
 import { generateLookupTable } from "../poc/blackscholes/generateLookupTable.mjs";
 import bs from "black-scholes";
 
@@ -367,7 +367,7 @@ describe("BlackScholesPOC (contract)", function () {
         let count = 0;
         for (let index = 50; index <= 200; index += 1) {
           const ratio = index / 100;
-          const indexStep = Math.round(S_S_RATIO_STEP * 100);
+          const indexStep = Math.round(STRIKE_STEP * 100);
           const actual = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(ratio)));
           const expected = Math.floor(index / indexStep) * indexStep;
           assert.equal(actual, expected);

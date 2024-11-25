@@ -1,6 +1,6 @@
 import bs from "black-scholes";
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
-import { S_S_RATIO_MAX, S_S_RATIO_MIN, S_S_RATIO_STEP } from "./BlackScholesJS.mjs";
+import { STRIKE_MAX, STRIKE_MIN, STRIKE_STEP } from "./BlackScholesJS.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
 const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
@@ -23,7 +23,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     fileHandle = await fs.open(filename, "w");                         //only for recording data
   }
 
-  const spotStrikeRatios = generatesStrikeSpotRatioPoints(S_S_RATIO_MIN, S_S_RATIO_MAX, S_S_RATIO_STEP);
+  const strikes = generateStrikePoints(STRIKE_MIN, STRIKE_MAX, STRIKE_STEP);
   const expirationSecs = generateTimePoints();
 
   const lookupTable = new Map();
@@ -32,14 +32,14 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // console.log("spotStrikeRatios", spotStrikeRatios);
   // console.log("expirationSecs", expirationSecs);
 
-  for (let i = 0; i < spotStrikeRatios.length - 1; i++) {
+  for (let i = 0; i < strikes.length - 1; i++) {
     const row = [];
     for (let j = 0; j < expirationSecs.length - 1; j++) {
       // for each element calculate Black Scholes
       const spot = 100;
       const vol = 1;  // 100%
-      const strikeA = 100 / spotStrikeRatios[i];
-      const strikeB = 100 / spotStrikeRatios[i + 1];
+      const strikeA = strikes[i];
+      const strikeB = strikes[i + 1];
       const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
       const expirationYearsB = expirationSecs[j + 1] / (365 * 24 * 60 * 60);
 
@@ -48,7 +48,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const optionPriceBA = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsA, vol, 0, "call"));
       const optionPriceBB = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsB, vol, 0, "call"));
 
-      const ssratioati = spotStrikeRatios[i];
+      const ssratioati = strikes[i];
       const exdays = expirationYearsA * 365;
       
       let x1 = new Array(10), y1 = new Array(10), y2 = new Array(10);
@@ -103,7 +103,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       cvsCounter ++;
 
       // pack for JS lookup table
-      const index = blackScholesJS.getIndexFromSpotStrikeRatio(spotStrikeRatios[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
+      const index = blackScholesJS.getIndexFromStrike(strikes[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
       lookupTable.set(index, element);
 
       // pack for SOL lookup table
@@ -126,7 +126,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   return { lookupTable, rows };
 }
 
-function generatesStrikeSpotRatioPoints(startPoint, endPoint, stepSize) {
+function generateStrikePoints(startPoint, endPoint, stepSize) {
   const points = [];
   const stepCount = Math.round((endPoint - startPoint) / stepSize);
   for (let i = 0; i <= stepCount; i++) {
