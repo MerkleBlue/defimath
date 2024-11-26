@@ -139,15 +139,10 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
       it.only("gets a single call price", async function () {
-        let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
-        let actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
-        let actualOptionPrice2 = blackScholesJS.getCallOptionPrice2(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
-        let actualOptionPrice3 = blackScholesJS.getCallOptionPrice3(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
-
+        const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
+        const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
-        console.log("expected:", expectedOptionPrice, "actual2:", actualOptionPrice2);
-        console.log("expected:", expectedOptionPrice, "actual3:", actualOptionPrice3);
       });
 
       it("gets multiple call prices - best case strike", async function () {
@@ -155,7 +150,7 @@ describe("BlackScholesJS", function () {
         for(let exp = 50; exp < 80; exp += 1) {
           for (let vol = 0.8; vol < 1.2; vol += 0.01) {
             let expected = bs.blackScholes(1000, 1000, exp / 365, vol, 0, "call");
-            let actual = blackScholesJS.getCallOptionPrice3(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
+            let actual = blackScholesJS.getCallOptionPrice(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
 
             let error = (Math.abs(actual - expected) / expected * 100);
             totalError += error;
@@ -186,7 +181,7 @@ describe("BlackScholesJS", function () {
         const vol = 0.8;
 
         let expected = bs.blackScholes(1000, 1000, exp / 365, vol, 0, "call");
-        let actual = blackScholesJS.getCallOptionPrice2(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
+        let actual = blackScholesJS.getCallOptionPrice(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
 
         let error = (Math.abs(actual - expected) / expected * 100);
 
@@ -203,7 +198,7 @@ describe("BlackScholesJS", function () {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
                 // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
                 let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                let actual = blackScholesJS.getCallOptionPrice3(1000, strike, exp * SECONDS_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+                let actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
 
                 let error = (Math.abs(actual - expected) / expected * 100);
                 // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
@@ -225,8 +220,7 @@ describe("BlackScholesJS", function () {
 
         console.log("Total tests: " + count);
         console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-        console.log("Avg error: " + (avgError).toFixed(8) + "%");
-        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%");
         console.log("Max error params: ", maxErrorParams);
 
         assert.isBelow(avgError, 0.00068); // avg error is below 0.025%
