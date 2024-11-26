@@ -74,7 +74,6 @@ describe("BlackScholesJS", function () {
             const expected = getFuturePrice(100, secs, rate);
             const actual = blackScholesJS.getFuturePrice(100, secs, rate);
             const error = (Math.abs(actual - expected) / expected * 100);
-            // console.log("expected:", expected.toFixed(6), "actual:", actual.toFixed(6), "error:", error.toFixed(4), "%");
             totalError += error;
             count++;
             if (maxError < error) {
@@ -85,8 +84,11 @@ describe("BlackScholesJS", function () {
             }
           }
         }
-        const { rate, secs, actual, expected } = maxErrorParams;
-        console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        if (maxErrorParams) {
+          const { rate, secs, actual, expected } = maxErrorParams;
+          console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        }
+
         assert.isBelow(maxError, 0.0001); // is below 0.0001%
       });
 
@@ -97,7 +99,6 @@ describe("BlackScholesJS", function () {
             const expected = getFuturePrice(100, secs, rate);
             const actual = blackScholesJS.getFuturePrice(100, secs, rate);
             const error = (Math.abs(actual - expected) / expected * 100);
-            // console.log("expected:", expected.toFixed(6), "actual:", actual.toFixed(6), "error:", error.toFixed(4), "%");
             totalError += error;
             count++;
             if (maxError < error) {
@@ -108,8 +109,10 @@ describe("BlackScholesJS", function () {
             }
           }
         }
-        const { rate, secs, actual, expected } = maxErrorParams;
-        //console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        if (maxErrorParams) {
+          const { rate, secs, actual, expected } = maxErrorParams;
+          console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        }
         assert.isBelow(maxError, 0.0001); // is below 0.0001%
       });
 
@@ -120,7 +123,6 @@ describe("BlackScholesJS", function () {
             const expected = getFuturePrice(100, days * SECONDS_IN_DAY, rate);
             const actual = blackScholesJS.getFuturePrice(100, days * SECONDS_IN_DAY, rate);            
             const error = (Math.abs(actual - expected) / expected * 100);
-            // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
             totalError += error;
             count++;
             if (maxError < error) {
@@ -131,8 +133,10 @@ describe("BlackScholesJS", function () {
             }
           }
         }
-        const { rate, days, actual, expected } = maxErrorParams;
-        //console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", days.toFixed(0) + "d", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        if (maxErrorParams) {
+          const { rate, days, actual, expected } = maxErrorParams;
+          console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", days.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+        }
         assert.isBelow(maxError, 0.0001); // is below 0.0001%
       });
     });
@@ -196,17 +200,14 @@ describe("BlackScholesJS", function () {
           for (let strike = 850; strike < 1100; strike += 10) {
             for (let vol = 0.8; vol < 1.2; vol += 0.08) {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
-                // console.log("exp:", exp, "strike:", strike, "vol:", vol, "rate:", rate);
-                let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                let actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+                const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
+                const actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
 
-                let error = (Math.abs(actual - expected) / expected * 100);
-                // console.log("expected:", expected.toFixed(4), "actual:", actual.toFixed(4), "error:", error.toFixed(4), "%");
+                const error = (Math.abs(actual - expected) / expected * 100);
                 totalError += error;
                 count++;
                 if (maxError < error && expected > 0.01) {
                   maxError = error;
-                  // console.log(exp.toFixed(6), strike.toFixed(2), vol.toFixed(2), maxError.toFixed(2) + "%", "act: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
                   maxErrorParams = {
                     exp, strike, vol, rate, actual, expected
                   }
@@ -226,6 +227,8 @@ describe("BlackScholesJS", function () {
         assert.isBelow(avgError, 0.00068); // avg error is below 0.00068%
         assert.isBelow(maxError, 0.0053); // max error is below 0.0053%
       });
+
+
     });
 
     describe("getPutOptionPrice", function () {
@@ -242,10 +245,10 @@ describe("BlackScholesJS", function () {
           for (let strike = 850; strike < 1100; strike += 10) {
             for (let vol = 0.8; vol < 1.2; vol += 0.08) {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
-                let expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "put");
-                let actual = blackScholesJS.getPutOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
+                const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "put");
+                const actual = blackScholesJS.getPutOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
 
-                let error = (Math.abs(actual - expected) / expected * 100);
+                const error = (Math.abs(actual - expected) / expected * 100);
                 totalError += error;
                 count++;
 
