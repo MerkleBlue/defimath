@@ -138,7 +138,7 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it.only("gets a single call price", async function () {
+      it("gets a single call price", async function () {
         const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
 
@@ -190,7 +190,7 @@ describe("BlackScholesJS", function () {
         console.log("Error: " + (error).toFixed(8) + "%");
       });
 
-      it.only("gets multiple call prices", async function () {
+      it("gets multiple call prices", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
           for (let strike = 850; strike < 1100; strike += 10) {
@@ -223,8 +223,8 @@ describe("BlackScholesJS", function () {
         console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        assert.isBelow(avgError, 0.00068); // avg error is below 0.025%
-        assert.isBelow(maxError, 0.0053); // max error is below 0.25%
+        assert.isBelow(avgError, 0.00068); // avg error is below 0.00068%
+        assert.isBelow(maxError, 0.0053); // max error is below 0.0053%
       });
     });
 
@@ -264,12 +264,11 @@ describe("BlackScholesJS", function () {
 
         console.log("Total tests: " + count);
         console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-        console.log("Avg error: " + (avgError).toFixed(8) + "%");
-        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%");
         console.log("Max error params: ", maxErrorParams);
 
-        assert.isBelow(avgError, 0.027); // avg error is below 0.027%
-        assert.isBelow(maxError, 0.25); // max error is below 0.025%
+        assert.isBelow(avgError, 0.0011); // avg error is below 0.0011%
+        assert.isBelow(maxError, 0.02); // max error is below 0.02%
       });
     });
 
