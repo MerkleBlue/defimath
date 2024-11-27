@@ -16,10 +16,49 @@ const SECONDS_IN_DAY = 24 * 60 * 60;
 describe("BlackScholesJS", function () {
   let blackScholesJS;
 
+  function findMinAndMax(map) {
+    // Initialize min and max objects with Infinity and -Infinity respectively
+    const result = {
+        min: { a1: Infinity, b1: Infinity, a3: Infinity, b3: Infinity, a4: Infinity, b4: Infinity },
+        max: { a1: -Infinity, b1: -Infinity, a3: -Infinity, b3: -Infinity, a4: -Infinity, b4: -Infinity },
+        absMin: { a1: Infinity, b1: Infinity, a3: Infinity, b3: Infinity, a4: Infinity, b4: Infinity }
+
+    };
+
+    // Iterate over the map
+    map.forEach(obj => {
+        // Update min and max for each key
+        for (const key of Object.keys(result.min)) {
+            if (obj[key] !== undefined) {
+                result.min[key] = Math.min(result.min[key], obj[key]);
+                result.max[key] = Math.max(result.max[key], obj[key]);
+                if (Math.abs(obj[key]) > 0) {
+                  result.absMin[key] = Math.min(result.absMin[key], Math.abs(obj[key]));
+                }
+            }
+        }
+    });
+
+    return result;
+}
+
   // before all tests, called once
   before(async () => {
-    const { lookupTable } = await generateLookupTable(new BlackScholesJS(), true);
+    const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS(), true);
     blackScholesJS = new BlackScholesJS(lookupTable);
+
+    // profile factors
+    let count = 0;
+    for (let [key, value] of lookupTable) {
+      //console.log(key + " is ", value);
+      count++;
+    }
+    console.log("lookupTable size: ", count);
+
+    const result = findMinAndMax(lookupTable);
+    console.log("min: ", result.min);
+    console.log("max: ", result.max);
+    console.log("absMin: ", result.absMin);
   });
 
   describe("functionality", async function () {
