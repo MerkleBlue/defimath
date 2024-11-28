@@ -439,12 +439,6 @@ contract BlackScholesPOC {
             } else {
                 factor = -int256(number - 2147483648); // 2 ** 31
             }
-
-            // uint256 optionPriceAA = cell / TWO_POW_192;
-            // uint256 a1 = uint32(cell / TWO_POW_160);
-            // console.log("optionPriceAA: %d", optionPriceAA); // there
-            // console.log("a1: %d", a1);
-
         }
     }
 
