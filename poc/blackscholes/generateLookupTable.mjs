@@ -109,6 +109,18 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         //     Avg error: 0.00011560%, Max error: 0.00065469%
         // with 100 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
         //     Avg error: 0.00011520%, Max error: 0.00063081%%
+        let csvRange = [{
+          optionPriceAA: optionPriceAA,
+          a1 :a1,
+          b1 : b1,
+          a3 : a3, 
+          b3 : b3,
+          a4 : a4,
+          b4 : b4
+        }];
+  
+        let csv = generateCsv(csvConfig)(csvRange);
+        await fs.appendFile(filename, csv); 
       }
 
       const element = {
