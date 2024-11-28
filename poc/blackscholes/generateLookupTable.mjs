@@ -52,7 +52,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const exdays = expirationYearsA * 365;
       
       let x12 = new Array(10), x34 = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10);
-      let a1 = 0, b1 = 0, a2 = 0, b2 = 0, a3 = 0, b3 = 0, a4 = 0, b4 = 0;
+      let a1 = 0, b1 = 0, a3 = 0, b3 = 0, a4 = 0, b4 = 0;
     
       if (writeToFile) {
         const fitPoints = 50;
@@ -76,9 +76,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         a1 = result.parameterValues[0];
         b1 = result.parameterValues[1];
 
-        result = levenbergMarquardt({ x: x12, y: y2 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        a2 = result.parameterValues[0];
-        b2 = result.parameterValues[1];
+        // result = levenbergMarquardt({ x: x12, y: y2 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
+        // a2 = result.parameterValues[0];
+        // b2 = result.parameterValues[1];
 
         // strike points
         const strikeChunk  = (strikeB - strikeA) / fitPoints;
@@ -93,8 +93,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           y3[k] = PriceTA - optionPriceAA;
           y4[k] = PriceTB - optionPriceAB;
         }
-
-        // console.log(x34);
 
         result = levenbergMarquardt({ x: x34, y: y3 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
         a3 = result.parameterValues[0];
@@ -122,8 +120,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         exdays,
         a1,
         b1,
-        a2,
-        b2,
+        // a2,
+        // b2,
         a3,
         b3,
         a4,
@@ -137,11 +135,17 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
       // pack for SOL lookup table
       const optionPriceAABigInt = BigInt(parseInt(optionPriceAA * 1e17));
-      const optionPriceABBigInt = BigInt(parseInt(optionPriceAB * 1e17));
-      const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
-      const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
-      const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + optionPriceABBigInt * BigInt(2 ** 128) + optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
-      row.push( { index, element: elementForSOL, a1, b1, a2, b2, optionPriceAA, optionPriceAB } );
+      const a1BigInt = intToUint32(a1);
+      const b1BigInt = intToUint32(b1);
+      const a3BigInt = intToUint32(a3);
+      const b3BigInt = intToUint32(b3);
+      const a4BigInt = intToUint32(a4);
+      const b4BigInt = intToUint32(b4);
+      // const optionPriceABBigInt = BigInt(parseInt(optionPriceAB * 1e17));
+      // const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
+      // const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
+      const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + a1BigInt * BigInt(2 ** 160) + b1BigInt * BigInt(2 ** 128) + a3BigInt * BigInt(2 ** 96) + b3BigInt * BigInt(2 ** 64) + a4BigInt * BigInt(2 ** 32) + b4BigInt; // * BigInt(2 ** 64) optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
+      row.push( { index, element: elementForSOL, a1, b1, a3, b3, a4, b4, optionPriceAA, optionPriceAB } );
     }
     rows.push(row);
   }
@@ -153,6 +157,19 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // console.log(lookupTable);
 
   return { lookupTable, rows };
+}
+
+function intToUint32(factor) {
+  if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds");
+
+  // positive
+  if (factor > 0) {
+    return BigInt(parseInt(factor * 1e6));
+  }
+
+  // negative
+  return BigInt(parseInt((Math.abs(factor) + 2147.483648) * 1e6)); // half the 2 ** 32
+  
 }
 
 function generateStrikePoints(startPoint, endPoint, stepSize) {

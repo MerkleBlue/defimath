@@ -22,7 +22,7 @@ describe("BlackScholesPOC (contract)", function () {
     const blackScholesPOC = await BlackScholesPOC.deploy();
 
     // populate lookup table
-    const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS());
+    const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS(), true);
     mapSize = lookupTable.size;
     // map indexes from rows to array of indexes
     let totalGas = 0;
@@ -46,7 +46,7 @@ describe("BlackScholesPOC (contract)", function () {
   });
 
   describe("performance", function () {
-    it("getCallOptionPrice gas", async function () {
+    it.only("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
@@ -213,7 +213,7 @@ describe("BlackScholesPOC (contract)", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it("gets a single call price", async function () {
+      it.only("gets a single call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
@@ -221,7 +221,7 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
 
-      it("gets multiple call prices", async function () {
+      it.only("gets multiple call prices", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
@@ -361,15 +361,13 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe("getIndexFromSpotStrikeRatio", function () {
-      it("calculates index for ratio [0.5, 2]", async function () {
+    describe.only("getIndexFromStrike", function () {
+      it("calculates index for strike [50, 200]", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let count = 0;
-        for (let index = 50; index <= 200; index += 1) {
-          const ratio = index / 100;
-          const indexStep = Math.round(STRIKE_STEP * 100);
-          const actual = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(ratio)));
-          const expected = Math.floor(index / indexStep) * indexStep;
+        for (let strike = 50; strike <= 200; strike += 1) {
+          const expected = Math.floor(strike / STRIKE_STEP) * STRIKE_STEP;
+          const actual = parseInt(await blackScholesPOC.getIndexFromStrike(tokens(strike)));
           assert.equal(actual, expected);
           count++;
         }
@@ -378,16 +376,16 @@ describe("BlackScholesPOC (contract)", function () {
 
       it("calculates index for specific ratios", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
-        const actual1 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(0.999999)));
+        const actual1 = parseInt(await blackScholesPOC.getIndexFromStrike(tokens(99.999999)));
         assert.equal(actual1, 95);
 
-        const actual2 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(1 - 1e-6)));
+        const actual2 = parseInt(await blackScholesPOC.getIndexFromStrike(tokens(100 - 1e-6)));
         assert.equal(actual2, 95);
 
-        const actual3 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(1 - 1e-9)));
+        const actual3 = parseInt(await blackScholesPOC.getIndexFromStrike(tokens(100 - 1e-9)));
         assert.equal(actual3, 95);
 
-        const actual4 = parseInt(await blackScholesPOC.getIndexFromSpotStrikeRatio(tokens(1 - 1e-12)));
+        const actual4 = parseInt(await blackScholesPOC.getIndexFromStrike(tokens(100 - 1e-12)));
         assert.equal(actual4, 95);
       });
     });

@@ -19,7 +19,7 @@ export class BlackScholesJS {
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
 
-    // step 2: calculate future and spot-strike ratio
+    // step 2: calculate strike scaled
     const future = this.getFuturePrice(spot, rate, timeToExpirySec);
     const strikeScaled = (strike / future) * SPOT_FIXED;
 
@@ -87,24 +87,40 @@ export class BlackScholesJS {
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
+    // console.log("strikeIndex:", strikeIndex);
+    // console.log("timeToExpiryIndex:", timeToExpiryIndex);
+    // console.log("optionPriceAA:", cell.optionPriceAA);
 
     // step 2) calculate the time delta and weight
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
     const deltaTime = (timeToExpirySecScaled - timeToExpiryFromIndex) / (365 * 24 * 60 * 60);
     const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
+    // console.log("timeToExpiryFromIndex:", timeToExpiryFromIndex);
+    // console.log("deltaTime:", deltaTime);
+    // console.log("expirationStep:", expirationStep);
+    // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
     // step 3) calculate the strike delta
     const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
+    // console.log("deltaStrike:", deltaStrike);
 
     // step 4) interpolate the price using quadratic interpolation
+    // console.log("a1", cell.a1);
+    // console.log("b1", cell.b1);
+    // console.log("a3", cell.a3);
+    // console.log("b3", cell.b3);
     const interpolatedPrice1 = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
     const interpolatedPrice3 = cell.a3 * (deltaStrike ** 2) + cell.b3 * deltaStrike;
     const interpolatedPrice4 = cell.a4 * (deltaStrike ** 2) + cell.b4 * deltaStrike;
+    // console.log("interpolatedPrice1", interpolatedPrice1);
+    // console.log("interpolatedPrice3", interpolatedPrice3);
+    // console.log("interpolatedPrice4", interpolatedPrice4);
 
     // step 5) calculate the final price
     const interpolatedPriceStrike = interpolatedPrice3 + timeToExpiryWeight * (interpolatedPrice4 - interpolatedPrice3);
     const finalPrice = cell.optionPriceAA + interpolatedPrice1 + interpolatedPriceStrike;
+    // console.log("interpolatedPriceStrike", interpolatedPriceStrike);
 
     return finalPrice;
   }
