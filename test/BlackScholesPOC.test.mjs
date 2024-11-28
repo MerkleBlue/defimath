@@ -249,8 +249,7 @@ describe("BlackScholesPOC (contract)", function () {
 
         console.log("Total tests: ", count);
         console.log("Table (map) size: ", mapSize);
-        console.log("Avg error: " + (avgError).toFixed(8) + "%");
-        console.log("Max error: " + maxError.toFixed(8) + "%");
+        console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%");
         console.log("Max error params: ", maxErrorParams);
 
         assert.isBelow(avgError, 0.025); // avg error is below 0.025%
@@ -374,7 +373,7 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("values tested: ", count);
       });
 
-      it("calculates index for specific ratios", async function () {
+      it("calculates index for specific strikes", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         const actual1 = parseInt(await blackScholesPOC.getIndexFromStrike(tokens(99.999999)));
         assert.equal(actual1, 95);

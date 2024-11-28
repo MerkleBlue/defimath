@@ -12,9 +12,6 @@ contract BlackScholesPOC {
     uint256 internal constant TWO_POW_64 = 2 ** 64;
     uint256 internal constant TWO_POW_32 = 2 ** 32;
 
-
-
-
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
     uint256 internal constant SPOT_FIXED = 100; // $100
@@ -93,7 +90,6 @@ contract BlackScholesPOC {
             return _getFuturePrice(spot, timeToExpirySec, rate);
         }
     }
-
 
     function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
         unchecked {
