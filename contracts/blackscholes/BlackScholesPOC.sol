@@ -71,15 +71,15 @@ contract BlackScholesPOC {
 
             // step 2: calculate discounted strike and spot-strike ratio
             uint256 discountedStrike = _getDiscountedStrikePrice(strike, timeToExpirySec, rate);
-            uint256 spotStrikeRatio = uint256(spot) * 1e18 / discountedStrike;
+            uint256 strikeScaled = discountedStrike * 1e18 / uint256(spot) *  SPOT_FIXED;
 
             // step 3: set the expiration based on volatility
             uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
 
             // step 4: interpolate price
-            uint256 finalPrice = interpolatePriceQuadratic(spotStrikeRatio, timeToExpirySecScaled);
+            uint256 finalPrice = interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
 
-            uint256 callPrice = finalPrice * 10 * spotScale / 1e18;
+            uint256 callPrice = finalPrice * spotScale / 1e18;
 
             price = callPrice + discountedStrike - spot;
         }
