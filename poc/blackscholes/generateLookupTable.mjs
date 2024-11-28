@@ -9,6 +9,36 @@ function quadraticFit([a, b]) {
   return (x) => a * x * x + b * x;
 }
 
+async function ReadSavedLookUpTable()
+{
+  const filePath = `${csvConfig.filename}.json`;  
+
+  let objectsArray = await fs.readFile(filePath, 'utf8');
+  // console.log(objectsArray);
+
+  // var objectsArray;
+  // await fs.readFile(filePath, 'utf8', (err, data) => {
+  //   console.log(data)
+  //   console.log(err)
+
+  objectsArray = JSON.parse(objectsArray, reviver);
+
+    // objectsArray = objectsArray
+    //     .split('\n') // Split by newlines
+    //     .filter(line => line.trim() !== '') // Remove empty lines
+    //     .map(line => {
+    //         try {
+    //             return JSON.parse(line); // Parse each line as JSON
+    //         } catch (error) {
+    //             return null;
+    //         }
+    //     })
+    //     .filter(obj => obj !== null); // Remove any invalid JSON
+    // });
+    return objectsArray;
+
+}
+
 export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
@@ -18,7 +48,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // first dimension is spot strike ratio, second is expiration times
   var cvsCounter = 0;
   let fileHandle;
-  const filename = `${csvConfig.filename}.csv`;  
+  const filename = `${csvConfig.filename}.json`;  
   if (writeToFile) {
     fileHandle = await fs.open(filename, "w");                         //only for recording data
   }
@@ -109,7 +139,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         //     Avg error: 0.00011560%, Max error: 0.00065469%
         // with 100 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
         //     Avg error: 0.00011520%, Max error: 0.00063081%%
-        let csvRange = [{
+        let fittingData = {
           optionPriceAA: optionPriceAA,
           a1 :a1,
           b1 : b1,
@@ -117,10 +147,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           b3 : b3,
           a4 : a4,
           b4 : b4
-        }];
-  
-        let csv = generateCsv(csvConfig)(csvRange);
-        await fs.appendFile(filename, csv); 
+        };
+
+        // await fs.appendFile(filename, JSON.stringify(fittingData, null, 2)+ '\n');
       }
 
       const element = {
@@ -162,14 +191,47 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     rows.push(row);
   }
 
+  await fs.appendFile(filename, JSON.stringify(lookupTable, replacer)+ '\n');
+
   if (writeToFile) {
     await fileHandle.close();
   }
 
-  // console.log(lookupTable);
+  (async () => {
+    try {
+        const objectsArray = await ReadSavedLookUpTable();
+        console.log("Objects Array:", objectsArray);
+        console.log(objectsArray.get(105313));
+        console.log(lookupTable.get(105313));
+    } catch (error) {
+        console.error("Error:", error);
+    }
+  })();
 
   return { lookupTable, rows };
 }
+
+function replacer(key, value) {
+  if(value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries()), // or with spread: value: [...value]
+    };
+  } else {
+    return value;
+  }
+}
+
+function reviver(key, value) {
+  if(typeof value === 'object' && value !== null) {
+    if (value.dataType === 'Map') {
+      return new Map(value.value);
+    }
+  }
+  return value;
+}
+
+
 
 function intToUint32(factor) {
   if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds");
