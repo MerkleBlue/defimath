@@ -1,9 +1,9 @@
 import bs from "black-scholes";
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 import { STRIKE_MAX, STRIKE_MIN, STRIKE_STEP } from "./BlackScholesJS.mjs";
-import { mkConfig, generateCsv, asString } from "export-to-csv";
+import { mkConfig} from "export-to-csv";
 import { promises as fs } from "fs";
-const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
+const jsonConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
 
 function quadraticFit([a, b]) {
   return (x) => a * x * x + b * x;
@@ -11,31 +11,11 @@ function quadraticFit([a, b]) {
 
 async function ReadSavedLookUpTable()
 {
-  const filePath = `${csvConfig.filename}.json`;  
+  const filePath = `${jsonConfig.filename}.json`;  
 
   let objectsArray = await fs.readFile(filePath, 'utf8');
-  // console.log(objectsArray);
-
-  // var objectsArray;
-  // await fs.readFile(filePath, 'utf8', (err, data) => {
-  //   console.log(data)
-  //   console.log(err)
-
   objectsArray = JSON.parse(objectsArray, reviver);
-
-    // objectsArray = objectsArray
-    //     .split('\n') // Split by newlines
-    //     .filter(line => line.trim() !== '') // Remove empty lines
-    //     .map(line => {
-    //         try {
-    //             return JSON.parse(line); // Parse each line as JSON
-    //         } catch (error) {
-    //             return null;
-    //         }
-    //     })
-    //     .filter(obj => obj !== null); // Remove any invalid JSON
-    // });
-    return objectsArray;
+  return objectsArray;
 
 }
 
@@ -48,7 +28,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // first dimension is spot strike ratio, second is expiration times
   var cvsCounter = 0;
   let fileHandle;
-  const filename = `${csvConfig.filename}.json`;  
+  const filename = `${jsonConfig.filename}.json`;  
   if (writeToFile) {
     fileHandle = await fs.open(filename, "w");                         //only for recording data
   }
@@ -191,18 +171,14 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     rows.push(row);
   }
 
-  await fs.appendFile(filename, JSON.stringify(lookupTable, replacer)+ '\n');
-
   if (writeToFile) {
+    await fs.appendFile(filename, JSON.stringify(lookupTable, replacer)+ '\n');
     await fileHandle.close();
   }
 
   (async () => {
     try {
         const objectsArray = await ReadSavedLookUpTable();
-        console.log("Objects Array:", objectsArray);
-        console.log(objectsArray.get(105313));
-        console.log(lookupTable.get(105313));
     } catch (error) {
         console.error("Error:", error);
     }
