@@ -12,9 +12,6 @@ contract BlackScholesPOC {
     uint256 internal constant TWO_POW_64 = 2 ** 64;
     uint256 internal constant TWO_POW_32 = 2 ** 32;
 
-
-
-
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
     uint256 internal constant SPOT_FIXED = 100; // $100
@@ -74,15 +71,15 @@ contract BlackScholesPOC {
 
             // step 2: calculate discounted strike and spot-strike ratio
             uint256 discountedStrike = _getDiscountedStrikePrice(strike, timeToExpirySec, rate);
-            uint256 spotStrikeRatio = uint256(spot) * 1e18 / discountedStrike;
+            uint256 strikeScaled = discountedStrike * 1e18 / uint256(spot) *  SPOT_FIXED;
 
             // step 3: set the expiration based on volatility
             uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
 
             // step 4: interpolate price
-            uint256 finalPrice = interpolatePriceQuadratic(spotStrikeRatio, timeToExpirySecScaled);
+            uint256 finalPrice = interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
 
-            uint256 callPrice = finalPrice * 10 * spotScale / 1e18;
+            uint256 callPrice = finalPrice * spotScale / 1e18;
 
             price = callPrice + discountedStrike - spot;
         }
@@ -93,7 +90,6 @@ contract BlackScholesPOC {
             return _getFuturePrice(spot, timeToExpirySec, rate);
         }
     }
-
 
     function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
         unchecked {
@@ -439,12 +435,6 @@ contract BlackScholesPOC {
             } else {
                 factor = -int256(number - 2147483648); // 2 ** 31
             }
-
-            // uint256 optionPriceAA = cell / TWO_POW_192;
-            // uint256 a1 = uint32(cell / TWO_POW_160);
-            // console.log("optionPriceAA: %d", optionPriceAA); // there
-            // console.log("a1: %d", a1);
-
         }
     }
 
