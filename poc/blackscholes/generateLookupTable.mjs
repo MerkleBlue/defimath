@@ -23,7 +23,20 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
-  console.log("Generating lookup table...");
+
+
+  try {
+    const lookupTable = await ReadSavedLookUpTable();
+    if (lookupTable instanceof Map) {
+      console.log("Reading lookup table from file...");
+      const lookupTableSOL = getLookupTableSOL(lookupTable);
+      return { lookupTable, lookupTableSOL };
+    }
+  } catch (error) {
+      console.error("Error:", error);
+  }
+
+  console.log("Generating new lookup table...");
 
   // first dimension is spot strike ratio, second is expiration times
   var cvsCounter = 0;
@@ -37,7 +50,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   const expirationSecs = generateTimePoints();
 
   const lookupTable = new Map();
-  const rows = [];
 
   // console.log("strikes", strikes);
   // console.log("expirationSecs", expirationSecs);
@@ -119,26 +131,15 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         //     Avg error: 0.00011560%, Max error: 0.00065469%
         // with 100 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
         //     Avg error: 0.00011520%, Max error: 0.00063081%%
-        let fittingData = {
-          optionPriceAA: optionPriceAA,
-          a1 :a1,
-          b1 : b1,
-          a3 : a3, 
-          b3 : b3,
-          a4 : a4,
-          b4 : b4
-        };
-
-        // await fs.appendFile(filename, JSON.stringify(fittingData, null, 2)+ '\n');
       }
 
       const element = {
         optionPriceAA,
-        optionPriceAB,
-        optionPriceBA,
-        optionPriceBB,
-        ssratioati,
-        exdays,
+        // optionPriceAB,
+        // optionPriceBA,
+        // optionPriceBB,
+        // ssratioati,
+        // exdays,
         a1,
         b1,
         // a2,
@@ -153,22 +154,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       // pack for JS lookup table
       const index = blackScholesJS.getIndexFromStrike(strikes[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
       lookupTable.set(index, element);
-
-      // pack for SOL lookup table
-      const optionPriceAABigInt = BigInt(parseInt(optionPriceAA * 1e17));
-      const a1BigInt = intToUint32(a1);
-      const b1BigInt = intToUint32(b1);
-      const a3BigInt = intToUint32(a3);
-      const b3BigInt = intToUint32(b3);
-      const a4BigInt = intToUint32(a4);
-      const b4BigInt = intToUint32(b4);
-      // const optionPriceABBigInt = BigInt(parseInt(optionPriceAB * 1e17));
-      // const optionPriceBABigInt = BigInt(parseInt(optionPriceBA * 1e17));
-      // const optionPriceBBBigInt = BigInt(parseInt(optionPriceBB * 1e17));
-      const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + a1BigInt * BigInt(2 ** 160) + b1BigInt * BigInt(2 ** 128) + a3BigInt * BigInt(2 ** 96) + b3BigInt * BigInt(2 ** 64) + a4BigInt * BigInt(2 ** 32) + b4BigInt; // * BigInt(2 ** 64) optionPriceBABigInt * BigInt(2 ** 64) + optionPriceBBBigInt;
-      row.push( { index, element: elementForSOL, a1, b1, a3, b3, a4, b4, optionPriceAA, optionPriceAB } );
     }
-    rows.push(row);
   }
 
   if (writeToFile) {
@@ -176,15 +162,36 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     await fileHandle.close();
   }
 
-  (async () => {
-    try {
-        const objectsArray = await ReadSavedLookUpTable();
-    } catch (error) {
-        console.error("Error:", error);
-    }
-  })();
+  // (async () => {
+  //   try {
+  //       const objectsArray = await ReadSavedLookUpTable();
+  //   } catch (error) {
+  //       console.error("Error:", error);
+  //   }
+  // })();
 
-  return { lookupTable, rows };
+  const lookupTableSOL = getLookupTableSOL(lookupTable);
+
+  return { lookupTable, lookupTableSOL };
+}
+
+function getLookupTableSOL(lookupTable) {
+  const lookupTableSOL = new Map();
+  // pack for SOL lookup table
+  for (const [key, value] of lookupTable) {
+    const { optionPriceAA, a1, b1, a3, b3, a4, b4 } = value;
+    const optionPriceAABigInt = BigInt(parseInt(optionPriceAA * 1e17));
+    const a1BigInt = intToUint32(a1);
+    const b1BigInt = intToUint32(b1);
+    const a3BigInt = intToUint32(a3);
+    const b3BigInt = intToUint32(b3);
+    const a4BigInt = intToUint32(a4);
+    const b4BigInt = intToUint32(b4);
+    const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + a1BigInt * BigInt(2 ** 160) + b1BigInt * BigInt(2 ** 128) + a3BigInt * BigInt(2 ** 96) + b3BigInt * BigInt(2 ** 64) + a4BigInt * BigInt(2 ** 32) + b4BigInt;
+    lookupTableSOL.set(key, elementForSOL);
+  }
+
+  return lookupTableSOL;
 }
 
 function replacer(key, value) {
@@ -206,8 +213,6 @@ function reviver(key, value) {
   }
   return value;
 }
-
-
 
 function intToUint32(factor) {
   if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds");

@@ -22,17 +22,23 @@ describe("BlackScholesPOC (contract)", function () {
     const blackScholesPOC = await BlackScholesPOC.deploy();
 
     // populate lookup table
-    const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS(), true);
-    mapSize = lookupTable.size;
-    // map indexes from rows to array of indexes
+    const { lookupTableSOL } = await generateLookupTable(new BlackScholesJS(), true);
+
     let totalGas = 0;
-    for (let i = 0; i < rows.length; i++) {
-      const indexArray = rows[i].map(cell => cell.index);
-      const dataArray = rows[i].map(cell => cell.element);
-      const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
-      totalGas += parseInt(gas);
-      await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
+    let indexArray = [], dataArray = [];
+    for (const [key, value] of lookupTableSOL) {
+      if (indexArray.length < 100) {
+        indexArray.push(key);
+        dataArray.push(value);
+      } else {
+        const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+        totalGas += parseInt(gas);
+        await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
+        indexArray = [];
+        dataArray = [];
+      }
     }
+
     console.log("Total gas spent:", Math.round(totalGas / 1e6), "M");
 
     return { owner, blackScholesPOC };
