@@ -59,11 +59,12 @@ export class BlackScholesJS {
   // same for rate: 10% and time: 2 years
   // So basically, if rate * years < 0.2, we are good, if not, use other method maybe?
   getFuturePrice(spot, timeToExpirySec, rate) {
-    // we use Pade approximation for exp(x)
-    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+
     const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
     const x = rate * timeToExpiryYears;
     if (x <= 0.2) {
+      // we use Pade approximation for exp(x)
+      // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
       const numerator = (x + 3) ** 2 + 3;
       const denominator = (x - 3) ** 2 + 3;
       const futurePrice = spot * (numerator / denominator);
