@@ -63,6 +63,14 @@ export class BlackScholesJS {
     // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
     const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
     const x = rate * timeToExpiryYears;
+    if (x <= 0.2) {
+      const numerator = (x + 3) ** 2 + 3;
+      const denominator = (x - 3) ** 2 + 3;
+      const futurePrice = spot * (numerator / denominator);
+      return futurePrice;
+    }
+
+    // todo: implement other method, this method gives error when x > 0.2
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
     const futurePrice = spot * (numerator / denominator);
