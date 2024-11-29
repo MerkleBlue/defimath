@@ -6,6 +6,7 @@
 
 # misc
 generated.csv
+generated.json
 /testfiles
 /artifacts
 /cache
