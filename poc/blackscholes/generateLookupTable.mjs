@@ -9,31 +9,28 @@ function quadraticFit([a, b]) {
   return (x) => a * x * x + b * x;
 }
 
-async function ReadSavedLookUpTable()
-{
+async function readSavedLookupTable() {
   const filePath = `${jsonConfig.filename}.json`;  
 
-  let objectsArray = await fs.readFile(filePath, 'utf8');
-  objectsArray = JSON.parse(objectsArray, reviver);
-  return objectsArray;
-
+  let lookupTable = await fs.readFile(filePath, 'utf8');
+  lookupTable = JSON.parse(lookupTable, reviver);
+  return lookupTable;
 }
 
 export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
-
-
+  // read from file if exists
   try {
-    const lookupTable = await ReadSavedLookUpTable();
+    const lookupTable = await readSavedLookupTable();
     if (lookupTable instanceof Map) {
       console.log("Reading lookup table from file...");
       const lookupTableSOL = getLookupTableSOL(lookupTable);
       return { lookupTable, lookupTableSOL };
     }
   } catch (error) {
-      console.error("Error:", error);
+      console.error("File not found, generating new lookup table...");
   }
 
   console.log("Generating new lookup table...");
@@ -135,15 +132,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
       const element = {
         optionPriceAA,
-        // optionPriceAB,
-        // optionPriceBA,
-        // optionPriceBB,
-        // ssratioati,
-        // exdays,
         a1,
         b1,
-        // a2,
-        // b2,
         a3,
         b3,
         a4,
@@ -162,14 +152,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     await fileHandle.close();
   }
 
-  // (async () => {
-  //   try {
-  //       const objectsArray = await ReadSavedLookUpTable();
-  //   } catch (error) {
-  //       console.error("Error:", error);
-  //   }
-  // })();
-
+  // create lookupTable for Solidity
   const lookupTableSOL = getLookupTableSOL(lookupTable);
 
   return { lookupTable, lookupTableSOL };
