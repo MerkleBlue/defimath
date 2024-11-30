@@ -48,7 +48,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
   const lookupTable = new Map();
 
-  // console.log("strikes", strikes);
+  console.log("strikes", strikes);
   // console.log("expirationSecs", expirationSecs);
 
   for (let i = 0; i < strikes.length - 1; i++) {
@@ -132,6 +132,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
       const element = {
         optionPriceAA,
+        optionPriceAB,
+        optionPriceBA,
+        optionPriceBB,
         a1,
         b1,
         a3,

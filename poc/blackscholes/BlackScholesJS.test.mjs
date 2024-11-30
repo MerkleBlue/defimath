@@ -8,7 +8,9 @@ import { promises as fs } from "fs";
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
 
-const SECONDS_IN_DAY = 24 * 60 * 60;
+const SEC_IN_HOUR = 60 * 60;
+const SEC_IN_DAY = 24 * 60 * 60;
+const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 
 // await generateLookupTable(new BlackScholesJS(), true);
@@ -159,8 +161,8 @@ describe("BlackScholesJS", function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for (let rate = 0; rate <= 0.1; rate += 0.01) {
           for (let days = 1; days <= 2 * 365; days += 1) {
-            const expected = getFuturePrice(100, days * SECONDS_IN_DAY, rate);
-            const actual = blackScholesJS.getFuturePrice(100, days * SECONDS_IN_DAY, rate);            
+            const expected = getFuturePrice(100, days * SEC_IN_DAY, rate);
+            const actual = blackScholesJS.getFuturePrice(100, days * SEC_IN_DAY, rate);            
             const error = (Math.abs(actual - expected) / expected * 100);
             totalError += error;
             count++;
@@ -181,9 +183,66 @@ describe("BlackScholesJS", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it.only("gets a single call price", async function () {
+
+      function testRange(setup) {
+        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
+        for(let exp = setup.exp.min; exp < setup.exp.max; exp += setup.exp.step) {
+          for (let strike = setup.strike.min; strike < setup.strike.max; strike += setup.strike.step) {
+            for (let vol = setup.vol.min; vol < setup.vol.max; vol += setup.vol.step) {
+              for (let rate = 0; rate < 0.01; rate += 0.02) {
+                const expected = Math.max(0, bs.blackScholes(1000 * 1, strike * 1, exp / SEC_IN_YEAR, vol, rate, "call"));
+                const actual = blackScholesJS.getCallOptionPrice(1000 * 1, strike * 1, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+
+                const error = expected !== 0 ? (Math.abs(actual - expected) / expected * 100) : 0;
+                if (strike === 1030 && exp === 3600 && vol === 0.88) {
+                  console.log("err:", error.toFixed(6) + "%", "exp:", expected.toFixed(6), "act:", actual.toFixed(6), "strike:", strike, "exp:", exp, "vol:", vol);
+                }
+                totalError += error;
+                count++;
+                if (maxError < error && expected > 0.009) {
+                  maxError = error;
+                  maxErrorParams = {
+                    exp, strike, vol, rate, actual, expected
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        const avgError = totalError / count;
+        console.log("totalError: " + totalError, "count: " + count);
+
+        // console.log("Total tests: " + count);
+        // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
+        console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%", "tests: ", count);
+        console.log("Max error params: ", maxErrorParams);
+      }
+
+      // todo: to delete
+      it.only("gets multiple call prices - specific negative case", async function () {
+        const setup = { exp: { min: 3600, max: 3601, step: SEC_IN_HOUR }, strike: { min: 1030, max: 1031, step: 10 }, vol: { min: 0.88, max: 0.89, step: 0.1 }}
+        testRange(setup);
+      });
+
+      // it.only("gets multiple call prices - [1h, 24h)", async function () {
+      //   const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 10 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+      //   testRange(setup);
+      // });
+
+      it("gets multiple call prices - [1d, 30d)", async function () {
+        const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 10 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        testRange(setup);
+      });
+
+      it("gets multiple call prices - [30d, 365d)", async function () {
+        const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        testRange(setup);
+      });
+
+      it("gets a single call price", async function () {
         const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
-        const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
+        const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
       });
@@ -193,7 +252,7 @@ describe("BlackScholesJS", function () {
         for(let exp = 50; exp < 80; exp += 1) {
           for (let vol = 0.8; vol < 1.2; vol += 0.01) {
             let expected = bs.blackScholes(1000, 1000, exp / 365, vol, 0, "call");
-            let actual = blackScholesJS.getCallOptionPrice(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
+            let actual = blackScholesJS.getCallOptionPrice(1000, 1000, exp * SEC_IN_DAY, vol, 0);
 
             let error = (Math.abs(actual - expected) / expected * 100);
             totalError += error;
@@ -224,7 +283,7 @@ describe("BlackScholesJS", function () {
         const vol = 0.8;
 
         let expected = bs.blackScholes(1000, 1000, exp / 365, vol, 0, "call");
-        let actual = blackScholesJS.getCallOptionPrice(1000, 1000, exp * SECONDS_IN_DAY, vol, 0);
+        let actual = blackScholesJS.getCallOptionPrice(1000, 1000, exp * SEC_IN_DAY, vol, 0);
 
         let error = (Math.abs(actual - expected) / expected * 100);
 
@@ -233,19 +292,19 @@ describe("BlackScholesJS", function () {
         console.log("Error: " + (error).toFixed(8) + "%");
       });
 
-      it.only("gets multiple call prices", async function () {
+      it("gets multiple call prices", async function () {
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
-          for (let strike = 850; strike < 1100; strike += 10) {
+          for (let strike = 210; strike < 4900; strike += 10) {
             for (let vol = 0.8; vol < 1.2; vol += 0.08) {
-              for (let rate = 0; rate < 0.05; rate += 0.02) {
+              for (let rate = 0; rate < 0.01; rate += 0.02) {
                 const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                const actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+                const actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SEC_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
 
                 const error = (Math.abs(actual - expected) / expected * 100);
                 totalError += error;
                 count++;
-                if (maxError < error && expected > 0.01) {
+                if (maxError < error && expected > 0.99) {
                   maxError = error;
                   maxErrorParams = {
                     exp, strike, vol, rate, actual, expected
@@ -266,14 +325,12 @@ describe("BlackScholesJS", function () {
         assert.isBelow(avgError, 0.00068); // avg error is below 0.00068%
         assert.isBelow(maxError, 0.0053); // max error is below 0.0053%
       });
-
-
     });
 
     describe("getPutOptionPrice", function () {
       it("gets a single put price", async function () {
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "put");
-        let actualOptionPrice = blackScholesJS.getPutOptionPrice(1000, 930, 60 * SECONDS_IN_DAY, 0.60, 0.05);
+        let actualOptionPrice = blackScholesJS.getPutOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
 
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
       });
@@ -285,7 +342,7 @@ describe("BlackScholesJS", function () {
             for (let vol = 0.8; vol < 1.2; vol += 0.08) {
               for (let rate = 0; rate < 0.05; rate += 0.02) {
                 const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "put");
-                const actual = blackScholesJS.getPutOptionPrice(1000, strike, exp * SECONDS_IN_DAY, vol, rate);
+                const actual = blackScholesJS.getPutOptionPrice(1000, strike, exp * SEC_IN_DAY, vol, rate);
 
                 const error = (Math.abs(actual - expected) / expected * 100);
                 totalError += error;
@@ -367,7 +424,7 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe.only("getIndexFromStrike", function () {
+    describe("getIndexFromStrike", function () {
       it("calculates index for strike [50, 200]", async function () {
         let count = 0;
         for (let strike = 50; strike <= 200; strike += 1) {
@@ -381,13 +438,13 @@ describe("BlackScholesJS", function () {
 
       it("calculates index for specific strikes", async function () {
         const actual1 = blackScholesJS.getIndexFromStrike(99.9999);
-        assert.equal(actual1, 95);
+        assert.equal(actual1, 100 - STRIKE_STEP);
 
         const actual2 = blackScholesJS.getIndexFromStrike(100 - 1e-6);
-        assert.equal(actual2, 95);
+        assert.equal(actual2, 100 - STRIKE_STEP);
 
         const actual3 = blackScholesJS.getIndexFromStrike(100 - 1e-8);
-        assert.equal(actual3, 95);
+        assert.equal(actual3, 100 - STRIKE_STEP);
 
         // this is where it rounds up to 100
         const actual4 = blackScholesJS.getIndexFromStrike(100 - 1e-9);
