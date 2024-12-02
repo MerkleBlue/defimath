@@ -138,7 +138,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
           console.log("x12 and y1");
           for (let i = 0; i < fitPoints; i++) {
-            console.log(x12[i] + ",", y1[i] + ",", checkArray[i]);
+            console.log(x12[i].toFixed(2) + ",", y1[i].toFixed(6) + ",", checkArray[i].toFixed(6));
           }
 
           // for strike interpolation

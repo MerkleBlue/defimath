@@ -196,7 +196,9 @@ describe("BlackScholesJS", function () {
     describe("getCallOptionPrice", function () {
 
       function testRange(setup) {
-        let maxRelError = 0, maxAbsError = 0, totalError = 0, count = 0, maxRelErrorParams = null, maxAbsErrorParams = null;
+        // NSV = non small values, we don't care about error below $0.001
+        let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0;
+        let maxRelErrorParams = null, maxAbsErrorParams = null;
         for(let exp = setup.exp.min; exp < setup.exp.max; exp += setup.exp.step) {
           for (let strike = setup.strike.min; strike < setup.strike.max; strike += setup.strike.step) {
             for (let vol = setup.vol.min; vol < setup.vol.max; vol += setup.vol.step) {
@@ -208,8 +210,13 @@ describe("BlackScholesJS", function () {
                 if (strike === 1030 && exp === 3600 && vol === 0.88) {
                   console.log("err:", error.toFixed(6) + "%", "exp:", expected.toFixed(6), "act:", actual.toFixed(6), "strike:", strike, "exp:", exp, "vol:", vol);
                 }
-                totalError += error;
                 count++;
+
+                // we don't care about small values
+                if (expected > 0.001) {
+                  totalErrorNSV += error;
+                  countNSV++;
+                }
                 // relative error is in percentage
                 if (maxRelError < error && expected > 0.001) {
                   maxRelError = error;
@@ -231,12 +238,12 @@ describe("BlackScholesJS", function () {
           }
         }
 
-        const avgError = totalError / count;
-        console.log("totalError: " + totalError, "count: " + count);
+        const avgError = totalErrorNSV / countNSV;
+        console.log("totalError NSV: " + totalErrorNSV, "count NSV: " + countNSV);
 
         // console.log("Total tests: " + count);
         // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-        console.log("Avg rel error: " + avgError.toFixed(6) + "%,", "Max rel error: " + maxRelError.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsError.toFixed(6) + ",", "tests: ", count);
+        console.log("Avg rel NSV error: " + avgError.toFixed(6) + "%,", "Max rel NSV error: " + maxRelError.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsError.toFixed(6) + ",", "Total tests: ", count, "Total NSV tests: ", countNSV, "NSV/total ratio: ", ((countNSV / count) * 100).toFixed(2) + "%");
         console.log("Max rel error params: ", maxRelErrorParams);
         console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams.exp));
       }
@@ -248,22 +255,22 @@ describe("BlackScholesJS", function () {
       });
 
       it.only("gets multiple call prices - [300s, 1h)", async function () {
-        const setup = { exp: { min: 300, max: SEC_IN_HOUR, step: 1 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: 300, max: SEC_IN_HOUR, step: 1 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
       it.only("gets multiple call prices - [1h, 24h)", async function () {
-        const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 40 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 40 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
       it.only("gets multiple call prices - [1d, 30d)", async function () {
-        const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 40 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 40 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
       it.only("gets multiple call prices - [30d, 365d)", async function () {
-        const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY / 4 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY / 4 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
