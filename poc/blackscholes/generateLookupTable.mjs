@@ -21,17 +21,17 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
-  // read from file if exists
-  try {
-    const lookupTable = await readSavedLookupTable();
-    if (lookupTable instanceof Map) {
-      console.log("Reading lookup table from file...");
-      const lookupTableSOL = getLookupTableSOL(lookupTable);
-      return { lookupTable, lookupTableSOL };
-    }
-  } catch (error) {
-      console.error("File not found, generating new lookup table...");
-  }
+  // // read from file if exists
+  // try {
+  //   const lookupTable = await readSavedLookupTable();
+  //   if (lookupTable instanceof Map) {
+  //     console.log("Reading lookup table from file...");
+  //     const lookupTableSOL = getLookupTableSOL(lookupTable);
+  //     return { lookupTable, lookupTableSOL };
+  //   }
+  // } catch (error) {
+  //     console.error("File not found, generating new lookup table...");
+  // }
 
   console.log("Generating new lookup table...");
 
@@ -49,7 +49,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   const lookupTable = new Map();
 
   console.log("strikes", strikes);
-  // console.log("expirationSecs", expirationSecs);
+  console.log("expirationSecs", expirationSecs);
 
   for (let i = 0; i < strikes.length - 1; i++) {
     const row = [];
@@ -84,12 +84,20 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           const tpmTime = expirationYearsA + k * timeChunk;
       
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
-          const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
+          // const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
       
-          x12[k] = k * timeChunk;
+          x12[k] = k * timeChunk * 1000;
           y1[k] = PriceAA - optionPriceAA;
-          y2[k] = PriceBA - optionPriceBA;
+          // y2[k] = PriceBA - optionPriceBA;
+
+          if (strikes[i] === 101 && expirationSecs[j] === 1048576) {
+            console.log(PriceAA);
+          }
         }
+        // if (strikes[i] === 101 && expirationSecs[j] === 1048576) {
+        //   x12.push(fitPoints * timeChunk);
+        //   y1.push(optionPriceAB - optionPriceAA);
+        // }
 
         let result = levenbergMarquardt({ x: x12, y: y1 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
         a1 = result.parameterValues[0];
@@ -116,6 +124,38 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         result = levenbergMarquardt({ x: x34, y: y3 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
         a3 = result.parameterValues[0];
         b3 = result.parameterValues[1];
+
+        if (strikes[i] === 101 && expirationSecs[j] === 1048576) {
+          console.log("bingo cell");
+          console.log(result);
+
+          // for time interpolation
+          const checkArray = [];
+          for (let k = 0; k < fitPoints; k++) {
+            const x = k * timeChunk * 1000;
+            checkArray.push(a1 * x * x + b1 * x);
+          }
+
+          console.log("x12 and y1");
+          for (let i = 0; i < fitPoints; i++) {
+            console.log(x12[i] + ",", y1[i] + ",", checkArray[i]);
+          }
+
+          // for strike interpolation
+          // console.log("x34", x34);
+          // console.log("y3", y3);
+          // console.log("check --- ");
+          // const checkArray = [];
+          // for (let k = 0; k < fitPoints; k++) {
+          //   const x = k * strikeChunk;
+          //   const res = a3 * x * x + b3 * x;
+          //   checkArray.push(res);
+          // }
+          // console.log("ch", checkArray)
+        }
+
+
+
 
         result = levenbergMarquardt({ x: x34, y: y4 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
         a4 = result.parameterValues[0];
@@ -201,7 +241,7 @@ function reviver(key, value) {
 }
 
 function intToUint32(factor) {
-  if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds");
+  if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds: " + factor);
 
   // positive
   if (factor > 0) {
