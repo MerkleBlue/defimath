@@ -247,6 +247,11 @@ describe("BlackScholesJS", function () {
         testRange(setup);
       });
 
+      it.only("gets multiple call prices - [300s, 1h)", async function () {
+        const setup = { exp: { min: 300, max: SEC_IN_HOUR, step: 1 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        testRange(setup);
+      });
+
       it.only("gets multiple call prices - [1h, 24h)", async function () {
         const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 40 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);

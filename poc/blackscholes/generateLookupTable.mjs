@@ -79,7 +79,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
         // time points
         const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
-        const multiplier = 1 / timeChunk;
         for (let k = 0; k < fitPoints; k++) {
           
           const tpmTime = expirationYearsA + k * timeChunk;
@@ -133,7 +132,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           // for time interpolation
           const checkArray = [];
           for (let k = 0; k < fitPoints; k++) {
-            const x = k * timeChunk * 1000;
+            const x = k * timeChunk / (expirationYearsB - expirationYearsA);
             checkArray.push(a1 * x * x + b1 * x);
           }
 
