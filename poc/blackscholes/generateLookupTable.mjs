@@ -79,6 +79,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
         // time points
         const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
+        const multiplier = 1 / timeChunk;
         for (let k = 0; k < fitPoints; k++) {
           
           const tpmTime = expirationYearsA + k * timeChunk;
@@ -86,7 +87,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           const PriceAA = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
           // const PriceBA = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
       
-          x12[k] = k * timeChunk * 1000;
+          x12[k] = k * timeChunk / (expirationYearsB - expirationYearsA);
           y1[k] = PriceAA - optionPriceAA;
           // y2[k] = PriceBA - optionPriceBA;
 

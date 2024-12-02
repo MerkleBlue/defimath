@@ -211,7 +211,7 @@ describe("BlackScholesJS", function () {
                 totalError += error;
                 count++;
                 // relative error is in percentage
-                if (maxRelError < error && expected > 0.009) {
+                if (maxRelError < error && expected > 0.001) {
                   maxRelError = error;
                   maxRelErrorParams = {
                     exp, strike, vol, rate, actual, expected
@@ -248,17 +248,17 @@ describe("BlackScholesJS", function () {
       });
 
       it.only("gets multiple call prices - [1h, 24h)", async function () {
-        const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 10 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 40 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
       it.only("gets multiple call prices - [1d, 30d)", async function () {
-        const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 10 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 40 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
       it.only("gets multiple call prices - [30d, 365d)", async function () {
-        const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
+        const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY / 4 }, strike: { min: 800, max: 1200, step: 10 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 

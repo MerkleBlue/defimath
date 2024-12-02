@@ -102,11 +102,9 @@ export class BlackScholesJS {
 
     // step 2) calculate the time delta and weight
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
-    const deltaTime = (timeToExpirySecScaled - timeToExpiryFromIndex) / (365 * 24 * 60 * 60) * 1000;
     const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
     // console.log("timeToExpiryFromIndex:", timeToExpiryFromIndex);
-    // console.log("deltaTime:", deltaTime);
     // console.log("expirationStep:", expirationStep);
     // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
@@ -117,7 +115,7 @@ export class BlackScholesJS {
 
     // step 4) interpolate the price using quadratic interpolation
     // console.log("cell", cell);
-    const interpolatedPrice1 = cell.a1 * (deltaTime ** 2) + cell.b1 * deltaTime;
+    const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 2) + cell.b1 * timeToExpiryWeight;
     const interpolatedPrice3 = cell.a3 * (deltaStrike ** 2) + cell.b3 * deltaStrike;
     const interpolatedPrice4 = cell.a4 * (deltaStrike ** 2) + cell.b4 * deltaStrike;
     // console.log("interpolatedPrice1", interpolatedPrice1);
