@@ -263,7 +263,7 @@ function generateStrikePoints(startPoint, endPoint, stepSize) {
   return points;
 }
 
-function generateTimePoints() {
+export function generateTimePoints() {
   const points = [1, 2, 3, 4, 5, 6, 7];
 
   for (let major = 3; major < 32; major++) {

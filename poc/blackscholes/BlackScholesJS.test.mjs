@@ -2,7 +2,7 @@
 import { assert } from "chai";
 import bs from "black-scholes";
 import { BlackScholesJS, STRIKE_STEP } from "./BlackScholesJS.mjs";
-import { generateLookupTable } from "./generateLookupTable.mjs";
+import { generateLookupTable, generateTimePoints } from "./generateLookupTable.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
 
@@ -17,6 +17,7 @@ const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 describe("BlackScholesJS", function () {
   let blackScholesJS;
+  let testTimePoints;
 
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
@@ -53,10 +54,42 @@ describe("BlackScholesJS", function () {
     seconds %= 60;
 
     return { days, hours, minutes, seconds };
-}
+  }
+
+  function generateTestTimePoints() {
+    const timePoints = generateTimePoints();
+  
+    const testTimePoints = [];
+    for (let i = 1; i < 128; i++) {
+      testTimePoints.push(i);
+    }
+
+    for (let i = 0; i < timePoints.length - 1; i++) {
+      const cellDeltaTime = timePoints[i + 1] - timePoints[i];
+      if (cellDeltaTime >= 16) {
+        const step = cellDeltaTime / 16;
+        for (let j = 0; j < 16; j++) {
+          if (timePoints[i] + j * step < 10 * SEC_IN_YEAR) { // up to 10 years
+            testTimePoints.push(Math.round(timePoints[i] + j * step));
+          }
+        }
+      }
+    }
+
+    console.log("timePoints.length", timePoints.length, "testTimePoints.length", testTimePoints.length);
+    console.log("testTimePoints", testTimePoints);
+
+    //   for(let minor = 0; minor < 8; minor++) {
+    //     points.push(parseFloat(2 ** major + minor * 2 ** (major - 3)));
+    //   }
+    // }
+  
+    return testTimePoints;
+  }
 
   // before all tests, called once
   before(async () => {
+    testTimePoints = generateTestTimePoints();
     const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS(), true);
     blackScholesJS = new BlackScholesJS(lookupTable);
 
@@ -199,7 +232,7 @@ describe("BlackScholesJS", function () {
         // NSV = non small values, we don't care about error below $0.001
         let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0;
         let maxRelErrorParams = null, maxAbsErrorParams = null;
-        for(let exp = setup.exp.min; exp < setup.exp.max; exp += setup.exp.step) {
+        for(let exp of testTimePoints) {
           for (let strike = setup.strike.min; strike < setup.strike.max; strike += setup.strike.step) {
             for (let vol = setup.vol.min; vol < setup.vol.max; vol += setup.vol.step) {
               for (let rate = 0; rate < 0.01; rate += 0.02) {
@@ -229,6 +262,7 @@ describe("BlackScholesJS", function () {
                 const absError = Math.abs(actual - expected);
                 if (maxAbsError < absError) {
                   maxAbsError = absError;
+                  console.log("maxAbsError", maxAbsError, "strike", strike)
                   maxAbsErrorParams = {
                     exp, strike, vol, rate, actual, expected
                   }
@@ -249,7 +283,7 @@ describe("BlackScholesJS", function () {
       }
 
       it.only("gets multiple call prices - specific negative case", async function () {
-        const setup = { exp: { min: 301 * SEC_IN_DAY, max: 360 * SEC_IN_DAY + 1, step: SEC_IN_HOUR }, strike: { min: 2000, max: 4000, step: 1 }, vol: { min: 0.8, max: 0.81, step: 0.1 }}
+        const setup = { exp: { min: 1 * SEC_IN_DAY, max: 720 * SEC_IN_DAY + 1, step: 6 * SEC_IN_HOUR }, strike: { min: 2000, max: 3000, step: 1 }, vol: { min: 0.8, max: 0.81, step: 0.1 }}
         testRange(setup);
       });
 

@@ -5,8 +5,8 @@ export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price 5x from spot price
 export const STRIKE_MIN = 200; // 20;
-export const STRIKE_MAX = 400; // 500;
-export const STRIKE_STEP = 4;
+export const STRIKE_MAX = 300; // 500;
+export const STRIKE_STEP = 2;
 
 export class BlackScholesJS {
 
@@ -25,7 +25,7 @@ export class BlackScholesJS {
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
-    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+    const timeToExpirySecScaled = Math.round(timeToExpirySec * (volRatio * volRatio));
 
     // step 4: interpolate price
     const finalPrice = this.interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
@@ -93,6 +93,8 @@ export class BlackScholesJS {
   };
 
   interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled) {
+    // todo: handle 0 time and 0 strike
+
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
@@ -176,6 +178,29 @@ export class BlackScholesJS {
 
   getStrikeFromIndex(index) {
     return index;
+  }
+
+  getIndexFromStrike2(strike) {
+
+    // strike 300 - 500 => abs error < $0.002714 step 4
+    // strike 200 - 300 => abs error < $0.005806 step 4
+    // strike 200 - 300 => abs error < $0.002836 step 2
+    
+
+    // if (strike >= 200)
+    // const multiplier = strike / STRIKE_STEP;
+    // let roundedRatio = Math.floor(multiplier) * STRIKE_STEP;
+
+    // // NOTE: floating point precision issue, so we need to check if very close to the upper edge
+    // if (Math.floor(multiplier) !== Math.floor(multiplier + 0.000000001)) {
+    //   roundedRatio = Math.floor(multiplier + 0.000000001) * STRIKE_STEP;
+    // }
+
+    // return Math.round(roundedRatio);
+  }
+
+  getStrikeFromIndex2(index) {
+    return index * 10;
   }
 
   findMajor(value) {
