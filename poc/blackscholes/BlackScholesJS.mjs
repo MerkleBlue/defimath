@@ -3,10 +3,9 @@ export const SPOT_FIXED = 100;
 export const VOL_FIXED = 1;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
-// strike price 5x from spot price
-export const STRIKE_MIN = 200; // 20;
-export const STRIKE_MAX = 300; // 500;
-export const STRIKE_STEP = 2;
+// strike price +-5x from spot price
+export const STRIKE_MIN = 20;
+export const STRIKE_MAX = 500;
 
 export class BlackScholesJS {
 
@@ -98,9 +97,10 @@ export class BlackScholesJS {
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
     // console.log("strikeIndex:", strikeIndex);
     // console.log("timeToExpiryIndex:", timeToExpiryIndex);
+    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
+
 
     // step 2) calculate the time delta and weight
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
@@ -112,7 +112,7 @@ export class BlackScholesJS {
 
     // step 3) calculate the strike delta
     const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
-    // console.log("strikeScaled", strikeScaled, "strikeFromIndex:", this.getStrikeFromIndex(strikeIndex));
+    // console.log("strikeScaled", strikeScaled, "strikeFromIndex:", this.getStrikeFromIndex2(strikeIndex));
     // console.log("deltaStrike:", deltaStrike);
 
     // step 4) interpolate the price using quadratic interpolation
@@ -125,7 +125,7 @@ export class BlackScholesJS {
     // console.log("interpolatedPrice4", interpolatedPrice4);
 
     // step 5) calculate the final price
-    const extrisicPriceAA = Math.max(0, 100 - strikeIndex);
+    const extrisicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
     const intrinsicPriceAA = cell.optionPriceAA - extrisicPriceAA;
 
     const extrinsicPriceTA = Math.max(0, 100 - strikeScaled);
@@ -165,42 +165,48 @@ export class BlackScholesJS {
   }
 
   getIndexFromStrike(strike) {
-    const multiplier = strike / STRIKE_STEP;
-    let roundedRatio = Math.floor(multiplier) * STRIKE_STEP;
+    // tested
+    // strike 200 - 800 => max abs error < $0.002595 step 0.4, 60s - 4y
+    // strike 800 - 1050 => max abs error < $0.005226 step 0.2, 60s - 4y
+    // strike 1050 - 1200 => max abs error < $0.002816 step 0.5, 60s - 4y
+    // strike 1200 - 2000 => max abs error < $0.002999 step 1, 60s - 4y
+    // strike 2000 - 5000 => max abs error < $0.005805 step 4, 60s - 4y
+    
 
-    // NOTE: floating point precision issue, so we need to check if very close to the upper edge
-    if (Math.floor(multiplier) !== Math.floor(multiplier + 0.000000001)) {
-      roundedRatio = Math.floor(multiplier + 0.000000001) * STRIKE_STEP;
+    if (strike >= 200 && strike <= 500) {
+      const rest = strike - 200;
+      const step = 4;
+      return Math.round(2000 + Math.floor(rest / step) * step * 10);
     }
 
-    return Math.round(roundedRatio);
+    if (strike >= 120 && strike < 200) {
+      const rest = strike - 120;
+      const step = 1;
+      return Math.round(1200 + Math.floor(rest / step) * step * 10);
+    }
+
+    if (strike >= 105 && strike < 120) {
+      const rest = strike - 105;
+      const step = 0.5;
+      return Math.round(1050 + Math.floor(rest / step) * step * 10);
+    }
+
+    if (strike >= 80 && strike < 105) {
+      const rest = strike - 80;
+      const step = 0.2;
+      return Math.round(800 + Math.floor(rest / step) * step * 10);
+    }
+
+    if (strike >= 20 && strike < 80) {
+      const rest = strike - 20;
+      const step = 0.4;
+      return Math.round(200 + Math.floor(rest / step) * step * 10);
+    }
   }
 
   getStrikeFromIndex(index) {
-    return index;
-  }
-
-  getIndexFromStrike2(strike) {
-
-    // strike 300 - 500 => abs error < $0.002714 step 4
-    // strike 200 - 300 => abs error < $0.005806 step 4
-    // strike 200 - 300 => abs error < $0.002836 step 2
-    
-
-    // if (strike >= 200)
-    // const multiplier = strike / STRIKE_STEP;
-    // let roundedRatio = Math.floor(multiplier) * STRIKE_STEP;
-
-    // // NOTE: floating point precision issue, so we need to check if very close to the upper edge
-    // if (Math.floor(multiplier) !== Math.floor(multiplier + 0.000000001)) {
-    //   roundedRatio = Math.floor(multiplier + 0.000000001) * STRIKE_STEP;
-    // }
-
-    // return Math.round(roundedRatio);
-  }
-
-  getStrikeFromIndex2(index) {
-    return index * 10;
+    // since 0.1 is the smallest step, we can just return the index / 10
+    return index / 10;
   }
 
   findMajor(value) {

@@ -1,6 +1,6 @@
 import bs from "black-scholes";
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
-import { STRIKE_MAX, STRIKE_MIN, STRIKE_STEP } from "./BlackScholesJS.mjs";
+import { STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
 import { mkConfig} from "export-to-csv";
 import { promises as fs } from "fs";
 const jsonConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
@@ -21,17 +21,17 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   // we start with fixed values: spot 100, volatility 100%, rate 0%
   // what is not fixed: strike and expiration
 
-  // // read from file if exists
-  // try {
-  //   const lookupTable = await readSavedLookupTable();
-  //   if (lookupTable instanceof Map) {
-  //     console.log("Reading lookup table from file...");
-  //     const lookupTableSOL = getLookupTableSOL(lookupTable);
-  //     return { lookupTable, lookupTableSOL };
-  //   }
-  // } catch (error) {
-  //     console.error("File not found, generating new lookup table...");
-  // }
+  // read from file if exists
+  try {
+    const lookupTable = await readSavedLookupTable();
+    if (lookupTable instanceof Map) {
+      console.log("Reading lookup table from file...");
+      const lookupTableSOL = getLookupTableSOL(lookupTable);
+      return { lookupTable, lookupTableSOL };
+    }
+  } catch (error) {
+      console.error("File not found, generating new lookup table...");
+  }
 
   console.log("Generating new lookup table...");
 
@@ -43,7 +43,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     fileHandle = await fs.open(filename, "w");                         //only for recording data
   }
 
-  const strikes = generateStrikePoints(STRIKE_MIN, STRIKE_MAX, STRIKE_STEP);
+  const strikes = generateStrikePoints(blackScholesJS, STRIKE_MIN, STRIKE_MAX);
   const expirationSecs = generateTimePoints();
 
   const lookupTable = new Map();
@@ -252,13 +252,17 @@ function intToUint32(factor) {
   
 }
 
-function generateStrikePoints(startPoint, endPoint, stepSize) {
-  const points = [];
-  const stepCount = Math.round((endPoint - startPoint) / stepSize);
-  for (let i = 0; i <= stepCount; i++) {
-    const point = (startPoint + stepSize * i).toFixed(6);
-    points.push(parseFloat(point));
+function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
+  const points = [startPoint];
+  
+  for (let strike = startPoint; strike <= endPoint; strike += 0.1) {
+    const lastStrike = points[points.length - 1];
+    const newStrike = blackScholesJS.getStrikeFromIndex(blackScholesJS.getIndexFromStrike(strike));
+    if (lastStrike !== newStrike) {
+      points.push(newStrike);
+    }
   }
+  points.push(endPoint);
 
   return points;
 }
