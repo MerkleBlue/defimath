@@ -248,28 +248,33 @@ describe("BlackScholesJS", function () {
         console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams.exp));
       }
 
-      // todo: to delete
       it.only("gets multiple call prices - specific negative case", async function () {
-        const setup = { exp: { min: 1278720, max: 1278721, step: SEC_IN_HOUR }, strike: { min: 1010, max: 1011, step: 10 }, vol: { min: 0.96, max: 0.97, step: 0.1 }}
+        const setup = { exp: { min: 301 * SEC_IN_DAY, max: 360 * SEC_IN_DAY + 1, step: SEC_IN_HOUR }, strike: { min: 2000, max: 4000, step: 1 }, vol: { min: 0.8, max: 0.81, step: 0.1 }}
         testRange(setup);
       });
 
-      it.only("gets multiple call prices - [300s, 1h)", async function () {
+      // todo: to delete
+      // it.only("gets multiple call prices - specific negative case", async function () {
+      //   const setup = { exp: { min: 3600, max: 3601, step: SEC_IN_HOUR }, strike: { min: 992, max: 993, step: 10 }, vol: { min: 0.8, max: 0.81, step: 0.1 }}
+      //   testRange(setup);
+      // });
+
+      it("gets multiple call prices - [300s, 1h)", async function () {
         const setup = { exp: { min: 300, max: SEC_IN_HOUR, step: 1 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
-      it.only("gets multiple call prices - [1h, 24h)", async function () {
+      it("gets multiple call prices - [1h, 24h)", async function () {
         const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 40 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
-      it.only("gets multiple call prices - [1d, 30d)", async function () {
+      it("gets multiple call prices - [1d, 30d)", async function () {
         const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 40 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });
 
-      it.only("gets multiple call prices - [30d, 365d)", async function () {
+      it("gets multiple call prices - [30d, 365d)", async function () {
         const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY / 4 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
         testRange(setup);
       });

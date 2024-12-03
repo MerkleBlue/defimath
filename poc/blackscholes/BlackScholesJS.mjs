@@ -4,9 +4,9 @@ export const VOL_FIXED = 1;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price 5x from spot price
-export const STRIKE_MIN = 80; // 20;
-export const STRIKE_MAX = 120; // 500;
-export const STRIKE_STEP = 1;
+export const STRIKE_MIN = 200; // 20;
+export const STRIKE_MAX = 400; // 500;
+export const STRIKE_STEP = 4;
 
 export class BlackScholesJS {
 
@@ -123,8 +123,18 @@ export class BlackScholesJS {
     // console.log("interpolatedPrice4", interpolatedPrice4);
 
     // step 5) calculate the final price
+    const extrisicPriceAA = Math.max(0, 100 - strikeIndex);
+    const intrinsicPriceAA = cell.optionPriceAA - extrisicPriceAA;
+
+    const extrinsicPriceTA = Math.max(0, 100 - strikeScaled);
+
     const interpolatedPriceStrike = interpolatedPrice3 + timeToExpiryWeight * (interpolatedPrice4 - interpolatedPrice3);
-    const finalPrice = cell.optionPriceAA + interpolatedPrice1 + interpolatedPriceStrike;
+
+
+    // const finalPrice = cell.optionPriceAA + interpolatedPrice1 + interpolatedPriceStrike;
+    const finalPrice = extrinsicPriceTA + intrinsicPriceAA + interpolatedPrice1 + interpolatedPriceStrike;
+    // console.log("extrisicPriceAA", extrisicPriceAA);
+    // console.log("intrinsicPriceAA", intrinsicPriceAA);
     // console.log("interpolatedPriceStrike", interpolatedPriceStrike);
 
     return finalPrice;
