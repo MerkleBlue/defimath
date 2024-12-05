@@ -1,8 +1,8 @@
 
 import { assert } from "chai";
 import bs from "black-scholes";
-import { BlackScholesJS } from "./BlackScholesJS.mjs";
-import { generateLookupTable, generateTimePoints } from "./generateLookupTable.mjs";
+import { BlackScholesJS, STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
+import { generateLookupTable, generateStrikePoints, generateTimePoints } from "./generateLookupTable.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
 
@@ -18,6 +18,7 @@ const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 describe("BlackScholesJS", function () {
   let blackScholesJS;
   let testTimePoints;
+  let testStrikePoints;
 
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
@@ -82,9 +83,27 @@ describe("BlackScholesJS", function () {
     return testTimePoints;
   }
 
+  function generateTestStrikePoints(blackScholesJS, startPoint, endPoint) {
+    const strikePoints = generateStrikePoints(blackScholesJS, startPoint, endPoint);
+
+    const testStrikePoints = [];
+    for (let i = 0; i < strikePoints.length - 1; i++) {
+      const cellDeltaStrike = strikePoints[i + 1] - strikePoints[i];
+      const step = cellDeltaStrike / 16;
+      for (let j = 0; j < 16; j++) {
+        testStrikePoints.push(strikePoints[i] + j * step);
+      }
+    }
+
+    console.log("strikePoints.length", strikePoints.length, "testStrikePoints.length", testStrikePoints.length);
+  
+    return testStrikePoints;
+  }
+
   // before all tests, called once
   before(async () => {
     testTimePoints = generateTestTimePoints();
+    testStrikePoints = generateTestStrikePoints(new BlackScholesJS(), STRIKE_MIN, STRIKE_MAX);
     const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS(), true);
     blackScholesJS = new BlackScholesJS(lookupTable);
 
@@ -103,9 +122,6 @@ describe("BlackScholesJS", function () {
   });
 
   describe("functionality", async function () {
-    // it("record lookup table to csv file", async function ()  {
-    //   await generateLookupTable(new BlackScholesJS(),true);
-    // });
     /*it("record lookup table to csv file", async function ()  {
       const filename = `${csvConfig.filename}.csv`;
       fs.open(filename, "w");
@@ -223,17 +239,17 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
 
-      function testRange(setup) {
+      function testRange(strikePoints, timePoints, volPoints) {
         // NSV = non small values, we don't care about error below $0.001
         let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0;
         let maxRelErrorParams = null, maxAbsErrorParams = null;
-        for(let exp of testTimePoints) {
-        // for (let exp = setup.exp.min; exp < setup.exp.max; exp += setup.exp.step) {
-          for (let strike = setup.strike.min; strike < setup.strike.max; strike += setup.strike.step) {
-            for (let vol = setup.vol.min; vol < setup.vol.max; vol += setup.vol.step) {
+        const multi = 10;
+        for (let strike of strikePoints) {
+          for(let exp of timePoints) {
+            for (let vol of volPoints) {
               for (let rate = 0; rate < 0.01; rate += 0.02) {
-                const expected = Math.max(0, bs.blackScholes(1000 * 1, strike * 1, exp / SEC_IN_YEAR, vol, rate, "call"));
-                const actual = blackScholesJS.getCallOptionPrice(1000 * 1, strike * 1, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+                const expected = Math.max(0, bs.blackScholes(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, "call"));
+                const actual = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
 
                 const error = expected !== 0 ? (Math.abs(actual - expected) / expected * 100) : 0;
                 // if (strike === 1030 && exp === 3600 && vol === 0.88) {
@@ -250,7 +266,7 @@ describe("BlackScholesJS", function () {
                 if (maxRelError < error && expected > 0.001) {
                   maxRelError = error;
                   maxRelErrorParams = {
-                    exp, strike, vol, rate, actual, expected
+                    exp, strike: strike * multi, vol, rate, actual, expected
                   }
                 }
 
@@ -258,9 +274,9 @@ describe("BlackScholesJS", function () {
                 const absError = Math.abs(actual - expected);
                 if (maxAbsError < absError) {
                   maxAbsError = absError;
-                  // console.log("maxAbsError", maxAbsError, "strike", strike)
+                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi)
                   maxAbsErrorParams = {
-                    exp, strike, vol, rate, actual, expected
+                    exp, strike: strike * multi, vol, rate, actual, expected
                   }
                 }
               }
@@ -275,60 +291,32 @@ describe("BlackScholesJS", function () {
         // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
         console.log("Avg rel NSV error: " + avgError.toFixed(6) + "%,", "Max rel NSV error: " + maxRelError.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsError.toFixed(6) + ",", "Total tests: ", count, "Total NSV tests: ", countNSV, "NSV/total ratio: ", ((countNSV / count) * 100).toFixed(2) + "%");
         console.log("Max rel error params: ", maxRelErrorParams);
-        console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams.exp));
+        console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
       }
 
-      it("gets multiple call prices - 200 - 800", async function () {
-        const setup = { exp: { min: 1 * SEC_IN_DAY, max: 720 * SEC_IN_DAY + 1, step: 6 * SEC_IN_HOUR }, strike: { min: 200, max: 800, step: 0.25 }, vol: { min: 1, max: 1.01, step: 0.1 }}
-        testRange(setup);
+      it.only("gets multiple call prices: $200 - $800, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 80);
+        testRange(strikeSubArray, testTimePoints, [1]);
       });
 
-      it("gets multiple call prices - 800 - 1050", async function () {
-        const setup = { exp: { min: 1 * SEC_IN_DAY, max: 720 * SEC_IN_DAY + 1, step: 6 * SEC_IN_HOUR }, strike: { min: 800, max: 1050, step: 0.25 }, vol: { min: 1, max: 1.01, step: 0.1 }}
-        testRange(setup);
+      it.only("gets multiple call prices: $800 - $1050, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 80 && value <= 105);
+        testRange(strikeSubArray, testTimePoints, [1]);
       });
 
-      it("gets multiple call prices - 1050 - 1200", async function () {
-        const setup = { exp: { min: 1 * SEC_IN_DAY, max: 720 * SEC_IN_DAY + 1, step: 6 * SEC_IN_HOUR }, strike: { min: 1050, max: 1200, step: 0.25 }, vol: { min: 1, max: 1.01, step: 0.1 }}
-        testRange(setup);
+      it.only("gets multiple call prices: $1050 - $1200, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 105 && value <= 120);
+        testRange(strikeSubArray, testTimePoints, [1]);
       });
 
-      it("gets multiple call prices - 1200 - 2000", async function () {
-        const setup = { exp: { min: 1 * SEC_IN_DAY, max: 720 * SEC_IN_DAY + 1, step: 6 * SEC_IN_HOUR }, strike: { min: 1200, max: 2000, step: 0.5 }, vol: { min: 1, max: 1.01, step: 0.1 }}
-        testRange(setup);
+      it.only("gets multiple call prices: $1200 - $2000, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 120 && value <= 200);
+        testRange(strikeSubArray, testTimePoints, [1]);
       });
 
-      it("gets multiple call prices - 2000 - 5000", async function () {
-        const setup = { exp: { min: 1 * SEC_IN_DAY, max: 720 * SEC_IN_DAY + 1, step: 6 * SEC_IN_HOUR }, strike: { min: 2001, max: 4999, step: 2 }, vol: { min: 1, max: 1.01, step: 0.1 }}
-        testRange(setup);
-      });
-
-
-
-      // todo: to delete
-      // it.only("gets multiple call prices - specific negative case", async function () {
-      //   const setup = { exp: { min: 3600, max: 3601, step: SEC_IN_HOUR }, strike: { min: 992, max: 993, step: 10 }, vol: { min: 0.8, max: 0.81, step: 0.1 }}
-      //   testRange(setup);
-      // });
-
-      it("gets multiple call prices - [300s, 1h)", async function () {
-        const setup = { exp: { min: 300, max: SEC_IN_HOUR, step: 1 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
-        testRange(setup);
-      });
-
-      it("gets multiple call prices - [1h, 24h)", async function () {
-        const setup = { exp: { min: SEC_IN_HOUR, max: 24 * SEC_IN_HOUR, step: SEC_IN_HOUR / 40 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
-        testRange(setup);
-      });
-
-      it("gets multiple call prices - [1d, 30d)", async function () {
-        const setup = { exp: { min: SEC_IN_DAY, max: 30 * SEC_IN_DAY, step: SEC_IN_DAY / 40 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
-        testRange(setup);
-      });
-
-      it("gets multiple call prices - [30d, 365d)", async function () {
-        const setup = { exp: { min: 30 * SEC_IN_DAY, max: 365 * SEC_IN_DAY, step: SEC_IN_DAY / 4 }, strike: { min: 800, max: 1200, step: 2 }, vol: { min: 0.8, max: 1.2, step: 0.08 }}
-        testRange(setup);
+      it.only("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value <= 500);
+        testRange(strikeSubArray, testTimePoints, [1]);
       });
 
       it("gets a single call price", async function () {

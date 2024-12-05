@@ -252,7 +252,7 @@ function intToUint32(factor) {
   
 }
 
-function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
+export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
   const points = [startPoint];
   
   for (let strike = startPoint; strike <= endPoint; strike += 0.1) {
