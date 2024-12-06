@@ -199,58 +199,34 @@ export class BlackScholesJS {
     // strike 2000 - 5000 => max abs error < $0.005805 step 4, 60s - 4y
 
     // $0.002106, $0.000757, $0.001112, $0.001955, $0.005535 with cube interpolation
-    // $0.000212, $0.003459, $0.000942, $0.000912, $0.001722 with cube, using 1, 2 and 3
+    // $0.000212, $0.003459, $0.000942, $0.000912, $0.001722 with cube, using 1, 2 and 3, 461 strike points
+
+    // $0.000545, $0.001411, $0.000486, $0.000912, $0.001722, cube,  516 strike points
+    // $0.000545, $0.001411, $0.002613,            $0.001722,
+    // $0.000545, $0.001411, $0.000486, $0.016727, $0.001722, cube, 515 strike points
+    // $0.000545, $0.001411, $0.000486, $0.000565, $0.001722, cube, 526 strike points, commit
     
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 
     const rest = strike - boundary;
     return Math.round(boundary * 10 + Math.floor(rest / step) * step * 10);
-
-    // if (strike >= 200 && strike <= 500) {
-    //   const rest = strike - 200;
-    //   return Math.round(2000 + Math.floor(rest / step) * step * 10);
-    // }
-
-    // if (strike >= 120 && strike < 200) {
-    //   const rest = strike - 120;
-    //   // const step = 1;
-    //   return Math.round(1200 + Math.floor(rest / step) * step * 10);
-    // }
-
-    // if (strike >= 105 && strike < 120) {
-    //   const rest = strike - 105;
-    //   // const step = 0.5;
-    //   return Math.round(1050 + Math.floor(rest / step) * step * 10);
-    // }
-
-    // if (strike >= 80 && strike < 105) {
-    //   const rest = strike - 80;
-    //   // const step = 0.2;
-    //   return Math.round(800 + Math.floor(rest / step) * step * 10);
-    // }
-
-    // if (strike >= 20 && strike < 80) {
-    //   const rest = strike - 20;
-    //   // const step = 0.4;
-    //   return Math.round(200 + Math.floor(rest / step) * step * 10);
-    // }
   }
 
   getStrikeStepAndBoundary(strike) {
-    if (strike < 80) {
-      return { step: 0.4, boundary: 20 };
+    if (strike < 90) {
+      return { step: 0.5, boundary: 20 };
     }
 
-    if (strike < 105) {
-      return { step: 0.2, boundary: 80 };
+    if (strike < 110) {
+      return { step: 0.1, boundary: 90 };
     }
 
-    if (strike < 120) {
-      return { step: 0.5, boundary: 105 };
+    if (strike < 130) {
+      return { step: 0.5, boundary: 110 };
     }
 
     if (strike < 200) {
-      return { step: 1, boundary: 120 };
+      return { step: 1, boundary: 130 };
     }
 
     return { step: 4, boundary: 200 };
