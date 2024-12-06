@@ -239,11 +239,11 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
 
-      function testRange(strikePoints, timePoints, volPoints) {
+      function testRange(strikePoints, timePoints, volPoints, multi = 10) {
         // NSV = non small values, we don't care about error below $0.001
         let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0;
         let maxRelErrorParams = null, maxAbsErrorParams = null;
-        const multi = 10;
+        // const multi = 10;
         for (let strike of strikePoints) {
           for(let exp of timePoints) {
             for (let vol of volPoints) {
@@ -293,6 +293,14 @@ describe("BlackScholesJS", function () {
         console.log("Max rel error params: ", maxRelErrorParams);
         console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
       }
+
+      
+
+      it.only("gets multiple call prices: one specific max error", async function () {
+        const strikeSubArray = [20.4];
+        const timeSubArray = [74973184];
+        testRange(strikeSubArray, timeSubArray, [1], 1);
+      });
 
       it.only("gets multiple call prices: $200 - $800, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 80);
