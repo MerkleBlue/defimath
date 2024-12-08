@@ -77,8 +77,10 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const intrinsicPriceBB = optionPriceBB - Math.max(0, spot - strikeB);
 
       
-      let x12 = new Array(10), x34 = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10);
+      let x12 = new Array(10), x34 = new Array(10), x34w = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10), y3w = new Array(10), y4w = new Array(10);;
       let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0, a3 = 0, b3 = 0, c3 = 0, a4 = 0, b4 = 0, c4 = 0;
+      let a3w = 0, b3w = 0, c3w = 0, a4w = 0, b4w = 0, c4w = 0;
+
     
       if (writeToFile) {
         const fitPoints = 50;
@@ -127,69 +129,47 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           
           const tpmStrike = strikeA + k * strikeChunk;
       
-          const PriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
-          const PriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
-          const intrinsicPriceTA = Math.max(PriceTA - Math.max(0, spot - tpmStrike));
-          const intrinsicPriceTB = Math.max(PriceTB - Math.max(0, spot - tpmStrike));
+          const optionPriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
+          const optionPriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
+          const intrinsicPriceTA = Math.max(optionPriceTA - Math.max(0, spot - tpmStrike));
+          const intrinsicPriceTB = Math.max(optionPriceTB - Math.max(0, spot - tpmStrike));
 
           // record intrinsic price difference between TA and AA, and TB and AB
           x34[k] = k * strikeChunk;
           y3[k] = intrinsicPriceTA - intrinsicPriceAA;
           y4[k] = intrinsicPriceTB - intrinsicPriceAB;
+          x34w[k] = (k * strikeChunk) / (strikeB - strikeA);
+          y3w[k] = (optionPriceTA - optionPriceAA) / (optionPriceAA - optionPriceBA);
+          y4w[k] = (optionPriceTB - optionPriceAB) / (optionPriceAB - optionPriceBB);
         }
 
-        // let result = levenbergMarquardt({ x: x34, y: y3 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        // a3 = result.parameterValues[0];
-        // b3 = result.parameterValues[1];
+        if (expirationSecs[j] === 60 && strikeA === 99.6) {
+          console.log("BINGO");
+          console.log("x34w", x34w);
+          console.log("y3w", y3w);
+          console.log("y4w", y4w);
+        }
+
         resultCube = levenbergMarquardt({ x: x34, y: y3 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         a3 = resultCube.parameterValues[0];
         b3 = resultCube.parameterValues[1];
         c3 = resultCube.parameterValues[2];
 
-
-        if (strikes[i] === 200 && expirationSecs[j] === 16777216) {
-          console.log("bingo cell");
-          // console.log(result);
-
-          // for time interpolation
-          console.log("x12 and y1");
-          const checkArray = [];
-          for (let k = 0; k < fitPoints; k++) {
-            const x = k * timeChunk / (expirationYearsB - expirationYearsA);
-            checkArray.push(a1 * x ** 3 + b1 * x ** 2 + c1 * x);
-          }
-
-          for (let i = 0; i < fitPoints; i++) {
-            console.log(x12[i].toFixed(2) + ",", y1[i].toFixed(6) + ",", checkArray[i].toFixed(6));
-          }
-
-          // for strike interpolation
-          console.log("x34 and y3");
-          const checkArray3 = [];
-          for (let k = 0; k < fitPoints; k++) {
-            const x = k * strikeChunk;
-            checkArray3.push(a3 * x ** 3 + b3 * x ** 2 + c3 * x);
-          }
-          for (let i = 0; i < fitPoints; i++) {
-            console.log(x34[i].toFixed(2) + ",", y3[i].toFixed(6) + ",", checkArray3[i].toFixed(6));
-          }
-        }
-
-        // result = levenbergMarquardt({ x: x34, y: y4 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        // a4 = result.parameterValues[0];
-        // b4 = result.parameterValues[1];
         resultCube = levenbergMarquardt({ x: x34, y: y4 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         a4 = resultCube.parameterValues[0];
         b4 = resultCube.parameterValues[1];
         c4 = resultCube.parameterValues[2];
 
-        // NOTE:
-        // with 10 fitPoints, 100 iterations, and default errorTolerance:
-        //     Avg error: 0.00140628%, Max error: 0.01834267%
-        // with 50 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
-        //     Avg error: 0.00011560%, Max error: 0.00065469%
-        // with 100 fitPoints, 200 iterations, and errorTolerance: 1e-10: 
-        //     Avg error: 0.00011520%, Max error: 0.00063081%%
+        resultCube = levenbergMarquardt({ x: x34w, y: y3w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
+        a3w = resultCube.parameterValues[0];
+        b3w = resultCube.parameterValues[1];
+        c3w = resultCube.parameterValues[2];
+
+        resultCube = levenbergMarquardt({ x: x34w, y: y4w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
+        a4w = resultCube.parameterValues[0];
+        b4w = resultCube.parameterValues[1];
+        c4w = resultCube.parameterValues[2];
+
       }
 
       const element = {
@@ -208,7 +188,13 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         c3,
         a4,
         b4,
-        c4
+        c4,
+        a3w,
+        b3w,
+        c3w,
+        a4w,
+        b4w,
+        c4w
       };
       cvsCounter++;
 

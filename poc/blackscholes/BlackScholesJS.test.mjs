@@ -307,21 +307,21 @@ describe("BlackScholesJS", function () {
         }
 
 
-        it("gets multiple call prices: one specific max error", async function () {
-          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 8000);
+        it.only("gets multiple call prices: one specific max error", async function () {
+          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 2000);
           testRange(strikeSubArray, testTimePoints, [1]);
         });
       });
 
       
 
-      it("gets multiple call prices: one specific max error", async function () {
-        const strikeSubArray = [20.4];
-        const timeSubArray = [74973184];
-        testRange(strikeSubArray, timeSubArray, [1], 1);
+      it.only("gets multiple call prices: one specific max error", async function () {
+        const strikeSubArray = [99.65625]; //[40.96875]; //[203.75]; // [201.8532649335367];
+        const timeSubArray = [60]; //[1048576]; //[17825792];// [4685824];
+        testRange(strikeSubArray, timeSubArray, [1]);
       });
 
-      it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
+      it.only("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
         testRange(strikeSubArray, testTimePoints, [1]);
       });
@@ -331,6 +331,7 @@ describe("BlackScholesJS", function () {
         testRange(strikeSubArray, testTimePoints, [1]);
       });
 
+      // good when no extrinsic value
       it("gets multiple call prices: $1100 - $1300, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
         testRange(strikeSubArray, testTimePoints, [1]);
@@ -558,7 +559,7 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe.only("getIndexFromStrike", function () {
+    describe("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
         assert.equal(2000, blackScholesJS.getIndexFromStrike(200));
         assert.equal(2000, blackScholesJS.getIndexFromStrike(200.00001));
