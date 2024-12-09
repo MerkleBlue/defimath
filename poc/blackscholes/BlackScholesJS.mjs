@@ -94,7 +94,7 @@ export class BlackScholesJS {
   interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = false;
+    const log = true;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
@@ -131,7 +131,7 @@ export class BlackScholesJS {
     log && console.log("interpolatedPrice2", interpolatedPrice2);
     log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
     log && console.log("interpolatedStrikeWeight4w", interpolatedStrikeWeight4w);
-    const interpolatedStrikeWeightw = interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)
+    const interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
     log && console.log("interpolatedStrikeWeightw", interpolatedStrikeWeightw);
 
     // step 5) calculate the final price
@@ -144,7 +144,9 @@ export class BlackScholesJS {
     log && console.log("optionPriceAT", optionPriceAT, "ok");
     log && console.log("optionPriceBT", optionPriceBT, "ok");
 
-    const finalPrice = optionPriceAT + interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
+    log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT))
+
+    const finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
 
     return finalPrice;
   }

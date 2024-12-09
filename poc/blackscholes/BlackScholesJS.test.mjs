@@ -61,7 +61,7 @@ describe("BlackScholesJS", function () {
     const timePoints = generateTimePoints();
   
     const testTimePoints = [];
-    for (let i = 60; i < 128; i++) { // from 60 seconds
+    for (let i = 1; i < 128; i++) { // from 1 seconds
       testTimePoints.push(i);
     }
 
@@ -239,7 +239,7 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
 
-      function testRange(strikePoints, timePoints, volPoints, multi = 10) {
+      function testRange(strikePoints, timePoints, volPoints, allowedAbsError = 0.000114, multi = 10) {
         // NSV = non small values, we don't care about error below $0.001
         let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0;
         let maxRelErrorParams = null, maxAbsErrorParams = null;
@@ -293,10 +293,10 @@ describe("BlackScholesJS", function () {
         console.log("Max rel error params: ", maxRelErrorParams);
         console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
 
-        assert.isBelow(maxAbsError, 0.000114); // max error is below $0.000114
+        assert.isBelow(maxAbsError, allowedAbsError); // max error is below $0.000114
       }
 
-      describe.only("random tests", function () {
+      describe("random tests", function () {
 
         function generateRandomTestStrikePoints(startPoint, endPoint, count) {
           const testStrikePoints = [];
@@ -309,43 +309,43 @@ describe("BlackScholesJS", function () {
         }
 
 
-        it.only("gets multiple call prices: random", async function () {
+        it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(20, 500, 2000);
-          testRange(strikeSubArray, testTimePoints, [1]);
+          testRange(strikeSubArray, testTimePoints, [1], 0.000114);
         });
       });
 
     
-      it("gets multiple call prices: one specific max error", async function () {
-        const strikeSubArray = [99.65625];
-        const timeSubArray = [60];
+      it.only("gets multiple call prices: one specific max error", async function () {
+        const strikeSubArray = [100.0125];
+        const timeSubArray = [1];
         testRange(strikeSubArray, timeSubArray, [1]);
       });
 
       it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-        testRange(strikeSubArray, testTimePoints, [1]);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000045);
       });
 
-      it.only("gets multiple call prices: $900 - $1100, 60s - 4y, 100%", async function () {
+      it("gets multiple call prices: $900 - $1100, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 110);
-        testRange(strikeSubArray, testTimePoints, [1]);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000114);
       });
 
       // good when no extrinsic value
       it("gets multiple call prices: $1100 - $1300, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-        testRange(strikeSubArray, testTimePoints, [1]);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000060);
       });
 
       it("gets multiple call prices: $1300 - $2000, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-        testRange(strikeSubArray, testTimePoints, [1]);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000061);
       });
 
       it("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value <= 500);
-        testRange(strikeSubArray, testTimePoints, [1]);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000062);
       });
 
       it("gets a single call price", async function () {
