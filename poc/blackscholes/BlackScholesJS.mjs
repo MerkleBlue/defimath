@@ -99,11 +99,9 @@ export class BlackScholesJS {
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
     log && console.log("strikeIndex:", strikeIndex);
     log && console.log("timeToExpiryIndex:", timeToExpiryIndex);
-    log && console.log("cell", cell);
 
     // step 2) calculate the time delta and weight
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
@@ -120,22 +118,17 @@ export class BlackScholesJS {
     log && console.log("strikeScaled", strikeScaled, "strikeFromIndex:", this.getStrikeFromIndex(strikeIndex));
     log && console.log("deltaStrike:", deltaStrike);
     log && console.log("strikeWeight:", strikeWeight);
+    log && console.log("cell", cell);
 
     // step 4) interpolate the price using quadratic interpolation
 
     const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
     const interpolatedPrice2 = cell.a2 * (timeToExpiryWeight ** 3) + cell.b2 * (timeToExpiryWeight ** 2) + cell.c2 * timeToExpiryWeight;
-
-    const interpolatedPrice3 = cell.a3 * (deltaStrike ** 3) + cell.b3 * (deltaStrike ** 2) + cell.c3 * deltaStrike;
-    const interpolatedPrice4 = cell.a4 * (deltaStrike ** 3) + cell.b4 * (deltaStrike ** 2) + cell.c4 * deltaStrike;
-
     const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
     const interpolatedStrikeWeight4w = cell.a4w * (strikeWeight ** 3) + cell.b4w * (strikeWeight ** 2) + cell.c4w * strikeWeight;
 
     log && console.log("interpolatedPrice1", interpolatedPrice1);
     log && console.log("interpolatedPrice2", interpolatedPrice2);
-    log && console.log("interpolatedPrice3", interpolatedPrice3);
-    log && console.log("interpolatedPrice4", interpolatedPrice4);
     log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
     log && console.log("interpolatedStrikeWeight4w", interpolatedStrikeWeight4w);
     const interpolatedStrikeWeightw = interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)
@@ -143,60 +136,17 @@ export class BlackScholesJS {
 
     // step 5) calculate the final price
     const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
-    const extrinsicPriceTA = Math.max(0, 100 - strikeScaled);
     const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
-    // console.log("extrinsicPriceAA", extrinsicPriceAA);
-    // // console.log("extrinsicPriceTA", extrinsicPriceTA)
-    // console.log("extrinsicPriceBA", extrinsicPriceBA);
 
-    const optionPriceAA = extrinsicPriceAA + cell.intrinsicPriceAA;
     const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
-    const optionPriceAB = extrinsicPriceAA + cell.intrinsicPriceAB;
-    const optionPriceBA = extrinsicPriceBA + cell.intrinsicPriceBA;
     const optionPriceBT = extrinsicPriceBA + cell.intrinsicPriceBA + interpolatedPrice2;
-    const optionPriceBB = extrinsicPriceBA + cell.intrinsicPriceBB;
     log && console.log("-----------------")
     log && console.log("optionPriceAT", optionPriceAT, "ok");
     log && console.log("optionPriceBT", optionPriceBT, "ok");
-    // console.log("optionPriceAB", optionPriceAB);
-    log && console.log("optionPriceAA", optionPriceAA);
-    log && console.log("optionPriceBA", optionPriceBA);
-    // console.log("optionPriceBB", optionPriceBB);
 
-    let interpolatedStrikeWeight = strikeWeight;
-    // if (Math.abs(interpolatedPrice3) > 0.00001)
-    // const strikeWeightA = -interpolatedPrice3 / (cell.intrinsicPriceAA - cell.intrinsicPriceBA);
-    // console.log("strikeWeightA", strikeWeightA);
-    if (Math.abs(interpolatedPrice3) > 0.0001 && Math.abs(interpolatedPrice4) > 0.0001) {
-      const strikeWeightA = -interpolatedPrice3 / (cell.intrinsicPriceAA - cell.intrinsicPriceBA);
-      const strikeWeightB = -interpolatedPrice4 / (cell.intrinsicPriceAB - cell.intrinsicPriceBB);
-      interpolatedStrikeWeight = strikeWeightA + timeToExpiryWeight * (strikeWeightB - strikeWeightA)
-      log && console.log("strikeWeightA", strikeWeightA);
-      log && console.log("strikeWeightB", strikeWeightB);
-    }
+    const finalPrice = optionPriceAT + interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
 
-
-
-    const finalPrice2 = optionPriceAT - interpolatedStrikeWeight * (optionPriceAT - optionPriceBT);
-    log && console.log("interpolatedStrikeWeight", interpolatedStrikeWeight);
-    log && console.log("finalPrice2", finalPrice2);
-
-
-    const finalPrice3 = optionPriceAT + interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
-
-
-    // OLD
-    // const interpolatedPriceTime = interpolatedPrice1 + strikeWeight * (interpolatedPrice2 - interpolatedPrice1);
-    // const interpolatedPriceStrike = interpolatedPrice3 + timeToExpiryWeight * (interpolatedPrice4 - interpolatedPrice3);
-    // console.log("interpolatedPriceTime", interpolatedPriceTime);
-    // console.log("interpolatedPriceStrike", interpolatedPriceStrike);
-
-    // // const finalPrice = cell.optionPriceAA + interpolatedPrice1 + interpolatedPriceStrike;
-    // const finalPrice = optionPriceAT + interpolatedPriceStrike;
-
-    // console.log("finalPrice", finalPrice);
-
-    return finalPrice3;
+    return finalPrice;
   }
 
   getIndexFromTime(timeToExpirySec) {
@@ -236,7 +186,7 @@ export class BlackScholesJS {
     // $0.000545, $0.001411, $0.002613,            $0.001722,
     // $0.000545, $0.001411, $0.000486, $0.016727, $0.001722, cube, 515 strike points
     // $0.000545, $0.001411, $0.000486, $0.000565, $0.001722, cube, 526 strike points, commit
-    // $0., $0.000113, $0.000059, $0.000060, $0.000061, cube, 526 strike points, 
+    // $0.000044, $0.000113, $0.000059, $0.000060, $0.000061, cube, 526 strike points, strikeWeight precalculated
     
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 

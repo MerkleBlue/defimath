@@ -285,13 +285,15 @@ describe("BlackScholesJS", function () {
         }
 
         const avgError = totalErrorNSV / countNSV;
-        console.log("totalError NSV: " + totalErrorNSV, "count NSV: " + countNSV);
+        console.log("totalError NSV: " + totalErrorNSV, "count NonSmallValue (NSV): " + countNSV);
 
         // console.log("Total tests: " + count);
         // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
         console.log("Avg rel NSV error: " + avgError.toFixed(6) + "%,", "Max rel NSV error: " + maxRelError.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsError.toFixed(6) + ",", "Total tests: ", count, "Total NSV tests: ", countNSV, "NSV/total ratio: ", ((countNSV / count) * 100).toFixed(2) + "%");
         console.log("Max rel error params: ", maxRelErrorParams);
         console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
+
+        assert.isBelow(maxAbsError, 0.000114); // max error is below $0.000114
       }
 
       describe.only("random tests", function () {
@@ -307,26 +309,25 @@ describe("BlackScholesJS", function () {
         }
 
 
-        it.only("gets multiple call prices: one specific max error", async function () {
+        it.only("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(20, 500, 2000);
           testRange(strikeSubArray, testTimePoints, [1]);
         });
       });
 
-      
-
-      it.only("gets multiple call prices: one specific max error", async function () {
-        const strikeSubArray = [99.65625]; //[40.96875]; //[203.75]; // [201.8532649335367];
-        const timeSubArray = [60]; //[1048576]; //[17825792];// [4685824];
+    
+      it("gets multiple call prices: one specific max error", async function () {
+        const strikeSubArray = [99.65625];
+        const timeSubArray = [60];
         testRange(strikeSubArray, timeSubArray, [1]);
       });
 
-      it.only("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
+      it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
         testRange(strikeSubArray, testTimePoints, [1]);
       });
 
-      it("gets multiple call prices: $900 - $1100, 60s - 4y, 100%", async function () {
+      it.only("gets multiple call prices: $900 - $1100, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 110);
         testRange(strikeSubArray, testTimePoints, [1]);
       });
