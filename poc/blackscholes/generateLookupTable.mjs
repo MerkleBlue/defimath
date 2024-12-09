@@ -1,6 +1,6 @@
 import bs from "black-scholes";
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
-import { STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
+import { STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
 import { mkConfig} from "export-to-csv";
 import { promises as fs } from "fs";
 const jsonConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
@@ -11,6 +11,10 @@ function quadraticFit([a, b]) {
 
 function cubeFit([a, b, c]) {
   return (x) => a * x ** 3 + b * x ** 2 + c * x;
+}
+
+function fourOrderFit([a, b, c, d]) {
+  return (x) => a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x;
 }
 
 async function readSavedLookupTable() {
@@ -86,6 +90,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         const fitPoints = 50;
         const initialValues = [0, 0];
         const initialValuesCube = [0, 0, 0];
+        const initialValuesFourth = [0, 0, 0, 0];
 
         // time points
         const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
@@ -143,13 +148,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           y4w[k] = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB); // strike weights are always in [0, 1]
         }
 
-        if (expirationSecs[j] === 60 && strikeA === 99.6) {
-          console.log("BINGO");
-          console.log("x34w", x34w);
-          console.log("y3w", y3w);
-          console.log("y4w", y4w);
-        }
-
         // resultCube = levenbergMarquardt({ x: x34, y: y3 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         // a3 = resultCube.parameterValues[0];
         // b3 = resultCube.parameterValues[1];
@@ -170,7 +168,46 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         b4w = resultCube.parameterValues[1];
         c4w = resultCube.parameterValues[2];
 
+        resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
+        const a3w4 = resultCube.parameterValues[0];
+        const b3w4 = resultCube.parameterValues[1];
+        const c3w4 = resultCube.parameterValues[2];
+        const d3w4 = resultCube.parameterValues[3];
+
+
+        if (expirationSecs[j] === 1 && strikeA === 100) {
+          console.log("BINGO");
+          console.log("x34w", x34w);
+          console.log("y3w", y3w);
+          console.log("y4w", y4w);
+  
+          // // for time interpolation
+          // console.log("x12 and y1");
+          // const checkArray = [];
+          // for (let k = 0; k < fitPoints; k++) {
+          //   const x = k * timeChunk / (expirationYearsB - expirationYearsA);
+          //   checkArray.push(a1 * x ** 3 + b1 * x ** 2 + c1 * x);
+          // }
+
+          // for (let i = 0; i < fitPoints; i++) {
+          //   console.log(x12[i].toFixed(2) + ",", y1[i].toFixed(6) + ",", checkArray[i].toFixed(6));
+          // }
+  
+          // for strike interpolation
+          console.log("x34w and y3w");
+          const checkArray3 = [], checkArray4 = [];
+          for (let k = 0; k < fitPoints; k++) {
+            const x = (k * strikeChunk) / (strikeB - strikeA);
+            checkArray3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
+            checkArray4.push(a3w4 * x ** 4 + b3w4 * x ** 3 + c3w4 * x ** 2 + d3w4 * x);
+          }
+          for (let i = 0; i < fitPoints; i++) {
+            console.log(x34w[i].toFixed(2) + ",", y3w[i].toFixed(6) + ",", checkArray3[i].toFixed(6)+ ",", checkArray4[i].toFixed(6));
+          }
+        }
       }
+
+
 
       const element = {
         intrinsicPriceAA,
@@ -264,7 +301,7 @@ function intToUint32(factor) {
 export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
   const points = [startPoint];
   
-  for (let strike = startPoint; strike <= endPoint; strike += 0.1) {
+  for (let strike = startPoint; strike <= endPoint; strike += 1 / STRIKE_INDEX_MULTIPLIER) {
     const lastStrike = points[points.length - 1];
     const newStrike = blackScholesJS.getStrikeFromIndex(blackScholesJS.getIndexFromStrike(strike));
     if (lastStrike !== newStrike) {

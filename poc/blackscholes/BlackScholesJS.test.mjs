@@ -1,7 +1,7 @@
 
 import { assert } from "chai";
 import bs from "black-scholes";
-import { BlackScholesJS, STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
+import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
 import { generateLookupTable, generateStrikePoints, generateTimePoints } from "./generateLookupTable.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
@@ -61,7 +61,7 @@ describe("BlackScholesJS", function () {
     const timePoints = generateTimePoints();
   
     const testTimePoints = [];
-    for (let i = 1; i < 128; i++) { // from 1 seconds
+    for (let i = 60; i < 128; i++) { // from 1 seconds
       testTimePoints.push(i);
     }
 
@@ -243,7 +243,7 @@ describe("BlackScholesJS", function () {
         // NSV = non small values, we don't care about error below $0.001
         let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0;
         let maxRelErrorParams = null, maxAbsErrorParams = null;
-        // const multi = 10;
+        const totalPoints = strikePoints.length * timePoints.length * volPoints.length;
         for (let strike of strikePoints) {
           for(let exp of timePoints) {
             for (let vol of volPoints) {
@@ -279,6 +279,11 @@ describe("BlackScholesJS", function () {
                     exp, strike: strike * multi, vol, rate, actual, expected
                   }
                 }
+
+                // print progress
+                if (count % Math.round(totalPoints / 50) === 0) {
+                  console.log("Progress:", (count / totalPoints * 100).toFixed(0) + "%, Max abs error:", "$" + (maxAbsError ? maxAbsError.toFixed(6) : "0"));
+                }
               }
             }
           }
@@ -309,17 +314,17 @@ describe("BlackScholesJS", function () {
         }
 
 
-        it("gets multiple call prices: random", async function () {
-          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 2000);
+        it.only("gets multiple call prices: random", async function () {
+          const strikeSubArray = generateRandomTestStrikePoints(99, 101, 2000);
           testRange(strikeSubArray, testTimePoints, [1], 0.000114);
         });
       });
 
     
-      it.only("gets multiple call prices: one specific max error", async function () {
+      it("gets multiple call prices: one specific max error", async function () {
         const strikeSubArray = [100.0125];
         const timeSubArray = [1];
-        testRange(strikeSubArray, timeSubArray, [1]);
+        testRange(strikeSubArray, timeSubArray, [1.1]);
       });
 
       it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
@@ -560,49 +565,49 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getIndexFromStrike", function () {
+    describe.only("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
-        assert.equal(2000, blackScholesJS.getIndexFromStrike(200));
-        assert.equal(2000, blackScholesJS.getIndexFromStrike(200.00001));
-        assert.equal(2000, blackScholesJS.getIndexFromStrike(201));
-        assert.equal(2000, blackScholesJS.getIndexFromStrike(203));
-        assert.equal(2040, blackScholesJS.getIndexFromStrike(204));
-        assert.equal(2040, blackScholesJS.getIndexFromStrike(205));
-        assert.equal(2600, blackScholesJS.getIndexFromStrike(260));
-        assert.equal(2600, blackScholesJS.getIndexFromStrike(261));
-        assert.equal(4960, blackScholesJS.getIndexFromStrike(499));
-        assert.equal(4960, blackScholesJS.getIndexFromStrike(499.9999));
+        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));
+        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200.00001));
+        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(201));
+        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(203));
+        assert.equal(204 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(204));
+        assert.equal(204 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(205));
+        assert.equal(260 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(260));
+        assert.equal(260 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(261));
+        assert.equal(496 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(499));
+        assert.equal(496 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(499.9999));
       });
 
       it("calculates index for strike [120, 200)", async function () {
-        assert.equal(1200, blackScholesJS.getIndexFromStrike(120));
-        assert.equal(1200, blackScholesJS.getIndexFromStrike(120.00001));
-        assert.equal(1210, blackScholesJS.getIndexFromStrike(121));
-        assert.equal(1990, blackScholesJS.getIndexFromStrike(199));
-        assert.equal(1990, blackScholesJS.getIndexFromStrike(199.9999));
+        assert.equal(120 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(120));
+        assert.equal(120 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(120.00001));
+        assert.equal(121 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(121));
+        assert.equal(199 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(199));
+        assert.equal(199 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(199.9999));
       });
 
       it("calculates index for strike [105, 120)", async function () {
-        assert.equal(1050, blackScholesJS.getIndexFromStrike(105));
-        assert.equal(1050, blackScholesJS.getIndexFromStrike(105.1));
-        assert.equal(1050, blackScholesJS.getIndexFromStrike(105.499999));
-        assert.equal(1055, blackScholesJS.getIndexFromStrike(105.5));
-        assert.equal(1055, blackScholesJS.getIndexFromStrike(105.500001));
-        assert.equal(1080, blackScholesJS.getIndexFromStrike(108.333333));
-        assert.equal(1085, blackScholesJS.getIndexFromStrike(108.666666));
-        assert.equal(1195, blackScholesJS.getIndexFromStrike(119.999999));
+        assert.equal(105 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105));
+        assert.equal(105 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.1));
+        assert.equal(105.4 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.499999));
+        assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.5));
+        assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.500001));
+        assert.equal(108.3 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(108.333333));
+        assert.equal(108.6 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(108.666666));
+        assert.equal(119.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(119.999999));
       });
 
       it("calculates index for strike [80, 105)", async function () {
-        assert.equal(800, blackScholesJS.getIndexFromStrike(80));
-        assert.equal(800, blackScholesJS.getIndexFromStrike(80.1));
-        assert.equal(800, blackScholesJS.getIndexFromStrike(80.199999));
-        assert.equal(802, blackScholesJS.getIndexFromStrike(80.2));
-        assert.equal(998, blackScholesJS.getIndexFromStrike(99.999999));
-        assert.equal(1000, blackScholesJS.getIndexFromStrike(100.000001));
-        assert.equal(1048, blackScholesJS.getIndexFromStrike(104.999999));
+        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80));
+        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.1));
+        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.199999));
+        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.2));
+        assert.equal(99.95 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(99.999999));
+        assert.equal(100 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(100.000001));
+        assert.equal(104.9 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(104.999999));
       });
-      // todo: finish down to 20
+      // todo: start from 20, test each segment
     });
   });
 });

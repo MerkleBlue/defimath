@@ -4,8 +4,9 @@ export const VOL_FIXED = 1;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price +-5x from spot price
-export const STRIKE_MIN = 20; // 20;
-export const STRIKE_MAX = 500; // 500;
+export const STRIKE_MIN = 90; // 20;
+export const STRIKE_MAX = 110; // 500;
+export const STRIKE_INDEX_MULTIPLIER = 100;
 
 export class BlackScholesJS {
 
@@ -94,7 +95,7 @@ export class BlackScholesJS {
   interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = true;
+    const log = false;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
@@ -193,23 +194,31 @@ export class BlackScholesJS {
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 
     const rest = strike - boundary;
-    return Math.round(boundary * 10 + Math.floor(rest / step) * step * 10);
+    return Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor(rest / step) * step * STRIKE_INDEX_MULTIPLIER);
   }
 
   getStrikeStepAndBoundary(strike) {
-    if (strike < 90) {
+    if (strike >= 20 && strike < 90) {
       return { step: 0.5, boundary: 20 };
     }
 
-    if (strike < 110) {
+    if (strike >= 90 && strike < 99) {
       return { step: 0.1, boundary: 90 };
     }
 
-    if (strike < 130) {
+    if (strike >= 99 && strike < 101) {
+      return { step: 0.05, boundary: 99 };
+    }
+
+    if (strike >= 101 && strike < 110) {
+      return { step: 0.1, boundary: 101 };
+    }
+
+    if (strike >= 110 && strike < 130) {
       return { step: 0.5, boundary: 110 };
     }
 
-    if (strike < 200) {
+    if (strike >= 130 && strike < 200) {
       return { step: 1, boundary: 130 };
     }
 
@@ -218,7 +227,7 @@ export class BlackScholesJS {
 
   getStrikeFromIndex(index) {
     // since 0.1 is the smallest step, we can just return the index / 10
-    return index / 10;
+    return index / STRIKE_INDEX_MULTIPLIER;
   }
 
   findMajor(value) {
