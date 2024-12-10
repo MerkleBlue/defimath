@@ -4,8 +4,8 @@ export const VOL_FIXED = 1;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price +-5x from spot price
-export const STRIKE_MIN = 90; // 20;
-export const STRIKE_MAX = 110; // 500;
+export const STRIKE_MIN = 20; // 20;
+export const STRIKE_MAX = 500; // 500;
 export const STRIKE_INDEX_MULTIPLIER = 100;
 
 export class BlackScholesJS {
@@ -190,6 +190,7 @@ export class BlackScholesJS {
     // $0.000545, $0.001411, $0.000486, $0.016727, $0.001722, cube, 515 strike points
     // $0.000545, $0.001411, $0.000486, $0.000565, $0.001722, cube, 526 strike points, commit
     // $0.000044, $0.000113, $0.000059, $0.000060, $0.000061, cube, 526 strike points, strikeWeight precalculated
+    // $0.000044, $0.000046, $0.000049, $0.000047, $0.000059, $0.000060, $0.000061
     
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 

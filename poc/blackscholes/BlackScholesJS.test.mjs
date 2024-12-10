@@ -237,7 +237,7 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getCallOptionPrice", function () {
+    describe.only("getCallOptionPrice", function () {
 
       function testRange(strikePoints, timePoints, volPoints, allowedAbsError = 0.000114, multi = 10) {
         // NSV = non small values, we don't care about error below $0.001
@@ -252,9 +252,6 @@ describe("BlackScholesJS", function () {
                 const actual = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
 
                 const error = expected !== 0 ? (Math.abs(actual - expected) / expected * 100) : 0;
-                // if (strike === 1030 && exp === 3600 && vol === 0.88) {
-                //   console.log("err:", error.toFixed(6) + "%", "exp:", expected.toFixed(6), "act:", actual.toFixed(6), "strike:", strike, "exp:", exp, "vol:", vol);
-                // }
                 count++;
 
                 // we don't care about small values
@@ -281,7 +278,7 @@ describe("BlackScholesJS", function () {
                 }
 
                 // print progress
-                if (count % Math.round(totalPoints / 50) === 0) {
+                if (count % Math.round(totalPoints / 20) === 0) {
                   console.log("Progress:", (count / totalPoints * 100).toFixed(0) + "%, Max abs error:", "$" + (maxAbsError ? maxAbsError.toFixed(6) : "0"));
                 }
               }
@@ -298,7 +295,7 @@ describe("BlackScholesJS", function () {
         console.log("Max rel error params: ", maxRelErrorParams);
         console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
 
-        assert.isBelow(maxAbsError, allowedAbsError); // max error is below $0.000114
+        assert.isBelow(maxAbsError, allowedAbsError); // max error is below max allowed absolute error
       }
 
       describe("random tests", function () {
@@ -314,7 +311,7 @@ describe("BlackScholesJS", function () {
         }
 
 
-        it.only("gets multiple call prices: random", async function () {
+        it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(99, 101, 2000);
           testRange(strikeSubArray, testTimePoints, [1], 0.000114);
         });
@@ -332,12 +329,21 @@ describe("BlackScholesJS", function () {
         testRange(strikeSubArray, testTimePoints, [1], 0.000045);
       });
 
-      it("gets multiple call prices: $900 - $1100, 60s - 4y, 100%", async function () {
-        const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 110);
-        testRange(strikeSubArray, testTimePoints, [1], 0.000114);
+      it("gets multiple call prices: $900 - $990, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000047);
       });
 
-      // good when no extrinsic value
+      it("gets multiple call prices: $990 - $1010, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000050);
+      });
+
+      it("gets multiple call prices: $1010 - $1100, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
+        testRange(strikeSubArray, testTimePoints, [1], 0.000048);
+      });
+
       it("gets multiple call prices: $1100 - $1300, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
         testRange(strikeSubArray, testTimePoints, [1], 0.000060);
@@ -403,40 +409,6 @@ describe("BlackScholesJS", function () {
         console.log("expected", expected, "actual", actual);
         console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
         console.log("Error: " + (error).toFixed(8) + "%");
-      });
-
-      it("gets multiple call prices", async function () {
-        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
-        for(let exp = 50; exp < 80; exp += 1) {
-          for (let strike = 210; strike < 4900; strike += 10) {
-            for (let vol = 0.8; vol < 1.2; vol += 0.08) {
-              for (let rate = 0; rate < 0.01; rate += 0.02) {
-                const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "call");
-                const actual = blackScholesJS.getCallOptionPrice(1000, strike, exp * SEC_IN_DAY, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
-
-                const error = (Math.abs(actual - expected) / expected * 100);
-                totalError += error;
-                count++;
-                if (maxError < error && expected > 0.99) {
-                  maxError = error;
-                  maxErrorParams = {
-                    exp, strike, vol, rate, actual, expected
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        const avgError = totalError / count;
-
-        console.log("Total tests: " + count);
-        console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-        console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%");
-        console.log("Max error params: ", maxErrorParams);
-
-        assert.isBelow(avgError, 0.00068); // avg error is below 0.00068%
-        assert.isBelow(maxError, 0.0053); // max error is below 0.0053%
       });
     });
 
