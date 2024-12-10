@@ -61,7 +61,7 @@ describe("BlackScholesJS", function () {
     const timePoints = generateTimePoints();
   
     const testTimePoints = [];
-    for (let i = 60; i < 128; i++) { // from 1 seconds
+    for (let i = 30; i < 128; i++) { // from 1 seconds
       testTimePoints.push(i);
     }
 
