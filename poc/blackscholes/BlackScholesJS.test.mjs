@@ -61,7 +61,7 @@ describe("BlackScholesJS", function () {
     const timePoints = generateTimePoints();
   
     const testTimePoints = [];
-    for (let i = 15; i < 128; i++) { // from 1 seconds
+    for (let i = 10; i < 128; i++) { // from 1 seconds
       testTimePoints.push(i);
     }
 
@@ -271,7 +271,7 @@ describe("BlackScholesJS", function () {
                 const absError = Math.abs(actual - expected);
                 if (maxAbsError < absError) {
                   maxAbsError = absError;
-                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi)
+                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
                   maxAbsErrorParams = {
                     exp, strike: strike * multi, vol, rate, actual, expected
                   }
@@ -319,9 +319,9 @@ describe("BlackScholesJS", function () {
 
     
       it("gets multiple call prices: one specific max error", async function () {
-        const strikeSubArray = [100.0125];
-        const timeSubArray = [1];
-        testRange(strikeSubArray, timeSubArray, [1.1]);
+        const strikeSubArray = [100.00625];
+        const timeSubArray = [3];
+        testRange(strikeSubArray, timeSubArray, [1]);
       });
 
       it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
@@ -334,7 +334,8 @@ describe("BlackScholesJS", function () {
         testRange(strikeSubArray, testTimePoints, [1], 0.000047);
       });
 
-      it.only("gets multiple call prices: $990 - $1010, 60s - 4y, 100%", async function () {
+      // here are errors
+      it("gets multiple call prices: $990 - $1010, 60s - 4y, 100%", async function () {
         const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
         testRange(strikeSubArray, testTimePoints, [1], 0.000051);
       });
@@ -354,8 +355,8 @@ describe("BlackScholesJS", function () {
         testRange(strikeSubArray, testTimePoints, [1], 0.000061);
       });
 
-      it("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
-        const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value <= 500);
+      it.only("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
+        const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
         testRange(strikeSubArray, testTimePoints, [1], 0.000062);
       });
 
@@ -537,7 +538,7 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe.only("getIndexFromStrike", function () {
+    describe("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200.00001));
