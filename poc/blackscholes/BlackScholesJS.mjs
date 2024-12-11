@@ -194,8 +194,7 @@ export class BlackScholesJS {
     
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 
-    const rest = strike - boundary;
-    return Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor(rest / step) * step * STRIKE_INDEX_MULTIPLIER);
+    return Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor((strike + 1e-9 - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER);
   }
 
   getStrikeStepAndBoundary(strike) {
