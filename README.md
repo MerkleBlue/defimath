@@ -3,7 +3,7 @@ Primitives for Solidity DeFi contracts
 
 ## Black Scholes Option Pricing
 
-The Black Scholes option pricing model is a mathematical model used to calculate the price of an option. The model is used to determine the price of a European call or put option, which can be exercised only at the expiration date of the option. The model is based on the assumption that the price of the underlying asset follows a geometric Brownian motion.
+The Black Scholes option pricing model is a mathematical model used to calculate the price of a European call or put option. European options can be exercised only at the expiration date of the option. 
 
 Black Scholes formula uses 5 inputs, and calculates option price. The inputs are:
 - Current price of the underlying asset
@@ -11,9 +11,8 @@ Black Scholes formula uses 5 inputs, and calculates option price. The inputs are
 - Time to expiration
 - Risk-free interest rate
 - Volatility of the underlying asset
-Also, option can be call or put, so that can be 6th input.
 
-Calculating option price using math calculation can be expensive, so we can use pre-calculated values for the option price. We can use the pre-calculated values to get the option price for the given inputs.
+Calculating option price using math calculations that includes logarithms and standard normal distribution can be expensive when implemented in Solidity, so we can use pre-calculated values for the option price.
 
 ## Option Price Calculation
 
@@ -26,6 +25,23 @@ see https://optioncreator.com/st7im8w and https://optioncreator.com/steaphh
 see: https://optioncreator.com/sty6x02
 
 Additionally, call-put parity allows us that we only use one table with call options to calculate put price using: call + strike = future + put
+
+# Limitations
+
+The following limitations apply to the lookup table:
+
+ - strike prices are limited to 5x spot price on both sides, i.e. from $200 to $5000 for spot price of $1000
+ - time to expiration is limited to 1 year
+ - volatility is limited to 200%
+ - risk-free rate is limited to 20%
+
+# Precision
+
+Maximum error is $0.000061 when called within limitations for a $1000 spot price. For example, for ETH options when ETH is trading around $4000, max error is $0.000244 (less than 1/40 of a cent).
+
+# Performance
+
+BlackScholes contract costs on average around 6400 gas to calculate option price (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.
 
 # Sample Hardhat Project
 
