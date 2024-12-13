@@ -70,6 +70,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
       const expirationYearsB = expirationSecs[j + 1] / (365 * 24 * 60 * 60);
 
+      // NOTE: AB means strike A and expiration B
       const optionPriceAA = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsA, vol, 0, "call"));
       const optionPriceAB = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsB, vol, 0, "call"));
       const optionPriceBA = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsA, vol, 0, "call"));
@@ -79,10 +80,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const intrinsicPriceAB = optionPriceAB - Math.max(0, spot - strikeA);
       const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
       const intrinsicPriceBB = optionPriceBB - Math.max(0, spot - strikeB);
-
       
       let x12 = new Array(10), x34 = new Array(10), x34w = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10), y3w = new Array(10), y4w = new Array(10);;
-      let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0, a3 = 0, b3 = 0, c3 = 0, a4 = 0, b4 = 0, c4 = 0;
+      let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0;
       let a3w = 0, b3w = 0, c3w = 0, a4w = 0, b4w = 0, c4w = 0;
 
     
@@ -93,25 +93,21 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         const initialValuesFourth = [0, 0, 0, 0];
 
         // time points
+        // calculated as difference between intrinsic prices of AA and AT, and AB and BT
         const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
         for (let k = 0; k < fitPoints; k++) {
           
           const tpmTime = expirationYearsA + k * timeChunk;
       
-          const PriceAT = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
-          const PriceBT = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
-          const intrinsicPriceAT = Math.max(PriceAT - Math.max(0, spot - strikeA));
-          const intrinsicPriceBT = Math.max(PriceBT - Math.max(0, spot - strikeB));
+          const optionPriceAT = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
+          const optionPriceBT = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
+          const intrinsicPriceAT = Math.max(optionPriceAT - Math.max(0, spot - strikeA));
+          const intrinsicPriceBT = Math.max(optionPriceBT - Math.max(0, spot - strikeB));
       
           x12[k] = k * timeChunk / (expirationYearsB - expirationYearsA);
           y1[k] = intrinsicPriceAT - intrinsicPriceAA;
           y2[k] = intrinsicPriceBT - intrinsicPriceBA;
         }
-
-        // let result = levenbergMarquardt({ x: x12, y: y1 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        // a1 = result.parameterValues[0];
-        // b1 = result.parameterValues[1];
-        // // console.log(result.parameterError, resultCube.parameterError);
 
         let resultCube = levenbergMarquardt({ x: x12, y: y1 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         a1 = resultCube.parameterValues[0];
@@ -124,11 +120,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         c2 = resultCube.parameterValues[2];
 
 
-        // result = levenbergMarquardt({ x: x12, y: y2 }, quadraticFit, { initialValues, maxIterations: 200, errorTolerance: 1e-10 });
-        // a2 = result.parameterValues[0];
-        // b2 = result.parameterValues[1];
-
         // strike points
+        // calculated as strike weights between AA and TA, and AB and TB, always in [0, 1]
         const strikeChunk  = (strikeB - strikeA) / fitPoints;
         for (let k = 0; k < fitPoints; k++) {
           
@@ -136,27 +129,11 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       
           const optionPriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
           const optionPriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
-          // const intrinsicPriceTA = Math.max(optionPriceTA - Math.max(0, spot - tpmStrike));
-          // const intrinsicPriceTB = Math.max(optionPriceTB - Math.max(0, spot - tpmStrike));
 
-          // record intrinsic price difference between TA and AA, and TB and AB
-          // x34[k] = k * strikeChunk;
-          // y3[k] = intrinsicPriceTA - intrinsicPriceAA;
-          // y4[k] = intrinsicPriceTB - intrinsicPriceAB;
           x34w[k] = (k * strikeChunk) / (strikeB - strikeA);
           y3w[k] = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA);
           y4w[k] = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB); // strike weights are always in [0, 1]
         }
-
-        // resultCube = levenbergMarquardt({ x: x34, y: y3 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
-        // a3 = resultCube.parameterValues[0];
-        // b3 = resultCube.parameterValues[1];
-        // c3 = resultCube.parameterValues[2];
-
-        // resultCube = levenbergMarquardt({ x: x34, y: y4 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
-        // a4 = resultCube.parameterValues[0];
-        // b4 = resultCube.parameterValues[1];
-        // c4 = resultCube.parameterValues[2];
 
         resultCube = levenbergMarquardt({ x: x34w, y: y3w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         a3w = resultCube.parameterValues[0];
@@ -206,8 +183,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           }
         }
       }
-
-
 
       const element = {
         intrinsicPriceAA,
