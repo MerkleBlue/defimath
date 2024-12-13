@@ -191,6 +191,9 @@ export class BlackScholesJS {
     // $0.000545, $0.001411, $0.000486, $0.000565, $0.001722, cube, 526 strike points, commit
     // $0.000044, $0.000113, $0.000059, $0.000060, $0.000061, cube, 526 strike points, strikeWeight precalculated
     // $0.000044, $0.000046, $0.000051, $0.000047, $0.000059, $0.000060, $0.000061
+
+    // 2 years and up to 200% vol, cube, 526 strike points, strikeWeight precalculated
+    // $0.000061, $0.000068, $0.000067, $0.000071, $0.000085, $0.000086, $0.000070, 547 strike points
     
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 

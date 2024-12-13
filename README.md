@@ -31,7 +31,7 @@ Additionally, call-put parity allows us that we only use one table with call opt
 The following limitations apply to the lookup table:
 
  - strike prices are limited to 5x spot price on both sides, i.e. from $200 to $5000 for spot price of $1000
- - time to expiration is limited to 1 year
+ - time to expiration is in range from 1 second to 2 years
  - volatility is limited to 200%
  - risk-free rate is limited to 20%
 

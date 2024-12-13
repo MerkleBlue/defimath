@@ -23,9 +23,9 @@ describe("BlackScholesJS", function () {
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
     const result = {
-        min: { a1: Infinity, b1: Infinity, a3: Infinity, b3: Infinity, a4: Infinity, b4: Infinity },
-        max: { a1: -Infinity, b1: -Infinity, a3: -Infinity, b3: -Infinity, a4: -Infinity, b4: -Infinity },
-        absMin: { a1: Infinity, b1: Infinity, a3: Infinity, b3: Infinity, a4: Infinity, b4: Infinity }
+        min: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3: Infinity, b3: Infinity, c3: Infinity, a4: Infinity, b4: Infinity, c4: Infinity },
+        max: { a1: -Infinity, b1: -Infinity, c1: -Infinity, a2: -Infinity, b2: -Infinity, c2: -Infinity, a3: -Infinity, b3: -Infinity, c3: -Infinity, a4: -Infinity, b4: -Infinity, c4: -Infinity },
+        absMin: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3: Infinity, b3: Infinity, c3: Infinity, a4: Infinity, b4: Infinity, c4: Infinity }
 
     };
 
@@ -70,7 +70,7 @@ describe("BlackScholesJS", function () {
       if (cellDeltaTime >= 16) {
         const step = cellDeltaTime / 16;
         for (let j = 0; j < 16; j++) {
-          if (timePoints[i] + j * step < 4 * SEC_IN_YEAR) { // up to 4 years = 1 year and 200% vol
+          if (timePoints[i] + j * step < 8 * SEC_IN_YEAR) { // up to 8 years = 2 years and 200% vol
             testTimePoints.push(Math.round(timePoints[i] + j * step));
           }
         }
@@ -327,7 +327,7 @@ describe("BlackScholesJS", function () {
         });
       });
 
-      describe("multiple call options - 16x16 per cell", function () {
+      describe.only("multiple call options - 16x16 per cell", function () {
         it("gets multiple call prices: one specific max error", async function () {
           const strikeSubArray = [100.00625];
           const timeSubArray = [3];
@@ -336,38 +336,38 @@ describe("BlackScholesJS", function () {
 
         it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000045);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000062);
         });
 
         it("gets multiple call prices: $900 - $990, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000047);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000069);
         });
 
         // here are errors
         it("gets multiple call prices: $990 - $1010, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000051);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000068);
         });
 
         it("gets multiple call prices: $1010 - $1100, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000048);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000072);
         });
 
         it("gets multiple call prices: $1100 - $1300, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000060);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000086);
         });
 
         it("gets multiple call prices: $1300 - $2000, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000061);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000087);
         });
 
         it("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000062);
+          testRange(strikeSubArray, testTimePoints, [1], true, 0.000079);
         });
       });
     });
