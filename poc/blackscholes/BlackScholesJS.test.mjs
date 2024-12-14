@@ -70,7 +70,7 @@ describe("BlackScholesJS", function () {
       if (cellDeltaTime >= 16) {
         const step = cellDeltaTime / 16;
         for (let j = 0; j < 16; j++) {
-          if (timePoints[i] + j * step < 8 * SEC_IN_YEAR) { // up to 8 years = 2 years and 200% vol
+          if (timePoints[i] + j * step < 2 * SEC_IN_YEAR) { // up to 2 years
             testTimePoints.push(Math.round(timePoints[i] + j * step));
           }
         }
@@ -321,7 +321,7 @@ describe("BlackScholesJS", function () {
           return testStrikePoints;
         }
 
-        it.only("gets multiple call prices: random", async function () {
+        it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(99, 101, 4000);
           testRange(strikeSubArray, testTimePoints, [1], true, 0.00062);
         });

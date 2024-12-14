@@ -1,6 +1,6 @@
 // fix the spot price in table to $100, and volatilty to 100%
 export const SPOT_FIXED = 100;
-export const VOL_FIXED = 1;
+export const VOL_FIXED = 0.25;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price +-5x from spot price
@@ -26,6 +26,7 @@ export class BlackScholesJS {
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = Math.round(timeToExpirySec * (volRatio * volRatio));
+    // console.log("strikeScaled", strikeScaled, "timeToExpirySecScaled", timeToExpirySecScaled, timeToExpirySec);
 
     // step 4: interpolate price
     const finalPrice = this.interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);

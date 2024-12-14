@@ -1,6 +1,6 @@
 import bs from "black-scholes";
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
-import { STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
+import { STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "./BlackScholesJS.mjs";
 import { mkConfig} from "export-to-csv";
 import { promises as fs } from "fs";
 const jsonConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
@@ -64,7 +64,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     for (let j = 0; j < expirationSecs.length - 1; j++) {
       // for each element calculate Black Scholes
       const spot = 100;
-      const vol = 1;  // 100%
+      const vol = VOL_FIXED;  // 25%
       const strikeA = strikes[i];
       const strikeB = strikes[i + 1];
       const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
