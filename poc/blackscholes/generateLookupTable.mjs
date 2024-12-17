@@ -283,7 +283,7 @@ export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
       points.push(newStrike);
     }
   }
-  points.push(endPoint);
+  points.push(endPoint); // last point
 
   return points;
 }
@@ -296,6 +296,9 @@ export function generateTimePoints() {
       points.push(parseFloat(2 ** major + minor * 2 ** (major - 3)));
     }
   }
+  points.push(parseFloat(2 ** 32)); // last point
+
+  // console.log("Last time point: ", points[points.length - 1]);
 
   return points;
 }

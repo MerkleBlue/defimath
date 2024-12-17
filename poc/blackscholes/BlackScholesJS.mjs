@@ -25,8 +25,14 @@ export class BlackScholesJS {
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
-    const timeToExpirySecScaled = Math.round(timeToExpirySec * (volRatio * volRatio));
+    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio); //Math.floor(timeToExpirySec * (volRatio * volRatio));
+    // console.log("timeToExpiryScaled (not rounded)", timeToExpirySec * (volRatio * volRatio));
     // console.log("strikeScaled", strikeScaled, "timeToExpirySecScaled", timeToExpirySecScaled, timeToExpirySec);
+
+    // handle when time is 0
+    if (timeToExpirySecScaled === 0) {
+      return Math.max(0, spot - strike);
+    }
 
     // step 4: interpolate price
     const finalPrice = this.interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
@@ -100,14 +106,14 @@ export class BlackScholesJS {
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
-    const timeToExpiryIndex = this.getIndexFromTime(timeToExpirySecScaled);
-    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
+    const timeToExpiryIndex = this.getIndexFromTime(Math.floor(timeToExpirySecScaled));
     log && console.log("strikeIndex:", strikeIndex);
     log && console.log("timeToExpiryIndex:", timeToExpiryIndex);
+    const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
 
     // step 2) calculate the time delta and weight
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
-    const expirationStep = 2 ** (Math.floor(timeToExpiryIndex / 10) - 3);
+    const expirationStep = Math.max(1, 2 ** (Math.floor(timeToExpiryIndex / 10) - 3));
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
     log && console.log("timeToExpiryFromIndex:", timeToExpiryFromIndex);
     log && console.log("expirationStep:", expirationStep);
@@ -125,7 +131,7 @@ export class BlackScholesJS {
     // step 4) interpolate the price using quadratic interpolation
 
     const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
-    const interpolatedPrice2 = cell.a2 * (timeToExpiryWeight ** 3) + cell.b2 * (timeToExpiryWeight ** 2) + cell.c2 * timeToExpiryWeight;
+    const interpolatedPrice2 = Math.max(0, cell.a2 * (timeToExpiryWeight ** 3) + cell.b2 * (timeToExpiryWeight ** 2) + cell.c2 * timeToExpiryWeight);
     const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
     const interpolatedStrikeWeight4w = cell.a4w * (strikeWeight ** 3) + cell.b4w * (strikeWeight ** 2) + cell.c4w * strikeWeight;
 

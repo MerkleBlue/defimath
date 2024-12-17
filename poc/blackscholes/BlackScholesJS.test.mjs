@@ -136,7 +136,7 @@ describe("BlackScholesJS", function () {
             const absError = Math.abs(actual - expected);
             if (maxAbsError < absError) {
               maxAbsError = absError;
-              // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+              console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
               maxAbsErrorParams = {
                 exp, strike: strike * multi, vol, rate, actual, expected
               }
@@ -344,7 +344,6 @@ describe("BlackScholesJS", function () {
           testRange(strikeSubArray, testTimePoints, [1], true, 0.000069);
         });
 
-        // here are errors
         it("gets multiple call prices: $990 - $1010, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           testRange(strikeSubArray, testTimePoints, [1], true, 0.000068);
@@ -368,6 +367,23 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           testRange(strikeSubArray, testTimePoints, [1], true, 0.000079);
+        });
+      });
+
+      describe("multiple call options - vol limit testing", function () {
+        it("gets multiple call prices: vol 200%", async function () {
+          testRange(testStrikePoints, testTimePoints, [2], true, 0.000087);
+        });
+
+        it("gets multiple call prices: vol 1% - one specific", async function () {
+          const strikeSubArray = [100.00625];
+          const timeSubArray = [1000];
+          testRange(strikeSubArray, timeSubArray, [0.01], true, 0.000087);
+        });
+
+        it("gets multiple call prices: vol 1%", async function () {
+          const timeSubArray = testTimePoints.filter(value => value >= 1000 && value <= 2000);
+          testRange(testStrikePoints, timeSubArray, [0.01], true, 0.000087);
         });
       });
     });
