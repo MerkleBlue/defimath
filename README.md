@@ -32,7 +32,7 @@ The following limitations apply to the lookup table:
 
  - strike prices are limited to 5x spot price on both sides, i.e. from $200 to $5000 for spot price of $1000
  - time to expiration is in range from 1 second to 2 years
- - volatility is limited to 200%
+ - volatility is limited from 1% to 192%
  - risk-free rate is limited to 20%
 
 # Precision

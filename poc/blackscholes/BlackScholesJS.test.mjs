@@ -1,7 +1,7 @@
 
 import { assert } from "chai";
 import bs from "black-scholes";
-import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN } from "./BlackScholesJS.mjs";
+import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "./BlackScholesJS.mjs";
 import { generateLookupTable, generateStrikePoints, generateTimePoints } from "./generateLookupTable.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
 import { promises as fs } from "fs";
@@ -61,7 +61,7 @@ describe("BlackScholesJS", function () {
     const timePoints = generateTimePoints();
   
     const testTimePoints = [];
-    for (let i = 15; i < 128; i++) { // from 1 seconds
+    for (let i = 60; i < 128; i++) { // from 1 seconds
       testTimePoints.push(i);
     }
 
@@ -323,50 +323,50 @@ describe("BlackScholesJS", function () {
 
         it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(99, 101, 4000);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.00062);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.00062);
         });
       });
 
       describe.only("multiple call options - 16x16 per cell", function () {
-        it("gets multiple call prices: one specific max error", async function () {
-          const strikeSubArray = [100.00625];
-          const timeSubArray = [3];
-          testRange(strikeSubArray, timeSubArray, [1], true);
+        it.only("gets multiple call prices: one specific max error", async function () {
+          const strikeSubArray = [99.95625];
+          const timeSubArray = [60];
+          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000001);
         });
 
         it("gets multiple call prices: $200 - $900, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000062);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000062);
         });
 
         it("gets multiple call prices: $900 - $990, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000069);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000069);
         });
 
         it("gets multiple call prices: $990 - $1010, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000068);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000068);
         });
 
         it("gets multiple call prices: $1010 - $1100, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000072);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000072);
         });
 
         it("gets multiple call prices: $1100 - $1300, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000086);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000086);
         });
 
         it("gets multiple call prices: $1300 - $2000, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000087);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000087);
         });
 
         it("gets multiple call prices: $2000 - $5000, 60s - 4y, 100%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
-          testRange(strikeSubArray, testTimePoints, [1], true, 0.000079);
+          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.000079);
         });
       });
 

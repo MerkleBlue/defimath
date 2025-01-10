@@ -1,11 +1,12 @@
 // fix the spot price in table to $100, and volatilty to 100%
 export const SPOT_FIXED = 100;
-export const VOL_FIXED = 0.25;
+export const VOL_FIXED = 0.12;
+export const MAX_MAJOR = 34;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price +-5x from spot price
-export const STRIKE_MIN = 20; // 20;
-export const STRIKE_MAX = 500; // 500;
+export const STRIKE_MIN = 99.9; // 20;
+export const STRIKE_MAX = 100; // 500;
 export const STRIKE_INDEX_MULTIPLIER = 100;
 
 export class BlackScholesJS {
@@ -102,7 +103,7 @@ export class BlackScholesJS {
   interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = false;
+    const log = true;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
@@ -242,7 +243,7 @@ export class BlackScholesJS {
 
   findMajor(value) {
     let min = 2;
-    let max = 32;
+    let max = MAX_MAJOR;
     let result = -1;
 
     while (min <= max) {

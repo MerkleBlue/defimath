@@ -26,7 +26,7 @@ async function readSavedLookupTable() {
 }
 
 export async function generateLookupTable(blackScholesJS, writeToFile) {
-  // we start with fixed values: spot 100, volatility 100%, rate 0%
+  // we start with fixed values: spot 100, volatility 12%, rate 0%
   // what is not fixed: strike and expiration
 
   // read from file if exists
@@ -134,6 +134,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           y3w[k] = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA);
           y4w[k] = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB); // strike weights are always in [0, 1]
         }
+        x34w[fitPoints] = 1;
+        y3w[fitPoints] = 1;
+        y4w[fitPoints] = 1;
 
         resultCube = levenbergMarquardt({ x: x34w, y: y3w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         a3w = resultCube.parameterValues[0];
@@ -145,14 +148,21 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         b4w = resultCube.parameterValues[1];
         c4w = resultCube.parameterValues[2];
 
+        // 4th order fit
         resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
         const a3w4 = resultCube.parameterValues[0];
         const b3w4 = resultCube.parameterValues[1];
         const c3w4 = resultCube.parameterValues[2];
         const d3w4 = resultCube.parameterValues[3];
 
+        resultCube = levenbergMarquardt({ x: x34w, y: y4w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
+        const a4w4 = resultCube.parameterValues[0];
+        const b4w4 = resultCube.parameterValues[1];
+        const c4w4 = resultCube.parameterValues[2];
+        const d4w4 = resultCube.parameterValues[3];
 
-        if (expirationSecs[j] === 1 && strikeA === 100) {
+
+        if (expirationSecs[j] === 60 && strikeA === 99.95) {
           console.log("BINGO");
           console.log("x34w", x34w);
           console.log("y3w", y3w);
@@ -171,15 +181,21 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           // }
   
           // for strike interpolation
-          console.log("x34w and y3w");
-          const checkArray3 = [], checkArray4 = [];
+          const checkArray3w3 = [], checkArray3w4 = [], checkArray4w3 = [], checkArray4w4 = [];
           for (let k = 0; k < fitPoints; k++) {
             const x = (k * strikeChunk) / (strikeB - strikeA);
-            checkArray3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
-            checkArray4.push(a3w4 * x ** 4 + b3w4 * x ** 3 + c3w4 * x ** 2 + d3w4 * x);
+            checkArray3w3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
+            checkArray3w4.push(a3w4 * x ** 4 + b3w4 * x ** 3 + c3w4 * x ** 2 + d3w4 * x);
+            checkArray4w3.push(a4w * x ** 3 + b4w * x ** 2 + c4w * x);
+            checkArray4w4.push(a4w4 * x ** 4 + b4w4 * x ** 3 + c4w4 * x ** 2 + d4w4 * x);
           }
+          console.log("x34w, y3w, check3w, check3w4");          
           for (let i = 0; i < fitPoints; i++) {
-            console.log(x34w[i].toFixed(2) + ",", y3w[i].toFixed(6) + ",", checkArray3[i].toFixed(6)+ ",", checkArray4[i].toFixed(6));
+            console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6)+ ",", checkArray3w4[i].toFixed(6));
+          }
+          console.log("x34w, y4w, check4w, check4w4");          
+          for (let i = 0; i < fitPoints; i++) {
+            console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6)+ ",", checkArray4w4[i].toFixed(6));
           }
         }
       }
@@ -291,12 +307,12 @@ export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
 export function generateTimePoints() {
   const points = [1, 2, 3, 4, 5, 6, 7];
 
-  for (let major = 3; major < 32; major++) {
+  for (let major = 3; major < 34; major++) {
     for(let minor = 0; minor < 8; minor++) {
       points.push(parseFloat(2 ** major + minor * 2 ** (major - 3)));
     }
   }
-  points.push(parseFloat(2 ** 32)); // last point
+  points.push(parseFloat(2 ** 34)); // last point
 
   // console.log("Last time point: ", points[points.length - 1]);
 
