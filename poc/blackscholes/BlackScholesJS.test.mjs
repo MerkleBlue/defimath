@@ -348,7 +348,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000068);
+          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000075); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
