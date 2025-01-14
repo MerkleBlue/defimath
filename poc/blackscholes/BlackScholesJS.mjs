@@ -5,8 +5,8 @@ export const MAX_MAJOR = 34;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 
 // strike price +-5x from spot price
-export const STRIKE_MIN = 99.9; // 20;
-export const STRIKE_MAX = 100; // 500;
+export const STRIKE_MIN = 20; // 20;
+export const STRIKE_MAX = 500; // 500;
 export const STRIKE_INDEX_MULTIPLIER = 100;
 
 export class BlackScholesJS {
@@ -103,7 +103,7 @@ export class BlackScholesJS {
   interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = true;
+    const log = false;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);

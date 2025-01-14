@@ -60,11 +60,16 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   console.log("strikes", strikes);
   console.log("expirationSecs", expirationSecs);
 
+  const totalCount = (strikes.length - 1) * (expirationSecs.length - 1);
+  let count = 0;
   for (let i = 0; i < strikes.length - 1; i++) {
     for (let j = 0; j < expirationSecs.length - 1; j++) {
+      const progress = ++count / totalCount * 100;
+      if (progress % 10 === 0) console.log("Processing : ", progress.toFixed(0) + "%");
+
       // for each element calculate Black Scholes
       const spot = 100;
-      const vol = VOL_FIXED;  // 25%
+      const vol = VOL_FIXED;
       const strikeA = strikes[i];
       const strikeB = strikes[i + 1];
       const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
@@ -148,19 +153,18 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         b4w = resultCube.parameterValues[1];
         c4w = resultCube.parameterValues[2];
 
-        // 4th order fit
-        resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
-        const a3w4 = resultCube.parameterValues[0];
-        const b3w4 = resultCube.parameterValues[1];
-        const c3w4 = resultCube.parameterValues[2];
-        const d3w4 = resultCube.parameterValues[3];
+        // // 4th or 5th order fit will be used for extra low time values (< 90 secs)
+        // resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
+        // const a3w4 = resultCube.parameterValues[0];
+        // const b3w4 = resultCube.parameterValues[1];
+        // const c3w4 = resultCube.parameterValues[2];
+        // const d3w4 = resultCube.parameterValues[3];
 
-        resultCube = levenbergMarquardt({ x: x34w, y: y4w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
-        const a4w4 = resultCube.parameterValues[0];
-        const b4w4 = resultCube.parameterValues[1];
-        const c4w4 = resultCube.parameterValues[2];
-        const d4w4 = resultCube.parameterValues[3];
-
+        // resultCube = levenbergMarquardt({ x: x34w, y: y4w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
+        // const a4w4 = resultCube.parameterValues[0];
+        // const b4w4 = resultCube.parameterValues[1];
+        // const c4w4 = resultCube.parameterValues[2];
+        // const d4w4 = resultCube.parameterValues[3];
 
         if (expirationSecs[j] === 60 && strikeA === 99.95) {
           console.log("BINGO");
@@ -181,21 +185,20 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           // }
   
           // for strike interpolation
-          const checkArray3w3 = [], checkArray3w4 = [], checkArray4w3 = [], checkArray4w4 = [];
+          const checkArray3w3 = [], checkArray3w4 = [], checkArray4w3 = [], checkArray4w4 = [], checkArray3wn = [], checkArray4wn = []
           for (let k = 0; k < fitPoints; k++) {
             const x = (k * strikeChunk) / (strikeB - strikeA);
             checkArray3w3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
-            checkArray3w4.push(a3w4 * x ** 4 + b3w4 * x ** 3 + c3w4 * x ** 2 + d3w4 * x);
             checkArray4w3.push(a4w * x ** 3 + b4w * x ** 2 + c4w * x);
-            checkArray4w4.push(a4w4 * x ** 4 + b4w4 * x ** 3 + c4w4 * x ** 2 + d4w4 * x);
           }
-          console.log("x34w, y3w, check3w, check3w4");          
+          console.log("Print 3 and 4")
+          console.log("x34w, actual y3w, check 3w");          
           for (let i = 0; i < fitPoints; i++) {
-            console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6)+ ",", checkArray3w4[i].toFixed(6));
+            console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6));
           }
-          console.log("x34w, y4w, check4w, check4w4");          
+          console.log("x34w, y4w, check4w");          
           for (let i = 0; i < fitPoints; i++) {
-            console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6)+ ",", checkArray4w4[i].toFixed(6));
+            console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
           }
         }
       }
