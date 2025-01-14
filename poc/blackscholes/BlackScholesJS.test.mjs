@@ -333,19 +333,19 @@ describe("BlackScholesJS", function () {
         //   testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000001);
         // });
 
-        it.only("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 300);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000062);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000059);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-          const timeSubArray = testTimePoints.filter(value => value >= 300);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000069);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
 
-        it("gets multiple call prices: $990 - $1010, 240s - 2y, 12%", async function () {
+        it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
           testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000068);
@@ -353,26 +353,26 @@ describe("BlackScholesJS", function () {
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
-          const timeSubArray = testTimePoints.filter(value => value >= 300);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000072);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000068);
         });
 
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-          const timeSubArray = testTimePoints.filter(value => value >= 300);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000086);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000082);
         });
 
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-          const timeSubArray = testTimePoints.filter(value => value >= 300);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000087);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000082);
         });
 
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
-          const timeSubArray = testTimePoints.filter(value => value >= 300);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000079);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000065);
         });
       });
 
