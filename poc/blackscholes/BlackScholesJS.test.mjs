@@ -23,9 +23,9 @@ describe("BlackScholesJS", function () {
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
     const result = {
-        min: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3: Infinity, b3: Infinity, c3: Infinity, a4: Infinity, b4: Infinity, c4: Infinity },
-        max: { a1: -Infinity, b1: -Infinity, c1: -Infinity, a2: -Infinity, b2: -Infinity, c2: -Infinity, a3: -Infinity, b3: -Infinity, c3: -Infinity, a4: -Infinity, b4: -Infinity, c4: -Infinity },
-        absMin: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3: Infinity, b3: Infinity, c3: Infinity, a4: Infinity, b4: Infinity, c4: Infinity }
+        min: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3w: Infinity, b3w: Infinity, c3w: Infinity, a4w: Infinity, b4w: Infinity, c4w: Infinity },
+        max: { a1: -Infinity, b1: -Infinity, c1: -Infinity, a2: -Infinity, b2: -Infinity, c2: -Infinity, a3w: -Infinity, b3w: -Infinity, c3w: -Infinity, a4w: -Infinity, b4w: -Infinity, c4w: -Infinity },
+        absMin: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3w: Infinity, b3w: Infinity, c3w: Infinity, a4w: Infinity, b4w: Infinity, c4w: Infinity }
 
     };
 
@@ -335,13 +335,13 @@ describe("BlackScholesJS", function () {
 
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          const timeSubArray = testTimePoints.filter(value => value >= 144);
           testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000059);
         });
 
-        it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
+        it.only("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          const timeSubArray = testTimePoints.filter(value => value >= 144);
           testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
 

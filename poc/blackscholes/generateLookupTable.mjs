@@ -196,7 +196,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           for (let i = 0; i < fitPoints; i++) {
             console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6));
           }
-          console.log("x34w, y4w, check4w");          
+          console.log("x34w, actual y4w, check 4w");          
           for (let i = 0; i < fitPoints; i++) {
             console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
           }
@@ -205,9 +205,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
       const element = {
         intrinsicPriceAA,
-        intrinsicPriceAB,
         intrinsicPriceBA,
-        intrinsicPriceBB,
         a1,
         b1,
         c1,
