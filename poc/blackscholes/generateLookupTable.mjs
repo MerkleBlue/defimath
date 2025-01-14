@@ -135,23 +135,26 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           const optionPriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
           const optionPriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
 
+          const y3wtemp = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA); // strike weights are always in [0, 1]
+          const y4wtemp = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB);
+
           x34w[k] = (k * strikeChunk) / (strikeB - strikeA);
-          y3w[k] = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA);
-          y4w[k] = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB); // strike weights are always in [0, 1]
+          y3w[k] = y3wtemp ? y3wtemp : 0;
+          y4w[k] = y4wtemp ? y4wtemp : 0; 
         }
         x34w[fitPoints] = 1;
         y3w[fitPoints] = 1;
         y4w[fitPoints] = 1;
 
         resultCube = levenbergMarquardt({ x: x34w, y: y3w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
-        a3w = resultCube.parameterValues[0];
-        b3w = resultCube.parameterValues[1];
-        c3w = resultCube.parameterValues[2];
+        a3w = resultCube.parameterValues[0] ? resultCube.parameterValues[0] : 0;
+        b3w = resultCube.parameterValues[1] ? resultCube.parameterValues[1] : 0;
+        c3w = resultCube.parameterValues[2] ? resultCube.parameterValues[2] : 0;
 
         resultCube = levenbergMarquardt({ x: x34w, y: y4w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
-        a4w = resultCube.parameterValues[0];
-        b4w = resultCube.parameterValues[1];
-        c4w = resultCube.parameterValues[2];
+        a4w = resultCube.parameterValues[0] ? resultCube.parameterValues[0] : 0;
+        b4w = resultCube.parameterValues[1] ? resultCube.parameterValues[1] : 0;
+        c4w = resultCube.parameterValues[2] ? resultCube.parameterValues[2] : 0;
 
         // // 4th or 5th order fit will be used for extra low time values (< 90 secs)
         // resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
@@ -204,8 +207,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       }
 
       const element = {
-        intrinsicPriceAA,
-        intrinsicPriceBA,
+        intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e8) / 1e8,
+        intrinsicPriceBA: Math.round(intrinsicPriceBA * 1e8) / 1e8,
         a1: Math.round(a1 * 1e6) / 1e6,
         b1: Math.round(b1 * 1e6) / 1e6,
         c1: Math.round(c1 * 1e6) / 1e6,
