@@ -206,18 +206,18 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const element = {
         intrinsicPriceAA,
         intrinsicPriceBA,
-        a1,
-        b1,
-        c1,
-        a2,
-        b2,
-        c2,
-        a3w,
-        b3w,
-        c3w,
-        a4w,
-        b4w,
-        c4w
+        a1: Math.round(a1 * 1e6) / 1e6,
+        b1: Math.round(b1 * 1e6) / 1e6,
+        c1: Math.round(c1 * 1e6) / 1e6,
+        a2: Math.round(a2 * 1e6) / 1e6,
+        b2: Math.round(b2 * 1e6) / 1e6,
+        c2: Math.round(c2 * 1e6) / 1e6,
+        a3w: Math.round(a3w * 1e6) / 1e6,
+        b3w: Math.round(b3w * 1e6) / 1e6,
+        c3w: Math.round(c3w * 1e6) / 1e6,
+        a4w: Math.round(a4w * 1e6) / 1e6,
+        b4w: Math.round(b4w * 1e6) / 1e6,
+        c4w: Math.round(c4w * 1e6) / 1e6,
       };
       cvsCounter++;
 

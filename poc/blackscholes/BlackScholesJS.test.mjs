@@ -339,7 +339,7 @@ describe("BlackScholesJS", function () {
           testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000059);
         });
 
-        it.only("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
+        it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
           testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
@@ -360,7 +360,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000082);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000083);
         });
 
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
@@ -372,7 +372,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000065);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
 
