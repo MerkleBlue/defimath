@@ -170,12 +170,15 @@ describe("BlackScholesJS", function () {
     blackScholesJS = new BlackScholesJS(lookupTable);
 
     // profile factors
-    let count = 0;
+    let count = 0, intrinsicZeroCount = 0;
     for (let [key, value] of lookupTable) {
-      //console.log(key + " is ", value);
+      // console.log(key + " is ", value);
+      if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBA === 0) {
+        intrinsicZeroCount++;
+      }
       count++;
     }
-    console.log("lookupTable size: ", count);
+    console.log("lookupTable size: ", count, "intrinsic zero count: ", intrinsicZeroCount, (intrinsicZeroCount / count * 100).toFixed(2) + "%");
 
     const result = findMinAndMax(lookupTable);
     console.log("min: ", result.min);

@@ -157,6 +157,9 @@ export class BlackScholesJS {
 
     const finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
 
+    // check
+    // console.log(cell.intrinsicPriceBA, )
+
     return finalPrice;
   }
 
