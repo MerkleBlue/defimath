@@ -36,7 +36,7 @@ describe("BlackScholesJS", function () {
             if (obj[key] !== undefined) {
                 result.min[key] = Math.min(result.min[key], obj[key]);
                 result.max[key] = Math.max(result.max[key], obj[key]);
-                if (Math.abs(obj[key]) > 0) {
+                if (Math.abs(obj[key]) >= 0) {
                   result.absMin[key] = Math.min(result.absMin[key], Math.abs(obj[key]));
                 }
             }
