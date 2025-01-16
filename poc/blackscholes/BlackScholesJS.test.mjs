@@ -4,7 +4,6 @@ import bs from "black-scholes";
 import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "./BlackScholesJS.mjs";
 import { generateLookupTable, generateStrikePoints, generateTimePoints } from "./generateLookupTable.mjs";
 import { mkConfig, generateCsv, asString } from "export-to-csv";
-import { promises as fs } from "fs";
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
 
@@ -22,15 +21,32 @@ describe("BlackScholesJS", function () {
 
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
+    const inf = Infinity;
     const result = {
-        min: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3w: Infinity, b3w: Infinity, c3w: Infinity, a4w: Infinity, b4w: Infinity, c4w: Infinity },
-        max: { a1: -Infinity, b1: -Infinity, c1: -Infinity, a2: -Infinity, b2: -Infinity, c2: -Infinity, a3w: -Infinity, b3w: -Infinity, c3w: -Infinity, a4w: -Infinity, b4w: -Infinity, c4w: -Infinity },
-        absMin: { a1: Infinity, b1: Infinity, c1: Infinity, a2: Infinity, b2: Infinity, c2: Infinity, a3w: Infinity, b3w: Infinity, c3w: Infinity, a4w: Infinity, b4w: Infinity, c4w: Infinity }
-
+        min: { intrinsicPriceAA: inf, intrinsicPriceBA: inf, a1: inf, b1: inf, c1: inf, a2: inf, b2: inf, c2: inf, a3w: inf, b3w: inf, c3w: inf, a4w: inf, b4w: inf, c4w: inf },
+        max: { intrinsicPriceAA: -inf, intrinsicPriceBA: -inf, a1: -inf, b1: -inf, c1: -inf, a2: -inf, b2: -inf, c2: -inf, a3w: -inf, b3w: -inf, c3w: -inf, a4w: -inf, b4w: -inf, c4w: -inf },
+        absMin: { a1: inf, b1: inf, c1: inf, a2: inf, b2: inf, c2: inf, a3w: inf, b3w: inf, c3w: inf, a4w: inf, b4w: inf, c4w: inf }
     };
 
+    const resultDiff = {
+      min: { intrinsicPriceBAdiff: inf, a2diff: inf, b2diff: inf, c2diff: inf, a4diff: inf, b4diff: inf, c4diff: inf  },
+      max: { intrinsicPriceBAdiff: -inf, a2diff: -inf, b2diff: -inf, c2diff: -inf, a4diff: -inf, b4diff: -inf, c4diff: -inf }
+    };
+
+    // console.log(map);
+    // make map copy and remove elements with intrinsicPriceAA === 0
+    const mapCopy = new Map(map);
+    for (let [key, value] of map) {
+      if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBA === 0) {
+        mapCopy.delete(key);
+      }
+    }
+
+    // print map and mapCopy size
+    console.log("map size: ", map.size, "mapCopy size: ", mapCopy.size);
+
     // Iterate over the map
-    map.forEach(obj => {
+    mapCopy.forEach(obj => {
         // Update min and max for each key
         for (const key of Object.keys(result.min)) {
             if (obj[key] !== undefined) {
@@ -42,6 +58,45 @@ describe("BlackScholesJS", function () {
             }
         }
     });
+
+    // Iterate over the map
+    mapCopy.forEach(obj => {
+      // Update min and max for each key
+      resultDiff.min.intrinsicPriceBAdiff = Math.min(resultDiff.min.intrinsicPriceBAdiff, obj.intrinsicPriceAA - obj.intrinsicPriceBA);
+      resultDiff.max.intrinsicPriceBAdiff = Math.max(resultDiff.max.intrinsicPriceBAdiff, obj.intrinsicPriceAA - obj.intrinsicPriceBA);
+
+
+      resultDiff.min.a2diff = Math.min(resultDiff.min.a2diff, obj.a1 - obj.a2);
+      resultDiff.max.a2diff = Math.max(resultDiff.max.a2diff, obj.a1 - obj.a2);
+      resultDiff.min.b2diff = Math.min(resultDiff.min.b2diff, obj.b1 - obj.b2);
+      resultDiff.max.b2diff = Math.max(resultDiff.max.b2diff, obj.b1 - obj.b2);
+      resultDiff.min.c2diff = Math.min(resultDiff.min.c2diff, obj.c1 - obj.c2);
+      resultDiff.max.c2diff = Math.max(resultDiff.max.c2diff, obj.c1 - obj.c2);
+
+      resultDiff.min.a4diff = Math.min(resultDiff.min.a4diff, obj.a3w - obj.a4w);
+      resultDiff.max.a4diff = Math.max(resultDiff.max.a4diff, obj.a3w - obj.a4w);
+      resultDiff.min.b4diff = Math.min(resultDiff.min.b4diff, obj.b3w - obj.b4w);
+      resultDiff.max.b4diff = Math.max(resultDiff.max.b4diff, obj.b3w - obj.b4w);
+      resultDiff.min.c4diff = Math.min(resultDiff.min.c4diff, obj.c3w - obj.c4w);
+      resultDiff.max.c4diff = Math.max(resultDiff.max.c4diff, obj.c3w - obj.c4w);
+    });
+
+    result.min.intrinsicPriceBAdiff = Math.round(resultDiff.min.intrinsicPriceBAdiff * 1e6) / 1e6;
+    result.max.intrinsicPriceBAdiff = Math.round(resultDiff.max.intrinsicPriceBAdiff * 1e6) / 1e6;
+
+    result.min.a2diff = Math.round(resultDiff.min.a2diff * 1e6) / 1e6;
+    result.max.a2diff = Math.round(resultDiff.max.a2diff * 1e6) / 1e6;
+    result.min.b2diff = Math.round(resultDiff.min.b2diff * 1e6) / 1e6;
+    result.max.b2diff = Math.round(resultDiff.max.b2diff * 1e6) / 1e6;
+    result.min.c2diff = Math.round(resultDiff.min.c2diff * 1e6) / 1e6;
+    result.max.c2diff = Math.round(resultDiff.max.c2diff * 1e6) / 1e6;
+
+    result.min.a4diff = Math.round(resultDiff.min.a4diff * 1e6) / 1e6;
+    result.max.a4diff = Math.round(resultDiff.max.a4diff * 1e6) / 1e6;
+    result.min.b4diff = Math.round(resultDiff.min.b4diff * 1e6) / 1e6;
+    result.max.b4diff = Math.round(resultDiff.max.b4diff * 1e6) / 1e6;
+    result.min.c4diff = Math.round(resultDiff.min.c4diff * 1e6) / 1e6;
+    result.max.c4diff = Math.round(resultDiff.max.c4diff * 1e6) / 1e6;
 
     return result;
   }
@@ -135,7 +190,7 @@ describe("BlackScholesJS", function () {
             const absError = Math.abs(actual - expected);
             if (maxAbsError < absError) {
               maxAbsError = absError;
-              console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+              // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
               maxAbsErrorParams = {
                 exp, strike: strike * multi, vol, rate, actual, expected
               }
@@ -180,10 +235,42 @@ describe("BlackScholesJS", function () {
     }
     console.log("lookupTable size: ", count, "intrinsic zero count: ", intrinsicZeroCount, (intrinsicZeroCount / count * 100).toFixed(2) + "%");
 
+    // find min and max for parameters
     const result = findMinAndMax(lookupTable);
     console.log("min: ", result.min);
     console.log("max: ", result.max);
     console.log("absMin: ", result.absMin);
+
+    // vol 12% bits packing
+    // AA BAdiff: 27 + 20 = 47
+    // a1 b1 c1: 15 + 15 + 23 = 53
+    // a2diff b2diff c2diff: 9 + 12 + 16 = 37
+    // a3w b3w c3w: 20 + 21 + 20 = 61
+    // a4diff b4diff c4diff: 16 + 17 + 19 = 52
+
+    // TOTAL: 250 bits
+
+    // reduce decimals
+    const prec12 = 1e6;
+    const prec34 = 1e5;
+    lookupTable.forEach((value, key) => {
+      // for (const key of Object.keys(value)) {
+        value.a1 = Math.round(value.a1 * prec12) / prec12,
+        value.b1 = Math.round(value.b1 * prec12) / prec12,
+        value.c1 = Math.round(value.c1 * prec12) / prec12,
+        value.a2 = Math.round(value.a2 * prec12) / prec12,
+        value.b2 = Math.round(value.b2 * prec12) / prec12,
+        value.c2 = Math.round(value.c2 * prec12) / prec12,
+
+        value.a3w = Math.round(value.a3w * prec34) / prec34,
+        value.b3w = Math.round(value.b3w * prec34) / prec34,
+        value.c3w = Math.round(value.c3w * prec34) / prec34,
+        value.a4w = Math.round(value.a4w * prec34) / prec34,
+        value.b4w = Math.round(value.b4w * prec34) / prec34,
+        value.c4w = Math.round(value.c4w * prec34) / prec34
+      // }
+    }
+    );
   });
 
   describe("functionality", async function () {
@@ -339,7 +426,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000059);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
@@ -357,7 +444,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000068);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000069);
         });
 
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
@@ -369,13 +456,13 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000082);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000089);
         });
 
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000076);
         });
       });
 
