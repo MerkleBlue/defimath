@@ -1,6 +1,6 @@
 import bs from "black-scholes";
 import { levenbergMarquardt } from 'ml-levenberg-marquardt';
-import { STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "./BlackScholesJS.mjs";
+import { MAX_MAJOR, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "./BlackScholesJS.mjs";
 import { mkConfig} from "export-to-csv";
 import { promises as fs } from "fs";
 const jsonConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
@@ -312,12 +312,12 @@ export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
 export function generateTimePoints() {
   const points = [1, 2, 3, 4, 5, 6, 7];
 
-  for (let major = 3; major < 34; major++) {
+  for (let major = 3; major < MAX_MAJOR; major++) {
     for(let minor = 0; minor < 8; minor++) {
       points.push(parseFloat(2 ** major + minor * 2 ** (major - 3)));
     }
   }
-  points.push(parseFloat(2 ** 34)); // last point
+  points.push(parseFloat(2 ** MAX_MAJOR)); // last point
 
   // console.log("Last time point: ", points[points.length - 1]);
 
