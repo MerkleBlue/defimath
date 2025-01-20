@@ -23,9 +23,9 @@ describe("BlackScholesJS", function () {
     // Initialize min and max objects with Infinity and -Infinity respectively
     const inf = Infinity;
     const result = {
-        min: { intrinsicPriceAA: inf, intrinsicPriceBA: inf, a1: inf, b1: inf, c1: inf, a2: inf, b2: inf, c2: inf, a3w: inf, b3w: inf, c3w: inf, a4w: inf, b4w: inf, c4w: inf },
-        max: { intrinsicPriceAA: -inf, intrinsicPriceBA: -inf, a1: -inf, b1: -inf, c1: -inf, a2: -inf, b2: -inf, c2: -inf, a3w: -inf, b3w: -inf, c3w: -inf, a4w: -inf, b4w: -inf, c4w: -inf },
-        absMin: { a1: inf, b1: inf, c1: inf, a2: inf, b2: inf, c2: inf, a3w: inf, b3w: inf, c3w: inf, a4w: inf, b4w: inf, c4w: inf }
+        min: { intrinsicPriceAA: inf, intrinsicPriceBAdiff: inf, a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf },
+        max: { intrinsicPriceAA: -inf, intrinsicPriceBAdiff: -inf, a1: -inf, b1: -inf, c1: -inf, a2diff: -inf, b2diff: -inf, c2diff: -inf, a3w: -inf, b3w: -inf, c3w: -inf, a4wdiff: -inf, b4wdiff: -inf, c4wdiff: -inf },
+        absMin: { a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf }
     };
 
     const resultDiff = {
@@ -36,7 +36,7 @@ describe("BlackScholesJS", function () {
     // make map copy and remove elements with intrinsic price 0
     const nonZeroMap = new Map(map);
     for (let [key, value] of map) {
-      if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBA === 0) {
+      if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBAdiff === 0) {
         nonZeroMap.delete(key);
       }
     }
@@ -432,7 +432,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000069);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
@@ -462,13 +462,13 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000089);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
         });
 
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000076);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000079);
         });
       });
 

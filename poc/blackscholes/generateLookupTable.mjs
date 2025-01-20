@@ -206,22 +206,32 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         }
       }
 
-      // reduce to 8 decimals
+      // reduce prices to 8 decimals, factors to 6 decimals
+
       const element = {
         intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e8) / 1e8,
-        intrinsicPriceBA: Math.round(intrinsicPriceBA * 1e8) / 1e8,
-        a1: Math.round(a1 * 1e8) / 1e8,
-        b1: Math.round(b1 * 1e8) / 1e8,
-        c1: Math.round(c1 * 1e8) / 1e8,
-        a2: Math.round(a2 * 1e8) / 1e8,
-        b2: Math.round(b2 * 1e8) / 1e8,
-        c2: Math.round(c2 * 1e8) / 1e8,
-        a3w: Math.round(a3w * 1e8) / 1e8,
-        b3w: Math.round(b3w * 1e8) / 1e8,
-        c3w: Math.round(c3w * 1e8) / 1e8,
-        a4w: Math.round(a4w * 1e8) / 1e8,
-        b4w: Math.round(b4w * 1e8) / 1e8,
-        c4w: Math.round(c4w * 1e8) / 1e8,
+        intrinsicPriceBAdiff: Math.round((intrinsicPriceAA - intrinsicPriceBA) * 1e8) / 1e8,
+        // intrinsicPriceBA: Math.round(intrinsicPriceBA * 1e8) / 1e8,
+
+        a1: Math.round(a1 * 1e6) / 1e6,
+        b1: Math.round(b1 * 1e6) / 1e6,
+        c1: Math.round(c1 * 1e6) / 1e6,
+        a2diff: Math.round((a1 - a2) * 1e6) / 1e6,
+        b2diff: Math.round((b1 - b2) * 1e6) / 1e6,
+        c2diff: Math.round((c1 - c2) * 1e6) / 1e6,
+        // a2: Math.round(a2 * 1e6) / 1e6,
+        // b2: Math.round(b2 * 1e6) / 1e6,
+        // c2: Math.round(c2 * 1e6) / 1e6,
+
+        a3w: Math.round(a3w * 1e6) / 1e6,
+        b3w: Math.round(b3w * 1e6) / 1e6,
+        c3w: Math.round(c3w * 1e6) / 1e6,
+        a4wdiff: Math.round((a3w - a4w) * 1e6) / 1e6,
+        b4wdiff: Math.round((b3w - b4w) * 1e6) / 1e6,
+        c4wdiff: Math.round((c3w - c4w) * 1e6) / 1e6,
+        // a4w: Math.round(a4w * 1e6) / 1e6,
+        // b4w: Math.round(b4w * 1e6) / 1e6,
+        // c4w: Math.round(c4w * 1e6) / 1e6,
       };
       cvsCounter++;
 

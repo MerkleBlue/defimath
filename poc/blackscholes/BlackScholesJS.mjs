@@ -130,11 +130,17 @@ export class BlackScholesJS {
     log && console.log("cell", cell);
 
     // step 4) interpolate the price using quadratic interpolation
+    const a2 = cell.a1 - cell.a2diff;
+    const b2 = cell.b1 - cell.b2diff;
+    const c2 = cell.c1 - cell.c2diff;
+    const a4w = cell.a3w - cell.a4wdiff;
+    const b4w = cell.b3w - cell.b4wdiff;
+    const c4w = cell.c3w - cell.c4wdiff;
 
     const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
-    const interpolatedPrice2 = Math.max(0, cell.a2 * (timeToExpiryWeight ** 3) + cell.b2 * (timeToExpiryWeight ** 2) + cell.c2 * timeToExpiryWeight);
+    const interpolatedPrice2 = Math.max(0, a2 * (timeToExpiryWeight ** 3) + b2 * (timeToExpiryWeight ** 2) + c2 * timeToExpiryWeight);
     const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
-    const interpolatedStrikeWeight4w = cell.a4w * (strikeWeight ** 3) + cell.b4w * (strikeWeight ** 2) + cell.c4w * strikeWeight;
+    const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
 
     log && console.log("interpolatedPrice1", interpolatedPrice1);
     log && console.log("interpolatedPrice2", interpolatedPrice2);
@@ -147,8 +153,9 @@ export class BlackScholesJS {
     const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
     const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
 
+    const intrinsicPriceBA = cell.intrinsicPriceAA - cell.intrinsicPriceBAdiff;
     const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
-    const optionPriceBT = extrinsicPriceBA + cell.intrinsicPriceBA + interpolatedPrice2;
+    const optionPriceBT = extrinsicPriceBA + intrinsicPriceBA + interpolatedPrice2;
     log && console.log("-----------------")
     log && console.log("optionPriceAT", optionPriceAT, "ok");
     log && console.log("optionPriceBT", optionPriceBT, "ok");
