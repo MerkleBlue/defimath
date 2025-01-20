@@ -28,11 +28,6 @@ describe("BlackScholesJS", function () {
         absMin: { a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf }
     };
 
-    const resultDiff = {
-      min: { intrinsicPriceBAdiff: inf, a2diff: inf, b2diff: inf, c2diff: inf, a4diff: inf, b4diff: inf, c4diff: inf  },
-      max: { intrinsicPriceBAdiff: -inf, a2diff: -inf, b2diff: -inf, c2diff: -inf, a4diff: -inf, b4diff: -inf, c4diff: -inf }
-    };
-
     // make map copy and remove elements with intrinsic price 0
     const nonZeroMap = new Map(map);
     for (let [key, value] of map) {
@@ -43,7 +38,7 @@ describe("BlackScholesJS", function () {
 
     const sameIntrinsicPriceMap = new Map(nonZeroMap);
     for (let [key, value] of nonZeroMap) {
-      if (value.intrinsicPriceAA !== value.intrinsicPriceBA) {
+      if (value.intrinsicPriceBAdiff !== 0) {
         sameIntrinsicPriceMap.delete(key);
       }
     }
@@ -64,45 +59,6 @@ describe("BlackScholesJS", function () {
             }
         }
     });
-
-    // Iterate over the map
-    nonZeroMap.forEach(obj => {
-      // Update min and max for each key
-      resultDiff.min.intrinsicPriceBAdiff = Math.min(resultDiff.min.intrinsicPriceBAdiff, obj.intrinsicPriceAA - obj.intrinsicPriceBA);
-      resultDiff.max.intrinsicPriceBAdiff = Math.max(resultDiff.max.intrinsicPriceBAdiff, obj.intrinsicPriceAA - obj.intrinsicPriceBA);
-
-
-      resultDiff.min.a2diff = Math.min(resultDiff.min.a2diff, obj.a1 - obj.a2);
-      resultDiff.max.a2diff = Math.max(resultDiff.max.a2diff, obj.a1 - obj.a2);
-      resultDiff.min.b2diff = Math.min(resultDiff.min.b2diff, obj.b1 - obj.b2);
-      resultDiff.max.b2diff = Math.max(resultDiff.max.b2diff, obj.b1 - obj.b2);
-      resultDiff.min.c2diff = Math.min(resultDiff.min.c2diff, obj.c1 - obj.c2);
-      resultDiff.max.c2diff = Math.max(resultDiff.max.c2diff, obj.c1 - obj.c2);
-
-      resultDiff.min.a4diff = Math.min(resultDiff.min.a4diff, obj.a3w - obj.a4w);
-      resultDiff.max.a4diff = Math.max(resultDiff.max.a4diff, obj.a3w - obj.a4w);
-      resultDiff.min.b4diff = Math.min(resultDiff.min.b4diff, obj.b3w - obj.b4w);
-      resultDiff.max.b4diff = Math.max(resultDiff.max.b4diff, obj.b3w - obj.b4w);
-      resultDiff.min.c4diff = Math.min(resultDiff.min.c4diff, obj.c3w - obj.c4w);
-      resultDiff.max.c4diff = Math.max(resultDiff.max.c4diff, obj.c3w - obj.c4w);
-    });
-
-    result.min.intrinsicPriceBAdiff = Math.round(resultDiff.min.intrinsicPriceBAdiff * 1e6) / 1e6;
-    result.max.intrinsicPriceBAdiff = Math.round(resultDiff.max.intrinsicPriceBAdiff * 1e6) / 1e6;
-
-    result.min.a2diff = Math.round(resultDiff.min.a2diff * 1e6) / 1e6;
-    result.max.a2diff = Math.round(resultDiff.max.a2diff * 1e6) / 1e6;
-    result.min.b2diff = Math.round(resultDiff.min.b2diff * 1e6) / 1e6;
-    result.max.b2diff = Math.round(resultDiff.max.b2diff * 1e6) / 1e6;
-    result.min.c2diff = Math.round(resultDiff.min.c2diff * 1e6) / 1e6;
-    result.max.c2diff = Math.round(resultDiff.max.c2diff * 1e6) / 1e6;
-
-    result.min.a4diff = Math.round(resultDiff.min.a4diff * 1e6) / 1e6;
-    result.max.a4diff = Math.round(resultDiff.max.a4diff * 1e6) / 1e6;
-    result.min.b4diff = Math.round(resultDiff.min.b4diff * 1e6) / 1e6;
-    result.max.b4diff = Math.round(resultDiff.max.b4diff * 1e6) / 1e6;
-    result.min.c4diff = Math.round(resultDiff.min.c4diff * 1e6) / 1e6;
-    result.max.c4diff = Math.round(resultDiff.max.c4diff * 1e6) / 1e6;
 
     return result;
   }
@@ -243,9 +199,17 @@ describe("BlackScholesJS", function () {
 
     // find min and max for parameters
     const result = findMinAndMax(lookupTable);
-    console.log("min: ", result.min);
-    console.log("max: ", result.max);
-    console.log("absMin: ", result.absMin);
+
+    // for each attribute in result.min and result.max, print min and max
+    for (const key of Object.keys(result.min)) {
+      if (key !== undefined) {
+        console.log(key, "[", result.min[key], "-", result.max[key], "]");
+      }
+    }
+
+    // console.log("min: ", result.min);
+    // console.log("max: ", result.max);
+    // console.log("absMin: ", result.absMin);
 
     // vol 12% bits packing
     // AA BAdiff: 27 + 20 = 47
