@@ -33,20 +33,26 @@ describe("BlackScholesJS", function () {
       max: { intrinsicPriceBAdiff: -inf, a2diff: -inf, b2diff: -inf, c2diff: -inf, a4diff: -inf, b4diff: -inf, c4diff: -inf }
     };
 
-    // console.log(map);
-    // make map copy and remove elements with intrinsicPriceAA === 0
-    const mapCopy = new Map(map);
+    // make map copy and remove elements with intrinsic price 0
+    const nonZeroMap = new Map(map);
     for (let [key, value] of map) {
       if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBA === 0) {
-        mapCopy.delete(key);
+        nonZeroMap.delete(key);
+      }
+    }
+
+    const sameIntrinsicPriceMap = new Map(nonZeroMap);
+    for (let [key, value] of nonZeroMap) {
+      if (value.intrinsicPriceAA !== value.intrinsicPriceBA) {
+        sameIntrinsicPriceMap.delete(key);
       }
     }
 
     // print map and mapCopy size
-    console.log("map size: ", map.size, "mapCopy size: ", mapCopy.size);
+    console.log("map size: ", map.size, "mapCopy size: ", nonZeroMap.size, "sameIntrinsicPriceMap size: ", sameIntrinsicPriceMap.size);
 
     // Iterate over the map
-    mapCopy.forEach(obj => {
+    nonZeroMap.forEach(obj => {
         // Update min and max for each key
         for (const key of Object.keys(result.min)) {
             if (obj[key] !== undefined) {
@@ -60,7 +66,7 @@ describe("BlackScholesJS", function () {
     });
 
     // Iterate over the map
-    mapCopy.forEach(obj => {
+    nonZeroMap.forEach(obj => {
       // Update min and max for each key
       resultDiff.min.intrinsicPriceBAdiff = Math.min(resultDiff.min.intrinsicPriceBAdiff, obj.intrinsicPriceAA - obj.intrinsicPriceBA);
       resultDiff.max.intrinsicPriceBAdiff = Math.max(resultDiff.max.intrinsicPriceBAdiff, obj.intrinsicPriceAA - obj.intrinsicPriceBA);
