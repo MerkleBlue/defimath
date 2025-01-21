@@ -352,7 +352,7 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
-        it.only("gets a single call price", async function () {
+        it("gets a single call price", async function () {
           const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
           const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
 
@@ -542,35 +542,36 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe("getIndexFromStrike", function () {
-      it("calculates index for strike [50, 200]", async function () {
-        let count = 0;
-        for (let strike = 50; strike <= 200; strike += 1) {
-          const expected = Math.floor(strike / STRIKE_STEP) * STRIKE_STEP;
-          const actual = blackScholesJS.getIndexFromStrike(strike);
-          assert.equal(actual, expected);
-          count++;
-        }
-        console.log("values tested: ", count);
-      });
+    // OLD CODE: todo: to delete
+    // describe.only("getIndexFromStrike", function () {
+    //   // it("calculates index for strike [50, 200]", async function () {
+    //   //   let count = 0;
+    //   //   for (let strike = 50; strike <= 200; strike += 1) {
+    //   //     const expected = Math.floor(strike / STRIKE_STEP) * STRIKE_STEP;
+    //   //     const actual = blackScholesJS.getIndexFromStrike(strike);
+    //   //     assert.equal(actual, expected);
+    //   //     count++;
+    //   //   }
+    //   //   console.log("values tested: ", count);
+    //   // });
 
-      it("calculates index for specific strikes", async function () {
-        const actual1 = blackScholesJS.getIndexFromStrike(99.9999);
-        assert.equal(actual1, 100 - STRIKE_STEP);
+    //   // it("calculates index for specific strikes", async function () {
+    //   //   const actual1 = blackScholesJS.getIndexFromStrike(99.9999);
+    //   //   assert.equal(actual1, 100 - STRIKE_STEP);
 
-        const actual2 = blackScholesJS.getIndexFromStrike(100 - 1e-6);
-        assert.equal(actual2, 100 - STRIKE_STEP);
+    //   //   const actual2 = blackScholesJS.getIndexFromStrike(100 - 1e-6);
+    //   //   assert.equal(actual2, 100 - STRIKE_STEP);
 
-        const actual3 = blackScholesJS.getIndexFromStrike(100 - 1e-8);
-        assert.equal(actual3, 100 - STRIKE_STEP);
+    //   //   const actual3 = blackScholesJS.getIndexFromStrike(100 - 1e-8);
+    //   //   assert.equal(actual3, 100 - STRIKE_STEP);
 
-        // this is where it rounds up to 100
-        const actual4 = blackScholesJS.getIndexFromStrike(100 - 1e-9);
-        assert.equal(actual4, 100);
-      });
-    });
+    //   //   // this is where it rounds up to 100
+    //   //   const actual4 = blackScholesJS.getIndexFromStrike(100 - 1e-9);
+    //   //   assert.equal(actual4, 100);
+    //   // });
+    // });
 
-    describe("getIndexFromStrike", function () {
+    describe.only("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200.00001));
@@ -594,7 +595,7 @@ describe("BlackScholesJS", function () {
 
       it("calculates index for strike [105, 120)", async function () {
         assert.equal(105 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105));
-        assert.equal(105 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.1));
+        assert.equal(105.1 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.1));
         assert.equal(105.4 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.499999));
         assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.5));
         assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.500001));
