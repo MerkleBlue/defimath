@@ -34,7 +34,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     const lookupTable = await readSavedLookupTable();
     if (lookupTable instanceof Map) {
       console.log("Reading lookup table from file...");
-      const lookupTableSOL = null; // getLookupTableSOL(lookupTable);
+      const lookupTableSOL = getLookupTableSOL(lookupTable);
       return { lookupTable, lookupTableSOL };
     }
   } catch (error) {
@@ -207,11 +207,9 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       }
 
       // reduce prices to 8 decimals, factors to 6 decimals
-
       const element = {
         intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e8) / 1e8,
         intrinsicPriceBAdiff: Math.round((intrinsicPriceAA - intrinsicPriceBA) * 1e8) / 1e8,
-        // intrinsicPriceBA: Math.round(intrinsicPriceBA * 1e8) / 1e8,
 
         a1: Math.round(a1 * 1e6) / 1e6,
         b1: Math.round(b1 * 1e6) / 1e6,
@@ -219,9 +217,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         a2diff: Math.round((a1 - a2) * 1e6) / 1e6,
         b2diff: Math.round((b1 - b2) * 1e6) / 1e6,
         c2diff: Math.round((c1 - c2) * 1e6) / 1e6,
-        // a2: Math.round(a2 * 1e6) / 1e6,
-        // b2: Math.round(b2 * 1e6) / 1e6,
-        // c2: Math.round(c2 * 1e6) / 1e6,
 
         a3w: Math.round(a3w * 1e6) / 1e6,
         b3w: Math.round(b3w * 1e6) / 1e6,
@@ -229,9 +224,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         a4wdiff: Math.round((a3w - a4w) * 1e6) / 1e6,
         b4wdiff: Math.round((b3w - b4w) * 1e6) / 1e6,
         c4wdiff: Math.round((c3w - c4w) * 1e6) / 1e6,
-        // a4w: Math.round(a4w * 1e6) / 1e6,
-        // b4w: Math.round(b4w * 1e6) / 1e6,
-        // c4w: Math.round(c4w * 1e6) / 1e6,
       };
       cvsCounter++;
 
@@ -247,7 +239,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   }
 
   // create lookupTable for Solidity
-  const lookupTableSOL = null; //getLookupTableSOL(lookupTable);
+  const lookupTableSOL = getLookupTableSOL(lookupTable);
 
   return { lookupTable, lookupTableSOL };
 }
@@ -256,16 +248,17 @@ function getLookupTableSOL(lookupTable) {
   const lookupTableSOL = new Map();
   // pack for SOL lookup table
   for (const [key, value] of lookupTable) {
-    const { optionPriceAA, a1, b1, a3, b3, a4, b4 } = value;
-    const optionPriceAABigInt = BigInt(parseInt(optionPriceAA * 1e17));
-    const a1BigInt = intToUint32(a1);
-    const b1BigInt = intToUint32(b1);
-    const a3BigInt = intToUint32(a3);
-    const b3BigInt = intToUint32(b3);
-    const a4BigInt = intToUint32(a4);
-    const b4BigInt = intToUint32(b4);
-    const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + a1BigInt * BigInt(2 ** 160) + b1BigInt * BigInt(2 ** 128) + a3BigInt * BigInt(2 ** 96) + b3BigInt * BigInt(2 ** 64) + a4BigInt * BigInt(2 ** 32) + b4BigInt;
-    lookupTableSOL.set(key, elementForSOL);
+    const { intrinsicPriceAA, intrinsicPriceBAdiff, a1, b1, c1, a2diff, b2diff, c2diff, a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff } = value;
+    const intrinsicPriceAABigInt = BigInt(parseInt(intrinsicPriceAA * 1e8));
+    console.log(intrinsicPriceAA, intrinsicPriceAABigInt);
+    // const a1BigInt = intToUint32(a1);
+    // const b1BigInt = intToUint32(b1);
+    // const a3BigInt = intToUint32(a3);
+    // const b3BigInt = intToUint32(b3);
+    // const a4BigInt = intToUint32(a4);
+    // const b4BigInt = intToUint32(b4);
+    // const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + a1BigInt * BigInt(2 ** 160) + b1BigInt * BigInt(2 ** 128) + a3BigInt * BigInt(2 ** 96) + b3BigInt * BigInt(2 ** 64) + a4BigInt * BigInt(2 ** 32) + b4BigInt;
+    // lookupTableSOL.set(key, elementForSOL);
   }
 
   return lookupTableSOL;

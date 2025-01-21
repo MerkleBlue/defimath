@@ -211,15 +211,6 @@ describe("BlackScholesJS", function () {
     // console.log("max: ", result.max);
     // console.log("absMin: ", result.absMin);
 
-    // vol 12% bits packing
-    // AA BAdiff: 27 + 20 = 47
-    // a1 b1 c1: 15 + 15 + 23 = 53
-    // a2diff b2diff c2diff: 9 + 12 + 16 = 37
-    // a3w b3w c3w: 20 + 21 + 20 = 61
-    // a4diff b4diff c4diff: 16 + 17 + 19 = 52
-
-    // TOTAL: 250 bits
-
     // reduce decimals
     const prec12 = 1e6;
     const prec34 = 1e5;
