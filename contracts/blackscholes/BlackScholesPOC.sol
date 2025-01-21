@@ -388,15 +388,13 @@ contract BlackScholesPOC {
             console.log("timeToExpiryIndex:", timeToExpiryIndex);
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
 
-            // // step 2) calculate the time delta and weight
-            // uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
-            // uint256 deltaTime = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / (365 * 24 * 60 * 60);
-            // uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
-            // uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
-            // // console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
-            // // console.log("deltaTime: %d", deltaTime);
-            // // console.log("expirationStep: %d", expirationStep);
-            // // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
+            // step 2) calculate timeToExpiry weight
+            uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
+            uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
+            uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
+            console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
+            console.log("expirationStep: %d", expirationStep);
+            console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
             // // step 3) calculate the strike delta
             // uint256 deltaStrike = strikeScaled - getStrikeFromIndex(strikeIndex);

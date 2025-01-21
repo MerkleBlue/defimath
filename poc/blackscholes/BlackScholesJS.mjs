@@ -112,7 +112,7 @@ export class BlackScholesJS {
     log && console.log("timeToExpiryIndex:", timeToExpiryIndex);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
 
-    // step 2) calculate the time delta and weight
+    // step 2) calculate timeToExpiry weight
     const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
     const expirationStep = Math.max(1, 2 ** (Math.floor(timeToExpiryIndex / 10) - 3));
     const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
