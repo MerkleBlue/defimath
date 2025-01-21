@@ -245,20 +245,69 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 }
 
 function getLookupTableSOL(lookupTable) {
+
+  // intrinsicPriceAA [ 0 - 82.48847598 ]
+  // intrinsicPriceBAdiff [ -0.45296252 - 0.47119369 ]
+  // a1 [ -0.005348 - 0.011765 ]
+  // b1 [ -0.23659 - 0.056593 ]
+  // c1 [ 0 - 4.860914 ]
+  // a2diff [ -0.000134 - 0.000207 ]
+  // b2diff [ -0.00258 - 0.001524 ]
+  // c2diff [ -0.025636 - 0.029092 ]
+  // a3w [ -0.31261 - 8.184084 ]
+  // b3w [ -14.254104 - 0.27579 ]
+  // c3w [ 0 - 7.271892 ]
+  // a4wdiff [ -0.016531 - 0.453166 ]
+  // b4wdiff [ -0.725168 - 0.056592 ]
+  // c4wdiff [ -0.014163 - 4.860915 ]
+
   const lookupTableSOL = new Map();
   // pack for SOL lookup table
   for (const [key, value] of lookupTable) {
     const { intrinsicPriceAA, intrinsicPriceBAdiff, a1, b1, c1, a2diff, b2diff, c2diff, a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff } = value;
     const intrinsicPriceAABigInt = BigInt(parseInt(intrinsicPriceAA * 1e8));
-    console.log(intrinsicPriceAA, intrinsicPriceAABigInt);
-    // const a1BigInt = intToUint32(a1);
-    // const b1BigInt = intToUint32(b1);
-    // const a3BigInt = intToUint32(a3);
-    // const b3BigInt = intToUint32(b3);
-    // const a4BigInt = intToUint32(a4);
-    // const b4BigInt = intToUint32(b4);
-    // const elementForSOL = optionPriceAABigInt * BigInt(2 ** 192) + a1BigInt * BigInt(2 ** 160) + b1BigInt * BigInt(2 ** 128) + a3BigInt * BigInt(2 ** 96) + b3BigInt * BigInt(2 ** 64) + a4BigInt * BigInt(2 ** 32) + b4BigInt;
-    // lookupTableSOL.set(key, elementForSOL);
+    const intrinsicPriceBAdiffBigInt = BigInt(parseInt(Math.max(0, (intrinsicPriceBAdiff + 0.45296252)) * 1e8));
+    const a1BigInt = BigInt(parseInt(Math.max(0, (a1 + 0.005348)) * 1e6));
+    const b1BigInt = BigInt(parseInt(Math.max(0, (b1 + 0.23659)) * 1e6));
+    const c1BigInt = BigInt(parseInt(c1 * 1e6));
+
+    const a2diffBigInt = BigInt(parseInt(Math.max(0, (a2diff + 0.000134)) * 1e6));
+    const b2diffBigInt = BigInt(parseInt(Math.max(0, (b2diff + 0.00258)) * 1e6));
+    const c2diffBigInt = BigInt(parseInt(Math.max(0, (c2diff + 0.025636)) * 1e6));
+
+    const a3wBigInt = BigInt(parseInt(Math.max(0, (a3w + 0.31261)) * 1e5));
+    const b3wBigInt = BigInt(parseInt(Math.max(0, (b3w + 14.2541)) * 1e5));
+    const c3wBigInt = BigInt(parseInt(c3w * 1e5));
+
+    const a4wdiffBigInt = BigInt(parseInt(Math.max(0, (a4wdiff + 0.01653)) * 1e5));
+    const b4wdiffBigInt = BigInt(parseInt(Math.max(0, (b4wdiff + 0.72517)) * 1e5));
+    const c4wdiffBigInt = BigInt(parseInt(Math.max(0, (c4wdiff + 0.01416)) * 1e5));
+
+    // vol 12% bits packing
+    // AA BAdiff: 27 + 20 = 47
+    // a1 b1 c1: 15 + 15 + 23 = 53
+    // a2diff b2diff c2diff: 9 + 12 + 16 = 37
+    // a3w b3w c3w: 20 + 21 + 20 = 61
+    // a4diff b4diff c4diff: 16 + 17 + 19 = 52
+    // TOTAL: 250 bits
+
+    const elementForSOL = 
+      intrinsicPriceAABigInt * BigInt(2 ** 223) + 
+      intrinsicPriceBAdiffBigInt * BigInt(2 ** 203) + 
+      a1BigInt * BigInt(2 ** 188) + 
+      b1BigInt * BigInt(2 ** 173) + 
+      c1BigInt * BigInt(2 ** 150) + 
+      a2diffBigInt * BigInt(2 ** 141) +
+      b2diffBigInt * BigInt(2 ** 129) + 
+      c2diffBigInt * BigInt(2 ** 113) + 
+      a3wBigInt * BigInt(2 ** 93) +
+      b3wBigInt * BigInt(2 ** 72) + 
+      c3wBigInt * BigInt(2 ** 52) + 
+      a4wdiffBigInt * BigInt(2 ** 36) + 
+      b4wdiffBigInt * BigInt(2 ** 19) + 
+      c4wdiffBigInt;
+
+      lookupTableSOL.set(key, elementForSOL);
   }
 
   return lookupTableSOL;
@@ -285,6 +334,20 @@ function reviver(key, value) {
 }
 
 function intToUint32(factor) {
+  if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds: " + factor);
+
+  // positive
+  if (factor > 0) {
+    return BigInt(parseInt(factor * 1e6));
+  }
+
+  // negative
+  return BigInt(parseInt((Math.abs(factor) + 2147.483648) * 1e6)); // half the 2 ** 32
+  
+}
+
+function intToUint(value, bits, decimals) {
+  const divider = 2 ** (bits - 1);
   if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds: " + factor);
 
   // positive
