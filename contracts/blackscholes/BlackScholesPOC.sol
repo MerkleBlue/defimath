@@ -333,7 +333,7 @@ contract BlackScholesPOC {
 
     function getStrikeFromIndex(uint256 index) public pure returns (uint256) {
         unchecked {
-            return index * 1e18;
+            return index * 1e18 / STRIKE_INDEX_MULTIPLIER; // todo: optimize
         }
     }
 
@@ -396,9 +396,12 @@ contract BlackScholesPOC {
             console.log("expirationStep: %d", expirationStep);
             console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
-            // // step 3) calculate the strike delta
-            // uint256 deltaStrike = strikeScaled - getStrikeFromIndex(strikeIndex);
-            // // console.log("deltaStrike: %d", deltaStrike);
+            // step 3) calculate strike weight
+            uint256 deltaStrike = strikeScaled - getStrikeFromIndex(strikeIndex);
+            (uint256 step, ) = getStrikeStepAndBoundary(strikeScaled);
+            uint256 strikeWeight = deltaStrike * 1e18 / step;
+            console.log("deltaStrike: %d", deltaStrike);
+            console.log("strikeWeight: %d", strikeWeight);
 
             // finalPrice = applyQuadraticFormula(cell, deltaTime, deltaStrike, timeToExpiryWeight);
         }
