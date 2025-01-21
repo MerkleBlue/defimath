@@ -15,6 +15,7 @@ contract BlackScholesPOC {
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
     uint256 internal constant SPOT_FIXED = 100; // $100
+    uint256 internal constant VOL_FIXED = 12 * 1e16; // 12%
     uint256 internal constant STRIKE_RANGE_FIXED = 5; // $5
 
     // single mapping is faster than map of map, uint is faster than struct
@@ -49,12 +50,13 @@ contract BlackScholesPOC {
             uint256 strikeScaled = uint256(strike) * 1e18 / _getFuturePrice(spot, timeToExpirySec, rate) * SPOT_FIXED;
 
             // step 3: set the expiration based on volatility
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+            uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e36;
 
             // step 4: interpolate price
-            uint256 finalPrice = interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
+            uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
-            price = finalPrice * spotScale / 1e18;
+            // price = finalPrice * spotScale / 1e18;
         }
     }
 
@@ -77,7 +79,7 @@ contract BlackScholesPOC {
             uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
 
             // step 4: interpolate price
-            uint256 finalPrice = interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
+            uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
             uint256 callPrice = finalPrice * spotScale / 1e18;
 
@@ -322,7 +324,7 @@ contract BlackScholesPOC {
     //     }
     // }
 
-    function interpolatePriceQuadratic(
+    function interpolatePrice(
         uint256 strikeScaled,
         uint256 timeToExpirySecScaled
     ) private view returns (uint256 finalPrice) {
@@ -330,23 +332,25 @@ contract BlackScholesPOC {
             // step 1) get the specific cell
             uint256 strikeIndex = getIndexFromStrike(strikeScaled);
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
-            uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
+            console.log("strikeIndex:", strikeIndex);
+            console.log("timeToExpiryIndex:", timeToExpiryIndex);
+            // uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
 
-            // step 2) calculate the time delta and weight
-            uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
-            uint256 deltaTime = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / (365 * 24 * 60 * 60);
-            uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
-            uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
-            // console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
-            // console.log("deltaTime: %d", deltaTime);
-            // console.log("expirationStep: %d", expirationStep);
-            // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
+            // // step 2) calculate the time delta and weight
+            // uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
+            // uint256 deltaTime = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / (365 * 24 * 60 * 60);
+            // uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
+            // uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
+            // // console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
+            // // console.log("deltaTime: %d", deltaTime);
+            // // console.log("expirationStep: %d", expirationStep);
+            // // console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
-            // step 3) calculate the strike delta
-            uint256 deltaStrike = strikeScaled - getStrikeFromIndex(strikeIndex);
-            // console.log("deltaStrike: %d", deltaStrike);
+            // // step 3) calculate the strike delta
+            // uint256 deltaStrike = strikeScaled - getStrikeFromIndex(strikeIndex);
+            // // console.log("deltaStrike: %d", deltaStrike);
 
-            finalPrice = applyQuadraticFormula(cell, deltaTime, deltaStrike, timeToExpiryWeight);
+            // finalPrice = applyQuadraticFormula(cell, deltaTime, deltaStrike, timeToExpiryWeight);
         }
     }
 

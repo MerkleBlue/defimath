@@ -36,7 +36,7 @@ export class BlackScholesJS {
     }
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
@@ -55,7 +55,7 @@ export class BlackScholesJS {
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     const callPrice = finalPrice * spotScale;
@@ -100,10 +100,10 @@ export class BlackScholesJS {
     return discountedStrikePrice;
   };
 
-  interpolatePriceQuadratic(strikeScaled, timeToExpirySecScaled) {
+  interpolatePrice(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = false;
+    const log = true;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);

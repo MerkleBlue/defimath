@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert } from "chai";
 import hre from "hardhat";
-import { BlackScholesJS, STRIKE_STEP } from "../poc/blackscholes/BlackScholesJS.mjs";
+import { BlackScholesJS } from "../poc/blackscholes/BlackScholesJS.mjs";
 import { generateLookupTable } from "../poc/blackscholes/generateLookupTable.mjs";
 import bs from "black-scholes";
 
@@ -52,7 +52,7 @@ describe("BlackScholesPOC (contract)", function () {
   });
 
   describe("performance", function () {
-    it.only("getCallOptionPrice gas", async function () {
+    it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
@@ -70,7 +70,7 @@ describe("BlackScholesPOC (contract)", function () {
       console.log("Gas spent [avg]:", Math.round(totalGas / count));
     });
 
-    it.only("getPutOptionPrice gas", async function () {
+    it("getPutOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
@@ -227,7 +227,7 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
 
-      it.only("gets multiple call prices", async function () {
+      it("gets multiple call prices", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
@@ -272,7 +272,7 @@ describe("BlackScholesPOC (contract)", function () {
         console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice.toString() / 1e18);
       });
 
-      it.only("gets multiple put prices", async function () {
+      it("gets multiple put prices", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
         for(let exp = 50; exp < 80; exp += 1) {
@@ -365,7 +365,7 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe.only("getIndexFromStrike", function () {
+    describe("getIndexFromStrike", function () {
       it("calculates index for strike [50, 200]", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let count = 0;
