@@ -542,35 +542,6 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    // OLD CODE: todo: to delete
-    // describe.only("getIndexFromStrike", function () {
-    //   // it("calculates index for strike [50, 200]", async function () {
-    //   //   let count = 0;
-    //   //   for (let strike = 50; strike <= 200; strike += 1) {
-    //   //     const expected = Math.floor(strike / STRIKE_STEP) * STRIKE_STEP;
-    //   //     const actual = blackScholesJS.getIndexFromStrike(strike);
-    //   //     assert.equal(actual, expected);
-    //   //     count++;
-    //   //   }
-    //   //   console.log("values tested: ", count);
-    //   // });
-
-    //   // it("calculates index for specific strikes", async function () {
-    //   //   const actual1 = blackScholesJS.getIndexFromStrike(99.9999);
-    //   //   assert.equal(actual1, 100 - STRIKE_STEP);
-
-    //   //   const actual2 = blackScholesJS.getIndexFromStrike(100 - 1e-6);
-    //   //   assert.equal(actual2, 100 - STRIKE_STEP);
-
-    //   //   const actual3 = blackScholesJS.getIndexFromStrike(100 - 1e-8);
-    //   //   assert.equal(actual3, 100 - STRIKE_STEP);
-
-    //   //   // this is where it rounds up to 100
-    //   //   const actual4 = blackScholesJS.getIndexFromStrike(100 - 1e-9);
-    //   //   assert.equal(actual4, 100);
-    //   // });
-    // });
-
     describe.only("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));

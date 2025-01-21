@@ -16,7 +16,7 @@ contract BlackScholesPOC {
 
     uint256 internal constant SPOT_FIXED = 100; // $100
     uint256 internal constant VOL_FIXED = 12 * 1e16; // 12%
-    uint256 internal constant STRIKE_RANGE_FIXED = 5; // $5
+    uint256 internal constant STRIKE_INDEX_MULTIPLIER = 100;
 
     // single mapping is faster than map of map, uint is faster than struct
     mapping(uint40 => uint256) private lookupTable;
@@ -273,10 +273,62 @@ contract BlackScholesPOC {
         }
     }
 
+    // OLD CODE: todo: delete 
+    // function getIndexFromStrike(uint256 strike) public pure returns (uint256) {
+    //     unchecked {
+    //         return (strike / 5e18) * STRIKE_RANGE_FIXED;
+    //     }
+    // }
+
+
     function getIndexFromStrike(uint256 strike) public pure returns (uint256) {
-        unchecked {
-            return (strike / 5e18) * STRIKE_RANGE_FIXED;
+    
+        (uint256 step, uint256 boundary) = getStrikeStepAndBoundary(strike);
+
+        return boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18;
+
+        // return Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor((strike + 1e-9 - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER);
+    }
+
+    function getStrikeStepAndBoundary(uint256 strike) public pure returns (uint128 step, uint128 boundary) {
+        if (strike >= 20 * 1e18 && strike < 90 * 1e18) {
+            step = 5 * 1e17;
+            boundary = 20 * 1e18;
+            return (step, boundary);
         }
+
+        if (strike >= 90 * 1e18 && strike < 99 * 1e18) {
+            step = 1 * 1e17;
+            boundary = 90 * 1e18;
+            return (step, boundary);
+        }
+
+        if (strike >= 99 * 1e18 && strike < 101 * 1e18) {
+            step = 5 * 1e16;
+            boundary = 99 * 1e18;
+            return (step, boundary);
+        }
+
+        if (strike >= 101 * 1e18 && strike < 110 * 1e18) {
+            step = 1 * 1e17;
+            boundary = 101 * 1e18;
+            return (step, boundary);
+        }
+
+        if (strike >= 110 * 1e18 && strike < 130 * 1e18) {
+            step = 5 * 1e17;
+            boundary = 110 * 1e18;
+            return (step, boundary);
+        }
+
+        if (strike >= 130 * 1e18 && strike < 200 * 1e18) {
+            step = 1 * 1e18;
+            boundary = 130 * 1e18;
+            return (step, boundary);
+        }
+
+        step = 4 * 1e18;
+        boundary = 200 * 1e18;
     }
 
     function getStrikeFromIndex(uint256 index) public pure returns (uint256) {
