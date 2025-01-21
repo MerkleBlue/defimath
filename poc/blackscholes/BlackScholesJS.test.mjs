@@ -352,7 +352,7 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
-        it("gets a single call price", async function () {
+        it.only("gets a single call price", async function () {
           const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
           const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
 
@@ -542,7 +542,7 @@ describe("BlackScholesJS", function () {
       });
     });
 
-    describe.only("getIndexFromStrike", function () {
+    describe("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));
         assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200.00001));

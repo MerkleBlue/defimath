@@ -386,7 +386,7 @@ contract BlackScholesPOC {
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
             console.log("strikeIndex:", strikeIndex);
             console.log("timeToExpiryIndex:", timeToExpiryIndex);
-            // uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
+            uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
 
             // // step 2) calculate the time delta and weight
             // uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);

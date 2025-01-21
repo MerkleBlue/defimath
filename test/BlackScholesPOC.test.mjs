@@ -219,7 +219,7 @@ describe("BlackScholesPOC (contract)", function () {
     });
 
     describe("getCallOptionPrice", function () {
-      it("gets a single call price", async function () {
+      it.only("gets a single call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
@@ -365,7 +365,7 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe.only("getIndexFromStrike", function () {
+    describe("getIndexFromStrike", function () {
       it("calculates index for strike [200, 500]", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
 
