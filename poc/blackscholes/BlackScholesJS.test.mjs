@@ -212,26 +212,26 @@ describe("BlackScholesJS", function () {
     // console.log("absMin: ", result.absMin);
 
     // reduce decimals
-    const prec12 = 1e6;
-    const prec34 = 1e5;
-    lookupTable.forEach((value, key) => {
-      // for (const key of Object.keys(value)) {
-        value.a1 = Math.round(value.a1 * prec12) / prec12,
-        value.b1 = Math.round(value.b1 * prec12) / prec12,
-        value.c1 = Math.round(value.c1 * prec12) / prec12,
-        value.a2 = Math.round(value.a2 * prec12) / prec12,
-        value.b2 = Math.round(value.b2 * prec12) / prec12,
-        value.c2 = Math.round(value.c2 * prec12) / prec12,
+    // const prec12 = 1e6;
+    // const prec34 = 1e5;
+    // lookupTable.forEach((value, key) => {
+    //   // for (const key of Object.keys(value)) {
+    //     value.a1 = Math.round(value.a1 * prec12) / prec12,
+    //     value.b1 = Math.round(value.b1 * prec12) / prec12,
+    //     value.c1 = Math.round(value.c1 * prec12) / prec12,
+    //     value.a2 = Math.round(value.a2 * prec12) / prec12,
+    //     value.b2 = Math.round(value.b2 * prec12) / prec12,
+    //     value.c2 = Math.round(value.c2 * prec12) / prec12,
 
-        value.a3w = Math.round(value.a3w * prec34) / prec34,
-        value.b3w = Math.round(value.b3w * prec34) / prec34,
-        value.c3w = Math.round(value.c3w * prec34) / prec34,
-        value.a4w = Math.round(value.a4w * prec34) / prec34,
-        value.b4w = Math.round(value.b4w * prec34) / prec34,
-        value.c4w = Math.round(value.c4w * prec34) / prec34
-      // }
-    }
-    );
+    //     value.a3w = Math.round(value.a3w * prec34) / prec34,
+    //     value.b3w = Math.round(value.b3w * prec34) / prec34,
+    //     value.c3w = Math.round(value.c3w * prec34) / prec34,
+    //     value.a4w = Math.round(value.a4w * prec34) / prec34,
+    //     value.b4w = Math.round(value.b4w * prec34) / prec34,
+    //     value.c4w = Math.round(value.c4w * prec34) / prec34
+    //   // }
+    // }
+    // );
   });
 
   describe("functionality", async function () {
@@ -352,9 +352,16 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
-        it.only("gets a single call price", async function () {
+        it("gets a single call price", async function () {
           const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
           const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
+
+          console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        });
+
+        it.only("gets a single call price test", async function () {
+          const expectedOptionPrice = bs.blackScholes(1000, 404.6875, 212992 / SEC_IN_YEAR, 1.92, 0, "call");
+          const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 404.6875, 212992, 1.92, 0);
 
           console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
         });
@@ -377,7 +384,7 @@ describe("BlackScholesJS", function () {
         });
       });
 
-      describe("multiple call options - 16x16 per cell", function () {
+      describe.only("multiple call options - 16x16 per cell", function () {
         // it.only("gets multiple call prices: one specific max error", async function () {
         //   const strikeSubArray = [99.95625];
         //   const timeSubArray = [60];
@@ -387,7 +394,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000069);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000106);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {

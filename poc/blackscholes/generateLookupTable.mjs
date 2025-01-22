@@ -207,7 +207,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       }
 
       // reduce prices to 8 decimals, factors to 6 decimals
-      const element = {
+      const el = {
         intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e8) / 1e8,
         intrinsicPriceBAdiff: Math.round((intrinsicPriceAA - intrinsicPriceBA) * 1e8) / 1e8,
 
@@ -227,9 +227,21 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       };
       cvsCounter++;
 
+      // optimization: reduce a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff to 0 if all others are 0
+      // or if intrinsicPriceBAdiff is 0, and a2diff, b2diff, c2diff are 0
+      if ((el.intrinsicPriceAA === 0 && el.intrinsicPriceBAdiff === 0 && el.a1 === 0 && el.b1 === 0 && el.c1 === 0 && el.a2diff === 0 && el.b2diff === 0 && el.c2diff === 0)
+      || (el.intrinsicPriceBAdiff === 0 && el.a2diff === 0 && el.b2diff === 0 && el.c2diff === 0)) {
+        el.a3w = 0;
+        el.b3w = 0;
+        el.c3w = 0;
+        el.a4wdiff = 0;
+        el.b4wdiff = 0;
+        el.c4wdiff = 0;
+      }
+
       // pack for JS lookup table
       const index = blackScholesJS.getIndexFromStrike(strikes[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
-      lookupTable.set(index, element);
+      lookupTable.set(index, el);
     }
   }
 
@@ -265,23 +277,23 @@ function getLookupTableSOL(lookupTable) {
   // pack for SOL lookup table
   for (const [key, value] of lookupTable) {
     const { intrinsicPriceAA, intrinsicPriceBAdiff, a1, b1, c1, a2diff, b2diff, c2diff, a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff } = value;
-    const intrinsicPriceAABigInt = BigInt(parseInt(intrinsicPriceAA * 1e8));
-    const intrinsicPriceBAdiffBigInt = BigInt(parseInt(Math.max(0, (intrinsicPriceBAdiff + 0.452963)) * 1e6)); // todo: this was 1e8, see if this is enough, still got 6 bits extra
-    const a1BigInt = BigInt(parseInt(Math.max(0, (a1 + 0.005348)) * 1e6));
-    const b1BigInt = BigInt(parseInt(Math.max(0, (b1 + 0.23659)) * 1e6));
-    const c1BigInt = BigInt(parseInt(c1 * 1e6));
+    const intrinsicPriceAABigInt = BigInt(Math.round(intrinsicPriceAA * 1e8));
+    const intrinsicPriceBAdiffBigInt = BigInt(Math.round(Math.max(0, (intrinsicPriceBAdiff + 0.452963)) * 1e6)); // todo: this was 1e8, see if this is enough, still got 6 bits extra
+    const a1BigInt = BigInt(Math.round(Math.max(0, (a1 + 0.005348)) * 1e6));
+    const b1BigInt = BigInt(Math.round(Math.max(0, (b1 + 0.23659)) * 1e6));
+    const c1BigInt = BigInt(Math.round(c1 * 1e6));
 
-    const a2diffBigInt = BigInt(parseInt(Math.max(0, (a2diff + 0.000134)) * 1e6));
-    const b2diffBigInt = BigInt(parseInt(Math.max(0, (b2diff + 0.00258)) * 1e6));
-    const c2diffBigInt = BigInt(parseInt(Math.max(0, (c2diff + 0.025636)) * 1e6));
+    const a2diffBigInt = BigInt(Math.round(Math.max(0, (a2diff + 0.000134)) * 1e6));
+    const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.00258)) * 1e6));
+    const c2diffBigInt = BigInt(Math.round(Math.max(0, (c2diff + 0.025636)) * 1e6));
 
-    const a3wBigInt = BigInt(parseInt(Math.max(0, (a3w + 0.31261)) * 1e5));
-    const b3wBigInt = BigInt(parseInt(Math.max(0, (b3w + 14.2541)) * 1e5));
-    const c3wBigInt = BigInt(parseInt(c3w * 1e5));
+    const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.31261)) * 1e5));
+    const b3wBigInt = BigInt(Math.round(Math.max(0, (b3w + 14.2541)) * 1e5));
+    const c3wBigInt = BigInt(Math.round(c3w * 1e5));
 
-    const a4wdiffBigInt = BigInt(parseInt(Math.max(0, (a4wdiff + 0.01653)) * 1e5));
-    const b4wdiffBigInt = BigInt(parseInt(Math.max(0, (b4wdiff + 0.72517)) * 1e5));
-    const c4wdiffBigInt = BigInt(parseInt(Math.max(0, (c4wdiff + 0.01416)) * 1e5));
+    const a4wdiffBigInt = BigInt(Math.round(Math.max(0, (a4wdiff + 0.01653)) * 1e5));
+    const b4wdiffBigInt = BigInt(Math.round(Math.max(0, (b4wdiff + 0.72517)) * 1e5));
+    const c4wdiffBigInt = BigInt(Math.round(Math.max(0, (c4wdiff + 0.01416)) * 1e5));
 
     // vol 12% bits packing
     // AA BAdiff: 27 + 20 = 47
