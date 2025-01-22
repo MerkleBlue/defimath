@@ -266,7 +266,7 @@ function getLookupTableSOL(lookupTable) {
   for (const [key, value] of lookupTable) {
     const { intrinsicPriceAA, intrinsicPriceBAdiff, a1, b1, c1, a2diff, b2diff, c2diff, a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff } = value;
     const intrinsicPriceAABigInt = BigInt(parseInt(intrinsicPriceAA * 1e8));
-    const intrinsicPriceBAdiffBigInt = BigInt(parseInt(Math.max(0, (intrinsicPriceBAdiff + 0.45296252)) * 1e8));
+    const intrinsicPriceBAdiffBigInt = BigInt(parseInt(Math.max(0, (intrinsicPriceBAdiff + 0.452963)) * 1e6)); // todo: this was 1e8, see if this is enough, still got 6 bits extra
     const a1BigInt = BigInt(parseInt(Math.max(0, (a1 + 0.005348)) * 1e6));
     const b1BigInt = BigInt(parseInt(Math.max(0, (b1 + 0.23659)) * 1e6));
     const c1BigInt = BigInt(parseInt(c1 * 1e6));
@@ -291,9 +291,14 @@ function getLookupTableSOL(lookupTable) {
     // a4diff b4diff c4diff: 16 + 17 + 19 = 52
     // TOTAL: 250 bits
 
+    if(key === 9220267) {
+      console.log("intrinsicPriceAABigInt", intrinsicPriceAABigInt, intrinsicPriceAABigInt * BigInt(2 ** 223));
+    }
+
+
     const elementForSOL = 
-      intrinsicPriceAABigInt * BigInt(2 ** 223) + 
-      intrinsicPriceBAdiffBigInt * BigInt(2 ** 203) + 
+      intrinsicPriceAABigInt * BigInt(2 ** 223) +
+      intrinsicPriceBAdiffBigInt * BigInt(2 ** 203) +
       a1BigInt * BigInt(2 ** 188) + 
       b1BigInt * BigInt(2 ** 173) + 
       c1BigInt * BigInt(2 ** 150) + 

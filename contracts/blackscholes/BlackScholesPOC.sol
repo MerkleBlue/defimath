@@ -403,8 +403,42 @@ contract BlackScholesPOC {
             console.log("deltaStrike: %d", deltaStrike);
             console.log("strikeWeight: %d", strikeWeight);
 
+            // step 4)  
+            step4(cell, strikeWeight, timeToExpiryWeight);
+
             // finalPrice = applyQuadraticFormula(cell, deltaTime, deltaStrike, timeToExpiryWeight);
         }
+    }
+
+    function step4(
+        uint256 cell,
+        uint256 strikeWeight,
+        uint256 timeToExpiryWeight
+    ) private pure returns (uint256 finalPrice) {
+        // AA BAdiff: 27 + 20 = 47
+        // a1 b1 c1: 15 + 15 + 23 = 53
+        // a2diff b2diff c2diff: 9 + 12 + 16 = 37
+        // a3w b3w c3w: 20 + 21 + 20 = 61
+        // a4diff b4diff c4diff: 16 + 17 + 19 = 52
+        unchecked {
+            int256 intrinsicPriceAA = int256(cell >> 223);
+            int256 a1 = int256((cell << 256 - 188 - 15) >> 256 - 15);
+            console.log("a1: %d", (cell << 256 - 188 - 15) >> 256 - 15);
+            if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
+            if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }
+
+            // if (a1 > 0) {
+            //     console.log("a1: %d", uint256(a1));
+            // } else {
+            //     console.log("a1: -%d", uint256(-a1));
+            // }
+            // int256 b1 = decodeFactor(uint32(cell / TWO_POW_128));
+            // int256 a3 = decodeFactor(uint32(cell / TWO_POW_96));
+            // int256 b3 = decodeFactor(uint32(cell / TWO_POW_64));
+            // int256 a4 = decodeFactor(uint32(cell / TWO_POW_32));
+            // int256 b4 = decodeFactor(uint32(cell));
+        }
+
     }
 
     // todo: rename 
@@ -430,55 +464,6 @@ contract BlackScholesPOC {
             int256 interpolatedPriceStrike = interpolatedPrice3 + int256(timeToExpiryWeight) * (interpolatedPrice4 - interpolatedPrice3) / 1e18;
             finalPrice = uint256(int256(optionPriceAA) * 10 + interpolatedPrice1 + interpolatedPriceStrike);
 
-            // console.log("optionPriceAA", optionPriceAA);
-
-            // if (a1 > 0) {
-            //     console.log("a1: %d", uint256(a1));
-            // } else {
-            //     console.log("a1: -%d", uint256(-a1));
-            // }
-
-            // if (b1 > 0) {
-            //     console.log("b1: %d", uint256(b1));
-            // } else {
-            //     console.log("b1: -%d", uint256(-b1));
-            // }
-
-            // if (a3 > 0) {
-            //     console.log("a3: %d", uint256(a3));
-            // } else {
-            //     console.log("a3: -%d", uint256(-a3));
-            // }
-
-            // if (b3 > 0) {
-            //     console.log("b3: %d", uint256(b3));
-            // } else {
-            //     console.log("b3: -%d", uint256(-b3));
-            // }
-
-            // if (interpolatedPrice1 > 0) {
-            //     console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1));
-            // } else {
-            //     console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1));
-            // }
-
-            // if (interpolatedPrice3 > 0) {
-            //     console.log("interpolatedPrice3: %d", uint256(interpolatedPrice3));
-            // } else {
-            //     console.log("interpolatedPrice3: -%d", uint256(-interpolatedPrice3));
-            // }
-
-            // if (interpolatedPrice4 > 0) {
-            //     console.log("interpolatedPrice4: %d", uint256(interpolatedPrice4));
-            // } else {
-            //     console.log("interpolatedPrice4: -%d", uint256(-interpolatedPrice4));
-            // }
-
-            // if (interpolatedPriceStrike > 0) {
-            //     console.log("interpolatedPriceStrike: %d", uint256(interpolatedPriceStrike));
-            // } else {
-            //     console.log("interpolatedPriceStrike: -%d", uint256(-interpolatedPriceStrike));
-            // }
 
         }
     }

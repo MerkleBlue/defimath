@@ -141,12 +141,12 @@ export class BlackScholesJS {
     const interpolatedPrice2 = Math.max(0, a2 * (timeToExpiryWeight ** 3) + b2 * (timeToExpiryWeight ** 2) + c2 * timeToExpiryWeight);
     const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
     const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
+    const interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
 
     log && console.log("interpolatedPrice1", interpolatedPrice1);
     log && console.log("interpolatedPrice2", interpolatedPrice2);
     log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
     log && console.log("interpolatedStrikeWeight4w", interpolatedStrikeWeight4w);
-    const interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
     log && console.log("interpolatedStrikeWeightw", interpolatedStrikeWeightw);
 
     // step 5) calculate the final price
