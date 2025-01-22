@@ -420,12 +420,44 @@ contract BlackScholesPOC {
         // a2diff b2diff c2diff: 9 + 12 + 16 = 37
         // a3w b3w c3w: 20 + 21 + 20 = 61
         // a4diff b4diff c4diff: 16 + 17 + 19 = 52
+
+        // intrinsicPriceAA [ 0 - 82.48847598 ]
+        // intrinsicPriceBAdiff [ -0.45296252 - 0.47119369 ]
+        // a1 [ -0.005348 - 0.011765 ]
+        // b1 [ -0.23659 - 0.056593 ]
+        // c1 [ 0 - 4.860914 ]
+        // a2diff [ -0.000134 - 0.000207 ]
+        // b2diff [ -0.00258 - 0.001524 ]
+        // c2diff [ -0.025636 - 0.029092 ]
+        // a3w [ -0.31261 - 8.184084 ]
+        // b3w [ -14.254104 - 0.27579 ]
+        // c3w [ 0 - 7.271892 ]
+        // a4wdiff [ -0.016531 - 0.453166 ]
+        // b4wdiff [ -0.725168 - 0.056592 ]
+        // c4wdiff [ -0.014163 - 4.860915 ]
         unchecked {
             int256 intrinsicPriceAA = int256(cell >> 223);
             int256 a1 = int256((cell << 256 - 188 - 15) >> 256 - 15);
+
+            int256 a3w = int256((cell << 256 - 93 - 20) >> 256 - 20) - 31261;
+            int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1425410;
+            int256 c3w = int256((cell << 256 - 52 - 20) >> 256 - 20);
+            int256 a4wdiff = int256((cell << 256 - 36 - 16) >> 256 - 16) - 1653;
+            int256 b4wdiff = int256((cell << 256 - 19 - 17) >> 256 - 17) - 72517;
+            int256 c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 1416;
+
+
             console.log("a1: %d", (cell << 256 - 188 - 15) >> 256 - 15);
             if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
             if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }
+
+            if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
+            if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
+            if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }
+            if (a4wdiff > 0) { console.log("a4wdiff: %d", uint256(a4wdiff)); } else { console.log("a4wdiff: -%d", uint256(-a4wdiff)); }
+            if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }
+            if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }
+
 
             // if (a1 > 0) {
             //     console.log("a1: %d", uint256(a1));
