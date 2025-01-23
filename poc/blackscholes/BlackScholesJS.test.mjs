@@ -214,30 +214,24 @@ describe("BlackScholesJS", function () {
       }
     }
 
-    // console.log("min: ", result.min);
-    // console.log("max: ", result.max);
-    // console.log("absMin: ", result.absMin);
-
     // reduce decimals to 6 decimals, all but c3w which is 5 decimals, with almost same precision
     lookupTable.forEach((value, key) => {
-        value.intrinsicPriceBAdiff =  Math.round(value.intrinsicPriceBAdiff * 1e6) / 1e6,
+      value.intrinsicPriceBAdiff =  Math.round(value.intrinsicPriceBAdiff * 1e6) / 1e6,
 
-        value.a1 = Math.round(value.a1 * 1e6) / 1e6,
-        value.b1 = Math.round(value.b1 * 1e6) / 1e6,
-        value.c1 = Math.round(value.c1 * 1e6) / 1e6, // 1e5 ok, 0.88
-        value.a2diff = Math.round(value.a2diff * 1e6) / 1e6,
-        value.b2diff = Math.round(value.b2diff * 1e6) / 1e6,
-        value.c2diff = Math.round(value.c2diff * 1e6) / 1e6,
+      value.a1 = Math.round(value.a1 * 1e6) / 1e6,
+      value.b1 = Math.round(value.b1 * 1e6) / 1e6,
+      value.c1 = Math.round(value.c1 * 1e6) / 1e6,
+      value.a2diff = Math.round(value.a2diff * 1e6) / 1e6,
+      value.b2diff = Math.round(value.b2diff * 1e6) / 1e6,
+      value.c2diff = Math.round(value.c2diff * 1e6) / 1e6,
 
-        value.a3w = Math.round(value.a3w * 1e6) / 1e6,
-        value.b3w = Math.round(value.b3w * 1e6) / 1e6,
-        value.c3w = Math.round(value.c3w * 1e5) / 1e5,
-        value.a4wdiff = Math.round(value.a4wdiff * 1e6) / 1e6,
-        value.b4wdiff = Math.round(value.b4wdiff * 1e6) / 1e6,
-        value.c4wdiff = Math.round(value.c4wdiff * 1e6) / 1e6
-      // }
-    }
-    );
+      value.a3w = Math.round(value.a3w * 1e6) / 1e6,
+      value.b3w = Math.round(value.b3w * 1e6) / 1e6,
+      value.c3w = Math.round(value.c3w * 1e5) / 1e5,
+      value.a4wdiff = Math.round(value.a4wdiff * 1e6) / 1e6,
+      value.b4wdiff = Math.round(value.b4wdiff * 1e6) / 1e6,
+      value.c4wdiff = Math.round(value.c4wdiff * 1e6) / 1e6
+    });
   });
 
   describe("functionality", async function () {
@@ -390,7 +384,7 @@ describe("BlackScholesJS", function () {
         });
       });
 
-      describe.only("multiple call options - 16x16 per cell", function () {
+      describe("multiple call options - 16x16 per cell", function () {
         // it.only("gets multiple call prices: one specific max error", async function () {
         //   const strikeSubArray = [99.95625];
         //   const timeSubArray = [60];
