@@ -451,7 +451,9 @@ contract BlackScholesPOC {
             //     if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }
             // }
 
-            int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight);
+            int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight);
+            if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }
+
             // {
             //     int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
             //     int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
@@ -530,7 +532,8 @@ contract BlackScholesPOC {
 
     function getInterpolatedStrikeWeightw(
         uint256 cell,
-        uint256 strikeWeight
+        uint256 strikeWeight,
+        uint256 timeToExpiryWeight
     ) private pure returns (int256 interpolatedStrikeWeightw) {
         unchecked {
             // strikeWeight = 387491520165781370;
@@ -546,6 +549,12 @@ contract BlackScholesPOC {
 
             if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }
             if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }
+
+            interpolatedStrikeWeightw = interpolatedStrikeWeight3w + int256(timeToExpiryWeight) * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w) / 1e18; // todo: Math.min(1, ...)
+            // if factors are zeroed, use default strike weight
+            if (interpolatedStrikeWeightw == 0){
+                interpolatedStrikeWeightw = int256(strikeWeight);
+            }
 
             // if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
             // if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
