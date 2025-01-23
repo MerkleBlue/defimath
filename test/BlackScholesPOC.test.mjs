@@ -52,7 +52,7 @@ describe("BlackScholesPOC (contract)", function () {
   });
 
   describe("performance", function () {
-    it("getCallOptionPrice gas", async function () {
+    it.only("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
