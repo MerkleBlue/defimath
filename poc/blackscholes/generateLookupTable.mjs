@@ -323,9 +323,9 @@ function getLookupTableSOL(lookupTable) {
     const elementForSOL = 
       // intrinsicPriceAABigInt * BigInt(2 ** 227) +
       // intrinsicPriceBAdiffBigInt * BigInt(2 ** 207) +
-      // a1BigInt * BigInt(2 ** 192) + 
-      // b1BigInt * BigInt(2 ** 173) + 
-      // c1BigInt * BigInt(2 ** 150) + 
+      a1BigInt * BigInt(2 ** 192) + 
+      b1BigInt * BigInt(2 ** 173) + 
+      c1BigInt * BigInt(2 ** 150) + 
       a2diffBigInt * BigInt(2 ** 141) +
       b2diffBigInt * BigInt(2 ** 128) + 
       c2diffBigInt * BigInt(2 ** 112) + 
