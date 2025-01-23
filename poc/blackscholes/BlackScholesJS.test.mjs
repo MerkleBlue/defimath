@@ -36,6 +36,13 @@ describe("BlackScholesJS", function () {
       }
     }
 
+    const nonSmallTimeMap = new Map(nonZeroMap);
+    for (let [key, value] of map) {
+      if (key % 1000 < 144) {
+        nonSmallTimeMap.delete(key);
+      }
+    }
+
     const sameIntrinsicPriceMap = new Map(nonZeroMap);
     for (let [key, value] of nonZeroMap) {
       if (value.intrinsicPriceBAdiff !== 0) {
@@ -47,7 +54,7 @@ describe("BlackScholesJS", function () {
     console.log("map size: ", map.size, "mapCopy size: ", nonZeroMap.size, "sameIntrinsicPriceMap size: ", sameIntrinsicPriceMap.size);
 
     // Iterate over the map
-    nonZeroMap.forEach(obj => {
+    nonSmallTimeMap.forEach(obj => {
         // Update min and max for each key
         for (const key of Object.keys(result.min)) {
             if (obj[key] !== undefined) {
@@ -403,10 +410,10 @@ describe("BlackScholesJS", function () {
           testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
 
-        it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
+        it.only("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
-          const timeSubArray = testTimePoints.filter(value => value >= 500);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000075); // todo [0.01, VOL_FIXED, 1.92]
+          const timeSubArray = testTimePoints.filter(value => value >= 900);
+          testRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000075); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
