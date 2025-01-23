@@ -206,10 +206,10 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         }
       }
 
-      // reduce prices to 8 decimals, factors to 6 decimals
+      // reduce prices and factors to 6 decimals
       const el = {
-        intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e8) / 1e8,
-        intrinsicPriceBAdiff: Math.round((intrinsicPriceAA - intrinsicPriceBA) * 1e8) / 1e8,
+        intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e6) / 1e6,
+        intrinsicPriceBAdiff: Math.round((intrinsicPriceAA - intrinsicPriceBA) * 1e6) / 1e6,
 
         a1: Math.round(a1 * 1e6) / 1e6,
         b1: Math.round(b1 * 1e6) / 1e6,
@@ -387,7 +387,7 @@ export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
       points.push(newStrike);
     }
   }
-  points.push(endPoint); // last point
+  // points.push(endPoint); // last point
 
   return points;
 }
