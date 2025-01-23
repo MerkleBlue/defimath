@@ -56,7 +56,7 @@ contract BlackScholesPOC {
             // step 4: interpolate price
             uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
-            // price = finalPrice * spotScale / 1e18;
+            price = finalPrice * spotScale / 1e18;
         }
     }
 
@@ -406,6 +406,7 @@ contract BlackScholesPOC {
 
             // step 4) and 5)  
             finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step);
+            console.log("finalPrice: %d", finalPrice);
 
 
 
@@ -544,18 +545,10 @@ contract BlackScholesPOC {
             if (optionPriceAT > 0) { console.log("optionPriceAT: %d", uint256(optionPriceAT)); } else { console.log("optionPriceAT: -%d", uint256(-optionPriceAT)); }
             if (optionPriceBT > 0) { console.log("optionPriceBT: %d", uint256(optionPriceBT)); } else { console.log("optionPriceBT: -%d", uint256(-optionPriceBT)); }
 
-
+            finalPrice = uint256(maxInt256(0, optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT) / 1e18));
 
             // if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
             // if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
-
-            // if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
-            // if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
-            // if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }
-
-            // if (a4wdiff > 0) { console.log("a4wdiff: %d", uint256(a4wdiff)); } else { console.log("a4wdiff: -%d", uint256(-a4wdiff)); }
-            // if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }
-            // if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }
         }
     }
 
@@ -585,8 +578,6 @@ contract BlackScholesPOC {
 
             int256 interpolatedPriceStrike = interpolatedPrice3 + int256(timeToExpiryWeight) * (interpolatedPrice4 - interpolatedPrice3) / 1e18;
             finalPrice = uint256(int256(optionPriceAA) * 10 + interpolatedPrice1 + interpolatedPriceStrike);
-
-
         }
     }
 
