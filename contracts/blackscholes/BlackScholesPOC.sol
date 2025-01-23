@@ -420,7 +420,7 @@ contract BlackScholesPOC {
         // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
         // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
         // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
-        // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals, tried, bad
+        // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals,
         // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
         // b2diff [ -0.00258 - 0.001524 ]                   13 bits, 6 decimals
         // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
@@ -433,16 +433,16 @@ contract BlackScholesPOC {
 
         // TOTAL: 254 bits
         unchecked {
-            int256 intrinsicPriceAA = int256(cell >> 223);
+            int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
+            int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
 
-            
             int256 a1 = int256((cell << 256 - 192 - 15) >> 256 - 15) - 5256;
             int256 b1 = int256((cell << 256 - 173 - 19) >> 256 - 19) - 236590;
             int256 c1 = int256((cell << 256 - 150 - 23) >> 256 - 23);
 
-            int256 a2diff = int256((cell << 256 - 141 - 9) >> 256 - 9) - 134;
-            int256 b2diff = int256((cell << 256 - 128 - 13) >> 256 - 13) - 2580;
-            int256 c2diff = int256((cell << 256 - 112 - 16) >> 256 - 16) - 25636;
+            // int256 a2diff = int256((cell << 256 - 141 - 9) >> 256 - 9) - 134;
+            // int256 b2diff = int256((cell << 256 - 128 - 13) >> 256 - 13) - 2580;
+            // int256 c2diff = int256((cell << 256 - 112 - 16) >> 256 - 16) - 25636;
 
             // int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
             // int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
@@ -454,14 +454,15 @@ contract BlackScholesPOC {
 
 
             if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
+            if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
 
             if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }
             if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }
             if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }
 
-            if (a2diff > 0) { console.log("a2diff: %d", uint256(a2diff)); } else { console.log("a2diff: -%d", uint256(-a2diff)); }
-            if (b2diff > 0) { console.log("b2diff: %d", uint256(b2diff)); } else { console.log("b2diff: -%d", uint256(-b2diff)); }
-            if (c2diff > 0) { console.log("c2diff: %d", uint256(c2diff)); } else { console.log("c2diff: -%d", uint256(-c2diff)); }
+            // if (a2diff > 0) { console.log("a2diff: %d", uint256(a2diff)); } else { console.log("a2diff: -%d", uint256(-a2diff)); }
+            // if (b2diff > 0) { console.log("b2diff: %d", uint256(b2diff)); } else { console.log("b2diff: -%d", uint256(-b2diff)); }
+            // if (c2diff > 0) { console.log("c2diff: %d", uint256(c2diff)); } else { console.log("c2diff: -%d", uint256(-c2diff)); }
 
             // if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
             // if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }

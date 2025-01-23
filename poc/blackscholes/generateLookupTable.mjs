@@ -258,21 +258,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
 
 function getLookupTableSOL(lookupTable) {
 
-  // intrinsicPriceAA [ 0 - 82.48847598 ]
-  // intrinsicPriceBAdiff [ -0.45296252 - 0.47119369 ]
-  // a1 [ -0.005348 - 0.011765 ]
-  // b1 [ -0.23659 - 0.056593 ]
-  // c1 [ 0 - 4.860914 ]
-  // a2diff [ -0.000134 - 0.000207 ]
-  // b2diff [ -0.00258 - 0.001524 ]
-  // c2diff [ -0.025636 - 0.029092 ]
-  // a3w [ -0.31261 - 8.184084 ]
-  // b3w [ -14.254104 - 0.27579 ]
-  // c3w [ 0 - 7.271892 ]
-  // a4wdiff [ -0.016531 - 0.453166 ]
-  // b4wdiff [ -0.725168 - 0.056592 ]
-  // c4wdiff [ -0.014163 - 4.860915 ]
-
   const lookupTableSOL = new Map();
   // pack for SOL lookup table
   for (const [key, value] of lookupTable) {
@@ -321,8 +306,8 @@ function getLookupTableSOL(lookupTable) {
 
     // shift bits
     const elementForSOL = 
-      // intrinsicPriceAABigInt * BigInt(2 ** 227) +
-      // intrinsicPriceBAdiffBigInt * BigInt(2 ** 207) +
+      intrinsicPriceAABigInt * BigInt(2 ** 227) +
+      intrinsicPriceBAdiffBigInt * BigInt(2 ** 207) +
       a1BigInt * BigInt(2 ** 192) + 
       b1BigInt * BigInt(2 ** 173) + 
       c1BigInt * BigInt(2 ** 150) + 
