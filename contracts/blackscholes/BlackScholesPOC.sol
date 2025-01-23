@@ -415,26 +415,23 @@ contract BlackScholesPOC {
         uint256 strikeWeight,
         uint256 timeToExpiryWeight
     ) private pure returns (uint256 finalPrice) {
-        // AA BAdiff: 27 + 20 = 47
-        // a1 b1 c1: 15 + 15 + 23 = 53
-        // a2diff b2diff c2diff: 9 + 12 + 16 = 37
-        // a3w b3w c3w: 20 + 21 + 20 = 61
-        // a4diff b4diff c4diff: 16 + 17 + 19 = 52
 
-        // intrinsicPriceAA [ 0 - 82.48847598 ]
-        // intrinsicPriceBAdiff [ -0.45296252 - 0.47119369 ]
-        // a1 [ -0.005348 - 0.011765 ]
-        // b1 [ -0.23659 - 0.056593 ]
-        // c1 [ 0 - 4.860914 ]
-        // a2diff [ -0.000134 - 0.000207 ]
-        // b2diff [ -0.00258 - 0.001524 ]
-        // c2diff [ -0.025636 - 0.029092 ]
-        // a3w [ -0.31261 - 8.184084 ]
-        // b3w [ -14.254104 - 0.27579 ]
-        // c3w [ 0 - 7.271892 ]
-        // a4wdiff [ -0.016531 - 0.453166 ]
-        // b4wdiff [ -0.725168 - 0.056592 ]
-        // c4wdiff [ -0.014163 - 4.860915 ]
+        // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
+        // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
+        // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
+        // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
+        // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals, tried, bad
+        // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
+        // b2diff [ -0.00258 - 0.001524 ]                   13 bits, 6 decimals
+        // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
+        // a3w [ -0.001096 - 0.2756 ]                       19 bits, 6 decimals
+        // b3w [ -1.052697 - 0 ]                            21 bits, 6 decimals
+        // c3w [ 0 - 1.778273 ]                             18 bits, 5 decimals
+        // a4wdiff [ -0.000147 - 0.040763 ]                 19 bits, 6 decimals
+        // b4wdiff [ -0.116937 - 0.000924 ]                 18 bits, 6 decimals
+        // c4wdiff [ -0.000973 - 0.076386 ]                 17 bits, 6 decimals
+
+        // TOTAL: 254 bits
         unchecked {
             int256 intrinsicPriceAA = int256(cell >> 223);
             int256 a1 = int256((cell << 256 - 188 - 15) >> 256 - 15);
@@ -442,9 +439,10 @@ contract BlackScholesPOC {
             int256 a3w = int256((cell << 256 - 93 - 20) >> 256 - 20) - 31261;
             int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1425410;
             int256 c3w = int256((cell << 256 - 52 - 20) >> 256 - 20);
-            int256 a4wdiff = int256((cell << 256 - 36 - 16) >> 256 - 16) - 1653;
-            int256 b4wdiff = int256((cell << 256 - 19 - 17) >> 256 - 17) - 72517;
-            int256 c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 1416;
+
+            int256 a4wdiff = int256((cell << 256 - 35 - 19) >> 256 - 19) - 147;
+            int256 b4wdiff = int256((cell << 256 - 18 - 17) >> 256 - 18) - 116937;
+            int256 c4wdiff = int256((cell << 256 - 17) >> 256 - 17) - 973;
 
 
             console.log("a1: %d", (cell << 256 - 188 - 15) >> 256 - 15);

@@ -352,19 +352,19 @@ describe("BlackScholesJS", function () {
 
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
-        it("gets a single call price", async function () {
+        it.only("gets a single call price", async function () {
           const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
           const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
 
           console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
         });
 
-        it.only("gets a single call price test", async function () {
-          const expectedOptionPrice = bs.blackScholes(1000, 404.6875, 212992 / SEC_IN_YEAR, 1.92, 0, "call");
-          const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 404.6875, 212992, 1.92, 0);
+        // it.only("gets a single call price test", async function () {
+        //   const expectedOptionPrice = bs.blackScholes(1000, 404.6875, 212992 / SEC_IN_YEAR, 1.92, 0, "call");
+        //   const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 404.6875, 212992, 1.92, 0);
 
-          console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
-        });
+        //   console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+        // });
       });
 
       describe("random tests", function () {
