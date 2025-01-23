@@ -535,8 +535,16 @@ contract BlackScholesPOC {
             console.log("extrinsicPriceAA: %d", extrinsicPriceAA);
             console.log("extrinsicPriceBA: %d", extrinsicPriceBA);
 
-            // int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
-            // int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
+            int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
+            int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
+            int256 intrinsicPriceBA = intrinsicPriceAA - intrinsicPriceBAdiff;
+
+            int256 optionPriceAT = int256(extrinsicPriceAA) + intrinsicPriceAA * 1e12 + interpolatedPrice1;
+            int256 optionPriceBT = int256(extrinsicPriceBA) + intrinsicPriceBA * 1e12 + interpolatedPrice2;
+            if (optionPriceAT > 0) { console.log("optionPriceAT: %d", uint256(optionPriceAT)); } else { console.log("optionPriceAT: -%d", uint256(-optionPriceAT)); }
+            if (optionPriceBT > 0) { console.log("optionPriceBT: %d", uint256(optionPriceBT)); } else { console.log("optionPriceBT: -%d", uint256(-optionPriceBT)); }
+
+
 
             // if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
             // if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
