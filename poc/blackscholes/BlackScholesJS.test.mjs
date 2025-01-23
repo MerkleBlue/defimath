@@ -218,27 +218,26 @@ describe("BlackScholesJS", function () {
     // console.log("max: ", result.max);
     // console.log("absMin: ", result.absMin);
 
-    // reduce decimals
-    // const prec12 = 1e6;
-    // const prec34 = 1e5;
-    // lookupTable.forEach((value, key) => {
-    //   // for (const key of Object.keys(value)) {
-    //     value.a1 = Math.round(value.a1 * prec12) / prec12,
-    //     value.b1 = Math.round(value.b1 * prec12) / prec12,
-    //     value.c1 = Math.round(value.c1 * prec12) / prec12,
-    //     value.a2 = Math.round(value.a2 * prec12) / prec12,
-    //     value.b2 = Math.round(value.b2 * prec12) / prec12,
-    //     value.c2 = Math.round(value.c2 * prec12) / prec12,
+    // reduce decimals to 6 decimals, all but c3w which is 5 decimals, with almost same precision
+    lookupTable.forEach((value, key) => {
+        value.intrinsicPriceBAdiff =  Math.round(value.intrinsicPriceBAdiff * 1e6) / 1e6,
 
-    //     value.a3w = Math.round(value.a3w * prec34) / prec34,
-    //     value.b3w = Math.round(value.b3w * prec34) / prec34,
-    //     value.c3w = Math.round(value.c3w * prec34) / prec34,
-    //     value.a4w = Math.round(value.a4w * prec34) / prec34,
-    //     value.b4w = Math.round(value.b4w * prec34) / prec34,
-    //     value.c4w = Math.round(value.c4w * prec34) / prec34
-    //   // }
-    // }
-    // );
+        value.a1 = Math.round(value.a1 * 1e6) / 1e6,
+        value.b1 = Math.round(value.b1 * 1e6) / 1e6,
+        value.c1 = Math.round(value.c1 * 1e6) / 1e6, // 1e5 ok, 0.88
+        value.a2diff = Math.round(value.a2diff * 1e6) / 1e6,
+        value.b2diff = Math.round(value.b2diff * 1e6) / 1e6,
+        value.c2diff = Math.round(value.c2diff * 1e6) / 1e6,
+
+        value.a3w = Math.round(value.a3w * 1e6) / 1e6,
+        value.b3w = Math.round(value.b3w * 1e6) / 1e6,
+        value.c3w = Math.round(value.c3w * 1e5) / 1e5,
+        value.a4wdiff = Math.round(value.a4wdiff * 1e6) / 1e6,
+        value.b4wdiff = Math.round(value.b4wdiff * 1e6) / 1e6,
+        value.c4wdiff = Math.round(value.c4wdiff * 1e6) / 1e6
+      // }
+    }
+    );
   });
 
   describe("functionality", async function () {
@@ -401,31 +400,31 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000106);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000067);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
         });
 
-        it.only("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
+        it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 900);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000075); // todo [0.01, VOL_FIXED, 1.92]
+          testRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000069);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
         });
 
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000083);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
         });
 
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
@@ -437,7 +436,7 @@ describe("BlackScholesJS", function () {
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000079);
+          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
 
