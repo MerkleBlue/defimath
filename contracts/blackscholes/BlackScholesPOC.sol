@@ -397,14 +397,17 @@ contract BlackScholesPOC {
             console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
             // step 3) calculate strike weight
-            uint256 deltaStrike = strikeScaled - getStrikeFromIndex(strikeIndex);
+            uint256 strikeA = getStrikeFromIndex(strikeIndex);
+            uint256 deltaStrike = strikeScaled - strikeA;
             (uint256 step, ) = getStrikeStepAndBoundary(strikeScaled);
             uint256 strikeWeight = deltaStrike * 1e18 / step;
             console.log("deltaStrike: %d", deltaStrike);
             console.log("strikeWeight: %d", strikeWeight);
 
-            // step 4)  
-            step4(cell, strikeWeight, timeToExpiryWeight);
+            // step 4) and 5)  
+            finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step);
+
+
 
             // finalPrice = applyQuadraticFormula(cell, deltaTime, deltaStrike, timeToExpiryWeight);
         }
@@ -413,7 +416,9 @@ contract BlackScholesPOC {
     function step4(
         uint256 cell,
         uint256 strikeWeight,
-        uint256 timeToExpiryWeight
+        uint256 timeToExpiryWeight,
+        uint256 strikeA,
+        uint256 step
     ) private pure returns (uint256) {
 
         // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
@@ -435,63 +440,12 @@ contract BlackScholesPOC {
         unchecked {
 
             (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight);
-            // {
-            //     int256 a1 = int256((cell << 256 - 192 - 15) >> 256 - 15) - 5256;
-            //     int256 b1 = int256((cell << 256 - 173 - 19) >> 256 - 19) - 236590;
-            //     int256 c1 = int256((cell << 256 - 150 - 23) >> 256 - 23);
-            //     interpolatedPrice1 = a1 * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + b1 * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + c1 * 1e12 * int256(timeToExpiryWeight) / 1e18;
-
-            //     int256 a2diff = int256((cell << 256 - 141 - 9) >> 256 - 9) - 134;
-            //     int256 b2diff = int256((cell << 256 - 128 - 13) >> 256 - 13) - 2580;
-            //     int256 c2diff = int256((cell << 256 - 112 - 16) >> 256 - 16) - 25636;
-
-            //     interpolatedPrice2 = (a1 - a2diff) * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + (b1 - b2diff) * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + (c1 - c2diff) * 1e12 * int256(timeToExpiryWeight) / 1e18;
-
-            //     if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }
-            //     if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }
-            // }
 
             int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight);
             if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }
 
-            // {
-            //     int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
-            //     int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
-            //     int256 c3w = int256((cell << 256 - 54 - 18) >> 256 - 18);
-            //     int256 interpolatedStrikeWeight3w = a3w * 1e12 * int256(strikeWeight ** 3) / 1e54 + b3w * 1e12 * int256(strikeWeight ** 2) / 1e36 + c3w * 1e12 * int256(strikeWeight) / 1e18;
-
-            //     int256 a4wdiff = int256((cell << 256 - 35 - 19) >> 256 - 19) - 147;
-            //     int256 b4wdiff = int256((cell << 256 - 18 - 17) >> 256 - 18) - 116937;
-            //     int256 c4wdiff = int256((cell << 256 - 17) >> 256 - 17) - 973;
-            //     int256 interpolatedStrikeWeight4w = (a3w - a4wdiff) * 1e12 * int256(strikeWeight ** 3) / 1e54 + (b3w - b4wdiff) * 1e12 * int256(strikeWeight ** 2) / 1e36 + (c3w - c4wdiff) * 1e12 * int256(strikeWeight) / 1e18;
-
-            //     if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }
-            //     if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }
-            // }
-
-
-
-            // int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
-            // int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
-
-            // if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
-            // if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
-
-            // if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }
-            // if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }
-            // if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }
-
-            // if (a2diff > 0) { console.log("a2diff: %d", uint256(a2diff)); } else { console.log("a2diff: -%d", uint256(-a2diff)); }
-            // if (b2diff > 0) { console.log("b2diff: %d", uint256(b2diff)); } else { console.log("b2diff: -%d", uint256(-b2diff)); }
-            // if (c2diff > 0) { console.log("c2diff: %d", uint256(c2diff)); } else { console.log("c2diff: -%d", uint256(-c2diff)); }
-
-            // if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
-            // if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
-            // if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }
-
-            // if (a4wdiff > 0) { console.log("a4wdiff: %d", uint256(a4wdiff)); } else { console.log("a4wdiff: -%d", uint256(-a4wdiff)); }
-            // if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }
-            // if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }
+            uint256 finalPrice = step5(cell, strikeA, step, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw);
+            return finalPrice;
         }
     }
 
@@ -564,6 +518,41 @@ contract BlackScholesPOC {
             // if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }
             // if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }
         }
+    }
+
+    function step5(
+        uint256 cell,
+        uint256 strikeA,
+        uint256 step,
+        int256 interpolatedPrice1, 
+        int256 interpolatedPrice2,
+        int256 interpolatedStrikeWeightw
+    ) private pure returns (uint256 finalPrice) {
+        unchecked {
+
+            uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
+            uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)) - int256(step));
+            console.log("extrinsicPriceAA: %d", extrinsicPriceAA);
+            console.log("extrinsicPriceBA: %d", extrinsicPriceBA);
+
+            // int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
+            // int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
+
+            // if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
+            // if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
+
+            // if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
+            // if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
+            // if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }
+
+            // if (a4wdiff > 0) { console.log("a4wdiff: %d", uint256(a4wdiff)); } else { console.log("a4wdiff: -%d", uint256(-a4wdiff)); }
+            // if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }
+            // if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }
+        }
+    }
+
+    function maxInt256(int256 a, int256 b) internal pure returns (int256) {
+        return a > b ? a : b;
     }
 
     // todo: rename 

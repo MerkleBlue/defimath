@@ -103,7 +103,7 @@ export class BlackScholesJS {
   interpolatePrice(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = false;
+    const log = true;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
@@ -156,6 +156,8 @@ export class BlackScholesJS {
     // step 5) calculate the final price
     const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
     const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
+    log && console.log("extrinsicPriceAA", extrinsicPriceAA);
+    log && console.log("extrinsicPriceBA", extrinsicPriceBA);
 
     const intrinsicPriceBA = cell.intrinsicPriceAA - cell.intrinsicPriceBAdiff;
     const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
