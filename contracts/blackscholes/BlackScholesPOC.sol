@@ -433,32 +433,47 @@ contract BlackScholesPOC {
 
         // TOTAL: 254 bits
         unchecked {
+
+
+            int256 interpolatedPrice1;
+            int256 interpolatedPrice2;
+            {
+                int256 a1 = int256((cell << 256 - 192 - 15) >> 256 - 15) - 5256;
+                int256 b1 = int256((cell << 256 - 173 - 19) >> 256 - 19) - 236590;
+                int256 c1 = int256((cell << 256 - 150 - 23) >> 256 - 23);
+                interpolatedPrice1 = a1 * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + b1 * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + c1 * 1e12 * int256(timeToExpiryWeight) / 1e18;
+
+                int256 a2diff = int256((cell << 256 - 141 - 9) >> 256 - 9) - 134;
+                int256 b2diff = int256((cell << 256 - 128 - 13) >> 256 - 13) - 2580;
+                int256 c2diff = int256((cell << 256 - 112 - 16) >> 256 - 16) - 25636;
+
+                interpolatedPrice2 = (a1 - a2diff) * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + (b1 - b2diff) * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + (c1 - c2diff) * 1e12 * int256(timeToExpiryWeight) / 1e18;
+            }
+
+            {
+                int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
+                int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
+                int256 c3w = int256((cell << 256 - 54 - 18) >> 256 - 18);
+            }
+
+            {
+                int256 a4wdiff = int256((cell << 256 - 35 - 19) >> 256 - 19) - 147;
+                int256 b4wdiff = int256((cell << 256 - 18 - 17) >> 256 - 18) - 116937;
+                int256 c4wdiff = int256((cell << 256 - 17) >> 256 - 17) - 973;
+            }
+
+            if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }
+            if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }
+
             int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
             int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
 
-            int256 a1 = int256((cell << 256 - 192 - 15) >> 256 - 15) - 5256;
-            int256 b1 = int256((cell << 256 - 173 - 19) >> 256 - 19) - 236590;
-            int256 c1 = int256((cell << 256 - 150 - 23) >> 256 - 23);
+            // if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
+            // if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
 
-            // int256 a2diff = int256((cell << 256 - 141 - 9) >> 256 - 9) - 134;
-            // int256 b2diff = int256((cell << 256 - 128 - 13) >> 256 - 13) - 2580;
-            // int256 c2diff = int256((cell << 256 - 112 - 16) >> 256 - 16) - 25636;
-
-            // int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
-            // int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
-            // int256 c3w = int256((cell << 256 - 54 - 18) >> 256 - 18);
-
-            // int256 a4wdiff = int256((cell << 256 - 35 - 19) >> 256 - 19) - 147;
-            // int256 b4wdiff = int256((cell << 256 - 18 - 17) >> 256 - 18) - 116937;
-            // int256 c4wdiff = int256((cell << 256 - 17) >> 256 - 17) - 973;
-
-
-            if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
-            if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }
-
-            if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }
-            if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }
-            if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }
+            // if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }
+            // if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }
+            // if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }
 
             // if (a2diff > 0) { console.log("a2diff: %d", uint256(a2diff)); } else { console.log("a2diff: -%d", uint256(-a2diff)); }
             // if (b2diff > 0) { console.log("b2diff: %d", uint256(b2diff)); } else { console.log("b2diff: -%d", uint256(-b2diff)); }
