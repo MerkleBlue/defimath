@@ -315,9 +315,9 @@ function getLookupTableSOL(lookupTable) {
     // TOTAL: 254 bits
 
 
-    if(key === 9220267) {
-      console.log("c4wdiffBigInt", c4wdiffBigInt); //, intrinsicPriceAABigInt * BigInt(2 ** 223));
-    }
+    // if(key === 9220267) {
+    //   console.log("c4wdiffBigInt", c4wdiffBigInt); //, intrinsicPriceAABigInt * BigInt(2 ** 223));
+    // }
 
     // shift bits
     const elementForSOL = 
@@ -326,9 +326,9 @@ function getLookupTableSOL(lookupTable) {
       // a1BigInt * BigInt(2 ** 192) + 
       // b1BigInt * BigInt(2 ** 173) + 
       // c1BigInt * BigInt(2 ** 150) + 
-      // a2diffBigInt * BigInt(2 ** 141) +
-      // b2diffBigInt * BigInt(2 ** 128) + 
-      // c2diffBigInt * BigInt(2 ** 112) + 
+      a2diffBigInt * BigInt(2 ** 141) +
+      b2diffBigInt * BigInt(2 ** 128) + 
+      c2diffBigInt * BigInt(2 ** 112) + 
       a3wBigInt * BigInt(2 ** 93) +
       b3wBigInt * BigInt(2 ** 72) + 
       c3wBigInt * BigInt(2 ** 54) + 
