@@ -436,9 +436,9 @@ contract BlackScholesPOC {
             int256 intrinsicPriceAA = int256(cell >> 223);
             int256 a1 = int256((cell << 256 - 188 - 15) >> 256 - 15);
 
-            int256 a3w = int256((cell << 256 - 93 - 20) >> 256 - 20) - 31261;
-            int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1425410;
-            int256 c3w = int256((cell << 256 - 52 - 20) >> 256 - 20);
+            int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
+            int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
+            int256 c3w = int256((cell << 256 - 54 - 18) >> 256 - 18);
 
             int256 a4wdiff = int256((cell << 256 - 35 - 19) >> 256 - 19) - 147;
             int256 b4wdiff = int256((cell << 256 - 18 - 17) >> 256 - 18) - 116937;

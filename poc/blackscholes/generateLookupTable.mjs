@@ -329,9 +329,9 @@ function getLookupTableSOL(lookupTable) {
       // a2diffBigInt * BigInt(2 ** 141) +
       // b2diffBigInt * BigInt(2 ** 128) + 
       // c2diffBigInt * BigInt(2 ** 112) + 
-      // a3wBigInt * BigInt(2 ** 93) +
-      // b3wBigInt * BigInt(2 ** 72) + 
-      // c3wBigInt * BigInt(2 ** 54) + 
+      a3wBigInt * BigInt(2 ** 93) +
+      b3wBigInt * BigInt(2 ** 72) + 
+      c3wBigInt * BigInt(2 ** 54) + 
       a4wdiffBigInt * BigInt(2 ** 35) + 
       b4wdiffBigInt * BigInt(2 ** 17) + 
       c4wdiffBigInt;
