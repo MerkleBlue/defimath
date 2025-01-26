@@ -7,6 +7,8 @@ import bs from "black-scholes";
 
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
+const duoTest = false;
+
 function tokens(value) {
   return hre.ethers.parseUnits(value.toString(), 18).toString();
 }
@@ -218,8 +220,8 @@ describe("BlackScholesPOC (contract)", function () {
       });
     });
 
-    describe("getCallOptionPrice", function () {
-      it.only("gets a single call price", async function () {
+    describe.only("getCallOptionPrice", function () {
+      it("gets a single call price", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
         let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
         let actualOptionPrice = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SECONDS_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
