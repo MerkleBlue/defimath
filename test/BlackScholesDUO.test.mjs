@@ -38,6 +38,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       if (indexArray.length < 100) {
         indexArray.push(key);
         dataArray.push(value);
+
+        // todo: don't set 0 values, once tests for option price are done, it will lower gas cost, and speedup tests
+        // console.log(value);
+        // if (value === 0) {
+        //   console.log("Skipping zero value at index", key);
+        // } else {
+
+        // }
       } else {
         const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
         totalGas += parseInt(gas);
@@ -91,7 +99,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
 
     // print map and mapCopy size
-    console.log("map size: ", map.size, "mapCopy size: ", nonZeroMap.size, "sameIntrinsicPriceMap size: ", sameIntrinsicPriceMap.size);
+    console.log("map size: ", map.size, "nonZero map size: ", nonZeroMap.size, "sameIntrinsicPriceMap size: ", sameIntrinsicPriceMap.size);
 
     // Iterate over the map
     nonSmallTimeMap.forEach(obj => {
