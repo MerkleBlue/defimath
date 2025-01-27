@@ -98,7 +98,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     }
 
-    // print map and mapCopy size
+    // print map and nonZero map size
     console.log("map size: ", map.size, "nonZero map size: ", nonZeroMap.size, "sameIntrinsicPriceMap size: ", sameIntrinsicPriceMap.size);
 
     // Iterate over the map
@@ -419,11 +419,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("functionality", async function () {
-
-    describe.only("getFuturePrice", function () {
-
-      it("calculates future price for lowest time and rate", async function () {
-        const { blackScholesPOC } = await loadFixture(deploy);
+    describe("getFuturePrice", function () {
+      it.only("calculates future price for lowest time and rate", async function () {
+        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         const expected = getFuturePrice(100, 1, 0.0001);
         const actualJS = blackScholesJS.getFuturePrice(100, 1, 1);
@@ -439,19 +437,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("calculates future price [0s, 10m]", async function () {
+      it("calculates future price [0s, 10m]", async function () {
         const testRatePoints = generateTestRatePoints();
         const timeSubArray = testTimePoints.filter(value => value <= 600);
         await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
       });
 
-      it.only("calculates future price [10m, 1d]", async function () {
+      it("calculates future price [10m, 1d]", async function () {
         const testRatePoints = generateTestRatePoints();
         const timeSubArray = testTimePoints.filter(value => value >= 600 && value <= SEC_IN_DAY);
         await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
       });
 
-      it.only("calculates future price [1d, 730d]", async function () {
+      it("calculates future price [1d, 730d]", async function () {
         const testRatePoints = generateTestRatePoints();
         const timeSubArray = testTimePoints.filter(value => value >= SEC_IN_DAY && value <= 730 * SEC_IN_DAY);
         await testFuturePriceRange(testRatePoints, timeSubArray, 0.00125);
@@ -461,18 +459,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
         it.only("gets a single call price", async function () {
-          const expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
-          const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
+          const expected = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
+
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
+          console.log("expected:", expected, "actual JS :", actualJS);
+
+          const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SEC_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
+          console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
         });
-
-        // it.only("gets a single call price test", async function () {
-        //   const expectedOptionPrice = bs.blackScholes(1000, 404.6875, 212992 / SEC_IN_YEAR, 1.92, 0, "call");
-        //   const actualOptionPrice = blackScholesJS.getCallOptionPrice(1000, 404.6875, 212992, 1.92, 0);
-
-        //   console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
-        // });
       });
 
       describe("random tests", function () {
