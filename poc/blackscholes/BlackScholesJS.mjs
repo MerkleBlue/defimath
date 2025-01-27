@@ -103,7 +103,7 @@ export class BlackScholesJS {
   interpolatePrice(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = true;
+    const log = false;
 
     // step 1) get the specific cell
     const strikeIndex = this.getIndexFromStrike(strikeScaled);

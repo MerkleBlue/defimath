@@ -3,17 +3,53 @@ import { assert } from "chai";
 import bs from "black-scholes";
 import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "../poc/blackscholes/BlackScholesJS.mjs";
 import { generateLookupTable, generateStrikePoints, generateTimePoints } from "../poc/blackscholes/generateLookupTable.mjs";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
+import hre from "hardhat";
 
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 
-// await generateLookupTable(new BlackScholesJS(), true);
+const duoTest = true;
+
+function tokens(value) {
+  return hre.ethers.parseUnits(value.toString(), 18).toString();
+}
 
 describe("BlackScholesDUO (SOL and JS)", function () {
   let blackScholesJS;
   let testTimePoints;
   let testStrikePoints;
+
+  async function deploy() {
+    const [owner] = await ethers.getSigners();
+
+    // deploy contract
+    const BlackScholesPOC = await ethers.getContractFactory("BlackScholesPOC");
+    const blackScholesPOC = await BlackScholesPOC.deploy();
+
+    // populate lookup table
+    const { lookupTableSOL } = await generateLookupTable(new BlackScholesJS(), true);
+
+    let totalGas = 0;
+    let indexArray = [], dataArray = [];
+    for (const [key, value] of lookupTableSOL) {
+      if (indexArray.length < 100) {
+        indexArray.push(key);
+        dataArray.push(value);
+      } else {
+        const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+        totalGas += parseInt(gas);
+        await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
+        indexArray = [];
+        dataArray = [];
+      }
+    }
+
+    console.log("Total gas spent:", Math.round(totalGas / 1e6), "M");
+
+    return { owner, blackScholesPOC };
+  }
 
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
@@ -230,31 +266,86 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
+  duoTest && describe.only("deployment", function () {
+    it("deploys contract", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+      console.log(blackScholesPOC.target);
+    });
+  });
+
+  duoTest && describe.only("performance", function () {
+    it("getCallOptionPrice gas", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      let totalGas = 0, count = 0;
+      for(let exp = 20; exp < 180; exp += 8) {
+        for (let strike = 600; strike < 1400; strike += 80) {
+          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+            for (let rate = 0; rate < 0.05; rate += 0.02) {
+              totalGas += parseInt(await blackScholesPOC.getCallOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SEC_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
+              count++;
+            }
+          }
+        }
+      }
+      console.log("Total tests: " + count);
+      console.log("Gas spent [avg]:", Math.round(totalGas / count));
+    });
+
+    it("getPutOptionPrice gas", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      let totalGas = 0, count = 0;
+      for(let exp = 20; exp < 180; exp += 8) {
+        for (let strike = 600; strike < 1400; strike += 80) {
+          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+            for (let rate = 0; rate < 0.05; rate += 0.02) {
+              totalGas += parseInt(await blackScholesPOC.getPutOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SEC_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
+              count++;
+            }
+          }
+        }
+      }
+      console.log("Total tests: " + count);
+      console.log("Gas spent [avg]:", Math.round(totalGas / count));
+    });
+
+    it("getIndexFromTime gas", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      let count = 0;
+      let totalGas = 0;
+      for (let i = 4; i < 32; i++) {
+        const gasUsed = await blackScholesPOC.getIndexFromTimeMeasureGas(2 ** i + 1);
+        totalGas += parseInt(gasUsed);
+        count++;
+      }
+      console.log("Gas spent [avg]: ", parseInt(totalGas / count));
+    });
+
+    it("getFuturePrice gas", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      let totalGas = 0, count = 0;
+      for (let rate = 0; rate <= 0.1; rate += 0.01) {
+        for (let days = 0; days <= 2 * 365; days += 1) {
+          const gasUsed = await blackScholesPOC.getFuturePriceMeasureGas(tokens(100), days * SEC_IN_DAY, Math.round(rate * 10_000));
+          totalGas += parseInt(gasUsed);
+          count++;
+        }
+      }
+      console.log("Gas spent [avg]: ", parseInt(totalGas / count));
+    });
+
+    it("test gas", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      const callPriceMap = await blackScholesPOC.measureGas();
+      console.log(callPriceMap);
+    });
+  });
+
   describe("functionality", async function () {
-    /*it("record lookup table to csv file", async function ()  {
-      const filename = `${csvConfig.filename}.csv`;
-      fs.open(filename, "w");
-
-      console.log("lookupTable");
-      for (let i = 0; i < blackScholesJS.lookupTable.length; i++) //nemoze mora da se indekxima vadi napolje
-        for (let j = 0; j < blackScholesJS.lookupTable[i].length; j++){ //blackScholesJS.lookupTable[i].length
-          console.log(`Value at [${i}][${j}] is: ${blackScholesJS.lookupTable[i][j]}`);
-          var range = blackScholesJS.lookupTable[i][j];
-          var csvRange = [{
-            optionPriceAA: range.optionPriceAA,
-            optionPriceAB: range.optionPriceAB,
-            optionPriceBA: range.optionPriceBA,
-            optionPriceBB: range.optionPriceBB,
-            ssratioati : range.ssratioati,
-            exdays : range.exdays,
-            i : i,
-            j : j
-          }];
-          var csv = generateCsv(csvConfig)(csvRange);
-          fs.appendFile(filename, csv);    
-
-        }  
-    });*/
 
     describe("getFuturePrice", function () {
       function getFuturePrice(spot, timeToExpirySec, rate) {
