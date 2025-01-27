@@ -51,6 +51,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return { owner, blackScholesPOC };
   }
 
+  function getFuturePrice(spot, timeToExpirySec, rate) {
+    // future = spot * e^(rT)
+    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
+    return futurePrice;
+  }
+
   function findMinAndMax(map) {
     // Initialize min and max objects with Infinity and -Infinity respectively
     const inf = Infinity;
@@ -155,7 +162,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return testStrikePoints;
   }
 
-  function testRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, multi = 10) {
+  function generateTestRatePoints() {
+    const testRatePoints = [];
+    for (let rate = 0; rate <= 0.2; rate += 0.005) { // up to 20%
+      testRatePoints.push(rate);
+    }
+  
+    return testRatePoints;
+  }
+
+  function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, multi = 10) {
     // NSV = non small values, we don't care about error below $0.001
     let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0, actual = 0;;
     let maxRelErrorParams = null, maxAbsErrorParams = null;
@@ -216,6 +232,52 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
 
     assert.isBelow(maxAbsError, allowedAbsError); // max error is below max allowed absolute error
+  }
+
+  async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125) { // %0.00125
+    const { blackScholesPOC } = await loadFixture(deploy);
+
+    let maxErrorJS = 0, maxErrorSOL = 0, totalErrorJS = 0, totalErrorSOL = 0, count = 0, maxErrorParamsJS = null, maxErrorParamsSOL = null;
+    for (let rate of ratePoints) {
+      for (let secs of timePoints) {
+        const expected = getFuturePrice(100, secs, rate);
+
+        const actualJS = blackScholesJS.getFuturePrice(100, secs, rate);
+        const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+        totalErrorJS += errorJS;
+
+        const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
+        const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+        totalErrorSOL += errorSOL;
+
+        count++;
+
+        if (maxErrorJS < errorJS) {
+          maxErrorJS = errorJS;
+          maxErrorParamsJS = {
+            rate, secs, actual: actualJS, expected
+          }
+        }
+        
+        if (maxErrorSOL < errorSOL) {
+          maxErrorSOL = errorSOL;
+          maxErrorParamsSOL = {
+            rate, secs, actual: actualSOL, expected
+          }
+        }
+      }
+    }
+    if (maxErrorParamsJS) {
+      const { rate, secs, actual, expected } = maxErrorParamsJS;
+      console.log("Worst case error JS:", maxErrorJS.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+    }
+    if (maxErrorParamsSOL) {
+      const { rate, secs, actual, expected } = maxErrorParamsSOL;
+      console.log("Worst case error SOL:", maxErrorJS.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+    }
+
+    assert.isBelow(maxErrorJS, allowedRelError);
+    assert.isBelow(maxErrorSOL, allowedRelError);
   }
 
   // before all tests, called once
@@ -348,14 +410,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   describe("functionality", async function () {
 
     describe.only("getFuturePrice", function () {
-      function getFuturePrice(spot, timeToExpirySec, rate) {
-        // future = spot * e^(rT)
-        const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
-        const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
-        return futurePrice;
-      }
 
-      it.only("calculates future price for lowest time and rate", async function () {
+      it("calculates future price for lowest time and rate", async function () {
         const { blackScholesPOC } = await loadFixture(deploy);
 
         const expected = getFuturePrice(100, 1, 0.0001);
@@ -372,77 +428,22 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it("calculates future price [0s, 10m]", async function () {
-        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
-        for (let rate = 0; rate <= 0.001; rate += 0.0001) {
-          for (let secs = 0; secs <= 600; secs += 1) {
-            const expected = getFuturePrice(100, secs, rate);
-            const actual = blackScholesJS.getFuturePrice(100, secs, rate);
-            const error = (Math.abs(actual - expected) / expected * 100);
-            totalError += error;
-            count++;
-            if (maxError < error) {
-              maxError = error;
-              maxErrorParams = {
-                rate, secs, actual, expected
-              }
-            }
-          }
-        }
-        if (maxErrorParams) {
-          const { rate, secs, actual, expected } = maxErrorParams;
-          console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
-        }
-
-        assert.isBelow(maxError, 0.0001); // is below 0.0001%
+      it.only("calculates future price [0s, 10m]", async function () {
+        const testRatePoints = generateTestRatePoints();
+        const timeSubArray = testTimePoints.filter(value => value <= 600);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
       });
 
-      it("calculates future price [10m, 1d]", async function () {
-        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
-        for (let rate = 0; rate <= 0.5; rate += 0.05) {
-          for (let secs = 600; secs <= 1440 * 60; secs += 120) {
-            const expected = getFuturePrice(100, secs, rate);
-            const actual = blackScholesJS.getFuturePrice(100, secs, rate);
-            const error = (Math.abs(actual - expected) / expected * 100);
-            totalError += error;
-            count++;
-            if (maxError < error) {
-              maxError = error;
-              maxErrorParams = {
-                rate, secs, actual, expected
-              }
-            }
-          }
-        }
-        if (maxErrorParams) {
-          const { rate, secs, actual, expected } = maxErrorParams;
-          console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
-        }
-        assert.isBelow(maxError, 0.0001); // is below 0.0001%
+      it.only("calculates future price [10m, 1d]", async function () {
+        const testRatePoints = generateTestRatePoints();
+        const timeSubArray = testTimePoints.filter(value => value >= 600 && value <= SEC_IN_DAY);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
       });
 
-      it("calculates future price [1d, 730d]", async function () {
-        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
-        for (let rate = 0; rate <= 0.1; rate += 0.01) {
-          for (let days = 1; days <= 2 * 365; days += 1) {
-            const expected = getFuturePrice(100, days * SEC_IN_DAY, rate);
-            const actual = blackScholesJS.getFuturePrice(100, days * SEC_IN_DAY, rate);            
-            const error = (Math.abs(actual - expected) / expected * 100);
-            totalError += error;
-            count++;
-            if (maxError < error) {
-              maxError = error;
-              maxErrorParams = {
-                rate, days, actual, expected
-              }
-            }
-          }
-        }
-        if (maxErrorParams) {
-          const { rate, days, actual, expected } = maxErrorParams;
-          console.log("Worst case: error:", maxError.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", days.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
-        }
-        assert.isBelow(maxError, 0.0001); // is below 0.0001%
+      it.only("calculates future price [1d, 730d]", async function () {
+        const testRatePoints = generateTestRatePoints();
+        const timeSubArray = testTimePoints.filter(value => value >= SEC_IN_DAY && value <= 730 * SEC_IN_DAY);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.00125);
       });
     });
 
@@ -476,7 +477,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
         it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(99, 101, 4000);
-          testRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.00062);
+          testOptionRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.00062);
         });
       });
 
@@ -490,60 +491,60 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000067);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000067);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
         });
 
         it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 900);
-          testRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
+          testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
         });
 
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
         });
 
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
         });
 
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
 
       describe("multiple call options - vol limit testing", function () {
         it("gets multiple call prices: vol 200%", async function () {
-          testRange(testStrikePoints, testTimePoints, [2], true, 0.000087);
+          testOptionRange(testStrikePoints, testTimePoints, [2], true, 0.000087);
         });
 
         it("gets multiple call prices: vol 1% - one specific", async function () {
           const strikeSubArray = [100.00625];
           const timeSubArray = [1000];
-          testRange(strikeSubArray, timeSubArray, [0.01], true, 0.000087);
+          testOptionRange(strikeSubArray, timeSubArray, [0.01], true, 0.000087);
         });
 
         it("gets multiple call prices: vol 1%", async function () {
           const timeSubArray = testTimePoints.filter(value => value >= 1000 && value <= 2000);
-          testRange(testStrikePoints, timeSubArray, [0.01], true, 0.000087);
+          testOptionRange(testStrikePoints, timeSubArray, [0.01], true, 0.000087);
         });
       });
     });
