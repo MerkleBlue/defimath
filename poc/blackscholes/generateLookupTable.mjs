@@ -35,6 +35,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     if (lookupTable instanceof Map) {
       console.log("Reading lookup table from file...");
       const lookupTableSOL = getLookupTableSOL(lookupTable);
+      
       return { lookupTable, lookupTableSOL };
     }
   } catch (error) {

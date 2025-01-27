@@ -31,6 +31,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     // populate lookup table
     const { lookupTableSOL } = await generateLookupTable(new BlackScholesJS(), true);
 
+    console.log("Initializing lookup table in contract...");
     let totalGas = 0;
     let indexArray = [], dataArray = [];
     for (const [key, value] of lookupTableSOL) {
@@ -235,22 +236,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   }
 
   async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125) { // %0.00125
-    const { blackScholesPOC } = await loadFixture(deploy);
+    const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
     let maxErrorJS = 0, maxErrorSOL = 0, totalErrorJS = 0, totalErrorSOL = 0, count = 0, maxErrorParamsJS = null, maxErrorParamsSOL = null;
-    for (let rate of ratePoints) {
-      for (let secs of timePoints) {
+    for (const rate of ratePoints) {
+      for (const secs of timePoints) {
         const expected = getFuturePrice(100, secs, rate);
 
         const actualJS = blackScholesJS.getFuturePrice(100, secs, rate);
         const errorJS = (Math.abs(actualJS - expected) / expected * 100);
         totalErrorJS += errorJS;
-
-        const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
-        const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
-        totalErrorSOL += errorSOL;
-
-        count++;
 
         if (maxErrorJS < errorJS) {
           maxErrorJS = errorJS;
@@ -258,20 +253,28 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             rate, secs, actual: actualJS, expected
           }
         }
-        
-        if (maxErrorSOL < errorSOL) {
-          maxErrorSOL = errorSOL;
-          maxErrorParamsSOL = {
-            rate, secs, actual: actualSOL, expected
+
+        if (duoTest) {
+          const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
+          const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+          totalErrorSOL += errorSOL;
+          
+          if (maxErrorSOL < errorSOL) {
+            maxErrorSOL = errorSOL;
+            maxErrorParamsSOL = {
+              rate, secs, actual: actualSOL, expected
+            }
           }
         }
+
+        count++;
       }
     }
     if (maxErrorParamsJS) {
       const { rate, secs, actual, expected } = maxErrorParamsJS;
       console.log("Worst case error JS:", maxErrorJS.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
     }
-    if (maxErrorParamsSOL) {
+    if (duoTest && maxErrorParamsSOL) {
       const { rate, secs, actual, expected } = maxErrorParamsSOL;
       console.log("Worst case error SOL:", maxErrorJS.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
     }
