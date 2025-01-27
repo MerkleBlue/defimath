@@ -266,14 +266,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe.only("deployment", function () {
+  duoTest && describe("deployment", function () {
     it("deploys contract", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
       console.log(blackScholesPOC.target);
     });
   });
 
-  duoTest && describe.only("performance", function () {
+  duoTest && describe("performance", function () {
     it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
@@ -347,7 +347,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("functionality", async function () {
 
-    describe("getFuturePrice", function () {
+    describe.only("getFuturePrice", function () {
       function getFuturePrice(spot, timeToExpirySec, rate) {
         // future = spot * e^(rT)
         const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
@@ -355,12 +355,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         return futurePrice;
       }
 
-      it("calculates future price for lowest time and rate", async function () {
+      it.only("calculates future price for lowest time and rate", async function () {
+        const { blackScholesPOC } = await loadFixture(deploy);
+
         const expected = getFuturePrice(100, 1, 0.0001);
-        const actual = blackScholesJS.getFuturePrice(100, 1, 1);
-        const error = (Math.abs(actual - expected) / expected * 100);
-        //console.log("Worst case: error:", error.toFixed(12) + "%, rate, ", "actual: " + actual.toFixed(12), "expected: " + expected.toFixed(12));
-        assert.isBelow(error, 0.0001); // is below 0.0001%
+        const actualJS = blackScholesJS.getFuturePrice(100, 1, 1);
+        const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+        console.log("Worst case JS: error:", errorJS.toFixed(12) + "%, rate, ", "actual: " + actualJS.toFixed(12), "expected: " + expected.toFixed(12));
+        assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+
+        if (duoTest) {
+          const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), 1, 1)).toString() / 1e18;
+          const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+          console.log("Worst case SOL: error:", errorSOL.toFixed(12) + "%, rate, ", "actual: " + actualSOL.toFixed(12), "expected: " + expected.toFixed(12));
+          assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+        }
       });
 
       it("calculates future price [0s, 10m]", async function () {
