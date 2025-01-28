@@ -110,6 +110,7 @@ export class BlackScholesJS {
     const timeToExpiryIndex = this.getIndexFromTime(Math.floor(timeToExpirySecScaled));
     log && console.log("strikeIndex:", strikeIndex);
     log && console.log("timeToExpiryIndex:", timeToExpiryIndex);
+    log && console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
 
     // step 2) calculate timeToExpiry weight
@@ -170,8 +171,7 @@ export class BlackScholesJS {
 
     const finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
 
-    // check
-    // console.log(cell.intrinsicPriceBA, )
+    console.log("------ END JS -------")
 
     return finalPrice;
   }

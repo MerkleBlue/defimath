@@ -35,10 +35,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     let totalGas = 0;
     let indexArray = [], dataArray = [];
     for (const [key, value] of lookupTableSOL) {
-      if (indexArray.length < 100) {
-        indexArray.push(key);
-        dataArray.push(value);
-
+      indexArray.push(key);
+      dataArray.push(value);
+      if (indexArray.length >= 100) {
         // todo: don't set 0 values, once tests for option price are done, it will lower gas cost, and speedup tests
         // console.log(value);
         // if (value === 0) {
@@ -46,7 +45,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         // } else {
 
         // }
-      } else {
         const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
         totalGas += parseInt(gas);
         await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
@@ -502,7 +500,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
-        it.only("gets a single call price", async function () {
+        it("gets a single call price", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
           const expected = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
@@ -515,9 +513,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
           }
         });
+
+        it.only("gets a single call price: debug", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          const expected = bs.blackScholes(1000, 999.1822550426883, 54263808 / SEC_IN_YEAR, 0.12, 0, "call");
+
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 999.1822550426883, 54263808, 0.12, 0);
+          console.log("expected:", expected, "actual JS :", actualJS);
+
+          if (duoTest) {
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(999.1822550426883), 54263808, tokens(0.12), 0);
+            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+          }
+        });
       });
 
-      describe.only("random tests", function () {
+      describe("random tests", function () {
         function generateRandomTestStrikePoints(startPoint, endPoint, count) {
           const testStrikePoints = [];
           for (let i = 0; i < count; i++) {

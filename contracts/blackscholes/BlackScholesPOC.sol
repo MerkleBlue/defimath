@@ -386,6 +386,7 @@ contract BlackScholesPOC {
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
             // console.log("strikeIndex:", strikeIndex);
             // console.log("timeToExpiryIndex:", timeToExpiryIndex);
+            // console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
 
             // step 2) calculate timeToExpiry weight
@@ -406,7 +407,6 @@ contract BlackScholesPOC {
 
             // step 4) and 5)  
             finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step);
-            // console.log("finalPrice: %d", finalPrice);
         }
     }
 
@@ -501,6 +501,8 @@ contract BlackScholesPOC {
             if (interpolatedStrikeWeightw == 0){
                 interpolatedStrikeWeightw = int256(strikeWeight);
             }
+            // if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }
+
 
             // if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
             // if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
@@ -546,42 +548,42 @@ contract BlackScholesPOC {
         return a > b ? a : b;
     }
 
-    // todo: rename 
-    function applyQuadraticFormula(
-        uint256 cell,
-        uint256 deltaTime,
-        uint256 deltaStrike,
-        uint256 timeToExpiryWeight
-    ) private pure returns (uint256 finalPrice) {
-        unchecked {
-            uint256 optionPriceAA = cell / TWO_POW_192;
-            int256 a1 = decodeFactor(uint32(cell / TWO_POW_160));
-            int256 b1 = decodeFactor(uint32(cell / TWO_POW_128));
-            int256 a3 = decodeFactor(uint32(cell / TWO_POW_96));
-            int256 b3 = decodeFactor(uint32(cell / TWO_POW_64));
-            int256 a4 = decodeFactor(uint32(cell / TWO_POW_32));
-            int256 b4 = decodeFactor(uint32(cell));
+    // // todo: rename 
+    // function applyQuadraticFormula(
+    //     uint256 cell,
+    //     uint256 deltaTime,
+    //     uint256 deltaStrike,
+    //     uint256 timeToExpiryWeight
+    // ) private pure returns (uint256 finalPrice) {
+    //     unchecked {
+    //         uint256 optionPriceAA = cell / TWO_POW_192;
+    //         int256 a1 = decodeFactor(uint32(cell / TWO_POW_160));
+    //         int256 b1 = decodeFactor(uint32(cell / TWO_POW_128));
+    //         int256 a3 = decodeFactor(uint32(cell / TWO_POW_96));
+    //         int256 b3 = decodeFactor(uint32(cell / TWO_POW_64));
+    //         int256 a4 = decodeFactor(uint32(cell / TWO_POW_32));
+    //         int256 b4 = decodeFactor(uint32(cell));
 
-            int256 interpolatedPrice1 = a1 * 1e12 * int256(deltaTime ** 2) / 1e36 + b1 * 1e12 * int256(deltaTime) / 1e18;
-            int256 interpolatedPrice3 = a3 * 1e12 * int256(deltaStrike ** 2) / 1e36 + b3 * 1e12 * int256(deltaStrike) / 1e18;
-            int256 interpolatedPrice4 = a4 * 1e12 * int256(deltaStrike ** 2) / 1e36 + b4 * 1e12 * int256(deltaStrike) / 1e18;
+    //         int256 interpolatedPrice1 = a1 * 1e12 * int256(deltaTime ** 2) / 1e36 + b1 * 1e12 * int256(deltaTime) / 1e18;
+    //         int256 interpolatedPrice3 = a3 * 1e12 * int256(deltaStrike ** 2) / 1e36 + b3 * 1e12 * int256(deltaStrike) / 1e18;
+    //         int256 interpolatedPrice4 = a4 * 1e12 * int256(deltaStrike ** 2) / 1e36 + b4 * 1e12 * int256(deltaStrike) / 1e18;
 
-            int256 interpolatedPriceStrike = interpolatedPrice3 + int256(timeToExpiryWeight) * (interpolatedPrice4 - interpolatedPrice3) / 1e18;
-            finalPrice = uint256(int256(optionPriceAA) * 10 + interpolatedPrice1 + interpolatedPriceStrike);
-        }
-    }
+    //         int256 interpolatedPriceStrike = interpolatedPrice3 + int256(timeToExpiryWeight) * (interpolatedPrice4 - interpolatedPrice3) / 1e18;
+    //         finalPrice = uint256(int256(optionPriceAA) * 10 + interpolatedPrice1 + interpolatedPriceStrike);
+    //     }
+    // }
 
-    function decodeFactor(uint256 number) private pure returns (int256 factor) {
-        unchecked {
+    // function decodeFactor(uint256 number) private pure returns (int256 factor) {
+    //     unchecked {
 
-            // positive
-            if (number < 2147483648) {
-                factor = int256(number);
-            } else {
-                factor = -int256(number - 2147483648); // 2 ** 31
-            }
-        }
-    }
+    //         // positive
+    //         if (number < 2147483648) {
+    //             factor = int256(number);
+    //         } else {
+    //             factor = -int256(number - 2147483648); // 2 ** 31
+    //         }
+    //     }
+    // }
 
     // todo: delete
     function getFuturePriceMeasureGas(uint128 spot, uint32 timeToExpirySec, uint16 rate) public view returns (uint256) {

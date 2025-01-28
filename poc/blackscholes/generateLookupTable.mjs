@@ -35,7 +35,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     if (lookupTable instanceof Map) {
       console.log("Reading lookup table from file...");
       const lookupTableSOL = getLookupTableSOL(lookupTable);
-      
+
       return { lookupTable, lookupTableSOL };
     }
   } catch (error) {
@@ -301,9 +301,9 @@ function getLookupTableSOL(lookupTable) {
     // TOTAL: 254 bits
 
 
-    // if(key === 9220267) {
-    //   console.log("c4wdiffBigInt", c4wdiffBigInt); //, intrinsicPriceAABigInt * BigInt(2 ** 223));
-    // }
+    if(key === 9990254) {
+      console.log("intrinsicPriceAABigInt", intrinsicPriceAABigInt); //, intrinsicPriceAABigInt * BigInt(2 ** 223));
+    }
 
     // shift bits
     const elementForSOL = 
@@ -322,7 +322,7 @@ function getLookupTableSOL(lookupTable) {
       b4wdiffBigInt * BigInt(2 ** 17) + 
       c4wdiffBigInt;
 
-      lookupTableSOL.set(key, elementForSOL);
+    lookupTableSOL.set(key, elementForSOL);
   }
 
   return lookupTableSOL;
