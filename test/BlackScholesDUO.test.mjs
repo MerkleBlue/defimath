@@ -466,8 +466,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
           console.log("expected:", expected, "actual JS :", actualJS);
 
-          const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SEC_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
-          console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+          if (duoTest) {
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SEC_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
+            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+          }
         });
       });
 
