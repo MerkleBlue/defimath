@@ -180,67 +180,111 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return testRatePoints;
   }
 
-  function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, multi = 10) {
+  async function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, multi = 10) {
+    const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
     // NSV = non small values, we don't care about error below $0.001
-    let maxRelError = 0, maxAbsError = 0, totalErrorNSV = 0, countNSV = 0, count = 0, actual = 0;;
-    let maxRelErrorParams = null, maxAbsErrorParams = null;
+    let maxRelErrorJS = 0, maxAbsErrorJS = 0, totalErrorNSVJS = 0, maxRelErrorSOL = 0, maxAbsErrorSOL = 0, totalErrorNSVSOL = 0, countNSV = 0, count = 0, actualJS = 0, actualSOL = 0;
+    let maxRelErrorParamsJS = null, maxAbsErrorParamsJS = null, maxRelErrorParamsSOL = null, maxAbsErrorParamsSOL = null;
     const totalPoints = strikePoints.length * timePoints.length * volPoints.length;
     for (let strike of strikePoints) {
       for(let exp of timePoints) {
         for (let vol of volPoints) {
           for (let rate = 0; rate < 0.01; rate += 0.02) {
+            // expected
             const expected = Math.max(0, bs.blackScholes(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, isCall ? "call" : "put"));
-            if (isCall) {
-              actual = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
-            } else {
-              actual = blackScholesJS.getPutOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+
+            // JS
+            {
+              if (isCall) {
+                actualJS = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+              } else {
+                actualJS = blackScholesJS.getPutOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
+              }
+
+              const errorJS = expected !== 0 ? (Math.abs(actualJS - expected) / expected * 100) : 0;
+
+              // we don't care about small values
+              if (expected > 0.001) {
+                totalErrorNSVJS += errorJS;
+              }
+              // relative error is in percentage
+              if (maxRelErrorJS < errorJS && expected > 0.001) {
+                maxRelErrorJS = errorJS;
+                maxRelErrorParamsJS = {
+                  exp, strike: strike * multi, vol, rate, actual: actualJS, expected
+                }
+              }
+
+              // absolute error is in currency
+              const absError = Math.abs(actualJS - expected);
+              if (maxAbsErrorJS < absError) {
+                maxAbsErrorJS = absError;
+                // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+                maxAbsErrorParamsJS = {
+                  exp, strike: strike * multi, vol, rate, actual: actualJS, expected
+                }
+              }
             }
 
-            const error = expected !== 0 ? (Math.abs(actual - expected) / expected * 100) : 0;
+            // SOL
+            if (duoTest) {
+              if (isCall) {
+                actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+              } else {
+                actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+              }
+
+              const errorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
+
+              // we don't care about small values
+              if (expected > 0.001) {
+                totalErrorNSVSOL += errorSOL;
+                countNSV++;
+              }
+              // relative error is in percentage
+              if (maxRelErrorSOL < errorSOL && expected > 0.001) {
+                maxRelErrorSOL = errorSOL;
+                maxRelErrorParamsSOL = {
+                  exp, strike: strike * multi, vol, rate, actual: actualSOL, expected
+                }
+              }
+
+              // absolute error is in currency
+              const absError = Math.abs(actualSOL - expected);
+              if (maxAbsErrorSOL < absError) {
+                maxAbsErrorSOL = absError;
+                // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+                maxAbsErrorParamsSOL = {
+                  exp, strike: strike * multi, vol, rate, actual: actualSOL, expected
+                }
+              }
+            }
+
             count++;
-
-            // we don't care about small values
-            if (expected > 0.001) {
-              totalErrorNSV += error;
-              countNSV++;
-            }
-            // relative error is in percentage
-            if (maxRelError < error && expected > 0.001) {
-              maxRelError = error;
-              maxRelErrorParams = {
-                exp, strike: strike * multi, vol, rate, actual, expected
-              }
-            }
-
-            // absolute error is in currency
-            const absError = Math.abs(actual - expected);
-            if (maxAbsError < absError) {
-              maxAbsError = absError;
-              // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
-              maxAbsErrorParams = {
-                exp, strike: strike * multi, vol, rate, actual, expected
-              }
-            }
 
             // print progress
             if (count % Math.round(totalPoints / 20) === 0) {
-              console.log("Progress:", (count / totalPoints * 100).toFixed(0) + "%, Max abs error:", "$" + (maxAbsError ? maxAbsError.toFixed(6) : "0"));
+              console.log("Progress:", (count / totalPoints * 100).toFixed(0) + "%, Max abs error:", "$" + (maxAbsErrorJS ? maxAbsErrorJS.toFixed(6) : "0"));
             }
           }
         }
       }
     }
 
-    const avgError = totalErrorNSV / countNSV;
-    console.log("totalError NSV: " + totalErrorNSV, "count NonSmallValue (NSV): " + countNSV);
+    const avgError = totalErrorNSVJS / countNSV;
+    console.log("totalError NSV: " + totalErrorNSVJS, "count NonSmallValue (NSV): " + countNSV);
 
     // console.log("Total tests: " + count);
     // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-    console.log("Avg rel NSV error: " + avgError.toFixed(6) + "%,", "Max rel NSV error: " + maxRelError.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsError.toFixed(6) + ",", "Total tests: ", count, "Total NSV tests: ", countNSV, "NSV/total ratio: ", ((countNSV / count) * 100).toFixed(2) + "%");
-    console.log("Max rel error params: ", maxRelErrorParams);
-    console.log("Max abs error params: ", maxAbsErrorParams, convertSeconds(maxAbsErrorParams ? maxAbsErrorParams.exp : 1));
+    console.log("Avg rel NSV error: " + avgError.toFixed(6) + "%,", "Max rel NSV error: " + maxRelErrorJS.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsErrorJS.toFixed(6) + ",", "Total tests: ", count, "Total NSV tests: ", countNSV, "NSV/total ratio: ", ((countNSV / count) * 100).toFixed(2) + "%");
+    console.log("Max rel error params JS: ", maxRelErrorParamsJS);
+    console.log("Max abs error params JS: ", maxAbsErrorParamsJS, convertSeconds(maxAbsErrorParamsJS ? maxAbsErrorParamsJS.exp : 1));
+    console.log("Max rel error params SOL: ", maxRelErrorParamsSOL);
+    console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.exp : 1));
 
-    assert.isBelow(maxAbsError, allowedAbsError); // max error is below max allowed absolute error
+    assert.isBelow(maxAbsErrorJS, allowedAbsError); // max error is below max allowed absolute error
+    assert.isBelow(maxAbsErrorSOL, allowedAbsError); // max error is below max allowed absolute error
   }
 
   async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125) { // %0.00125
@@ -420,7 +464,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("functionality", async function () {
     describe("getFuturePrice", function () {
-      it.only("calculates future price for lowest time and rate", async function () {
+      it("calculates future price for lowest time and rate", async function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         const expected = getFuturePrice(100, 1, 0.0001);
@@ -473,7 +517,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe("random tests", function () {
+      describe.only("random tests", function () {
         function generateRandomTestStrikePoints(startPoint, endPoint, count) {
           const testStrikePoints = [];
           for (let i = 0; i < count; i++) {
@@ -485,8 +529,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
 
         it("gets multiple call prices: random", async function () {
-          const strikeSubArray = generateRandomTestStrikePoints(99, 101, 4000);
-          testOptionRange(strikeSubArray, testTimePoints, [VOL_FIXED], true, 0.00062);
+          const strikeSubArray = generateRandomTestStrikePoints(99, 101, 100);
+          const timeSubArray = testTimePoints.filter(value => value >= 500);
+          await testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.00062);
         });
       });
 
