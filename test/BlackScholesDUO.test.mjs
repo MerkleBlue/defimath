@@ -84,7 +84,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     const nonSmallTimeMap = new Map(nonZeroMap);
     for (let [key, value] of map) {
-      if (key % 1000 < 160) { // 71 is actually 2 ^ 7 + 1 * 2 ^ 4 = 144
+      if (key % 1000 < 160) { // 160 is actually 2 ^ 16 secs
         nonSmallTimeMap.delete(key);
       }
     }

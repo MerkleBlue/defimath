@@ -360,22 +360,42 @@ function getLookupTableSOL(lookupTable) {
       console.log("a3wBigInt", a3wBigInt);
     }
 
-    // shift bits
-    const elementForSOL = 
-      intrinsicPriceAABigInt * BigInt(2 ** 227) +
-      intrinsicPriceBAdiffBigInt * BigInt(2 ** 207) +
-      a1BigInt * BigInt(2 ** 192) + 
-      b1BigInt * BigInt(2 ** 173) + 
-      c1BigInt * BigInt(2 ** 150) + 
-      a2diffBigInt * BigInt(2 ** 141) +
-      b2diffBigInt * BigInt(2 ** 128) + 
-      c2diffBigInt * BigInt(2 ** 112) + 
+    let elementForSOL;
+    if (key % 1000 < 160) { 
+
+      // shift bits
+      elementForSOL = 
+        intrinsicPriceAABigInt * BigInt(2 ** 199) +
+        intrinsicPriceBAdiffBigInt * BigInt(2 ** 183) +
+        a1BigInt * BigInt(2 ** 176) + 
+        b1BigInt * BigInt(2 ** 167) + 
+        c1BigInt * BigInt(2 ** 153) + 
+        a2diffBigInt * BigInt(2 ** 146) +
+        b2diffBigInt * BigInt(2 ** 138) + 
+        c2diffBigInt * BigInt(2 ** 130) + 
+        a3wBigInt * BigInt(2 ** 106) +
+        b3wBigInt * BigInt(2 ** 81) + 
+        c3wBigInt * BigInt(2 ** 58) + 
+        a4wdiffBigInt * BigInt(2 ** 39) + 
+        b4wdiffBigInt * BigInt(2 ** 19) + 
+        c4wdiffBigInt;
+    } else {
+      elementForSOL =
+      intrinsicPriceAABigInt * BigInt(2 ** 224) +
+      intrinsicPriceBAdiffBigInt * BigInt(2 ** 204) +
+      a1BigInt * BigInt(2 ** 189) + 
+      b1BigInt * BigInt(2 ** 170) + 
+      c1BigInt * BigInt(2 ** 147) + 
+      a2diffBigInt * BigInt(2 ** 138) +
+      b2diffBigInt * BigInt(2 ** 127) + 
+      c2diffBigInt * BigInt(2 ** 111) + 
       a3wBigInt * BigInt(2 ** 93) +
-      b3wBigInt * BigInt(2 ** 72) + 
-      c3wBigInt * BigInt(2 ** 54) + 
-      a4wdiffBigInt * BigInt(2 ** 35) + 
-      b4wdiffBigInt * BigInt(2 ** 17) + 
+      b3wBigInt * BigInt(2 ** 73) + 
+      c3wBigInt * BigInt(2 ** 52) + 
+      a4wdiffBigInt * BigInt(2 ** 36) + 
+      b4wdiffBigInt * BigInt(2 ** 18) + 
       c4wdiffBigInt;
+    }
 
     lookupTableSOL.set(key, elementForSOL);
   }
