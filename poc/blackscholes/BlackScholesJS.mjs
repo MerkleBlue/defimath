@@ -171,7 +171,7 @@ export class BlackScholesJS {
 
     const finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
 
-    console.log("------ END JS -------")
+    log && console.log("------ END JS -------")
 
     return finalPrice;
   }

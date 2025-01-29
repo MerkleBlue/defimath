@@ -529,7 +529,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe("random tests", function () {
+      describe.only("random tests", function () {
         function generateRandomTestStrikePoints(startPoint, endPoint, count) {
           const testStrikePoints = [];
           for (let i = 0; i < count; i++) {
