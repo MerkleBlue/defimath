@@ -84,7 +84,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     const nonSmallTimeMap = new Map(nonZeroMap);
     for (let [key, value] of map) {
-      if (key % 1000 < 144) {
+      if (key % 1000 < 160) { // 71 is actually 2 ^ 7 + 1 * 2 ^ 4 = 144
         nonSmallTimeMap.delete(key);
       }
     }
@@ -517,19 +517,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it.only("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 999.1822550426883, 54263808 / SEC_IN_YEAR, 0.12, 0, "call");
+          const expected = bs.blackScholes(1000, 1001.2824298911495, 576 / SEC_IN_YEAR, 0.12, 0, "call");
 
-          const actualJS = blackScholesJS.getCallOptionPrice(1000, 999.1822550426883, 54263808, 0.12, 0);
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 1001.2824298911495, 576, 0.12, 0);
           console.log("expected:", expected, "actual JS :", actualJS);
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(999.1822550426883), 54263808, tokens(0.12), 0);
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(1001.2824298911495), 576, tokens(0.12), 0);
             console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
           }
         });
       });
 
-      describe.only("random tests", function () {
+      describe("random tests", function () {
         function generateRandomTestStrikePoints(startPoint, endPoint, count) {
           const testStrikePoints = [];
           for (let i = 0; i < count; i++) {
