@@ -377,8 +377,8 @@ function getLookupTableSOL(lookupTable) {
     }
 
     lookupTableSOL.set(key, elementForSOL);
-    // if(key === 10010091) {
-    //   console.log("a3wBigInt", a3wBigInt);
+    // if(key === 49600337) {
+    //   console.log("intrinsicPriceAABigInt 1111111", elementForSOL);
     // }
   }
 

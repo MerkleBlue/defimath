@@ -6,11 +6,11 @@ import "hardhat/console.sol";
 
 contract BlackScholesPOC {
     uint256 internal constant TWO_POW_192 = 2 ** 192;
-    uint256 internal constant TWO_POW_160 = 2 ** 160;
-    uint256 internal constant TWO_POW_128 = 2 ** 128;
-    uint256 internal constant TWO_POW_96 = 2 ** 96;
-    uint256 internal constant TWO_POW_64 = 2 ** 64;
-    uint256 internal constant TWO_POW_32 = 2 ** 32;
+    // uint256 internal constant TWO_POW_160 = 2 ** 160;
+    // uint256 internal constant TWO_POW_128 = 2 ** 128;
+    // uint256 internal constant TWO_POW_96 = 2 ** 96;
+    // uint256 internal constant TWO_POW_64 = 2 ** 64;
+    // uint256 internal constant TWO_POW_32 = 2 ** 32;
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
@@ -368,6 +368,7 @@ contract BlackScholesPOC {
             if (log) console.log("timeToExpiryIndex:", timeToExpiryIndex);
             if (log) console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
+            if (log) console.log("cell:", cell);
 
             // step 2) calculate timeToExpiry weight
             uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);

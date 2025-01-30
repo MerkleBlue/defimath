@@ -52,6 +52,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         dataArray = [];
       }
     }
+    // set remaining elements
+    if (indexArray.length > 0) {
+      const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+      totalGas += parseInt(gas);
+      await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
+    }
 
     console.log("Total gas spent:", Math.round(totalGas / 1e6), "M");
 
@@ -545,13 +551,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it.only("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 4452.891605358824, 22020096 / SEC_IN_YEAR, 1.92, 0, "call");
+          const expected = bs.blackScholes(1000, 4971.658960116134, 62914560 / SEC_IN_YEAR, 1.92, 0, "call");
 
-          const actualJS = blackScholesJS.getCallOptionPrice(1000, 4452.891605358824, 22020096, 1.92, 0);
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 4971.658960116134, 62914560, 1.92, 0);
           console.log("expected:", expected, "actual JS :", actualJS);
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(4452.891605358824), 22020096, tokens(1.92), 0);
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(4971.658960116134), 62914560, tokens(1.92), 0);
             console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
           }
         });
@@ -568,10 +574,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           return testStrikePoints;
         }
 
-        it("gets multiple call prices: random", async function () {
-          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 40);
+        it.only("gets multiple call prices: random", async function () {
+          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 50);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.00062);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
         });
       });
 
@@ -681,7 +687,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("getIndexFromTime", function () {
+    describe("getIndexFromTime", function () {
       async function getActualExpected(blackScholesPOC, time) {
         const actualJS = blackScholesJS.getIndexFromTime(time);
 
