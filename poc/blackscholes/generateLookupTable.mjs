@@ -264,114 +264,55 @@ function getLookupTableSOL(lookupTable) {
   for (const [key, value] of lookupTable) {
     const { intrinsicPriceAA, intrinsicPriceBAdiff, a1, b1, c1, a2diff, b2diff, c2diff, a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff } = value;
 
-    const intrinsicPriceAABigInt = BigInt(Math.round(intrinsicPriceAA * 1e6));
-    const intrinsicPriceBAdiffBigInt = BigInt(Math.round(Math.max(0, (intrinsicPriceBAdiff + 0.452963)) * 1e6));
-
-    const a1BigInt = BigInt(Math.round(Math.max(0, (a1 + 0.005256)) * 1e6));
-    const b1BigInt = BigInt(Math.round(Math.max(0, (b1 + 0.23659)) * 1e6));
-    const c1BigInt = BigInt(Math.round(c1 * 1e6));
-
-    const a2diffBigInt = BigInt(Math.round(Math.max(0, (a2diff + 0.000134)) * 1e6));
-    const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.00258)) * 1e6));
-    const c2diffBigInt = BigInt(Math.round(Math.max(0, (c2diff + 0.025636)) * 1e6));
-
-    const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.001096)) * 1e6));
-    const b3wBigInt = BigInt(Math.round(Math.max(0, (b3w + 1.052697)) * 1e6));
-    const c3wBigInt = BigInt(Math.round(c3w * 1e5));
-
-    const a4wdiffBigInt = BigInt(Math.round(Math.max(0, (a4wdiff + 0.000147)) * 1e6));
-    const b4wdiffBigInt = BigInt(Math.round(Math.max(0, (b4wdiff + 0.116937)) * 1e6));
-    const c4wdiffBigInt = BigInt(Math.round(Math.max(0, (c4wdiff + 0.000973)) * 1e6));
-
-
-    // OLD VALUES
-    // // for time index > 144
-    // // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
-    // // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
-    // // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
-    // // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
-    // // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals
-    // // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
-    // // b2diff [ -0.00258 - 0.001524 ]                   13 bits, 6 decimals
-    // // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
-    // // a3w [ -0.001096 - 0.2756 ]                       19 bits, 6 decimals
-    // // b3w [ -1.052697 - 0 ]                            21 bits, 6 decimals
-    // // c3w [ 0 - 1.778273 ]                             18 bits, 5 decimals, there is no less than 1, 
-    // // a4wdiff [ -0.000147 - 0.040763 ]                 19 bits, 6 decimals
-    // // b4wdiff [ -0.116937 - 0.000924 ]                 18 bits, 6 decimals
-    // // c4wdiff [ -0.000973 - 0.076386 ]                 17 bits, 6 decimals
-
-    // // TOTAL: 254 bits
-
-    // // for time index <= 144
-    // // intrinsicPriceAA [ 0 - 0.127953 ]                17 bits, 6 decimals
-    // // intrinsicPriceBAdiff [ -0.02348 - 0.023417 ]     16 bits, 6 decimals
-    // // a1 [ -0.000046 - 0.000001 ]                       6 bits, 6 decimals
-    // // b1 [ -0.000142 - 0.000147 ]                       9 bits, 6 decimals
-    // // c1 [ 0 - 0.006798 ]                              17 bits, 6 decimals
-    // // a2diff [ -0.000074 - 0.000039 ]                   7 bits, 6 decimals
-    // // b2diff [ -0.000043 - 0.000096 ]                   8 bits, 6 decimals
-    // // c2diff [ -0.000763 - 0.00073 ]                   11 bits, 6 decimals    
-    // // a3w [ -0.31261 - 8.184084 ]
-    // // b3w [ -14.254104 - 0.27579 ]
-    // // c3w [ 0 - 7.271892 ]
-    // // a4wdiff [ -0.016531 - 0.402532 ]
-    // // b4wdiff [ -0.667013 - 0.027673 ]
-    // // c4wdiff [ -0.014163 - 0.279058 ]
-
-
-    // for time index < 160
-    // intrinsicPriceAA [ 0 - 0.211307 ]                18 bits, 6 decimals
-    // intrinsicPriceBAdiff [ -0.024112 - 0.024007 ]    16 bits, 6 decimals
-    // a1 [ -0.000054 - 0.000016 ]                       7 bits, 6 decimals
-    // b1 [ -0.000299 - 0.000157 ]                       9 bits, 6 decimals
-    // c1 [ 0 - 0.009644 ]                              14 bits, 6 decimals
-    // a2diff [ -0.000081 - 0.000039 ]                   7 bits, 6 decimals
-    // b2diff [ -0.000043 - 0.000116 ]                   8 bits, 6 decimals
-    // c2diff [ -0.00077 - 0.00073 ]                     8 bits, 6 decimals 
-    // a3w [ -0.31261 - 8.184084 ]                      24 bits, 6 decimals
-    // b3w [ -14.254104 - 0.27579 ]                     25 bits, 6 decimals
-    // c3w [ 0 - 7.271892 ]                             23 bits, 6 decimals
-    // a4wdiff [ -0.016531 - 0.402532 ]                 19 bits, 6 decimals
-    // b4wdiff [ -0.667013 - 0.027673 ]                 20 bits, 6 decimals
-    // c4wdiff [ -0.014163 - 0.279058 ]                 19 bits, 6 decimals
-
-    // TOTAL: 217 bits
-
-    // for time index >= 160
-    // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
-    // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
-    // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
-    // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
-    // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals
-    // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
-    // b2diff [ -0.00258 - 0.001524 ]                   11 bits, 6 decimals
-    // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
-    // a3w [ -0.000735 - 0.169962 ]                     18 bits, 6 decimals
-    // b3w [ -0.758836 - 0 ]                            20 bits, 6 decimals
-    // c3w [ 0 - 1.589459 ]                             21 bits, 6 decimals
-    // a4wdiff [ -0.000102 - 0.032914 ]                 16 bits, 6 decimals
-    // b4wdiff [ -0.10002 - 0.000924 ]                  18 bits, 6 decimals
-    // c4wdiff [ -0.000973 - 0.067263 ]                 18 bits, 6 decimals
-
-    // TOTAL: 251 bits
-
-    if(key === 10010091) {
-      console.log("a3wBigInt", a3wBigInt);
-    }
-
     let elementForSOL;
     if (key % 1000 < 160) { 
 
+      const intrinsicPriceAABigInt = BigInt(Math.round(intrinsicPriceAA * 1e6));
+      const intrinsicPriceBAdiffBigInt = BigInt(Math.round(Math.max(0, (intrinsicPriceBAdiff + 0.024112)) * 1e6));
+
+      const a1BigInt = BigInt(Math.round(Math.max(0, (a1 + 0.000054)) * 1e6));
+      const b1BigInt = BigInt(Math.round(Math.max(0, (b1 + 0.000299)) * 1e6));
+      const c1BigInt = BigInt(Math.round(c1 * 1e6));
+
+      const a2diffBigInt = BigInt(Math.round(Math.max(0, (a2diff + 0.000081)) * 1e6));
+      const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.000043)) * 1e6));
+      const c2diffBigInt = BigInt(Math.round(Math.max(0, (c2diff + 0.00077)) * 1e6));
+
+      const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.31261)) * 1e6));
+      const b3wBigInt = BigInt(Math.round(Math.max(0, (b3w + 14.254104)) * 1e6));
+      const c3wBigInt = BigInt(Math.round(c3w * 1e6));
+
+      const a4wdiffBigInt = BigInt(Math.round(Math.max(0, (a4wdiff + 0.016531)) * 1e6));
+      const b4wdiffBigInt = BigInt(Math.round(Math.max(0, (b4wdiff + 0.667013)) * 1e6));
+      const c4wdiffBigInt = BigInt(Math.round(Math.max(0, (c4wdiff + 0.014163)) * 1e6));
+
+      // for time index < 160
+      // intrinsicPriceAA [ 0 - 0.211307 ]                18 bits, 6 decimals
+      // intrinsicPriceBAdiff [ -0.024112 - 0.024007 ]    16 bits, 6 decimals
+      // a1 [ -0.000054 - 0.000016 ]                       7 bits, 6 decimals
+      // b1 [ -0.000299 - 0.000157 ]                       9 bits, 6 decimals
+      // c1 [ 0 - 0.009644 ]                              14 bits, 6 decimals
+      // a2diff [ -0.000081 - 0.000039 ]                   7 bits, 6 decimals
+      // b2diff [ -0.000043 - 0.000116 ]                   8 bits, 6 decimals
+      // c2diff [ -0.000770 - 0.000730 ]                  11 bits, 6 decimals 
+      // a3w [ -0.31261 - 8.184084 ]                      24 bits, 6 decimals
+      // b3w [ -14.254104 - 0.27579 ]                     25 bits, 6 decimals
+      // c3w [ 0 - 7.271892 ]                             23 bits, 6 decimals
+      // a4wdiff [ -0.016531 - 0.402532 ]                 19 bits, 6 decimals
+      // b4wdiff [ -0.667013 - 0.027673 ]                 20 bits, 6 decimals
+      // c4wdiff [ -0.014163 - 0.279058 ]                 19 bits, 6 decimals
+
+      // TOTAL: 220 bits
+
       // shift bits
       elementForSOL = 
-        intrinsicPriceAABigInt * BigInt(2 ** 199) +
-        intrinsicPriceBAdiffBigInt * BigInt(2 ** 183) +
-        a1BigInt * BigInt(2 ** 176) + 
-        b1BigInt * BigInt(2 ** 167) + 
-        c1BigInt * BigInt(2 ** 153) + 
-        a2diffBigInt * BigInt(2 ** 146) +
-        b2diffBigInt * BigInt(2 ** 138) + 
+        intrinsicPriceAABigInt * BigInt(2 ** 202) +
+        intrinsicPriceBAdiffBigInt * BigInt(2 ** 186) +
+        a1BigInt * BigInt(2 ** 179) + 
+        b1BigInt * BigInt(2 ** 170) + 
+        c1BigInt * BigInt(2 ** 156) + 
+        a2diffBigInt * BigInt(2 ** 149) +
+        b2diffBigInt * BigInt(2 ** 141) + 
         c2diffBigInt * BigInt(2 ** 130) + 
         a3wBigInt * BigInt(2 ** 106) +
         b3wBigInt * BigInt(2 ** 81) + 
@@ -380,24 +321,65 @@ function getLookupTableSOL(lookupTable) {
         b4wdiffBigInt * BigInt(2 ** 19) + 
         c4wdiffBigInt;
     } else {
+
+      const intrinsicPriceAABigInt = BigInt(Math.round(intrinsicPriceAA * 1e6));
+      const intrinsicPriceBAdiffBigInt = BigInt(Math.round(Math.max(0, (intrinsicPriceBAdiff + 0.452963)) * 1e6));
+
+      const a1BigInt = BigInt(Math.round(Math.max(0, (a1 + 0.005256)) * 1e6));
+      const b1BigInt = BigInt(Math.round(Math.max(0, (b1 + 0.23659)) * 1e6));
+      const c1BigInt = BigInt(Math.round(c1 * 1e6));
+
+      const a2diffBigInt = BigInt(Math.round(Math.max(0, (a2diff + 0.000134)) * 1e6));
+      const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.00258)) * 1e6));
+      const c2diffBigInt = BigInt(Math.round(Math.max(0, (c2diff + 0.025636)) * 1e6));
+
+      const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.001096)) * 1e6));
+      const b3wBigInt = BigInt(Math.round(Math.max(0, (b3w + 1.052697)) * 1e6));
+      const c3wBigInt = BigInt(Math.round(c3w * 1e6));
+
+      const a4wdiffBigInt = BigInt(Math.round(Math.max(0, (a4wdiff + 0.000147)) * 1e6));
+      const b4wdiffBigInt = BigInt(Math.round(Math.max(0, (b4wdiff + 0.116937)) * 1e6));
+      const c4wdiffBigInt = BigInt(Math.round(Math.max(0, (c4wdiff + 0.000973)) * 1e6));
+
+      // for time index >= 160
+      // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
+      // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
+      // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
+      // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
+      // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals
+      // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
+      // b2diff [ -0.00258 - 0.001524 ]                   11 bits, 6 decimals
+      // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
+      // a3w [ -0.000735 - 0.169962 ]                     18 bits, 6 decimals
+      // b3w [ -0.758836 - 0 ]                            20 bits, 6 decimals
+      // c3w [ 0 - 1.589459 ]                             21 bits, 6 decimals
+      // a4wdiff [ -0.000102 - 0.032914 ]                 16 bits, 6 decimals
+      // b4wdiff [ -0.10002 - 0.000924 ]                  18 bits, 6 decimals
+      // c4wdiff [ -0.000973 - 0.067263 ]                 18 bits, 6 decimals
+
+      // TOTAL: 251 bits
+
       elementForSOL =
-      intrinsicPriceAABigInt * BigInt(2 ** 224) +
-      intrinsicPriceBAdiffBigInt * BigInt(2 ** 204) +
-      a1BigInt * BigInt(2 ** 189) + 
-      b1BigInt * BigInt(2 ** 170) + 
-      c1BigInt * BigInt(2 ** 147) + 
-      a2diffBigInt * BigInt(2 ** 138) +
-      b2diffBigInt * BigInt(2 ** 127) + 
-      c2diffBigInt * BigInt(2 ** 111) + 
-      a3wBigInt * BigInt(2 ** 93) +
-      b3wBigInt * BigInt(2 ** 73) + 
-      c3wBigInt * BigInt(2 ** 52) + 
-      a4wdiffBigInt * BigInt(2 ** 36) + 
-      b4wdiffBigInt * BigInt(2 ** 18) + 
-      c4wdiffBigInt;
+        intrinsicPriceAABigInt * BigInt(2 ** 224) +
+        intrinsicPriceBAdiffBigInt * BigInt(2 ** 204) +
+        a1BigInt * BigInt(2 ** 189) + 
+        b1BigInt * BigInt(2 ** 170) + 
+        c1BigInt * BigInt(2 ** 147) + 
+        a2diffBigInt * BigInt(2 ** 138) +
+        b2diffBigInt * BigInt(2 ** 127) + 
+        c2diffBigInt * BigInt(2 ** 111) + 
+        a3wBigInt * BigInt(2 ** 93) +
+        b3wBigInt * BigInt(2 ** 73) + 
+        c3wBigInt * BigInt(2 ** 52) + 
+        a4wdiffBigInt * BigInt(2 ** 36) + 
+        b4wdiffBigInt * BigInt(2 ** 18) + 
+        c4wdiffBigInt;
     }
 
     lookupTableSOL.set(key, elementForSOL);
+    // if(key === 10010091) {
+    //   console.log("a3wBigInt", a3wBigInt);
+    // }
   }
 
   return lookupTableSOL;

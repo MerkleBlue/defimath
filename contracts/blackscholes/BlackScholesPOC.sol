@@ -418,22 +418,6 @@ contract BlackScholesPOC {
         uint256 step
     ) private pure returns (uint256) {
 
-        // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
-        // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
-        // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
-        // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
-        // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals,
-        // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
-        // b2diff [ -0.00258 - 0.001524 ]                   13 bits, 6 decimals
-        // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
-        // a3w [ -0.001096 - 0.2756 ]                       19 bits, 6 decimals
-        // b3w [ -1.052697 - 0 ]                            21 bits, 6 decimals
-        // c3w [ 0 - 1.778273 ]                             18 bits, 5 decimals
-        // a4wdiff [ -0.000147 - 0.040763 ]                 19 bits, 6 decimals
-        // b4wdiff [ -0.116937 - 0.000924 ]                 18 bits, 6 decimals
-        // c4wdiff [ -0.000973 - 0.076386 ]                 17 bits, 6 decimals
-
-        // TOTAL: 254 bits
         unchecked {
 
             (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight);
@@ -452,14 +436,14 @@ contract BlackScholesPOC {
         uint256 timeToExpiryWeight
     ) private pure returns (int256 interpolatedPrice1, int256 interpolatedPrice2) {
         unchecked {
-            int256 a1 = int256((cell << 256 - 192 - 15) >> 256 - 15) - 5256;
-            int256 b1 = int256((cell << 256 - 173 - 19) >> 256 - 19) - 236590;
-            int256 c1 = int256((cell << 256 - 150 - 23) >> 256 - 23);
+            int256 a1 = int256((cell << 256 - 179 - 7) >> 256 - 7) - 54;
+            int256 b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
+            int256 c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
             interpolatedPrice1 = a1 * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + b1 * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + c1 * 1e12 * int256(timeToExpiryWeight) / 1e18;
 
-            int256 a2diff = int256((cell << 256 - 141 - 9) >> 256 - 9) - 134;
-            int256 b2diff = int256((cell << 256 - 128 - 13) >> 256 - 13) - 2580;
-            int256 c2diff = int256((cell << 256 - 112 - 16) >> 256 - 16) - 25636;
+            int256 a2diff = int256((cell << 256 - 149 - 7) >> 256 - 7) - 81;
+            int256 b2diff = int256((cell << 256 - 141 - 8) >> 256 - 8) - 43;
+            int256 c2diff = int256((cell << 256 - 130 - 11) >> 256 - 11) - 770;
 
             interpolatedPrice2 = (a1 - a2diff) * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + (b1 - b2diff) * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + (c1 - c2diff) * 1e12 * int256(timeToExpiryWeight) / 1e18;
 
@@ -482,15 +466,14 @@ contract BlackScholesPOC {
         uint256 timeToExpiryWeight
     ) private pure returns (int256 interpolatedStrikeWeightw) {
         unchecked {
-            // strikeWeight = 387491520165781370;
-            int256 a3w = int256((cell << 256 - 93 - 19) >> 256 - 19) - 1096;
-            int256 b3w = int256((cell << 256 - 72 - 21) >> 256 - 21) - 1052697;
-            int256 c3w = int256((cell << 256 - 54 - 18) >> 256 - 18);
-            int256 interpolatedStrikeWeight3w = a3w * 1e12 * int256(strikeWeight ** 3) / 1e54 + b3w * 1e12 * int256(strikeWeight ** 2) / 1e36 + c3w * 1e13 * int256(strikeWeight) / 1e18;
+            int256 a3w = int256((cell << 256 - 106 - 24) >> 256 - 24) - 312610;
+            int256 b3w = int256((cell << 256 - 81 - 25) >> 256 - 25) - 14254104;
+            int256 c3w = int256((cell << 256 - 58 - 23) >> 256 - 23);
+            int256 interpolatedStrikeWeight3w = a3w * 1e12 * int256(strikeWeight ** 3) / 1e54 + b3w * 1e12 * int256(strikeWeight ** 2) / 1e36 + c3w * 1e12 * int256(strikeWeight) / 1e18;
 
-            int256 a4wdiff = int256((cell << 256 - 35 - 19) >> 256 - 19) - 147;
-            int256 b4wdiff = int256((cell << 256 - 18 - 17) >> 256 - 18) - 116937;
-            int256 c4wdiff = int256((cell << 256 - 17) >> 256 - 17) - 973;
+            int256 a4wdiff = int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531;
+            int256 b4wdiff = int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013;
+            int256 c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
 
             if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
             if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
@@ -500,7 +483,7 @@ contract BlackScholesPOC {
             if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }
             if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }
 
-            int256 interpolatedStrikeWeight4w = (a3w - a4wdiff) * 1e12 * int256(strikeWeight ** 3) / 1e54 + (b3w - b4wdiff) * 1e12 * int256(strikeWeight ** 2) / 1e36 + (c3w * 10 - c4wdiff) * 1e12 * int256(strikeWeight) / 1e18;
+            int256 interpolatedStrikeWeight4w = (a3w - a4wdiff) * 1e12 * int256(strikeWeight ** 3) / 1e54 + (b3w - b4wdiff) * 1e12 * int256(strikeWeight ** 2) / 1e36 + (c3w - c4wdiff) * 1e12 * int256(strikeWeight) / 1e18;
 
             if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }
             if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }
@@ -530,8 +513,8 @@ contract BlackScholesPOC {
             console.log("extrinsicPriceAA: %d", extrinsicPriceAA);
             console.log("extrinsicPriceBA: %d", extrinsicPriceBA);
 
-            int256 intrinsicPriceAA = int256((cell << 256 - 227 - 27) >> 256 - 27);
-            int256 intrinsicPriceBAdiff = int256((cell << 256 - 207 - 20) >> 256 - 20) - 452963;
+            int256 intrinsicPriceAA = int256((cell << 256 - 202 - 18) >> 256 - 18);
+            int256 intrinsicPriceBAdiff = int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112;
             int256 intrinsicPriceBA = intrinsicPriceAA - intrinsicPriceBAdiff;
             if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
             if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }

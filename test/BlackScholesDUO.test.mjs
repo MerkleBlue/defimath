@@ -500,7 +500,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("getCallOptionPrice", function () {
       describe("single option test", function () {
-        it("gets a single call price", async function () {
+        it("gets a single call price when time > 2 ^ 16", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
           const expected = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
@@ -514,7 +514,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
-        it.only("gets a single call price: debug", async function () {
+        it.only("gets a single call price when time < 2 ^ 16", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          const expected = bs.blackScholes(1000, 990, 0.05 / 365, 0.40, 0.05, "call");
+
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 990, 0.05 * SEC_IN_DAY, 0.40, 0.05);
+          console.log("expected:", expected, "actual JS :", actualJS);
+
+          if (duoTest) {
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(990), 0.05 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000));
+            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+          }
+        });
+
+        it("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
           const expected = bs.blackScholes(1000, 1001.2824298911495, 576 / SEC_IN_YEAR, 0.12, 0, "call");
