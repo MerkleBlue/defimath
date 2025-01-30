@@ -368,7 +368,7 @@ contract BlackScholesPOC {
 
             // step 2) calculate timeToExpiry weight
             uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
-            uint256 expirationStep = 2 ** (timeToExpiryIndex / 10 - 3);
+            uint256 expirationStep = maxUint256(1, 2 ** (timeToExpiryIndex / 10 - 3));
             uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
             // console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
             // console.log("expirationStep: %d", expirationStep);
@@ -552,6 +552,10 @@ contract BlackScholesPOC {
     }
 
     function maxInt256(int256 a, int256 b) internal pure returns (int256) {
+        return a > b ? a : b;
+    }
+
+    function maxUint256(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? a : b;
     }
 
