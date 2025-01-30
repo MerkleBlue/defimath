@@ -406,26 +406,27 @@ contract BlackScholesPOC {
             console.log("strikeWeight: %d", strikeWeight);
 
             // step 4) and 5)  
-            finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step);
+            finalPrice = step4LowerTime(cell, strikeWeight, timeToExpiryWeight, strikeA, step, timeToExpiryIndex < 160);
         }
     }
 
-    function step4(
+    function step4LowerTime(
         uint256 cell,
         uint256 strikeWeight,
         uint256 timeToExpiryWeight,
         uint256 strikeA,
-        uint256 step
+        uint256 step,
+        bool isLowerTime
     ) private pure returns (uint256) {
 
         unchecked {
 
-            (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight);
+            (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight, isLowerTime);
 
-            int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight);
+            int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight, isLowerTime);
             // if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }
 
-            uint256 finalPrice = step5(cell, strikeA, step, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw);
+            uint256 finalPrice = step5(cell, strikeA, step, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
 
             return finalPrice;
         }
@@ -433,17 +434,37 @@ contract BlackScholesPOC {
 
     function getInterpolatedPrice12(
         uint256 cell,
-        uint256 timeToExpiryWeight
+        uint256 timeToExpiryWeight,
+        bool isLowerTime
     ) private pure returns (int256 interpolatedPrice1, int256 interpolatedPrice2) {
         unchecked {
-            int256 a1 = int256((cell << 256 - 179 - 7) >> 256 - 7) - 54;
-            int256 b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
-            int256 c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
+            int256 a1;
+            int256 b1;
+            int256 c1;
+            if (isLowerTime) {
+                a1 = int256((cell << 256 - 179 - 7) >> 256 - 7) - 54;
+                b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
+                c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
+            } else {
+                a1 = int256((cell << 256 - 190 - 15) >> 256 - 15) - 5256;
+                b1 = int256((cell << 256 - 171 - 19) >> 256 - 19) - 236590;
+                c1 = int256((cell << 256 - 148 - 23) >> 256 - 23);
+            }
+
             interpolatedPrice1 = a1 * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + b1 * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + c1 * 1e12 * int256(timeToExpiryWeight) / 1e18;
 
-            int256 a2diff = int256((cell << 256 - 149 - 7) >> 256 - 7) - 81;
-            int256 b2diff = int256((cell << 256 - 141 - 8) >> 256 - 8) - 43;
-            int256 c2diff = int256((cell << 256 - 130 - 11) >> 256 - 11) - 770;
+            int256 a2diff;
+            int256 b2diff;
+            int256 c2diff;
+            if (isLowerTime) {
+                a2diff = int256((cell << 256 - 149 - 7) >> 256 - 7) - 81;
+                b2diff = int256((cell << 256 - 141 - 8) >> 256 - 8) - 43;
+                c2diff = int256((cell << 256 - 130 - 11) >> 256 - 11) - 770;
+            } else {
+                a2diff = int256((cell << 256 - 139 - 9) >> 256 - 9) - 134;
+                b2diff = int256((cell << 256 - 127 - 12) >> 256 - 12) - 2580;
+                c2diff = int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636;
+            }
 
             interpolatedPrice2 = (a1 - a2diff) * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + (b1 - b2diff) * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + (c1 - c2diff) * 1e12 * int256(timeToExpiryWeight) / 1e18;
 
@@ -463,17 +484,36 @@ contract BlackScholesPOC {
     function getInterpolatedStrikeWeightw(
         uint256 cell,
         uint256 strikeWeight,
-        uint256 timeToExpiryWeight
+        uint256 timeToExpiryWeight,
+        bool isLowerTime
     ) private pure returns (int256 interpolatedStrikeWeightw) {
         unchecked {
-            int256 a3w = int256((cell << 256 - 106 - 24) >> 256 - 24) - 312610;
-            int256 b3w = int256((cell << 256 - 81 - 25) >> 256 - 25) - 14254104;
-            int256 c3w = int256((cell << 256 - 58 - 23) >> 256 - 23);
+            int256 a3w;
+            int256 b3w;
+            int256 c3w;
+            if (isLowerTime) {
+                a3w = int256((cell << 256 - 106 - 24) >> 256 - 24) - 312610;
+                b3w = int256((cell << 256 - 81 - 25) >> 256 - 25) - 14254104;
+                c3w = int256((cell << 256 - 58 - 23) >> 256 - 23);
+            } else {
+                a3w = int256((cell << 256 - 93 - 18) >> 256 - 18) - 735;
+                b3w = int256((cell << 256 - 73 - 20) >> 256 - 20) - 758836;
+                c3w = int256((cell << 256 - 52 - 21) >> 256 - 21);
+            }
             int256 interpolatedStrikeWeight3w = a3w * 1e12 * int256(strikeWeight ** 3) / 1e54 + b3w * 1e12 * int256(strikeWeight ** 2) / 1e36 + c3w * 1e12 * int256(strikeWeight) / 1e18;
 
-            int256 a4wdiff = int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531;
-            int256 b4wdiff = int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013;
-            int256 c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
+            int256 a4wdiff;
+            int256 b4wdiff;
+            int256 c4wdiff;
+            if (isLowerTime) {
+                a4wdiff = int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531;
+                b4wdiff = int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013;
+                c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
+            } else {
+                a4wdiff = int256((cell << 256 - 36 - 16) >> 256 - 16) - 102;
+                b4wdiff = int256((cell << 256 - 18 - 18) >> 256 - 18) - 100020;
+                c4wdiff = int256((cell << 256 - 18) >> 256 - 18) - 973;
+            }
 
             if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }
             if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }
@@ -504,7 +544,8 @@ contract BlackScholesPOC {
         uint256 step,
         int256 interpolatedPrice1, 
         int256 interpolatedPrice2,
-        int256 interpolatedStrikeWeightw
+        int256 interpolatedStrikeWeightw,
+        bool isLowerTime
     ) private pure returns (uint256 finalPrice) {
         unchecked {
 
@@ -513,8 +554,15 @@ contract BlackScholesPOC {
             console.log("extrinsicPriceAA: %d", extrinsicPriceAA);
             console.log("extrinsicPriceBA: %d", extrinsicPriceBA);
 
-            int256 intrinsicPriceAA = int256((cell << 256 - 202 - 18) >> 256 - 18);
-            int256 intrinsicPriceBAdiff = int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112;
+            int256 intrinsicPriceAA;
+            int256 intrinsicPriceBAdiff;
+            if (isLowerTime) {
+                intrinsicPriceAA = int256((cell << 256 - 202 - 18) >> 256 - 18);
+                intrinsicPriceBAdiff = int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112;
+            } else {
+                intrinsicPriceAA = int256((cell << 256 - 225 - 27) >> 256 - 27);
+                intrinsicPriceBAdiff = int256((cell << 256 - 205 - 20) >> 256 - 20) - 452963;
+            }
             int256 intrinsicPriceBA = intrinsicPriceAA - intrinsicPriceBAdiff;
             if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }
             if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }

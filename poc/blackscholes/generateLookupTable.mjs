@@ -333,22 +333,22 @@ function getLookupTableSOL(lookupTable) {
       const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.00258)) * 1e6));
       const c2diffBigInt = BigInt(Math.round(Math.max(0, (c2diff + 0.025636)) * 1e6));
 
-      const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.001096)) * 1e6));
-      const b3wBigInt = BigInt(Math.round(Math.max(0, (b3w + 1.052697)) * 1e6));
+      const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.000735)) * 1e6));
+      const b3wBigInt = BigInt(Math.round(Math.max(0, (b3w + 0.758836)) * 1e6));
       const c3wBigInt = BigInt(Math.round(c3w * 1e6));
 
-      const a4wdiffBigInt = BigInt(Math.round(Math.max(0, (a4wdiff + 0.000147)) * 1e6));
-      const b4wdiffBigInt = BigInt(Math.round(Math.max(0, (b4wdiff + 0.116937)) * 1e6));
+      const a4wdiffBigInt = BigInt(Math.round(Math.max(0, (a4wdiff + 0.000102)) * 1e6));
+      const b4wdiffBigInt = BigInt(Math.round(Math.max(0, (b4wdiff + 0.100020)) * 1e6));
       const c4wdiffBigInt = BigInt(Math.round(Math.max(0, (c4wdiff + 0.000973)) * 1e6));
 
       // for time index >= 160
       // intrinsicPriceAA [ 0 - 82.488476 ]               27 bits, 6 decimals
       // intrinsicPriceBAdiff [ -0.452963 - 0.471194 ]    20 bits, 6 decimals
       // a1 [ -0.005256 - 0.011765 ]                      15 bits, 6 decimals
-      // b1 [ -0.23659 - 0.056027 ]                       19 bits, 6 decimals
+      // b1 [ -0.236590 - 0.056027 ]                      19 bits, 6 decimals
       // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals
       // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
-      // b2diff [ -0.00258 - 0.001524 ]                   11 bits, 6 decimals
+      // b2diff [ -0.002580 - 0.001524 ]                  12 bits, 6 decimals
       // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
       // a3w [ -0.000735 - 0.169962 ]                     18 bits, 6 decimals
       // b3w [ -0.758836 - 0 ]                            20 bits, 6 decimals
@@ -357,15 +357,15 @@ function getLookupTableSOL(lookupTable) {
       // b4wdiff [ -0.10002 - 0.000924 ]                  18 bits, 6 decimals
       // c4wdiff [ -0.000973 - 0.067263 ]                 18 bits, 6 decimals
 
-      // TOTAL: 251 bits
+      // TOTAL: 252 bits
 
       elementForSOL =
-        intrinsicPriceAABigInt * BigInt(2 ** 224) +
-        intrinsicPriceBAdiffBigInt * BigInt(2 ** 204) +
-        a1BigInt * BigInt(2 ** 189) + 
-        b1BigInt * BigInt(2 ** 170) + 
-        c1BigInt * BigInt(2 ** 147) + 
-        a2diffBigInt * BigInt(2 ** 138) +
+        intrinsicPriceAABigInt * BigInt(2 ** 225) +
+        intrinsicPriceBAdiffBigInt * BigInt(2 ** 205) +
+        a1BigInt * BigInt(2 ** 190) + 
+        b1BigInt * BigInt(2 ** 171) + 
+        c1BigInt * BigInt(2 ** 148) + 
+        a2diffBigInt * BigInt(2 ** 139) +
         b2diffBigInt * BigInt(2 ** 127) + 
         c2diffBigInt * BigInt(2 ** 111) + 
         a3wBigInt * BigInt(2 ** 93) +
