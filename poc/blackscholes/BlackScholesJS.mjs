@@ -109,6 +109,7 @@ export class BlackScholesJS {
     const strikeIndex = this.getIndexFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(Math.floor(timeToExpirySecScaled));
     log && console.log("strikeIndex:", strikeIndex);
+    log && console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
     log && console.log("timeToExpiryIndex:", timeToExpiryIndex);
     log && console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
@@ -278,7 +279,6 @@ export class BlackScholesJS {
   }
 
   findMinor(value, power) {
-    // console.log(value - 2 ** power);
     return Math.floor((value - 2 ** power) / (2 ** (power - 3)));
   }
 }

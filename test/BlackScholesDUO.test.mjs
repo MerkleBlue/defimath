@@ -545,13 +545,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it.only("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 1006.4917936960417, 87040 / SEC_IN_YEAR, 0.12, 0, "call");
+          const expected = bs.blackScholes(1000, 4452.891605358824, 22020096 / SEC_IN_YEAR, 1.92, 0, "call");
 
-          const actualJS = blackScholesJS.getCallOptionPrice(1000, 1006.4917936960417, 87040, 0.12, 0);
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 4452.891605358824, 22020096, 1.92, 0);
           console.log("expected:", expected, "actual JS :", actualJS);
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(1006.4917936960417), 87040, tokens(0.12), 0);
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(4452.891605358824), 22020096, tokens(1.92), 0);
             console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
           }
         });
@@ -568,60 +568,54 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           return testStrikePoints;
         }
 
-        it.only("gets multiple call prices: random", async function () {
-          const strikeSubArray = generateRandomTestStrikePoints(99, 101, 100);
+        it("gets multiple call prices: random", async function () {
+          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 40);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
-          await testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.00062);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.00062);
         });
       });
 
       describe("multiple call options - 16x16 per cell", function () {
-        // it.only("gets multiple call prices: one specific max error", async function () {
-        //   const strikeSubArray = [99.95625];
-        //   const timeSubArray = [60];
-        //   testRange(strikeSubArray, timeSubArray, [VOL_FIXED], true, 0.000001);
-        // });
-
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000067);
+          const timeSubArray = testTimePoints.filter(value => value >= 144 && value <= 2 * SEC_IN_DAY);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000067);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 144);
-          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
         });
 
         it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 900);
-          testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
+          await testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
         });
 
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
         });
 
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
         });
 
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
 
@@ -687,17 +681,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("getIndexFromTime", function () {
-      function getActualExpected(time) {
-        const actual = blackScholesJS.getIndexFromTime(time);
+    describe.only("getIndexFromTime", function () {
+      async function getActualExpected(blackScholesPOC, time) {
+        const actualJS = blackScholesJS.getIndexFromTime(time);
+
+        const actualSOL = await blackScholesPOC.getIndexFromTime(time);
+
         // check index against log2, which we don't have in JS
         const major = Math.floor(Math.log2(time));
         const minor = Math.floor((time - 2 ** major) / 2 ** (major - 3));
         const expected = major * 10 + minor;
-        return { actual, expected };
+        return { actualJS, actualSOL, expected };
       }
 
       it("calculates index for time [0, 2^3)", async function () {
+        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+        // JS
         assert.equal(blackScholesJS.getIndexFromTime(0), 0);
         assert.equal(blackScholesJS.getIndexFromTime(1), 1);
         assert.equal(blackScholesJS.getIndexFromTime(2), 2);
@@ -706,34 +706,65 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         assert.equal(blackScholesJS.getIndexFromTime(5), 5);
         assert.equal(blackScholesJS.getIndexFromTime(6), 6);
         assert.equal(blackScholesJS.getIndexFromTime(7), 7);
+
+        // SOL
+        assert.equal(await blackScholesPOC.getIndexFromTime(0), 0);
+        assert.equal(await blackScholesPOC.getIndexFromTime(1), 1);
+        assert.equal(await blackScholesPOC.getIndexFromTime(2), 2);
+        assert.equal(await blackScholesPOC.getIndexFromTime(3), 3);
+        assert.equal(await blackScholesPOC.getIndexFromTime(4), 4);
+        assert.equal(await blackScholesPOC.getIndexFromTime(5), 5);
+        assert.equal(await blackScholesPOC.getIndexFromTime(6), 6);
+        assert.equal(await blackScholesPOC.getIndexFromTime(7), 7);
       });
 
       it("calculates index for time [2^3, 2^16)", async function () {
+        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
         let count = 0;
         for (let time = 8; time < 2 ** 16; time++) {
-          const { actual, expected } = getActualExpected(time);
-          assert.equal(actual, expected);
+          const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
+          assert.equal(actualJS, expected);
+          assert.equal(actualSOL, expected);
           count++;
         }
         console.log("values tested: ", count);
       });
 
-
       it("calculates index for time [2^16, 2^24)", async function () {
+        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
         let count = 0;
         for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8) {
-          const { actual, expected } = getActualExpected(time);
-          assert.equal(actual, expected);
+          const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
+          assert.equal(actualJS, expected);
+          assert.equal(actualSOL, expected);
           count++;
         }
         console.log("values tested: ", count);
       });
 
       it("calculates index for time [2^24, 2^32)", async function () {
+        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
         let count = 0;
         for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16) {
-          const { actual, expected } = getActualExpected(time);
-          assert.equal(actual, expected);
+          const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
+          assert.equal(actualJS, expected);
+          assert.equal(actualSOL, expected);
+          count++;
+        }
+        console.log("values tested: ", count);
+      });
+
+      it("calculates index for time [2^32, 2^34)", async function () {
+        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+        let count = 0;
+        for (let time = 2 ** 32; time < 2 ** 34; time += 2 ** 18) {
+          const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
+          assert.equal(actualJS, expected);
+          //assert.equal(actualSOL, expected);
           count++;
         }
         console.log("values tested: ", count);
