@@ -154,7 +154,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
 
     console.log("timePoints.length", timePoints.length, "testTimePoints.length", testTimePoints.length);
-  
+    console.log("Last time point:", testTimePoints[testTimePoints.length - 1], convertSeconds(testTimePoints[testTimePoints.length - 1]));
     return testTimePoints;
   }
 
