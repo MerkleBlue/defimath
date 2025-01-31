@@ -427,9 +427,9 @@ contract BlackScholesPOC {
                 b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
                 c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
             } else {
-                a1 = int256((cell << 256 - 190 - 15) >> 256 - 15) - 5256;
-                b1 = int256((cell << 256 - 171 - 19) >> 256 - 19) - 236590;
-                c1 = int256((cell << 256 - 148 - 23) >> 256 - 23);
+                a1 = int256((cell << 256 - 191 - 15) >> 256 - 15) - 5256;
+                b1 = int256((cell << 256 - 172 - 19) >> 256 - 19) - 236590;
+                c1 = int256((cell << 256 - 149 - 23) >> 256 - 23);
             }
 
             interpolatedPrice1 = a1 * 1e12 * int256(timeToExpiryWeight ** 3) / 1e54 + b1 * 1e12 * int256(timeToExpiryWeight ** 2) / 1e36 + c1 * 1e12 * int256(timeToExpiryWeight) / 1e18;
@@ -442,8 +442,8 @@ contract BlackScholesPOC {
                 b2diff = int256((cell << 256 - 141 - 8) >> 256 - 8) - 43;
                 c2diff = int256((cell << 256 - 130 - 11) >> 256 - 11) - 770;
             } else {
-                a2diff = int256((cell << 256 - 139 - 9) >> 256 - 9) - 134;
-                b2diff = int256((cell << 256 - 127 - 12) >> 256 - 12) - 2580;
+                a2diff = int256((cell << 256 - 140 - 9) >> 256 - 9) - 134;
+                b2diff = int256((cell << 256 - 127 - 13) >> 256 - 13) - 2580;
                 c2diff = int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636;
             }
 
@@ -539,8 +539,8 @@ contract BlackScholesPOC {
                 intrinsicPriceAA = int256((cell << 256 - 202 - 18) >> 256 - 18);
                 intrinsicPriceBAdiff = int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112;
             } else {
-                intrinsicPriceAA = int256((cell << 256 - 225 - 27) >> 256 - 27);
-                intrinsicPriceBAdiff = int256((cell << 256 - 205 - 20) >> 256 - 20) - 452963;
+                intrinsicPriceAA = int256((cell << 256 - 226 - 27) >> 256 - 27);
+                intrinsicPriceBAdiff = int256((cell << 256 - 206 - 20) >> 256 - 20) - 452963;
             }
             int256 intrinsicPriceBA = intrinsicPriceAA - intrinsicPriceBAdiff;
             if (log) { if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }}

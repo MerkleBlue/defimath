@@ -326,11 +326,11 @@ function getLookupTableSOL(lookupTable) {
       const intrinsicPriceBAdiffBigInt = BigInt(Math.round(Math.max(0, (intrinsicPriceBAdiff + 0.452963)) * 1e6));
 
       const a1BigInt = BigInt(Math.round(Math.max(0, (a1 + 0.005256)) * 1e6));
-      const b1BigInt = BigInt(Math.round(Math.max(0, (b1 + 0.23659)) * 1e6));
+      const b1BigInt = BigInt(Math.round(Math.max(0, (b1 + 0.236590)) * 1e6));
       const c1BigInt = BigInt(Math.round(c1 * 1e6));
 
       const a2diffBigInt = BigInt(Math.round(Math.max(0, (a2diff + 0.000134)) * 1e6));
-      const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.00258)) * 1e6));
+      const b2diffBigInt = BigInt(Math.round(Math.max(0, (b2diff + 0.002580)) * 1e6));
       const c2diffBigInt = BigInt(Math.round(Math.max(0, (c2diff + 0.025636)) * 1e6));
 
       const a3wBigInt = BigInt(Math.round(Math.max(0, (a3w + 0.000735)) * 1e6));
@@ -348,7 +348,7 @@ function getLookupTableSOL(lookupTable) {
       // b1 [ -0.236590 - 0.056027 ]                      19 bits, 6 decimals
       // c1 [ 0 - 4.857372 ]                              23 bits, 6 decimals
       // a2diff [ -0.000134 - 0.000207 ]                   9 bits, 6 decimals
-      // b2diff [ -0.002580 - 0.001524 ]                  12 bits, 6 decimals
+      // b2diff [ -0.002580 - 0.001524 ]                  13 bits, 6 decimals
       // c2diff [ -0.025636 - 0.029092 ]                  16 bits, 6 decimals
       // a3w [ -0.000735 - 0.169962 ]                     18 bits, 6 decimals
       // b3w [ -0.758836 - 0 ]                            20 bits, 6 decimals
@@ -357,15 +357,15 @@ function getLookupTableSOL(lookupTable) {
       // b4wdiff [ -0.10002 - 0.000924 ]                  18 bits, 6 decimals
       // c4wdiff [ -0.000973 - 0.067263 ]                 18 bits, 6 decimals
 
-      // TOTAL: 252 bits
+      // TOTAL: 253 bits
 
       elementForSOL =
-        intrinsicPriceAABigInt * BigInt(2 ** 225) +
-        intrinsicPriceBAdiffBigInt * BigInt(2 ** 205) +
-        a1BigInt * BigInt(2 ** 190) + 
-        b1BigInt * BigInt(2 ** 171) + 
-        c1BigInt * BigInt(2 ** 148) + 
-        a2diffBigInt * BigInt(2 ** 139) +
+        intrinsicPriceAABigInt * BigInt(2 ** 226) +
+        intrinsicPriceBAdiffBigInt * BigInt(2 ** 206) +
+        a1BigInt * BigInt(2 ** 191) + 
+        b1BigInt * BigInt(2 ** 172) + 
+        c1BigInt * BigInt(2 ** 149) + 
+        a2diffBigInt * BigInt(2 ** 140) +
         b2diffBigInt * BigInt(2 ** 127) + 
         c2diffBigInt * BigInt(2 ** 111) + 
         a3wBigInt * BigInt(2 ** 93) +
