@@ -394,7 +394,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe("performance", function () {
+  duoTest && describe.only("performance", function () {
     it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
@@ -548,7 +548,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
-        it.only("gets a single call price: debug", async function () {
+        it("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
           const expected = bs.blackScholes(1000, 205.2645557380277, 37486592 / SEC_IN_YEAR, 1.92, 0, "call");
@@ -574,7 +574,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           return testStrikePoints;
         }
 
-        it.only("gets multiple call prices: random", async function () {
+        it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(20, 500, 60);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
