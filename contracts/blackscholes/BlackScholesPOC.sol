@@ -46,9 +46,6 @@ contract BlackScholesPOC {
 
             // step 3: set the expiration based on volatility
             uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
-            console.log("volRatio: %d", volRatio);
-            console.log("volRatio ** 2: %d", volRatio ** 2);
-            console.log("all: %d", uint256(timeToExpirySec) * (volRatio ** 2));
             uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e36;
 
             // step 4: interpolate price
@@ -350,15 +347,7 @@ contract BlackScholesPOC {
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
             if (log) console.log("cell:", cell);
 
-            // step 2) calculate timeToExpiry weight
-            uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
-            uint256 expirationStep = maxUint256(1, 2 ** (timeToExpiryIndex / 10 - 3));
-            uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
-            if (log) console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
-            if (log) console.log("expirationStep: %d", expirationStep);
-            if (log) console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
-
-            // step 3) calculate strike weight
+            // step 2) calculate strike weight
             uint256 strikeA = getStrikeFromIndex(strikeIndex);
             uint256 deltaStrike = strikeScaled - strikeA;
             (uint256 step, ) = getStrikeStepAndBoundary(strikeScaled);
@@ -366,8 +355,20 @@ contract BlackScholesPOC {
             if (log) console.log("deltaStrike: %d", deltaStrike);
             if (log) console.log("strikeWeight: %d", strikeWeight);
 
-            // step 4) and 5)  
-            finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step, timeToExpiryIndex < 160);
+            if (cell > 0) {
+                // step 3) calculate timeToExpiry weight
+                uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
+                uint256 expirationStep = maxUint256(1, 2 ** (timeToExpiryIndex / 10 - 3)); // todo: what if negative???
+                uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep;
+                if (log) console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
+                if (log) console.log("expirationStep: %d", expirationStep);
+                if (log) console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
+
+                // step 4) and 5)  
+                finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step, timeToExpiryIndex < 160);
+            } else {
+                finalPrice = finalStep(strikeA, step, strikeWeight);
+            }
         }
     }
 
@@ -507,6 +508,7 @@ contract BlackScholesPOC {
         bool isLowerTime
     ) private view returns (uint256 finalPrice) {
         unchecked {
+            // todo: put
             uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
             uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA) - int256(step)));
             if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
@@ -531,6 +533,22 @@ contract BlackScholesPOC {
             if (log) { if (optionPriceBT > 0) { console.log("optionPriceBT: %d", uint256(optionPriceBT)); } else { console.log("optionPriceBT: -%d", uint256(-optionPriceBT)); }}
 
             finalPrice = uint256(maxInt256(0, optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT) / 1e18));
+        }
+    }
+
+    function finalStep(
+        uint256 strikeA,
+        uint256 step,
+        uint256 strikeWeight
+    ) private view returns (uint256 finalPrice) {
+        unchecked {
+            // todo: put
+            uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
+            uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA) - int256(step)));
+            if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
+            if (log) { console.log("extrinsicPriceBA: %d", extrinsicPriceBA);}
+
+            finalPrice = uint256(extrinsicPriceAA - strikeWeight * (extrinsicPriceAA - extrinsicPriceBA) / 1e18);
         }
     }
 

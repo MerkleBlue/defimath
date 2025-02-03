@@ -376,6 +376,11 @@ function getLookupTableSOL(lookupTable) {
         c4wdiffBigInt;
     }
 
+    // short circuit when everything is 0, then we are not using negative values
+    if (intrinsicPriceAA === 0 && intrinsicPriceBAdiff === 0 && a1 === 0 && b1 === 0 && c1 === 0 && a2diff === 0 && b2diff === 0 && c2diff === 0 && a3w === 0 && b3w === 0 && c3w === 0 && a4wdiff === 0 && b4wdiff === 0 && c4wdiff === 0) {
+      elementForSOL = 0;
+    }
+
     lookupTableSOL.set(key, elementForSOL);
     // if(key === 49600337) {
     //   console.log("intrinsicPriceAABigInt 1111111", elementForSOL);
@@ -403,33 +408,6 @@ function reviver(key, value) {
     }
   }
   return value;
-}
-
-function intToUint32(factor) {
-  if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds: " + factor);
-
-  // positive
-  if (factor > 0) {
-    return BigInt(parseInt(factor * 1e6));
-  }
-
-  // negative
-  return BigInt(parseInt((Math.abs(factor) + 2147.483648) * 1e6)); // half the 2 ** 32
-  
-}
-
-function intToUint(value, bits, decimals) {
-  const divider = 2 ** (bits - 1);
-  if (Math.abs(factor) > 2147.483648) throw new Error("factor out of bounds: " + factor);
-
-  // positive
-  if (factor > 0) {
-    return BigInt(parseInt(factor * 1e6));
-  }
-
-  // negative
-  return BigInt(parseInt((Math.abs(factor) + 2147.483648) * 1e6)); // half the 2 ** 32
-  
 }
 
 export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {

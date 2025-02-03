@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 
-const duoTest = false;
+const duoTest = true;
 
 function tokens(value) {
   return hre.ethers.parseUnits(value.toString(), 18).toString();
@@ -548,7 +548,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
-        it.only("gets a single call price: debug", async function () {
+        it("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
           const expected = bs.blackScholes(1000, 901.9375000000001, 144 / SEC_IN_YEAR, 0.01, 0, "call");
@@ -574,7 +574,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           return testStrikePoints;
         }
 
-        it("gets multiple call prices: random", async function () {
+        it.only("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(20, 500, 60);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
@@ -582,7 +582,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("multiple call options - 16x16 per cell", function () {
-        it.only("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 145 && value <= 2 * SEC_IN_DAY);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);

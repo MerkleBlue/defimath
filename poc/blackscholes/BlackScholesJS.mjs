@@ -113,63 +113,71 @@ export class BlackScholesJS {
     log && console.log("timeToExpiryIndex:", timeToExpiryIndex);
     log && console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
     const cell = this.lookupTable.get(strikeIndex * 1000 + timeToExpiryIndex);
+    log && console.log("cell", cell);
 
-    // step 2) calculate timeToExpiry weight
-    const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
-    const expirationStep = Math.max(1, 2 ** (Math.floor(timeToExpiryIndex / 10) - 3));
-    const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
-    log && console.log("timeToExpiryFromIndex:", timeToExpiryFromIndex);
-    log && console.log("expirationStep:", expirationStep);
-    log && console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
-
-    // step 3) calculate the strike delta
+    // step 2) calculate the strike delta
     const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
     const strikeStep = this.getStrikeStepAndBoundary(strikeScaled).step;
     const strikeWeight = deltaStrike / strikeStep;
     log && console.log("strikeScaled", strikeScaled, "strikeFromIndex:", this.getStrikeFromIndex(strikeIndex));
     log && console.log("deltaStrike:", deltaStrike);
     log && console.log("strikeWeight:", strikeWeight);
-    log && console.log("cell", cell);
 
-    // step 4) interpolate the price using quadratic interpolation
-    const a2 = cell.a1 - cell.a2diff;
-    const b2 = cell.b1 - cell.b2diff;
-    const c2 = cell.c1 - cell.c2diff;
-    const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
-    const interpolatedPrice2 = Math.max(0, a2 * (timeToExpiryWeight ** 3) + b2 * (timeToExpiryWeight ** 2) + c2 * timeToExpiryWeight);
-    log && console.log("interpolatedPrice1", interpolatedPrice1);
-    log && console.log("interpolatedPrice2", interpolatedPrice2);
+    let finalPrice;
+    if (!this.isCellZero(cell)) {
+      // step 3) calculate timeToExpiry weight
+      const timeToExpiryFromIndex = this.getTimeFromIndex(timeToExpiryIndex);
+      const expirationStep = Math.max(1, 2 ** (Math.floor(timeToExpiryIndex / 10) - 3));
+      const timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) / expirationStep;
+      log && console.log("timeToExpiryFromIndex:", timeToExpiryFromIndex);
+      log && console.log("expirationStep:", expirationStep);
+      log && console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
-    const a4w = cell.a3w - cell.a4wdiff;
-    const b4w = cell.b3w - cell.b4wdiff;
-    const c4w = cell.c3w - cell.c4wdiff;
-    const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
-    const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
-    let interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
-    // if factors are zeroed, use default strike weight
-    if (interpolatedStrikeWeightw === 0){
-      interpolatedStrikeWeightw = strikeWeight;
+      // step 4) interpolate the price using quadratic interpolation
+      const a2 = cell.a1 - cell.a2diff;
+      const b2 = cell.b1 - cell.b2diff;
+      const c2 = cell.c1 - cell.c2diff;
+      const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
+      const interpolatedPrice2 = Math.max(0, a2 * (timeToExpiryWeight ** 3) + b2 * (timeToExpiryWeight ** 2) + c2 * timeToExpiryWeight);
+      log && console.log("interpolatedPrice1", interpolatedPrice1);
+      log && console.log("interpolatedPrice2", interpolatedPrice2);
+
+      const a4w = cell.a3w - cell.a4wdiff;
+      const b4w = cell.b3w - cell.b4wdiff;
+      const c4w = cell.c3w - cell.c4wdiff;
+      const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
+      const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
+      let interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
+      // if factors are zeroed, use default strike weight
+      if (interpolatedStrikeWeightw === 0){
+        interpolatedStrikeWeightw = strikeWeight;
+      }
+      log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
+      log && console.log("interpolatedStrikeWeight4w", interpolatedStrikeWeight4w);
+      log && console.log("interpolatedStrikeWeightw", interpolatedStrikeWeightw);
+
+      // step 5) calculate the final price
+      const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
+      const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
+      log && console.log("extrinsicPriceAA", extrinsicPriceAA);
+      log && console.log("extrinsicPriceBA", extrinsicPriceBA);
+
+      const intrinsicPriceBA = cell.intrinsicPriceAA - cell.intrinsicPriceBAdiff;
+      const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
+      const optionPriceBT = extrinsicPriceBA + intrinsicPriceBA + interpolatedPrice2;
+      log && console.log("-----------------")
+      log && console.log("optionPriceAT", optionPriceAT, "ok");
+      log && console.log("optionPriceBT", optionPriceBT, "ok");
+
+      log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT))
+
+      finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
+    } else {
+      const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
+      const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
+
+      finalPrice = extrinsicPriceAA - strikeWeight * (extrinsicPriceAA - extrinsicPriceBA);
     }
-    log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
-    log && console.log("interpolatedStrikeWeight4w", interpolatedStrikeWeight4w);
-    log && console.log("interpolatedStrikeWeightw", interpolatedStrikeWeightw);
-
-    // step 5) calculate the final price
-    const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
-    const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
-    log && console.log("extrinsicPriceAA", extrinsicPriceAA);
-    log && console.log("extrinsicPriceBA", extrinsicPriceBA);
-
-    const intrinsicPriceBA = cell.intrinsicPriceAA - cell.intrinsicPriceBAdiff;
-    const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
-    const optionPriceBT = extrinsicPriceBA + intrinsicPriceBA + interpolatedPrice2;
-    log && console.log("-----------------")
-    log && console.log("optionPriceAT", optionPriceAT, "ok");
-    log && console.log("optionPriceBT", optionPriceBT, "ok");
-
-    log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT))
-
-    const finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
 
     log && console.log("------ END JS -------")
 
@@ -279,5 +287,10 @@ export class BlackScholesJS {
 
   findMinor(value, power) {
     return Math.floor((value - 2 ** power) / (2 ** (power - 3)));
+  }
+
+  isCellZero(cell) {
+    const { intrinsicPriceAA, intrinsicPriceBAdiff, a1, b1, c1, a2diff, b2diff, c2diff, a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff } = cell;
+    return (intrinsicPriceAA === 0 && intrinsicPriceBAdiff === 0 && a1 === 0 && b1 === 0 && c1 === 0 && a2diff === 0 && b2diff === 0 && c2diff === 0 && a3w === 0 && b3w === 0 && c3w === 0 && a4wdiff === 0 && b4wdiff === 0 && c4wdiff === 0);
   }
 }
