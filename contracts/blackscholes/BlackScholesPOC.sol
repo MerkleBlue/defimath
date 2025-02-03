@@ -542,6 +542,7 @@ contract BlackScholesPOC {
         uint256 strikeWeight
     ) private view returns (uint256 finalPrice) {
         unchecked {
+            // todo: just use extrinsicPrice on a strike
             // todo: put
             uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
             uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA) - int256(step)));

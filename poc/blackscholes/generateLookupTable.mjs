@@ -426,7 +426,7 @@ export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
 }
 
 export function generateTimePoints() {
-  const points = [1, 2, 3, 4, 5, 6, 7];
+  const points = [0, 1, 2, 3, 4, 5, 6, 7];
 
   for (let major = 3; major < MAX_MAJOR; major++) {
     for(let minor = 0; minor < 8; minor++) {

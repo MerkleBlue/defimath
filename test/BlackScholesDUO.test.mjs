@@ -35,8 +35,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     let totalGas = 0;
     let indexArray = [], dataArray = [];
     for (const [key, value] of lookupTableSOL) {
-      indexArray.push(key);
-      dataArray.push(value);
+      if (value > 0) {
+        indexArray.push(key);
+        dataArray.push(value);
+      }
+
       if (indexArray.length >= 100) {
         // todo: don't set 0 values, once tests for option price are done, it will lower gas cost, and speedup tests
         // console.log(value);
@@ -574,7 +577,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           return testStrikePoints;
         }
 
-        it.only("gets multiple call prices: random", async function () {
+        it("gets multiple call prices: random", async function () {
           const strikeSubArray = generateRandomTestStrikePoints(20, 500, 60);
           const timeSubArray = testTimePoints.filter(value => value >= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
@@ -582,9 +585,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("multiple call options - 16x16 per cell", function () {
-        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+        it.only("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 145 && value <= 2 * SEC_IN_DAY);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 2 * SEC_IN_DAY);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
         });
 
