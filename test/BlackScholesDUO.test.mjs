@@ -581,8 +581,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe.only("multiple call options - 16x16 per cell", function () {
-        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+      describe("multiple call options - 16x16 per cell", function () {
+        it.only("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 145 && value <= 2 * SEC_IN_DAY);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);

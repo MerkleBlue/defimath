@@ -135,12 +135,14 @@ export class BlackScholesJS {
     const a2 = cell.a1 - cell.a2diff;
     const b2 = cell.b1 - cell.b2diff;
     const c2 = cell.c1 - cell.c2diff;
+    const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
+    const interpolatedPrice2 = Math.max(0, a2 * (timeToExpiryWeight ** 3) + b2 * (timeToExpiryWeight ** 2) + c2 * timeToExpiryWeight);
+    log && console.log("interpolatedPrice1", interpolatedPrice1);
+    log && console.log("interpolatedPrice2", interpolatedPrice2);
+
     const a4w = cell.a3w - cell.a4wdiff;
     const b4w = cell.b3w - cell.b4wdiff;
     const c4w = cell.c3w - cell.c4wdiff;
-
-    const interpolatedPrice1 = cell.a1 * (timeToExpiryWeight ** 3) + cell.b1 * (timeToExpiryWeight ** 2) + cell.c1 * timeToExpiryWeight;
-    const interpolatedPrice2 = Math.max(0, a2 * (timeToExpiryWeight ** 3) + b2 * (timeToExpiryWeight ** 2) + c2 * timeToExpiryWeight);
     const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
     const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
     let interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
@@ -148,9 +150,6 @@ export class BlackScholesJS {
     if (interpolatedStrikeWeightw === 0){
       interpolatedStrikeWeightw = strikeWeight;
     }
-
-    log && console.log("interpolatedPrice1", interpolatedPrice1);
-    log && console.log("interpolatedPrice2", interpolatedPrice2);
     log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
     log && console.log("interpolatedStrikeWeight4w", interpolatedStrikeWeight4w);
     log && console.log("interpolatedStrikeWeightw", interpolatedStrikeWeightw);
