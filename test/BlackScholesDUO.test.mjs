@@ -40,15 +40,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         dataArray.push(value);
       }
 
-      if (indexArray.length >= 100) {
-        // todo: don't set 0 values, once tests for option price are done, it will lower gas cost, and speedup tests
-        // console.log(value);
-        // if (value === 0) {
-        //   console.log("Skipping zero value at index", key);
-        // } else {
-
-        // }
+      if (indexArray.length >= 400) {
         const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+        // console.log("gas in batch", parseInt(gas));
         totalGas += parseInt(gas);
         await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
         indexArray = [];
@@ -58,6 +52,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     // set remaining elements
     if (indexArray.length > 0) {
       const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+      // console.log("gas in last batch", parseInt(gas));
       totalGas += parseInt(gas);
       await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
     }
@@ -397,7 +392,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe("performance", function () {
+  duoTest && describe.only("performance", function () {
     it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
