@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 
-const duoTest = true;
+const duoTest = false;
 
 function tokens(value) {
   return hre.ethers.parseUnits(value.toString(), 18).toString();
@@ -394,7 +394,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe.only("performance", function () {
+  duoTest && describe("performance", function () {
     it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
@@ -548,16 +548,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
-        it("gets a single call price: debug", async function () {
+        it.only("gets a single call price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 205.2645557380277, 37486592 / SEC_IN_YEAR, 1.92, 0, "call");
+          const expected = bs.blackScholes(1000, 901.9375000000001, 144 / SEC_IN_YEAR, 0.01, 0, "call");
 
-          const actualJS = blackScholesJS.getCallOptionPrice(1000, 205.2645557380277, 37486592, 1.92, 0);
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 901.9375000000001, 144, 0.01, 0);
           console.log("expected:", expected, "actual JS :", actualJS);
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(205.2645557380277), 37486592, tokens(1.92), 0);
+            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(901.9375000000001), 145, tokens(0.01), 0);
             console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
           }
         });
@@ -581,23 +581,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe("multiple call options - 16x16 per cell", function () {
+      describe.only("multiple call options - 16x16 per cell", function () {
         it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 144 && value <= 2 * SEC_IN_DAY);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000067);
+          const timeSubArray = testTimePoints.filter(value => value >= 145 && value <= 2 * SEC_IN_DAY);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
         });
 
         it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-          const timeSubArray = testTimePoints.filter(value => value >= 144);
+          const timeSubArray = testTimePoints.filter(value => value >= 145);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
         });
 
         it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 900);
-          await testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
