@@ -517,11 +517,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const expected = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
 
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
-          console.log("expected:", expected, "actual JS :", actualJS);
+          const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+          assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+          console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SEC_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000));
-            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+            const actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 60 * SEC_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+            console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
           }
         });
 
@@ -531,11 +535,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const expected = bs.blackScholes(1000, 990, 0.05 / 365, 0.40, 0.05, "call");
 
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 990, 0.05 * SEC_IN_DAY, 0.40, 0.05);
-          console.log("expected:", expected, "actual JS :", actualJS);
+          const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+          assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+          console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(990), 0.05 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000));
-            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+            const actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(990), 0.05 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+            console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
           }
         });
 
@@ -545,11 +553,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const expected = bs.blackScholes(1000, 990, 50 / 365, 0.40, 0.05, "call");
 
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 990, 50 * SEC_IN_DAY, 0.40, 0.05);
-          console.log("expected:", expected, "actual JS :", actualJS);
+          const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+          assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+          console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
 
           if (duoTest) {
-            const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(990), 50 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000));
-            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+            const actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(990), 50 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+            console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
           }
         });
 
@@ -637,6 +649,142 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe("getPutOptionPrice", function () {
+      describe("single option test", function () {
+        it("gets a single put price when time > 2 ^ 16", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          const expected = bs.blackScholes(1000, 1070, 60 / 365, 0.60, 0.05, "put");
+
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 1070, 60 * SEC_IN_DAY, 0.60, 0.05);
+          const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+          assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+          console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(1070), 60 * SEC_IN_DAY, tokens(0.60), Math.round(0.05 * 10_000))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+            console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
+          }
+        });
+
+        it("gets a single put price when time < 2 ^ 16", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          const expected = bs.blackScholes(1000, 1010, 0.05 / 365, 0.40, 0.05, "put");
+
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 1010, 0.05 * SEC_IN_DAY, 0.40, 0.05);
+          const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+          assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+          console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(1010), 0.05 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+            console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
+          }
+        });
+
+        it("gets a single call price when time > 2 ^ 16", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          const expected = bs.blackScholes(1000, 990, 50 / 365, 0.40, 0.05, "put");
+
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 990, 50 * SEC_IN_DAY, 0.40, 0.05);
+          const errorJS = (Math.abs(actualJS - expected) / expected * 100);
+          assert.isBelow(errorJS, 0.0001); // is below 0.0001%
+          console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(990), 50 * SEC_IN_DAY, tokens(0.40), Math.round(0.05 * 10_000))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+            console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
+          }
+        });
+
+        it("gets a single put price: debug", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          const expected = bs.blackScholes(1000, 901.9375000000001, 144 / SEC_IN_YEAR, 0.01, 0, "put");
+
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 901.9375000000001, 144, 0.01, 0);
+          console.log("expected:", expected, "actual JS :", actualJS);
+
+          if (duoTest) {
+            const actualSOL = await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(901.9375000000001), 145, tokens(0.01), 0);
+            console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+          }
+        });
+      });
+
+      describe("random tests", function () {
+        function generateRandomTestPoints(startPoint, endPoint, count, doRound = false) {
+          const testPoints = [];
+          for (let i = 0; i < count; i++) {
+            let point = 0;
+            if (doRound) {
+              point = Math.round(Math.random() * (endPoint - startPoint) + startPoint);
+            } else {
+              point = Math.random() * (endPoint - startPoint) + startPoint;
+            }
+            testPoints.push(point);
+          }
+        
+          return testPoints;
+        }
+
+        it("gets multiple put prices: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 50 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 50 : 600, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000094);
+        });
+      });
+
+      !fastTest && describe("multiple put options - 16x16 per cell", function () {
+        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 200);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
+        });
+
+        it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
+          const timeSubArray = testTimePoints.filter(value => value >= 145);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
+        });
+
+        it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
+          const timeSubArray = testTimePoints.filter(value => value >= 900);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
+        });
+
+        it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
+        });
+
+        it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
+        });
+
+        it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
+        });
+
+        it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
+          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+        });
+      });
     });
 
     describe("getIndexFromTime " + (fastTest ? "FAST" : "SLOW"), function () {

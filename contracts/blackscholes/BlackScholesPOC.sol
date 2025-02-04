@@ -41,7 +41,7 @@ contract BlackScholesPOC {
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
 
-            // step 2: spot-strike ratio
+            // step 2: calculate strike scaled
             uint256 strikeScaled = uint256(strike) * 1e18 / _getFuturePrice(spot, timeToExpirySec, rate) * SPOT_FIXED;
 
             // step 3: set the expiration based on volatility
@@ -51,6 +51,7 @@ contract BlackScholesPOC {
             // step 4: interpolate price
             uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
+            // finally, scale the price back to the original spot
             price = finalPrice * spotScale / 1e18;
         }
     }
@@ -66,18 +67,20 @@ contract BlackScholesPOC {
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
 
-            // step 2: calculate discounted strike and spot-strike ratio
+            // step 2: calculate strike scaled and discounted strike
             uint256 discountedStrike = _getDiscountedStrikePrice(strike, timeToExpirySec, rate);
             uint256 strikeScaled = discountedStrike * 1e18 / uint256(spot) *  SPOT_FIXED;
 
             // step 3: set the expiration based on volatility
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volatility) ** 2) / 1e36;
+            uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volRatio) ** 2) / 1e36;
 
             // step 4: interpolate price
             uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
 
             uint256 callPrice = finalPrice * spotScale / 1e18;
 
+            // finally, calculate the put price using put-call parity
             price = callPrice + discountedStrike - spot;
         }
     }

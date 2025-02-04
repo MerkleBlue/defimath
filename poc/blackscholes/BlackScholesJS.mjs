@@ -46,13 +46,20 @@ export class BlackScholesJS {
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
 
-    // step 2: calculate future and spot-strike ratio
+    // step 2: calculate strike scaled and discounted strike
     const discountedStrike = this.getDiscountedStrikePrice(strike, rate, timeToExpirySec);
     const strikeScaled = (discountedStrike / spot) * SPOT_FIXED;
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
+    // console.log("timeToExpiryScaled (not rounded)", timeToExpirySec * (volRatio * volRatio));
+    // console.log("strikeScaled", strikeScaled, "timeToExpirySecScaled", timeToExpirySecScaled, timeToExpirySec);
+
+    // handle when time is 0
+    if (timeToExpirySecScaled === 0) {
+      return Math.max(0, strike - spot);
+    }
 
     // step 4: interpolate price
     const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
@@ -149,7 +156,7 @@ export class BlackScholesJS {
       const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
       let interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
       // if factors are zeroed, use default strike weight
-      if (interpolatedStrikeWeightw === 0){
+      if (interpolatedStrikeWeightw === 0) {
         interpolatedStrikeWeightw = strikeWeight;
       }
       log && console.log("interpolatedStrikeWeight3w", interpolatedStrikeWeight3w);
