@@ -14,4 +14,9 @@ module.exports = {
   mocha: {
     timeout: 90000000000
   },
+  networks: {
+    hardhat: {
+        blockGasLimit: 1000000000000 // whatever you want here
+    },
+}
 };
