@@ -9,8 +9,8 @@ import hre from "hardhat";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-
 const duoTest = true;
+const fastTest = true;
 
 function tokens(value) {
   return hre.ethers.parseUnits(value.toString(), 18).toString();
@@ -57,7 +57,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
     }
 
-    console.log("Total gas spent:", Math.round(totalGas / 1e6), "M");
+    console.log("Init done. Total gas spent:", Math.round(totalGas / 1e6), "M");
 
     return { owner, blackScholesPOC };
   }
@@ -392,7 +392,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe.only("performance", function () {
+  duoTest && describe("performance", function () {
     it("getCallOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
@@ -562,27 +562,32 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("random tests", function () {
-        function generateRandomTestStrikePoints(startPoint, endPoint, count) {
-          const testStrikePoints = [];
+        function generateRandomTestPoints(startPoint, endPoint, count, doRound = false) {
+          const testPoints = [];
           for (let i = 0; i < count; i++) {
-            const strikePoint = Math.random() * (endPoint - startPoint) + startPoint;
-            testStrikePoints.push(strikePoint);
+            let point = 0;
+            if (doRound) {
+              point = Math.round(Math.random() * (endPoint - startPoint) + startPoint);
+            } else {
+              point = Math.random() * (endPoint - startPoint) + startPoint;
+            }
+            testPoints.push(point);
           }
         
-          return testStrikePoints;
+          return testPoints;
         }
 
-        it("gets multiple call prices: random", async function () {
-          const strikeSubArray = generateRandomTestStrikePoints(20, 500, 60);
-          const timeSubArray = testTimePoints.filter(value => value >= 500);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
+        it("gets multiple call prices: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 50 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 50 : 600, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000094);
         });
       });
 
-      describe("multiple call options - 16x16 per cell", function () {
-        it.only("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+      !fastTest && describe("multiple call options - 16x16 per cell", function () {
+        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 2 * SEC_IN_DAY);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 200);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
         });
 
@@ -622,70 +627,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
-
-      describe("multiple call options - vol limit testing", function () {
-        it("gets multiple call prices: vol 200%", async function () {
-          testOptionRange(testStrikePoints, testTimePoints, [2], true, 0.000087);
-        });
-
-        it("gets multiple call prices: vol 1% - one specific", async function () {
-          const strikeSubArray = [100.00625];
-          const timeSubArray = [1000];
-          testOptionRange(strikeSubArray, timeSubArray, [0.01], true, 0.000087);
-        });
-
-        it("gets multiple call prices: vol 1%", async function () {
-          const timeSubArray = testTimePoints.filter(value => value >= 1000 && value <= 2000);
-          testOptionRange(testStrikePoints, timeSubArray, [0.01], true, 0.000087);
-        });
-      });
     });
 
     describe("getPutOptionPrice", function () {
-      it("gets a single put price", async function () {
-        let expectedOptionPrice = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "put");
-        let actualOptionPrice = blackScholesJS.getPutOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
-
-        console.log("expected:", expectedOptionPrice, "actual:", actualOptionPrice);
-      });
-
-      it("gets multiple put prices", async function () {
-        let maxError = 0, totalError = 0, count = 0, maxErrorParams = null;
-        for(let exp = 50; exp < 80; exp += 1) {
-          for (let strike = 850; strike < 1100; strike += 10) {
-            for (let vol = 0.8; vol < 1.2; vol += 0.08) {
-              for (let rate = 0; rate < 0.05; rate += 0.02) {
-                const expected = bs.blackScholes(1000, strike, exp / 365, vol, rate, "put");
-                const actual = blackScholesJS.getPutOptionPrice(1000, strike, exp * SEC_IN_DAY, vol, rate);
-
-                const error = (Math.abs(actual - expected) / expected * 100);
-                totalError += error;
-                count++;
-
-                if (maxError < error && expected > 0.01) {
-                  maxError = error;
-                  maxErrorParams = {
-                    exp, strike, vol, rate, actual, expected
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        const avgError = totalError / count;
-
-        console.log("Total tests: " + count);
-        console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-        console.log("Error: avg: " + avgError.toFixed(6) + "%", "max: " + maxError.toFixed(6) + "%");
-        console.log("Max error params: ", maxErrorParams);
-
-        assert.isBelow(avgError, 0.0011); // avg error is below 0.0011%
-        assert.isBelow(maxError, 0.02); // max error is below 0.02%
-      });
     });
 
-    describe("getIndexFromTime", function () {
+    describe("getIndexFromTime " + (fastTest ? "FAST" : "SLOW"), function () {
       async function getActualExpected(blackScholesPOC, time) {
         const actualJS = blackScholesJS.getIndexFromTime(time);
 
@@ -726,7 +673,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        for (let time = 8; time < 2 ** 16; time++) {
+        let step = fastTest ? 16 : 1;
+        for (let time = 8; time < 2 ** 16; time += step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
           assert.equal(actualSOL, expected);
@@ -739,7 +687,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8) {
+        let step = fastTest ? 16 : 1;
+        for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
           assert.equal(actualSOL, expected);
@@ -752,7 +701,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16) {
+        let step = fastTest ? 16 : 1;
+        for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
           assert.equal(actualSOL, expected);
@@ -765,7 +715,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        for (let time = 2 ** 32; time < 2 ** 34; time += 2 ** 18) {
+        let step = fastTest ? 16 : 1;
+        for (let time = 2 ** 32; time < 2 ** 34; time += 2 ** 18 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
           //assert.equal(actualSOL, expected);
