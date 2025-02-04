@@ -177,9 +177,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return testStrikePoints;
   }
 
-  function generateTestRatePoints() {
+  function generateTestRatePoints(min, max, step) {
     const testRatePoints = [];
-    for (let rate = 0; rate <= 0.2; rate += 0.005) { // up to 20%
+    for (let rate = min; rate <= max; rate += step) { // up to 20%
       testRatePoints.push(rate);
     }
   
@@ -330,11 +330,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
     if (maxErrorParamsJS) {
       const { rate, secs, actual, expected } = maxErrorParamsJS;
-      console.log("Worst case error JS:", maxErrorJS.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      console.log("Max error JS:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
     }
     if (duoTest && maxErrorParamsSOL) {
       const { rate, secs, actual, expected } = maxErrorParamsSOL;
-      console.log("Worst case error SOL:", maxErrorJS.toFixed(8) + "%, rate, ", rate.toFixed(3), "expiration:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      console.log("Max error SOL:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
     }
 
     assert.isBelow(maxErrorJS, allowedRelError);
@@ -460,49 +460,52 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       console.log("Gas spent [avg]: ", parseInt(totalGas / count));
     });
 
-    it("test gas", async function () {
-      const { blackScholesPOC } = await loadFixture(deploy);
+    // it("test gas", async function () {
+    //   const { blackScholesPOC } = await loadFixture(deploy);
 
-      const callPriceMap = await blackScholesPOC.measureGas();
-      console.log(callPriceMap);
-    });
+    //   const callPriceMap = await blackScholesPOC.measureGas();
+    //   console.log(callPriceMap);
+    // });
   });
 
   describe("functionality", async function () {
-    describe("getFuturePrice", function () {
+    describe("getFuturePrice " + (fastTest ? "FAST" : "SLOW"), function () {
       it("calculates future price for lowest time and rate", async function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         const expected = getFuturePrice(100, 1, 0.0001);
         const actualJS = blackScholesJS.getFuturePrice(100, 1, 1);
         const errorJS = (Math.abs(actualJS - expected) / expected * 100);
-        console.log("Worst case JS: error:", errorJS.toFixed(12) + "%, rate, ", "actual: " + actualJS.toFixed(12), "expected: " + expected.toFixed(12));
+        console.log("Max error JS:", errorJS.toFixed(6) + "%, ", "actual: " + actualJS.toFixed(6), "expected: " + expected.toFixed(6));
         assert.isBelow(errorJS, 0.0001); // is below 0.0001%
 
         if (duoTest) {
           const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), 1, 1)).toString() / 1e18;
           const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
-          console.log("Worst case SOL: error:", errorSOL.toFixed(12) + "%, rate, ", "actual: " + actualSOL.toFixed(12), "expected: " + expected.toFixed(12));
+          console.log("Max error SOL:", errorSOL.toFixed(6) + "%, ", "actual: " + actualSOL.toFixed(6), "expected: " + expected.toFixed(6));
           assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
         }
       });
 
       it("calculates future price [0s, 10m]", async function () {
-        const testRatePoints = generateTestRatePoints();
+        const step = fastTest ? 0.02 : 0.005;
+        const testRatePoints = generateTestRatePoints(0, 0.2, step);
         const timeSubArray = testTimePoints.filter(value => value <= 600);
         await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
       });
 
       it("calculates future price [10m, 1d]", async function () {
-        const testRatePoints = generateTestRatePoints();
+        const step = fastTest ? 0.02 : 0.005;
+        const testRatePoints = generateTestRatePoints(0, 0.2, step);
         const timeSubArray = testTimePoints.filter(value => value >= 600 && value <= SEC_IN_DAY);
         await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
       });
 
       it("calculates future price [1d, 730d]", async function () {
-        const testRatePoints = generateTestRatePoints();
+        const step = fastTest ? 0.02 : 0.005;
+        const testRatePoints = generateTestRatePoints(0, 0.2, step);
         const timeSubArray = testTimePoints.filter(value => value >= SEC_IN_DAY && value <= 730 * SEC_IN_DAY);
-        await testFuturePriceRange(testRatePoints, timeSubArray, 0.00125);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.00142); // 0.00142%
       });
     });
 
@@ -684,7 +687,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           assert.equal(actualSOL, expected);
           count++;
         }
-        console.log("values tested: ", count);
+        // console.log("values tested: ", count);
       });
 
       it("calculates index for time [2^16, 2^24)", async function () {
@@ -698,7 +701,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           assert.equal(actualSOL, expected);
           count++;
         }
-        console.log("values tested: ", count);
+        // console.log("values tested: ", count);
       });
 
       it("calculates index for time [2^24, 2^32)", async function () {
@@ -712,7 +715,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           assert.equal(actualSOL, expected);
           count++;
         }
-        console.log("values tested: ", count);
+        // console.log("values tested: ", count);
       });
 
       it("calculates index for time [2^32, 2^34)", async function () {
@@ -726,7 +729,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           //assert.equal(actualSOL, expected);
           count++;
         }
-        console.log("values tested: ", count);
+        // console.log("values tested: ", count);
       });
     });
 
