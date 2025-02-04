@@ -726,7 +726,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let time = 2 ** 32; time < 2 ** 34; time += 2 ** 18 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
-          //assert.equal(actualSOL, expected);
+          assert.equal(actualSOL, expected);
           count++;
         }
         // console.log("values tested: ", count);
