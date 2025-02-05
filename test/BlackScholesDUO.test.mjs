@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = false;
+const fastTest = true;
 
 function tokens(value) {
   return hre.ethers.parseUnits(value.toString(), 18).toString();
@@ -177,7 +177,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     }
 
-    console.log("strikePoints.length", strikePoints.length, "testStrikePoints.length", testStrikePoints.length);
+    // console.log("strikePoints.length", strikePoints.length, "testStrikePoints.length", testStrikePoints.length);
   
     return testStrikePoints;
   }
@@ -680,7 +680,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
         });
 
-        it.only("gets multiple call prices: $900 - $990, 1s - 2y, 12%", async function () {
+        it("gets multiple call prices: $900 - $990, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
@@ -694,25 +694,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
         it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
         });
 
         it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
         });
 
         it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
         });
 
         it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
@@ -1010,13 +1010,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe.only("specific values", function () {
+      describe("specific values", function () {
         async function testSpecificValue(index, strike, blackScholesPOC) {
-            // JS
-            assert.equal(index * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(strike));
-
-            // SOL
-            assert.equal(index * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(strike)));
+          assert.equal(index * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(strike));
+          assert.equal(index * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(strike)));
         }
 
         it("calculates index for strike [20, 90)", async function () {
