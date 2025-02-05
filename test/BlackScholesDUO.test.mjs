@@ -412,10 +412,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
-      for(let exp = 40; exp < 100; exp += 10) {
-        for (let strike = 600; strike < 1400; strike += 80) {
+      for(let exp = 10; exp < 400; exp += 60) {
+        for (let strike = 700; strike < 1300; strike += 100) {
           for (let vol = 0.5; vol < 1; vol += 0.1) {
-            for (let rate = 0; rate < 0.05; rate += 0.02) {
+            for (let rate = 0; rate < 0.06; rate += 0.02) {
               totalGas += parseInt(await blackScholesPOC.getCallOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SEC_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
               count++;
             }
@@ -429,10 +429,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
-      for(let exp = 40; exp < 100; exp += 10) {
-        for (let strike = 600; strike < 1400; strike += 80) {
+      for(let exp = 10; exp < 400; exp += 60) {
+        for (let strike = 700; strike < 1300; strike += 100) {
           for (let vol = 0.5; vol < 1; vol += 0.1) {
-            for (let rate = 0; rate < 0.05; rate += 0.02) {
+            for (let rate = 0; rate < 0.06; rate += 0.02) {
               totalGas += parseInt(await blackScholesPOC.getPutOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SEC_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
               count++;
             }
