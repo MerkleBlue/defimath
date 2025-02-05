@@ -50,7 +50,7 @@ contract BlackScholesPOC {
             uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e36; // gas 98
 
             // step 4: interpolate price
-            uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled); // gas 6462
+            uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled); // 
 
             // finally, scale the price back to the original spot
             price = finalPrice * spotScale / 1e18;
@@ -280,17 +280,15 @@ contract BlackScholesPOC {
         }
     }
 
-    function getIndexFromStrike(uint256 strike) public pure returns (uint256) {
+    function getIndexAndWeightFromStrike(uint256 strike) public pure returns (uint256 index, uint256 weight, uint256 step) {
         unchecked {
-            // uint256 startGas = gasleft();
-            (uint256 step, uint256 boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas when 73, 93, 99.5, 103, 150
-            // uint256 endGas = gasleft();
+            (uint256 _step, uint256 boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas all other segments
 
-            // console.log("Gas in getStrikeStepAndBoundary: %d", (startGas - endGas));
+            index = boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / _step) * _step * STRIKE_INDEX_MULTIPLIER / 1e18; // gas 115
 
-            // boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18;
+            weight = (strike - getStrikeFromIndex(index)) * 1e18 / _step;
 
-            return boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18;
+            step = _step;
         }
     }
 
@@ -328,47 +326,6 @@ contract BlackScholesPOC {
                     }
                 }
             }
-
-
-
-            // if (strike >= 20e18 && strike < 90e18) {
-            //     step = 5e17;
-            //     boundary = 20e18;
-            //     return (step, boundary);
-            // }
-
-            // if (strike >= 90e18 && strike < 99e18) {
-            //     step = 1e17;
-            //     boundary = 90e18;
-            //     return (step, boundary);
-            // }
-
-            // if (strike >= 99e18 && strike < 101e18) {
-            //     step = 5e16;
-            //     boundary = 99e18;
-            //     return (step, boundary);
-            // }
-
-            // if (strike >= 101e18 && strike < 110e18) {
-            //     step = 1e17;
-            //     boundary = 101e18;
-            //     return (step, boundary);
-            // }
-
-            // if (strike >= 110e18 && strike < 130e18) {
-            //     step = 5e17;
-            //     boundary = 110e18;
-            //     return (step, boundary);
-            // }
-
-            // if (strike >= 130e18 && strike < 200e18) {
-            //     step = 1e18;
-            //     boundary = 130e18;
-            //     return (step, boundary);
-            // }
-
-            // step = 4e18;
-            // boundary = 200e18;
         }
     }
 
@@ -385,24 +342,22 @@ contract BlackScholesPOC {
         unchecked {
             // step 1) get the specific cell
             // uint256 startGas = gasleft();
-            uint256 strikeIndex = getIndexFromStrike(strikeScaled); // gas 297
+            (uint256 strikeIndex, uint256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 421
             // uint256 endGas = gasleft();
             // console.log("Gas in segment: %d", (startGas - endGas));
-            uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
+            uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
+            uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
             // if (log) console.log("strikeIndex:", strikeIndex);
             // if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
             // if (log) console.log("timeToExpiryIndex:", timeToExpiryIndex);
             // if (log) console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
-            uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)];
             // if (log) console.log("cell:", cell);
 
             // step 2) calculate strike weight
-            uint256 strikeA = getStrikeFromIndex(strikeIndex);
-            uint256 deltaStrike = strikeScaled - strikeA;
-            (uint256 step, ) = getStrikeStepAndBoundary(strikeScaled);
-            uint256 strikeWeight = deltaStrike * 1e18 / step;
-            // if (log) console.log("deltaStrike: %d", deltaStrike);
-            // if (log) console.log("strikeWeight: %d", strikeWeight);
+
+            uint256 strikeA = getStrikeFromIndex(strikeIndex); // gas 29
+            // // if (log) console.log("deltaStrike: %d", deltaStrike);
+            // // if (log) console.log("strikeWeight: %d", strikeWeight);
 
             if (cell > 0) {
                 // step 3) calculate timeToExpiry weight
