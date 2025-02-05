@@ -191,6 +191,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return testRatePoints;
   }
 
+  function generateRandomTestPoints(startPoint, endPoint, count, doRound = false) {
+    const testPoints = [];
+    for (let i = 0; i < count; i++) {
+      let point = 0;
+      if (doRound) {
+        point = Math.round(Math.random() * (endPoint - startPoint) + startPoint);
+      } else {
+        point = Math.random() * (endPoint - startPoint) + startPoint;
+      }
+      testPoints.push(point);
+    }
+  
+    return testPoints;
+  }
+
   async function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, log = true) {
     const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
@@ -521,7 +536,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("getCallOptionPrice", function () {
+    describe("getCallOptionPrice " + (fastTest ? "FAST" : "SLOW"), function () {
       describe("single option test", function () {
         it("gets a single call price when time > 2 ^ 16", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
@@ -593,25 +608,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("random tests", function () {
-        function generateRandomTestPoints(startPoint, endPoint, count, doRound = false) {
-          const testPoints = [];
-          for (let i = 0; i < count; i++) {
-            let point = 0;
-            if (doRound) {
-              point = Math.round(Math.random() * (endPoint - startPoint) + startPoint);
-            } else {
-              point = Math.random() * (endPoint - startPoint) + startPoint;
-            }
-            testPoints.push(point);
-          }
-        
-          return testPoints;
-        }
-
         it("gets multiple call prices: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 50 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 50 : 600, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000094);
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 20 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 20 : 600, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000094, !fastTest);
         });
       });
 
@@ -718,7 +718,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("getPutOptionPrice", function () {
+    describe("getPutOptionPrice " + (fastTest ? "FAST" : "SLOW"), function () {
       describe("single option test", function () {
         it("gets a single put price when time > 2 ^ 16", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
@@ -790,25 +790,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("random tests", function () {
-        function generateRandomTestPoints(startPoint, endPoint, count, doRound = false) {
-          const testPoints = [];
-          for (let i = 0; i < count; i++) {
-            let point = 0;
-            if (doRound) {
-              point = Math.round(Math.random() * (endPoint - startPoint) + startPoint);
-            } else {
-              point = Math.random() * (endPoint - startPoint) + startPoint;
-            }
-            testPoints.push(point);
-          }
-        
-          return testPoints;
-        }
-
         it("gets multiple put prices: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 50 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 50 : 600, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000110);
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 20 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 20 : 600, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000110, !fastTest);
         });
       });
 
@@ -956,7 +941,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        let step = fastTest ? 16 : 1;
+        let step = fastTest ? 32 : 1;
         for (let time = 8; time < 2 ** 16; time += step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
@@ -970,7 +955,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        let step = fastTest ? 16 : 1;
+        let step = fastTest ? 32 : 1;
         for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
@@ -984,7 +969,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        let step = fastTest ? 16 : 1;
+        let step = fastTest ? 32 : 1;
         for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
@@ -998,7 +983,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
         let count = 0;
-        let step = fastTest ? 16 : 1;
+        let step = fastTest ? 32 : 1;
         for (let time = 2 ** 32; time < 2 ** 34; time += 2 ** 18 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
