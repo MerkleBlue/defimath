@@ -423,7 +423,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   duoTest && describe("performance", function () {
-    it("getCallOptionPrice gas", async function () {
+    it.only("getCallOptionPrice gas single call", async function () {
+      const { blackScholesPOC } = await loadFixture(deploy);
+
+      const gas = parseInt(await blackScholesPOC.getCallOptionPrice.estimateGas(tokens(1000), tokens(930), 30 * SEC_IN_DAY, tokens(0.6), Math.round(0.05 * 10_000))) - 21000;
+      await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 30 * SEC_IN_DAY, tokens(0.6), Math.round(0.05 * 10_000));
+      console.log("Gas spent:", Math.round(gas));
+    });
+
+    it("getCallOptionPrice gas multiple calls", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;

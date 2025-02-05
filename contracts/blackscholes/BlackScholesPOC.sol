@@ -42,14 +42,15 @@ contract BlackScholesPOC {
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
 
             // step 2: calculate strike scaled
-            uint256 strikeScaled = uint256(strike) * 1e18 / _getFuturePrice(spot, timeToExpirySec, rate) * SPOT_FIXED;
+            uint256 strikeScaled = uint256(strike) * 1e18 / _getFuturePrice(spot, timeToExpirySec, rate) * SPOT_FIXED; // gas 379
+
 
             // step 3: set the expiration based on volatility
-            uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED;
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e36;
+            uint256 volRatio = uint256(volatility) * 1e18 / VOL_FIXED; // gas 35
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e36; // gas 98
 
             // step 4: interpolate price
-            uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
+            uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled); // gas 6462
 
             // finally, scale the price back to the original spot
             price = finalPrice * spotScale / 1e18;
@@ -280,53 +281,95 @@ contract BlackScholesPOC {
     }
 
     function getIndexFromStrike(uint256 strike) public pure returns (uint256) {
-    
-        (uint256 step, uint256 boundary) = getStrikeStepAndBoundary(strike);
+        unchecked {
+            // uint256 startGas = gasleft();
+            (uint256 step, uint256 boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas when 73, 93, 99.5, 103, 150
+            // uint256 endGas = gasleft();
 
-        return boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18;
+            // console.log("Gas in getStrikeStepAndBoundary: %d", (startGas - endGas));
 
-        // return Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor((strike + 1e-9 - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER);
+            // boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18;
+
+            return boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18;
+        }
     }
 
-    function getStrikeStepAndBoundary(uint256 strike) public pure returns (uint128 step, uint128 boundary) {
-        if (strike >= 20 * 1e18 && strike < 90 * 1e18) {
-            step = 5 * 1e17;
-            boundary = 20 * 1e18;
-            return (step, boundary);
-        }
+    function getStrikeStepAndBoundary(uint256 strike) private pure returns (uint256 step, uint256 boundary) {
+        unchecked {
+            if (strike >= 110e18) {
+                if (strike >= 200e18) {          // 200 - 500
+                    step = 4e18;
+                    boundary = 200e18;
+                } else {
+                    if (strike >= 130e18) {      // 130 - 200
+                        step = 1e18;
+                        boundary = 130e18;
+                    } else {                     // 110 - 130
+                        step = 5e17;
+                        boundary = 110e18;
+                    }
+                }
+            } else {
+                if (strike >= 99e18) {
+                    if (strike >= 101e18) {      // 101 - 110
+                        step = 1e17;
+                        boundary = 101e18;
+                    } else {                     // 99 - 101
+                        step = 5e16;
+                        boundary = 99e18;
+                    }
+                } else {
+                    if (strike >= 90e18) {       // 90 - 99
+                        step = 1e17;
+                        boundary = 90e18;
+                    } else {                     // 20 - 90
+                        step = 5e17;
+                        boundary = 20e18;
+                    }
+                }
+            }
 
-        if (strike >= 90 * 1e18 && strike < 99 * 1e18) {
-            step = 1 * 1e17;
-            boundary = 90 * 1e18;
-            return (step, boundary);
-        }
 
-        if (strike >= 99 * 1e18 && strike < 101 * 1e18) {
-            step = 5 * 1e16;
-            boundary = 99 * 1e18;
-            return (step, boundary);
-        }
 
-        if (strike >= 101 * 1e18 && strike < 110 * 1e18) {
-            step = 1 * 1e17;
-            boundary = 101 * 1e18;
-            return (step, boundary);
-        }
+            // if (strike >= 20e18 && strike < 90e18) {
+            //     step = 5e17;
+            //     boundary = 20e18;
+            //     return (step, boundary);
+            // }
 
-        if (strike >= 110 * 1e18 && strike < 130 * 1e18) {
-            step = 5 * 1e17;
-            boundary = 110 * 1e18;
-            return (step, boundary);
-        }
+            // if (strike >= 90e18 && strike < 99e18) {
+            //     step = 1e17;
+            //     boundary = 90e18;
+            //     return (step, boundary);
+            // }
 
-        if (strike >= 130 * 1e18 && strike < 200 * 1e18) {
-            step = 1 * 1e18;
-            boundary = 130 * 1e18;
-            return (step, boundary);
-        }
+            // if (strike >= 99e18 && strike < 101e18) {
+            //     step = 5e16;
+            //     boundary = 99e18;
+            //     return (step, boundary);
+            // }
 
-        step = 4 * 1e18;
-        boundary = 200 * 1e18;
+            // if (strike >= 101e18 && strike < 110e18) {
+            //     step = 1e17;
+            //     boundary = 101e18;
+            //     return (step, boundary);
+            // }
+
+            // if (strike >= 110e18 && strike < 130e18) {
+            //     step = 5e17;
+            //     boundary = 110e18;
+            //     return (step, boundary);
+            // }
+
+            // if (strike >= 130e18 && strike < 200e18) {
+            //     step = 1e18;
+            //     boundary = 130e18;
+            //     return (step, boundary);
+            // }
+
+            // step = 4e18;
+            // boundary = 200e18;
+        }
     }
 
     function getStrikeFromIndex(uint256 index) public pure returns (uint256) {
@@ -341,7 +384,10 @@ contract BlackScholesPOC {
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-            uint256 strikeIndex = getIndexFromStrike(strikeScaled);
+            // uint256 startGas = gasleft();
+            uint256 strikeIndex = getIndexFromStrike(strikeScaled); // gas 297
+            // uint256 endGas = gasleft();
+            // console.log("Gas in segment: %d", (startGas - endGas));
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled);
             // if (log) console.log("strikeIndex:", strikeIndex);
             // if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
