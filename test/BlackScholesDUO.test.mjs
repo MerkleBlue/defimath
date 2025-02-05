@@ -856,43 +856,43 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       !fastTest && describe("multiple put options - 16x16 per cell", function () {
-        it("gets multiple call prices: $200 - $900, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 200);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
         });
 
-        it("gets multiple call prices: $900 - $990, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 145);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
         });
 
-        it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
+        it("gets multiple put prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 900);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
         });
 
-        it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
         });
 
-        it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
         });
 
-        it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
         });
 
-        it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
@@ -994,97 +994,114 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("getIndexFromStrike", function () {
-      it("calculates index for strike [200, 500]", async function () {
-        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+    describe("getIndexFromStrike " + (fastTest ? "FAST" : "SLOW"), function () {
+      describe("multiple", function () {
+        it("calculates indexes for strike [20, 500]", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-        // JS
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200.00001));
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(201));
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(203));
-        assert.equal(204 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(204));
-        assert.equal(204 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(205));
-        assert.equal(260 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(260));
-        assert.equal(260 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(261));
-        assert.equal(496 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(499));
-        assert.equal(496 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(499.9999));
+          const filterEvery = fastTest ? 7 : 1;
+          const testStrikePoints = generateTestStrikePoints(blackScholesJS, 20, 501).filter((_, i) => i % filterEvery === 0);
+          for (let i = 0; i < testStrikePoints.length - 1; i++) {
+            const actualJS = blackScholesJS.getIndexFromStrike(testStrikePoints[i]);
+            const actualSOL = await blackScholesPOC.getIndexFromStrike(tokens(testStrikePoints[i]));
 
-        // SOL
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(200)));
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(200.00001)));
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(201)));
-        assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(203)));
-        assert.equal(204 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(204)));
-        assert.equal(204 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(205)));
-        assert.equal(260 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(260)));
-        assert.equal(260 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(261)));
-        assert.equal(496 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(499)));
-        assert.equal(496 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(499.9999)));
+            assert.equal(actualJS, actualSOL);
+          }
+        });
       });
 
-      it("calculates index for strike [120, 200)", async function () {
-        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+      describe("specific values", function () {
+        it("calculates index for strike [200, 500]", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-        // JS
-        assert.equal(120 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(120));
-        assert.equal(120 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(120.00001));
-        assert.equal(121 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(121));
-        assert.equal(199 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(199));
-        assert.equal(199 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(199.9999));
+          // JS
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200));
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(200.00001));
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(201));
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(203));
+          assert.equal(204 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(204));
+          assert.equal(204 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(205));
+          assert.equal(260 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(260));
+          assert.equal(260 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(261));
+          assert.equal(496 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(499));
+          assert.equal(496 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(499.9999));
 
-        // SOL
-        assert.equal(120 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(120)));
-        assert.equal(120 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(120.00001)));
-        assert.equal(121 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(121)));
-        assert.equal(199 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(199)));
-        assert.equal(199 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(199.9999)));
-      });
+          // SOL
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(200)));
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(200.00001)));
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(201)));
+          assert.equal(200 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(203)));
+          assert.equal(204 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(204)));
+          assert.equal(204 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(205)));
+          assert.equal(260 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(260)));
+          assert.equal(260 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(261)));
+          assert.equal(496 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(499)));
+          assert.equal(496 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(499.9999)));
+        });
 
-      it("calculates index for strike [105, 120)", async function () {
-        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+        it("calculates index for strike [120, 200)", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-        // JS
-        assert.equal(105 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105));
-        assert.equal(105.1 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.1));
-        assert.equal(105.4 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.499999));
-        assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.5));
-        assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.500001));
-        assert.equal(108.3 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(108.333333));
-        assert.equal(108.6 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(108.666666));
-        assert.equal(119.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(119.999999));
+          // JS
+          assert.equal(120 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(120));
+          assert.equal(120 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(120.00001));
+          assert.equal(121 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(121));
+          assert.equal(199 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(199));
+          assert.equal(199 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(199.9999));
 
-        // SOL
-        assert.equal(105 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105)));
-        assert.equal(105.1 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.1)));
-        assert.equal(105.4 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.499999)));
-        assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.5)));
-        assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.500001)));
-        assert.equal(108.3 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(108.333333)));
-        assert.equal(108.6 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(108.666666)));
-        assert.equal(119.5 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(119.999999)));
-      });
+          // SOL
+          assert.equal(120 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(120)));
+          assert.equal(120 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(120.00001)));
+          assert.equal(121 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(121)));
+          assert.equal(199 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(199)));
+          assert.equal(199 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(199.9999)));
+        });
 
-      it("calculates index for strike [80, 105)", async function () {
-        const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+        it("calculates index for strike [105, 120)", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-        // JS
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80));
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.1));
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.199999));
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.2));
-        assert.equal(99.95 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(99.999999));
-        assert.equal(100 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(100.000001));
-        assert.equal(104.9 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(104.999999));
+          // JS
+          assert.equal(105 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105));
+          assert.equal(105.1 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.1));
+          assert.equal(105.4 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.499999));
+          assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.5));
+          assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(105.500001));
+          assert.equal(108.3 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(108.333333));
+          assert.equal(108.6 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(108.666666));
+          assert.equal(119.5 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(119.999999));
 
-        // SOL
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80)));
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80.1)));
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80.199999)));
-        assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80.2)));
-        assert.equal(99.95 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(99.999999)));
-        assert.equal(100 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(100.000001)));
-        assert.equal(104.9 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(104.999999)));
+          // SOL
+          assert.equal(105 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105)));
+          assert.equal(105.1 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.1)));
+          assert.equal(105.4 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.499999)));
+          assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.5)));
+          assert.equal(105.5 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(105.500001)));
+          assert.equal(108.3 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(108.333333)));
+          assert.equal(108.6 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(108.666666)));
+          assert.equal(119.5 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(119.999999)));
+        });
+
+        it("calculates index for strike [80, 105)", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          // JS
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80));
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.1));
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.199999));
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(80.2));
+          assert.equal(99.95 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(99.999999));
+          assert.equal(100 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(100.000001));
+          assert.equal(104.9 * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(104.999999));
+
+          // SOL
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80)));
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80.1)));
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80.199999)));
+          assert.equal(80 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(80.2)));
+          assert.equal(99.95 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(99.999999)));
+          assert.equal(100 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(100.000001)));
+          assert.equal(104.9 * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(104.999999)));
+        });
       });
       // todo: start from 20, test each segment
     });
