@@ -40,10 +40,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         dataArray.push(value);
       }
 
+      // batch 200 elements
       if (indexArray.length >= 200) {
-        // const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
-        // console.log("gas in batch", parseInt(gas));
-        // totalGas += parseInt(gas);
+        if (!fastTest) {
+          const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+          console.log("gas in batch", parseInt(gas));
+          totalGas += parseInt(gas);
+        }
         await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
         indexArray = [];
         dataArray = [];
@@ -55,9 +58,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
     // set remaining elements
     if (indexArray.length > 0) {
-      const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
-      // console.log("gas in last batch", parseInt(gas));
-      totalGas += parseInt(gas);
+      if (!fastTest) {
+        const gas = await blackScholesPOC.setLookupTableElements.estimateGas(indexArray, dataArray);
+        // console.log("gas in last batch", parseInt(gas));
+        totalGas += parseInt(gas);
+      }
       await blackScholesPOC.setLookupTableElements(indexArray, dataArray);
     }
 
@@ -296,7 +301,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     assert.isBelow(maxAbsErrorSOL, allowedAbsError); // max error is below max allowed absolute error
   }
 
-  async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125) { // %0.00125
+  async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125, log = true) { // %0.00125
     const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
     let maxErrorJS = 0, maxErrorSOL = 0, totalErrorJS = 0, totalErrorSOL = 0, count = 0, maxErrorParamsJS = null, maxErrorParamsSOL = null;
@@ -331,13 +336,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         count++;
       }
     }
-    if (maxErrorParamsJS) {
-      const { rate, secs, actual, expected } = maxErrorParamsJS;
-      console.log("Max error JS:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
-    }
-    if (duoTest && maxErrorParamsSOL) {
-      const { rate, secs, actual, expected } = maxErrorParamsSOL;
-      console.log("Max error SOL:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+
+    if (log) {
+      if (maxErrorParamsJS) {
+        const { rate, secs, actual, expected } = maxErrorParamsJS;
+        console.log("Max error JS:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      }
+      if (duoTest && maxErrorParamsSOL) {
+        const { rate, secs, actual, expected } = maxErrorParamsSOL;
+        console.log("Max error SOL:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
+      }
     }
 
     assert.isBelow(maxErrorJS, allowedRelError);
@@ -404,9 +412,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
-      for(let exp = 20; exp < 180; exp += 8) {
+      for(let exp = 40; exp < 100; exp += 10) {
         for (let strike = 600; strike < 1400; strike += 80) {
-          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+          for (let vol = 0.5; vol < 1; vol += 0.1) {
             for (let rate = 0; rate < 0.05; rate += 0.02) {
               totalGas += parseInt(await blackScholesPOC.getCallOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SEC_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
               count++;
@@ -414,17 +422,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         }
       }
-      console.log("Total tests: " + count);
-      console.log("Gas spent [avg]:", Math.round(totalGas / count));
+      console.log("Gas spent [avg]:", Math.round(totalGas / count), "tests:", count);
     });
 
     it("getPutOptionPrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
-      for(let exp = 20; exp < 180; exp += 8) {
+      for(let exp = 40; exp < 100; exp += 10) {
         for (let strike = 600; strike < 1400; strike += 80) {
-          for (let vol = 0.8; vol < 1.2; vol += 0.08) {
+          for (let vol = 0.5; vol < 1; vol += 0.1) {
             for (let rate = 0; rate < 0.05; rate += 0.02) {
               totalGas += parseInt(await blackScholesPOC.getPutOptionPrice.estimateGas(tokens(1000), tokens(strike), exp * SEC_IN_DAY, tokens(vol), Math.round(rate * 10_000))) - 21000;
               count++;
@@ -432,8 +439,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         }
       }
-      console.log("Total tests: " + count);
-      console.log("Gas spent [avg]:", Math.round(totalGas / count));
+      console.log("Gas spent [avg]:", Math.round(totalGas / count), "tests:", count);
     });
 
     it("getIndexFromTime gas", async function () {
@@ -446,21 +452,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         totalGas += parseInt(gasUsed);
         count++;
       }
-      console.log("Gas spent [avg]: ", parseInt(totalGas / count));
+      console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
     });
 
     it("getFuturePrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
       let totalGas = 0, count = 0;
-      for (let rate = 0; rate <= 0.1; rate += 0.01) {
-        for (let days = 0; days <= 2 * 365; days += 1) {
+      for (let rate = 0; rate <= 0.2; rate += 0.04) {
+        for (let days = 0; days <= 2 * 365; days += 10) {
           const gasUsed = await blackScholesPOC.getFuturePriceMeasureGas(tokens(100), days * SEC_IN_DAY, Math.round(rate * 10_000));
           totalGas += parseInt(gasUsed);
           count++;
         }
       }
-      console.log("Gas spent [avg]: ", parseInt(totalGas / count));
+      console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
     });
 
     // it("test gas", async function () {
@@ -479,36 +485,39 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const expected = getFuturePrice(100, 1, 0.0001);
         const actualJS = blackScholesJS.getFuturePrice(100, 1, 1);
         const errorJS = (Math.abs(actualJS - expected) / expected * 100);
-        console.log("Max error JS:", errorJS.toFixed(6) + "%, ", "actual: " + actualJS.toFixed(6), "expected: " + expected.toFixed(6));
+        // console.log("Max error JS:", errorJS.toFixed(6) + "%, ", "actual: " + actualJS.toFixed(6), "expected: " + expected.toFixed(6));
         assert.isBelow(errorJS, 0.0001); // is below 0.0001%
 
         if (duoTest) {
           const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), 1, 1)).toString() / 1e18;
           const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
-          console.log("Max error SOL:", errorSOL.toFixed(6) + "%, ", "actual: " + actualSOL.toFixed(6), "expected: " + expected.toFixed(6));
+          // console.log("Max error SOL:", errorSOL.toFixed(6) + "%, ", "actual: " + actualSOL.toFixed(6), "expected: " + expected.toFixed(6));
           assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
         }
       });
 
       it("calculates future price [0s, 10m]", async function () {
-        const step = fastTest ? 0.02 : 0.005;
+        const step = fastTest ? 0.04 : 0.005;
+        const filterEvery = fastTest ? 4 : 1;
         const testRatePoints = generateTestRatePoints(0, 0.2, step);
-        const timeSubArray = testTimePoints.filter(value => value <= 600);
-        await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
+        const timeSubArray = testTimePoints.filter(value => value <= 600).filter((_, i) => i % filterEvery === 0);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001, !fastTest);
       });
 
       it("calculates future price [10m, 1d]", async function () {
-        const step = fastTest ? 0.02 : 0.005;
+        const step = fastTest ? 0.04 : 0.005;
+        const filterEvery = fastTest ? 6 : 1;
         const testRatePoints = generateTestRatePoints(0, 0.2, step);
-        const timeSubArray = testTimePoints.filter(value => value >= 600 && value <= SEC_IN_DAY);
-        await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001);
+        const timeSubArray = testTimePoints.filter(value => value >= 600 && value <= SEC_IN_DAY).filter((_, i) => i % filterEvery === 0);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.0001, !fastTest);
       });
 
       it("calculates future price [1d, 730d]", async function () {
-        const step = fastTest ? 0.02 : 0.005;
+        const step = fastTest ? 0.04 : 0.005;
+        const filterEvery = fastTest ? 7 : 1;
         const testRatePoints = generateTestRatePoints(0, 0.2, step);
-        const timeSubArray = testTimePoints.filter(value => value >= SEC_IN_DAY && value <= 730 * SEC_IN_DAY);
-        await testFuturePriceRange(testRatePoints, timeSubArray, 0.00142); // 0.00142%
+        const timeSubArray = testTimePoints.filter(value => value >= SEC_IN_DAY && value <= 730 * SEC_IN_DAY).filter((_, i) => i % filterEvery === 0);
+        await testFuturePriceRange(testRatePoints, timeSubArray, 0.00142, !fastTest); // 0.00142%
       });
     });
 
