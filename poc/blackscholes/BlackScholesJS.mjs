@@ -113,7 +113,7 @@ export class BlackScholesJS {
     const log = false;
 
     // step 1) get the specific cell
-    const strikeIndex = this.getIndexFromStrike(strikeScaled);
+    const { strikeIndex, strikeWeight, strikeStep } = this.getIndexAndWeightFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(Math.floor(timeToExpirySecScaled));
     log && console.log("strikeIndex:", strikeIndex);
     log && console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
@@ -123,9 +123,9 @@ export class BlackScholesJS {
     log && console.log("cell", cell);
 
     // step 2) calculate the strike delta
-    const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
-    const strikeStep = this.getStrikeStepAndBoundary(strikeScaled).step;
-    const strikeWeight = deltaStrike / strikeStep;
+    // const deltaStrike = strikeScaled - this.getStrikeFromIndex(strikeIndex);
+    // const strikeStep = this.getStrikeStepAndBoundary(strikeScaled).step;
+    // const strikeWeight = deltaStrike / strikeStep;
     log && console.log("strikeScaled", strikeScaled, "strikeFromIndex:", this.getStrikeFromIndex(strikeIndex));
     log && console.log("deltaStrike:", deltaStrike);
     log && console.log("strikeWeight:", strikeWeight);
@@ -213,7 +213,7 @@ export class BlackScholesJS {
     return 2 ** major + 2 ** (major - 3) * minor;
   }
 
-  getIndexFromStrike(strike) {
+  getIndexAndWeightFromStrike(strike) {
     // tested
     // strike 200 - 800 => max abs error < $0.002595 step 0.4, 60s - 4y
     // strike 800 - 1050 => max abs error < $0.005226 step 0.2, 60s - 4y
@@ -236,7 +236,11 @@ export class BlackScholesJS {
     
     const { step, boundary } = this.getStrikeStepAndBoundary(strike);
 
-    return Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor((strike + 1e-9 - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER);
+    const strikeIndex = Math.round(boundary * STRIKE_INDEX_MULTIPLIER + Math.floor((strike + 1e-9 - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER);
+
+    const strikeWeight = (strike - this.getStrikeFromIndex(strikeIndex)) / step;
+
+    return { strikeIndex, strikeWeight, strikeStep: step };
   }
 
   getStrikeStepAndBoundary(strike) {

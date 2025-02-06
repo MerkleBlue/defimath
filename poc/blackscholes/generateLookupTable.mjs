@@ -415,7 +415,7 @@ export function generateStrikePoints(blackScholesJS, startPoint, endPoint) {
   
   for (let strike = startPoint; strike <= endPoint; strike += 1 / STRIKE_INDEX_MULTIPLIER) {
     const lastStrike = points[points.length - 1];
-    const newStrike = blackScholesJS.getStrikeFromIndex(blackScholesJS.getIndexFromStrike(strike));
+    const newStrike = blackScholesJS.getStrikeFromIndex(blackScholesJS.getIndexAndWeightFromStrike(strike).strikeIndex);
     if (lastStrike !== newStrike) {
       points.push(newStrike);
     }

@@ -1010,7 +1010,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const filterEvery = fastTest ? 7 : 1;
           const testStrikePoints = generateTestStrikePoints(blackScholesJS, 20, 501).filter((_, i) => i % filterEvery === 0);
           for (let i = 0; i < testStrikePoints.length - 1; i++) {
-            const actualJS = blackScholesJS.getIndexFromStrike(testStrikePoints[i]);
+            const actualJS = blackScholesJS.getIndexAndWeightFromStrike(testStrikePoints[i]).strikeIndex;
             const actualSOL = (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(testStrikePoints[i]))).index;
 
             assert.equal(actualJS, actualSOL);
@@ -1020,7 +1020,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("specific values", function () {
         async function testSpecificValue(index, strike, blackScholesPOC) {
-          assert.equal(index * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(strike));
+          assert.equal(index * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexAndWeightFromStrike(strike).strikeIndex);
           assert.equal(index * STRIKE_INDEX_MULTIPLIER, (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(strike))).index);
         }
 
