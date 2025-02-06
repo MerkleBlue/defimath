@@ -513,9 +513,14 @@ contract BlackScholesPOC {
         bool isLowerTime
     ) private pure returns (uint256 finalPrice) {
         unchecked {
-            // todo: put
-            uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
-            uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA) - int256(step)));
+            uint256 extrinsicPriceAA;
+            if (SPOT_FIXED * 1e18 > strikeA) {
+                extrinsicPriceAA = SPOT_FIXED * 1e18 - strikeA;
+            }
+            uint256 extrinsicPriceBA;
+            if (SPOT_FIXED * 1e18 > strikeA + step) {
+                extrinsicPriceBA = SPOT_FIXED * 1e18 - (strikeA + step);
+            }
             // if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
             // if (log) { console.log("extrinsicPriceBA: %d", extrinsicPriceBA);}
 
@@ -548,8 +553,14 @@ contract BlackScholesPOC {
     ) private pure returns (uint256 finalPrice) {
         unchecked {
             // todo: just use extrinsicPrice on a strike
-            uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
-            uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA + step)));
+            uint256 extrinsicPriceAA;
+            if (SPOT_FIXED * 1e18 > strikeA) {
+                extrinsicPriceAA = SPOT_FIXED * 1e18 - strikeA;
+            }
+            uint256 extrinsicPriceBA;
+            if (SPOT_FIXED * 1e18 > strikeA + step) {
+                extrinsicPriceBA = SPOT_FIXED * 1e18 - strikeA - step;
+            }
             // if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
             // if (log) { console.log("extrinsicPriceBA: %d", extrinsicPriceBA);}
 
