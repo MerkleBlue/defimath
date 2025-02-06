@@ -280,14 +280,14 @@ contract BlackScholesPOC {
         }
     }
 
-    function getIndexAndWeightFromStrike(uint256 strike) public pure returns (uint256 index, uint256 weight, uint256 step) {
+    function getIndexAndWeightFromStrike(uint256 strike) public pure returns (uint256 index, int256 weight, uint256 step) {
         unchecked {
             uint256 boundary;
             (step, boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas all other segments
 
             index = boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18; // gas 115
 
-            weight = (strike - getStrikeFromIndex(index)) * 1e18 / step;
+            weight = int256((strike - getStrikeFromIndex(index)) * 1e18 / step);
         }
     }
 
@@ -340,7 +340,7 @@ contract BlackScholesPOC {
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-            (uint256 strikeIndex, uint256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 421
+            (uint256 strikeIndex, int256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 421
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
             // if (log) console.log("strikeIndex:", strikeIndex);
@@ -359,7 +359,7 @@ contract BlackScholesPOC {
                 // step 3) calculate timeToExpiry weight
                 uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
                 uint256 expirationStep = maxUint256(1, 2 ** (timeToExpiryIndex / 10 - 3)); // todo: what if negative???
-                uint256 timeToExpiryWeight = (timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep; // gas 482 3 lines above
+                int256 timeToExpiryWeight = int256((timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep); // gas 482 3 lines above
                 // if (log) console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
                 // if (log) console.log("expirationStep: %d", expirationStep);
                 // if (log) console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
@@ -367,15 +367,15 @@ contract BlackScholesPOC {
                 // step 4) and 5)  
                 finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, step, timeToExpiryIndex < 160); // gas 2201
             } else {
-                finalPrice = finalStep(strikeA, step, strikeWeight);
+                finalPrice = finalStep(strikeA, step, uint256(strikeWeight));
             }
         }
     }
 
     function step4(
         uint256 cell,
-        uint256 strikeWeight,
-        uint256 timeToExpiryWeight,
+        int256 strikeWeight,
+        int256 timeToExpiryWeight,
         uint256 strikeA,
         uint256 step,
         bool isLowerTime
@@ -397,7 +397,7 @@ contract BlackScholesPOC {
 
     function getInterpolatedPrice12(
         uint256 cell,
-        uint256 timeToExpiryWeight,
+        int256 timeToExpiryWeight,
         bool isLowerTime
     ) private pure returns (int256 interpolatedPrice1, int256 interpolatedPrice2) {
         unchecked {
@@ -415,7 +415,7 @@ contract BlackScholesPOC {
                 c1 = int256((cell << 256 - 149 - 23) >> 256 - 23);
             } // gas 112
 
-            interpolatedPrice1 = a1 * int256(timeToExpiryWeight ** 3) / 1e42 + b1 * int256(timeToExpiryWeight ** 2) / 1e24 + c1 * int256(timeToExpiryWeight) / 1e6;
+            interpolatedPrice1 = a1 * timeToExpiryWeight ** 3 / 1e42 + b1 * timeToExpiryWeight ** 2 / 1e24 + c1 * timeToExpiryWeight / 1e6;
 
             int256 a2diff;
             int256 b2diff;
@@ -430,7 +430,7 @@ contract BlackScholesPOC {
                 c2diff = int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636;
             }
 
-            interpolatedPrice2 = (a1 - a2diff) * int256(timeToExpiryWeight ** 3) / 1e42 + (b1 - b2diff) * int256(timeToExpiryWeight ** 2) / 1e24 + (c1 - c2diff) * int256(timeToExpiryWeight) / 1e6;
+            interpolatedPrice2 = (a1 - a2diff) * timeToExpiryWeight ** 3 / 1e42 + (b1 - b2diff) * timeToExpiryWeight ** 2 / 1e24 + (c1 - c2diff) * timeToExpiryWeight / 1e6;
 
             // if (log) { if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }}
             // if (log) { if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }}
@@ -447,8 +447,8 @@ contract BlackScholesPOC {
 
     function getInterpolatedStrikeWeightw(
         uint256 cell,
-        uint256 strikeWeight,
-        uint256 timeToExpiryWeight,
+        int256 strikeWeight,
+        int256 timeToExpiryWeight,
         bool isLowerTime
     ) private pure returns (int256 interpolatedStrikeWeightw) {
         unchecked {
@@ -464,7 +464,7 @@ contract BlackScholesPOC {
                 b3w = int256((cell << 256 - 73 - 20) >> 256 - 20) - 758836;
                 c3w = int256((cell << 256 - 52 - 21) >> 256 - 21);
             }
-            int256 interpolatedStrikeWeight3w = a3w * int256(strikeWeight ** 3) / 1e42 + b3w * int256(strikeWeight ** 2) / 1e24 + c3w * int256(strikeWeight) / 1e6;
+            int256 interpolatedStrikeWeight3w = a3w * strikeWeight ** 3 / 1e42 + b3w * strikeWeight ** 2 / 1e24 + c3w * strikeWeight / 1e6;
 
             int256 a4wdiff;
             int256 b4wdiff;
@@ -489,15 +489,15 @@ contract BlackScholesPOC {
             // if (log) { if (b4wdiff > 0) { console.log("b4wdiff: %d", uint256(b4wdiff)); } else { console.log("b4wdiff: -%d", uint256(-b4wdiff)); }}
             // if (log) { if (c4wdiff > 0) { console.log("c4wdiff: %d", uint256(c4wdiff)); } else { console.log("c4wdiff: -%d", uint256(-c4wdiff)); }}
 
-            int256 interpolatedStrikeWeight4w = (a3w - a4wdiff) * int256(strikeWeight ** 3) / 1e42 + (b3w - b4wdiff) * int256(strikeWeight ** 2) / 1e24 + (c3w - c4wdiff) * int256(strikeWeight) / 1e6;
+            int256 interpolatedStrikeWeight4w = (a3w - a4wdiff) * strikeWeight ** 3 / 1e42 + (b3w - b4wdiff) * strikeWeight ** 2 / 1e24 + (c3w - c4wdiff) * strikeWeight / 1e6;
 
             // if (log) { if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }}
             // if (log) { if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }}
 
-            interpolatedStrikeWeightw = interpolatedStrikeWeight3w + int256(timeToExpiryWeight) * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w) / 1e18; // todo: Math.min(1, ...)
+            interpolatedStrikeWeightw = interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w) / 1e18; // todo: Math.min(1, ...)
             // if factors are zeroed, use default strike weight
-            if (interpolatedStrikeWeightw == 0){
-                interpolatedStrikeWeightw = int256(strikeWeight);
+            if (interpolatedStrikeWeightw == 0) {
+                interpolatedStrikeWeightw = strikeWeight;
             }
             // if (log) { if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }}
         }
