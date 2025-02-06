@@ -1002,7 +1002,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("getIndexFromStrike " + (fastTest ? "FAST" : "SLOW"), function () {
+    describe.only("getIndexAndWeightFromStrike " + (fastTest ? "FAST" : "SLOW"), function () {
       describe("multiple", function () {
         it("calculates indexes for strike [20, 500]", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
@@ -1011,7 +1011,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const testStrikePoints = generateTestStrikePoints(blackScholesJS, 20, 501).filter((_, i) => i % filterEvery === 0);
           for (let i = 0; i < testStrikePoints.length - 1; i++) {
             const actualJS = blackScholesJS.getIndexFromStrike(testStrikePoints[i]);
-            const actualSOL = await blackScholesPOC.getIndexFromStrike(tokens(testStrikePoints[i]));
+            const actualSOL = (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(testStrikePoints[i]))).index;
 
             assert.equal(actualJS, actualSOL);
           }
@@ -1021,7 +1021,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       describe("specific values", function () {
         async function testSpecificValue(index, strike, blackScholesPOC) {
           assert.equal(index * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexFromStrike(strike));
-          assert.equal(index * STRIKE_INDEX_MULTIPLIER, await blackScholesPOC.getIndexFromStrike(tokens(strike)));
+          assert.equal(index * STRIKE_INDEX_MULTIPLIER, (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(strike))).index);
         }
 
         it("calculates index for strike [20, 90)", async function () {
