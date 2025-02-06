@@ -549,7 +549,7 @@ contract BlackScholesPOC {
         unchecked {
             // todo: just use extrinsicPrice on a strike
             uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
-            uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA) - int256(step)));
+            uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA + step)));
             // if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
             // if (log) { console.log("extrinsicPriceBA: %d", extrinsicPriceBA);}
 
