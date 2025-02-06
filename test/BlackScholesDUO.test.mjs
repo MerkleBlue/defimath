@@ -1002,7 +1002,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("getIndexAndWeightFromStrike " + (fastTest ? "FAST" : "SLOW"), function () {
+    describe("getIndexAndWeightFromStrike " + (fastTest ? "FAST" : "SLOW"), function () {
       describe("multiple", function () {
         it("calculates indexes for strike [20, 500]", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };

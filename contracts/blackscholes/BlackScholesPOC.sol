@@ -282,13 +282,12 @@ contract BlackScholesPOC {
 
     function getIndexAndWeightFromStrike(uint256 strike) public pure returns (uint256 index, uint256 weight, uint256 step) {
         unchecked {
-            (uint256 _step, uint256 boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas all other segments
+            uint256 boundary;
+            (step, boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas all other segments
 
-            index = boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / _step) * _step * STRIKE_INDEX_MULTIPLIER / 1e18; // gas 115
+            index = boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18; // gas 115
 
-            weight = (strike - getStrikeFromIndex(index)) * 1e18 / _step;
-
-            step = _step;
+            weight = (strike - getStrikeFromIndex(index)) * 1e18 / step;
         }
     }
 
