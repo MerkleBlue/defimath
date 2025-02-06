@@ -472,11 +472,13 @@ contract BlackScholesPOC {
             if (isLowerTime) {
                 a4wdiff = int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531;
                 b4wdiff = int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013;
-                c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
+                // c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
+                c4wdiff = int256(cell & 0x7FFFF) - 14163;
             } else {
                 a4wdiff = int256((cell << 256 - 36 - 16) >> 256 - 16) - 102;
                 b4wdiff = int256((cell << 256 - 18 - 18) >> 256 - 18) - 100020;
-                c4wdiff = int256((cell << 256 - 18) >> 256 - 18) - 973;
+                // c4wdiff = int256((cell << 256 - 18) >> 256 - 18) - 973;
+                c4wdiff = int256(cell & 0x1FFFF) - 973;
             }
 
             // if (log) { if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }}
@@ -546,7 +548,6 @@ contract BlackScholesPOC {
     ) private pure returns (uint256 finalPrice) {
         unchecked {
             // todo: just use extrinsicPrice on a strike
-            // todo: put
             uint256 extrinsicPriceAA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA)));
             uint256 extrinsicPriceBA = uint256(maxInt256(0, int256(SPOT_FIXED * 1e18) - int256(strikeA) - int256(step)));
             // if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
@@ -556,11 +557,11 @@ contract BlackScholesPOC {
         }
     }
 
-    function maxInt256(int256 a, int256 b) internal pure returns (int256) {
+    function maxInt256(int256 a, int256 b) private pure returns (int256) {
         return a > b ? a : b;
     }
 
-    function maxUint256(uint256 a, uint256 b) internal pure returns (uint256) {
+    function maxUint256(uint256 a, uint256 b) private pure returns (uint256) {
         return a > b ? a : b;
     }
 
