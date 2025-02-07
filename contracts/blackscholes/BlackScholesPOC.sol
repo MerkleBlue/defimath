@@ -286,7 +286,7 @@ contract BlackScholesPOC {
 
             index = (strike / (step * 1e16)) * step; // old 76
 
-            uint256 strikeFromIndex = getStrikeFromIndex(index);
+            uint256 strikeFromIndex = index * 1e16;
             weight = int256((strike - strikeFromIndex) * 100 / step);
 
             strikeB = strikeFromIndex + step * 1e16;
@@ -323,25 +323,22 @@ contract BlackScholesPOC {
         }
     }
 
-    function getStrikeFromIndex(uint256 index) public pure returns (uint256) {
-        unchecked {
-            return index * 1e18 / STRIKE_INDEX_MULTIPLIER; // todo: optimize
-        }
-    }
-
     function interpolatePrice(
         uint256 strikeScaled,
         uint256 timeToExpirySecScaled
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-            // uint256 startGas = gasleft();
+            uint256 startGas = gasleft();
+            (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 332
+            uint256 endGas = gasleft();
+            console.log("Gas in segment: %d", (startGas - endGas));
 
-            (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 329
-            // uint256 endGas = gasleft();
-            // console.log("Gas in segment: %d", (startGas - endGas));
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
+
+
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
+
             // if (log) console.log("strikeIndex:", strikeIndex);
             // if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
             // if (log) console.log("timeToExpiryIndex:", timeToExpiryIndex);
@@ -350,7 +347,8 @@ contract BlackScholesPOC {
 
             // step 2) calculate strike weight
 
-            uint256 strikeA = getStrikeFromIndex(strikeIndex); // gas 29
+            uint256 strikeA = strikeIndex * 1e16; // gas 21
+
             // // if (log) console.log("deltaStrike: %d", deltaStrike);
             // // if (log) console.log("strikeWeight: %d", strikeWeight);
 
