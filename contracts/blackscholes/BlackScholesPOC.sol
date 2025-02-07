@@ -331,13 +331,7 @@ contract BlackScholesPOC {
             // step 1) get the specific cell
             (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 332
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
-                        
-
-
-            // uint256 startGas = gasleft();
             uint256 cell = lookupTable[strikeIndex * 1000 + timeToExpiryIndex]; // gas 2199
-            // uint256 endGas = gasleft();
-            // console.log("Gas in segment: %d", (startGas - endGas));
 
             // if (log) console.log("strikeIndex:", strikeIndex);
             // if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
@@ -361,32 +355,41 @@ contract BlackScholesPOC {
                 // if (log) console.log("expirationStep: %d", expirationStep);
                 // if (log) console.log("timeToExpiryWeight: %d", timeToExpiryWeight);
 
-                // step 4) and 5)  
-                finalPrice = step4(cell, strikeWeight, timeToExpiryWeight, strikeA, strikeB, timeToExpiryIndex < 160); // gas 2201
+                // step 4) and 5)
+                // uint256 startGas = gasleft();
+
+                bool isLowerTime = timeToExpiryIndex < 160;
+                (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight, isLowerTime); // gas 708
+
+                int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight, isLowerTime); // gas 774
+
+                finalPrice = step5(cell, strikeA, strikeB, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
+                // uint256 endGas = gasleft();
+                // console.log("Gas in segment: %d", (startGas - endGas));
             } else {
                 finalPrice = finalStep(strikeA, strikeB, uint256(strikeWeight));
             }
         }
     }
 
-    function step4(
-        uint256 cell,
-        int256 strikeWeight,
-        int256 timeToExpiryWeight,
-        uint256 strikeA,
-        uint256 strikeB,
-        bool isLowerTime
-    ) private pure returns (uint256) {
-        unchecked {
-            (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight, isLowerTime); // gas 708
+    // function step4(
+    //     uint256 cell,
+    //     int256 strikeWeight,
+    //     int256 timeToExpiryWeight,
+    //     uint256 strikeA,
+    //     uint256 strikeB,
+    //     bool isLowerTime
+    // ) private pure returns (uint256) {
+    //     unchecked {
+    //         (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight, isLowerTime); // gas 708
 
-            int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight, isLowerTime); // gas 774
+    //         int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight, isLowerTime); // gas 774
 
-            uint256 finalPrice = step5(cell, strikeA, strikeB, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
+    //         uint256 finalPrice = step5(cell, strikeA, strikeB, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
 
-            return finalPrice;
-        }
-    }
+    //         return finalPrice;
+    //     }
+    // }
 
     function getInterpolatedPrice12(
         uint256 cell,
