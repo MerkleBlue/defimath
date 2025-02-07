@@ -376,7 +376,7 @@ contract BlackScholesPOC {
 
     function getInterpolatedPrice12(
         uint256 cell,
-        int256 timeToExpiryWeight,
+        int256 timeWeight,
         bool isLowerTime
     ) private pure returns (int256 interpolatedPrice1, int256 interpolatedPrice2) {
         unchecked {
@@ -389,8 +389,8 @@ contract BlackScholesPOC {
                 int256 b2 = b1 - (int256((cell << 256 - 141 - 8) >> 256 - 8) - 43);
                 int256 c2 = c1 - (int256((cell << 256 - 130 - 11) >> 256 - 11) - 770);
 
-                interpolatedPrice1 = timeToExpiryWeight * (a1 * timeToExpiryWeight ** 2 + b1 * timeToExpiryWeight * 1e18 + c1 * 1e36) / 1e42;
-                interpolatedPrice2 = timeToExpiryWeight * (a2 * timeToExpiryWeight ** 2 + b2 * timeToExpiryWeight * 1e18 + c2 * 1e36) / 1e42;
+                interpolatedPrice1 = timeWeight * (a1 * timeWeight ** 2 + b1 * timeWeight * 1e18 + c1 * 1e36) / 1e42;
+                interpolatedPrice2 = timeWeight * (a2 * timeWeight ** 2 + b2 * timeWeight * 1e18 + c2 * 1e36) / 1e42;
             } else {
                 int256 a1 = int256((cell << 256 - 191 - 15) >> 256 - 15) - 5256;
                 int256 b1 = int256((cell << 256 - 172 - 19) >> 256 - 19) - 236590;
@@ -400,8 +400,8 @@ contract BlackScholesPOC {
                 int256 b2 = b1 - (int256((cell << 256 - 127 - 13) >> 256 - 13) - 2580);
                 int256 c2 = c1 - (int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636);
 
-                interpolatedPrice1 = timeToExpiryWeight * (a1 * timeToExpiryWeight ** 2 + b1 * timeToExpiryWeight * 1e18 + c1 * 1e36) / 1e42;
-                interpolatedPrice2 = timeToExpiryWeight * (a2 * timeToExpiryWeight ** 2 + b2 * timeToExpiryWeight * 1e18 + c2 * 1e36) / 1e42;
+                interpolatedPrice1 = timeWeight * (a1 * timeWeight ** 2 + b1 * timeWeight * 1e18 + c1 * 1e36) / 1e42;
+                interpolatedPrice2 = timeWeight * (a2 * timeWeight ** 2 + b2 * timeWeight * 1e18 + c2 * 1e36) / 1e42;
             }
 
             // if (log) { if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }}
@@ -421,7 +421,7 @@ contract BlackScholesPOC {
         uint256 cell,
         bool isLowerTime,
         int256 strikeWeight,
-        int256 timeToExpiryWeight
+        int256 timeWeight
     ) private pure returns (int256) {
         unchecked {
             int256 interpolatedStrikeWeight3w;
@@ -430,16 +430,14 @@ contract BlackScholesPOC {
                 int256 a3w = int256((cell << 256 - 106 - 24) >> 256 - 24) - 312610;
                 int256 b3w = int256((cell << 256 - 81 - 25) >> 256 - 25) - 14254104;
                 int256 c3w = int256((cell << 256 - 58 - 23) >> 256 - 23);
+
+                int256 a4w = a3w - (int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531);
+                int256 b4w = b3w - (int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013);
+                // c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
+                int256 c4w = c3w - (int256(cell & 0x7FFFF) - 14163);
+
                 interpolatedStrikeWeight3w = strikeWeight * (a3w * strikeWeight ** 2 + b3w * strikeWeight * 1e18 + c3w * 1e36) / 1e42;
-
-                {
-                    int256 a4w = a3w - (int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531);
-                    int256 b4w = b3w - (int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013);
-                    // c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
-                    int256 c4w = c3w - (int256(cell & 0x7FFFF) - 14163);
-
-                    interpolatedStrikeWeight4w = strikeWeight * (a4w * strikeWeight ** 2 + b4w * strikeWeight * 1e18 + c4w * 1e36) / 1e42;
-                }
+                interpolatedStrikeWeight4w = strikeWeight * (a4w * strikeWeight ** 2 + b4w * strikeWeight * 1e18 + c4w * 1e36) / 1e42;
             } else {
                 int256 a3w = int256((cell << 256 - 93 - 18) >> 256 - 18) - 735;
                 int256 b3w = int256((cell << 256 - 73 - 20) >> 256 - 20) - 758836;
@@ -466,7 +464,7 @@ contract BlackScholesPOC {
             // if (log) { if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }}
             // if (log) { if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }}
 
-            int256 interpolatedStrikeWeightw = interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w) / 1e18; // todo: Math.min(1, ...)
+            int256 interpolatedStrikeWeightw = interpolatedStrikeWeight3w + timeWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w) / 1e18; // todo: Math.min(1, ...)
             // if factors are zeroed, use default strike weight
             if (interpolatedStrikeWeightw == 0) {
                 interpolatedStrikeWeightw = strikeWeight;
