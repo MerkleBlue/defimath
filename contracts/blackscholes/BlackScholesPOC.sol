@@ -541,7 +541,7 @@ contract BlackScholesPOC {
 
     function maxInt256(int256 a, int256 b) private pure returns (int256) {
         unchecked {
-            return a > b ? a : b;
+            return a <= b ? b : a;
         }
     }
 
