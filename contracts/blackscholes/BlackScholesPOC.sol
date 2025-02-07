@@ -282,12 +282,10 @@ contract BlackScholesPOC {
 
     function getIndexAndWeightFromStrike(uint256 strike) public pure returns (uint256 index, int256 weight, uint256 step) {
         unchecked {
-            // uint256 startGas = gasleft();
             step = getStrikeStep(strike); // gas: 102 when strike 200, 126 gas all other segments
-            // uint256 endGas = gasleft();
-            // console.log("Gas in segment: %d", (startGas - endGas));
 
             index = (strike / step) * step / 1e16; // 76
+
 
             weight = int256((strike - getStrikeFromIndex(index)) * 1e18 / step);
         }
@@ -342,7 +340,11 @@ contract BlackScholesPOC {
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-            (uint256 strikeIndex, int256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 
+            uint256 startGas = gasleft();
+
+            (uint256 strikeIndex, int256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 329
+            uint256 endGas = gasleft();
+            console.log("Gas in segment: %d", (startGas - endGas));
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
             // if (log) console.log("strikeIndex:", strikeIndex);
