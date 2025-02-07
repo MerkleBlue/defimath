@@ -380,36 +380,29 @@ contract BlackScholesPOC {
         bool isLowerTime
     ) private pure returns (int256 interpolatedPrice1, int256 interpolatedPrice2) {
         unchecked {
-
-            int256 a1;
-            int256 b1;
-            int256 c1;
             if (isLowerTime) {
-                a1 = int256((cell << 256 - 179 - 7) >> 256 - 7) - 54; // todo: int256(cell & 0x0010) - 54; removes 9 gas
-                b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
-                c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
-            } else {
-                a1 = int256((cell << 256 - 191 - 15) >> 256 - 15) - 5256;
-                b1 = int256((cell << 256 - 172 - 19) >> 256 - 19) - 236590;
-                c1 = int256((cell << 256 - 149 - 23) >> 256 - 23);
-            } // gas 112
+                int256 a1 = int256((cell << 256 - 179 - 7) >> 256 - 7) - 54;
+                int256 b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
+                int256 c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
 
-            interpolatedPrice1 = a1 * timeToExpiryWeight ** 3 / 1e42 + b1 * timeToExpiryWeight ** 2 / 1e24 + c1 * timeToExpiryWeight / 1e6;
+                int256 a2 = a1 - (int256((cell << 256 - 149 - 7) >> 256 - 7) - 81);
+                int256 b2 = b1 - (int256((cell << 256 - 141 - 8) >> 256 - 8) - 43);
+                int256 c2 = c1 - (int256((cell << 256 - 130 - 11) >> 256 - 11) - 770);
 
-            int256 a2diff;
-            int256 b2diff;
-            int256 c2diff;
-            if (isLowerTime) {
-                a2diff = int256((cell << 256 - 149 - 7) >> 256 - 7) - 81;
-                b2diff = int256((cell << 256 - 141 - 8) >> 256 - 8) - 43;
-                c2diff = int256((cell << 256 - 130 - 11) >> 256 - 11) - 770;
+                interpolatedPrice1 = timeToExpiryWeight * (a1 * timeToExpiryWeight ** 2 + b1 * timeToExpiryWeight * 1e18 + c1 * 1e36) / 1e42;
+                interpolatedPrice2 = timeToExpiryWeight * (a2 * timeToExpiryWeight ** 2 + b2 * timeToExpiryWeight * 1e18 + c2 * 1e36) / 1e42;
             } else {
-                a2diff = int256((cell << 256 - 140 - 9) >> 256 - 9) - 134;
-                b2diff = int256((cell << 256 - 127 - 13) >> 256 - 13) - 2580;
-                c2diff = int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636;
+                int256 a1 = int256((cell << 256 - 191 - 15) >> 256 - 15) - 5256;
+                int256 b1 = int256((cell << 256 - 172 - 19) >> 256 - 19) - 236590;
+                int256 c1 = int256((cell << 256 - 149 - 23) >> 256 - 23);
+
+                int256 a2 = a1 - (int256((cell << 256 - 140 - 9) >> 256 - 9) - 134);
+                int256 b2 = b1 - (int256((cell << 256 - 127 - 13) >> 256 - 13) - 2580);
+                int256 c2 = c1 - (int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636);
+
+                interpolatedPrice1 = timeToExpiryWeight * (a1 * timeToExpiryWeight ** 2 + b1 * timeToExpiryWeight * 1e18 + c1 * 1e36) / 1e42;
+                interpolatedPrice2 = timeToExpiryWeight * (a2 * timeToExpiryWeight ** 2 + b2 * timeToExpiryWeight * 1e18 + c2 * 1e36) / 1e42;
             }
-
-            interpolatedPrice2 = (a1 - a2diff) * timeToExpiryWeight ** 3 / 1e42 + (b1 - b2diff) * timeToExpiryWeight ** 2 / 1e24 + (c1 - c2diff) * timeToExpiryWeight / 1e6;
 
             // if (log) { if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }}
             // if (log) { if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }}
