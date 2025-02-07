@@ -282,46 +282,48 @@ contract BlackScholesPOC {
 
     function getIndexAndWeightFromStrike(uint256 strike) public pure returns (uint256 index, int256 weight, uint256 step) {
         unchecked {
-            uint256 boundary;
-            (step, boundary) = getStrikeStepAndBoundary(strike); // gas: 124 when 200, 147 to 149 gas all other segments
+            // uint256 startGas = gasleft();
+            step = getStrikeStep(strike); // gas: 102 when strike 200, 126 gas all other segments
+            // uint256 endGas = gasleft();
+            // console.log("Gas in segment: %d", (startGas - endGas));
 
-            index = boundary * STRIKE_INDEX_MULTIPLIER / 1e18 + ((strike - boundary) / step) * step * STRIKE_INDEX_MULTIPLIER / 1e18; // gas 115
+            index = (strike / step) * step / 1e16; // 76
 
             weight = int256((strike - getStrikeFromIndex(index)) * 1e18 / step);
         }
     }
 
-    function getStrikeStepAndBoundary(uint256 strike) private pure returns (uint256 step, uint256 boundary) {
+    function getStrikeStep(uint256 strike) private pure returns (uint256 step) {
         unchecked {
             if (strike >= 110e18) {
                 if (strike >= 200e18) {          // 200 - 500
                     step = 4e18;
-                    boundary = 200e18;
+                    // boundary = 200e18;
                 } else {
                     if (strike >= 130e18) {      // 130 - 200
                         step = 1e18;
-                        boundary = 130e18;
+                        // boundary = 130e18;
                     } else {                     // 110 - 130
                         step = 5e17;
-                        boundary = 110e18;
+                        // boundary = 110e18;
                     }
                 }
             } else {
                 if (strike >= 99e18) {
                     if (strike >= 101e18) {      // 101 - 110
                         step = 1e17;
-                        boundary = 101e18;
+                        // boundary = 101e18;
                     } else {                     // 99 - 101
                         step = 5e16;
-                        boundary = 99e18;
+                        // boundary = 99e18;
                     }
                 } else {
                     if (strike >= 90e18) {       // 90 - 99
                         step = 1e17;
-                        boundary = 90e18;
+                        // boundary = 90e18;
                     } else {                     // 20 - 90
                         step = 5e17;
-                        boundary = 20e18;
+                        // boundary = 20e18;
                     }
                 }
             }
@@ -340,7 +342,7 @@ contract BlackScholesPOC {
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-            (uint256 strikeIndex, int256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 421
+            (uint256 strikeIndex, int256 strikeWeight, uint256 step) = getIndexAndWeightFromStrike(strikeScaled); // gas 
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
             // if (log) console.log("strikeIndex:", strikeIndex);
@@ -381,13 +383,9 @@ contract BlackScholesPOC {
         bool isLowerTime
     ) private pure returns (uint256) {
         unchecked {
-
             (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight, isLowerTime); // gas 708
 
-            // uint256 startGas = gasleft();
             int256 interpolatedStrikeWeightw = getInterpolatedStrikeWeightw(cell, strikeWeight, timeToExpiryWeight, isLowerTime); // gas 774
-            // uint256 endGas = gasleft();
-            // console.log("Gas in segment: %d", (startGas - endGas));
 
             uint256 finalPrice = step5(cell, strikeA, step, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
 
