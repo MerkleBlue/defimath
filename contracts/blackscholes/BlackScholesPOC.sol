@@ -14,7 +14,7 @@ contract BlackScholesPOC {
     // bool log = false;
 
     // single mapping is faster than map of map, uint is faster than struct
-    mapping(uint40 => uint256) private lookupTable;
+    mapping(uint256 => uint256) private lookupTable;
 
     constructor() {
     }
@@ -329,17 +329,15 @@ contract BlackScholesPOC {
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-
             (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 332
-
-            // uint256 startGas = gasleft();
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
                         
+
+
+            // uint256 startGas = gasleft();
+            uint256 cell = lookupTable[strikeIndex * 1000 + timeToExpiryIndex]; // gas 2199
             // uint256 endGas = gasleft();
             // console.log("Gas in segment: %d", (startGas - endGas));
-
-
-            uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
 
             // if (log) console.log("strikeIndex:", strikeIndex);
             // if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
