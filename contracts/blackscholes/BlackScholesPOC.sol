@@ -272,7 +272,7 @@ contract BlackScholesPOC {
 
             uint256 minor = index % 10;
 
-            if (major < 3) {
+            if (major <= 2) {
                 return minor;
             }
 
@@ -329,12 +329,14 @@ contract BlackScholesPOC {
     ) private view returns (uint256 finalPrice) {
         unchecked {
             // step 1) get the specific cell
-            uint256 startGas = gasleft();
-            (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 332
-            uint256 endGas = gasleft();
-            console.log("Gas in segment: %d", (startGas - endGas));
 
+            (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 332
+
+            // uint256 startGas = gasleft();
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
+                        
+            // uint256 endGas = gasleft();
+            // console.log("Gas in segment: %d", (startGas - endGas));
 
 
             uint256 cell = lookupTable[uint40(strikeIndex * 1000 + timeToExpiryIndex)]; // gas 2205
