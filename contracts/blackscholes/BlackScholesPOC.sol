@@ -497,15 +497,15 @@ contract BlackScholesPOC {
             // if (log) { console.log("extrinsicPriceBA: %d", extrinsicPriceBA);}
 
             int256 intrinsicPriceAA;
-            int256 intrinsicPriceBAdiff;
+            int256 intrinsicPriceBA;
             if (isLowerTime) {
                 intrinsicPriceAA = int256((cell << 256 - 202 - 18) >> 256 - 18);
-                intrinsicPriceBAdiff = int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112;
+                intrinsicPriceBA = intrinsicPriceAA - (int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112);
             } else {
                 intrinsicPriceAA = int256((cell << 256 - 226 - 27) >> 256 - 27);
-                intrinsicPriceBAdiff = int256((cell << 256 - 206 - 20) >> 256 - 20) - 452963;
+                intrinsicPriceBA = intrinsicPriceAA - (int256((cell << 256 - 206 - 20) >> 256 - 20) - 452963);
             }
-            int256 intrinsicPriceBA = intrinsicPriceAA - intrinsicPriceBAdiff;
+            // int256 intrinsicPriceBA = intrinsicPriceAA - intrinsicPriceBAdiff;
             // if (log) { if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }}
             // if (log) { if (intrinsicPriceBAdiff > 0) { console.log("intrinsicPriceBAdiff: %d", uint256(intrinsicPriceBAdiff)); } else { console.log("intrinsicPriceBAdiff: -%d", uint256(-intrinsicPriceBAdiff)); }}
 
