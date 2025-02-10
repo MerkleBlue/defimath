@@ -7,9 +7,18 @@ import "hardhat/console.sol";
 contract BlackScholesPOC {
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
-    uint256 internal constant SPOT_FIXED = 100; // $100
-    uint256 internal constant VOL_FIXED = 12 * 1e16; // 12%
+    uint256 internal constant SPOT_FIXED = 100;                // $100
+    uint256 internal constant VOL_FIXED = 12e16;               // 12%
     uint256 internal constant STRIKE_INDEX_MULTIPLIER = 100;
+
+    // limits
+    uint256 public constant MAX_EXPIRATION = 63072001;         // 2 years
+    uint256 public constant MIN_VOLATILITY = 1e16 - 1;         // 1% volatility
+    uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
+    uint256 public constant MAX_RATE = 2e17 + 1;               // 20% risk-free rate
+
+    // error
+    error InputArgumentsError(uint256);
 
     // bool log = false;
 
@@ -38,6 +47,12 @@ contract BlackScholesPOC {
         uint16 rate
     ) external view returns (uint256 price) {
         unchecked {
+            // step 0) check inputs
+            if (MAX_EXPIRATION <= timeToExpirySec) revert  InputArgumentsError(1);
+            if (volatility <= MIN_VOLATILITY) revert  InputArgumentsError(2);
+            if (MAX_VOLATILITY <= volatility) revert  InputArgumentsError(3);
+            if (MAX_RATE <= rate) revert  InputArgumentsError(4);
+
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
 
