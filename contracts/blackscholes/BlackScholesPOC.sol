@@ -14,6 +14,7 @@ contract BlackScholesPOC {
     // limits
     uint256 public constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
     uint256 public constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
+    uint256 public constant MAX_STRIKE_SPOT_RATIO = 5;   
     uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
     uint256 public constant MIN_VOLATILITY = 1e16 - 1;         // 1% volatility
     uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
@@ -52,6 +53,8 @@ contract BlackScholesPOC {
             // step 0) check inputs
             if (spot <= MIN_SPOT) revert OutOfBoundsError(1);
             if (MAX_SPOT <= spot) revert OutOfBoundsError(2);
+            if (strike * MAX_STRIKE_SPOT_RATIO < spot) revert OutOfBoundsError(3);
+            if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert OutOfBoundsError(4);
             if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(1);
             if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(2);
             if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(3);

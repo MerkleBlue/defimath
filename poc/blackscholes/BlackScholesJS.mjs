@@ -12,6 +12,7 @@ export const STRIKE_INDEX_MULTIPLIER = 100;
 // limits
 export const MIN_SPOT = 0.000001;             // 1 milionth of a $
 export const MAX_SPOT = 1e15;                 // 1 quadrillion $
+export const MAX_STRIKE_SPOT_RATIO = 5;  
 export const MAX_EXPIRATION = 63072000;       // 2 years
 export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
@@ -28,6 +29,8 @@ export class BlackScholesJS {
     // step 0) check inputs
     if (spot < MIN_SPOT) throw new Error(1);
     if (spot > MAX_SPOT) throw new Error(2);
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
+    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
     if (timeToExpirySec > MAX_EXPIRATION) throw new Error(1);
     if (vol < MIN_VOLATILITY) throw new Error(2);
     if (vol > MAX_VOLATILITY) throw new Error(3);

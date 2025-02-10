@@ -760,6 +760,30 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
+        it("rejects when strike < spot / 5", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getCallOptionPrice(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("3");
+          expect(() => blackScholesJS.getCallOptionPrice(1000, 0, 50000, 0.6, 0.05)).to.throw("3");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(199.999999), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 3);
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(0), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 3);
+          }
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getCallOptionPrice(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("4");
+          expect(() => blackScholesJS.getCallOptionPrice(1000, 100000, 50000, 10_000, 0.05)).to.throw("4");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(5000.000001), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 4);
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 4);
+          }
+        });
+
         it("rejects when time > max time", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
