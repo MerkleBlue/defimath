@@ -25,9 +25,9 @@ export class BlackScholesJS {
   getCallOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 0) check inputs
     if (timeToExpirySec > MAX_EXPIRATION) throw new Error(1);
-    // if (volatility <= MIN_VOLATILITY) revert  InputArgumentsError(2);
-    // if (MAX_VOLATILITY <= volatility) revert  InputArgumentsError(3);
-    // if (MAX_RATE <= rate) revert  InputArgumentsError(4);
+    if (vol < MIN_VOLATILITY) throw new Error(2);
+    if (vol > MAX_VOLATILITY) throw new Error(3);
+    if (rate > MAX_RATE) throw new Error(4);
 
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;

@@ -12,10 +12,10 @@ contract BlackScholesPOC {
     uint256 internal constant STRIKE_INDEX_MULTIPLIER = 100;
 
     // limits
-    uint256 public constant MAX_EXPIRATION = 63072001;         // 2 years
+    uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
     uint256 public constant MIN_VOLATILITY = 1e16 - 1;         // 1% volatility
     uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
-    uint256 public constant MAX_RATE = 2e17 + 1;               // 20% risk-free rate
+    uint256 public constant MAX_RATE = 2001;                   // 20% risk-free rate
 
     // error
     error InputArgumentsError(uint256);
