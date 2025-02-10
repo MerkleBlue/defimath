@@ -213,14 +213,18 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return testPoints;
   }
 
-  async function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, log = true) {
+  async function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedAbsError = 0.000114, multi = 10, log = true) {
     const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-    // NSV = non small values, we don't care about error below $0.001
-    const multi = 10;
-    let maxRelErrorJS = 0, maxAbsErrorJS = 0, totalErrorNSVJS = 0, maxRelErrorSOL = 0, maxAbsErrorSOL = 0, totalErrorNSVSOL = 0, countNSV = 0, count = 0, actualJS = 0, actualSOL = 0;
+    // SV = small values (less than $1 on a $1000 spot), LV = large values, Zero = zero
+    let maxRelErrorJS = 0, maxAbsErrorJS = 0, totalErrorLVJS = 0, totalErrorSVJS = 0;
+    let maxRelErrorSOL = 0, maxAbsErrorSOL = 0, totalErrorLVSOL = 0, totalErrorSVSOL = 0;
     let maxRelErrorParamsJS = null, maxAbsErrorParamsJS = null, maxRelErrorParamsSOL = null, maxAbsErrorParamsSOL = null;
+    let countLVJS = 0, countSVJS = 0, countZeroJS = 0, countTotal = 0;
+    let countLVSOL = 0, countSVSOL = 0, countZeroSOL = 0;
+
     const totalPoints = strikePoints.length * timePoints.length * volPoints.length;
+    const smallLimit = 0.1 * multi;
     for (let strike of strikePoints) {
       for(let exp of timePoints) {
         for (let vol of volPoints) {
@@ -230,6 +234,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
             // JS
             {
+              let actualJS = 0
               if (isCall) {
                 actualJS = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
               } else {
@@ -237,32 +242,39 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               }
 
               const errorJS = expected !== 0 ? (Math.abs(actualJS - expected) / expected * 100) : 0;
+              console.log(expected, actualJS, errorJS)
 
               // we don't care about small values
-              if (expected > 0.001) {
-                totalErrorNSVJS += errorJS;
-              }
-              // relative error is in percentage
-              if (maxRelErrorJS < errorJS && expected > 0.001) {
-                maxRelErrorJS = errorJS;
-                maxRelErrorParamsJS = {
-                  exp, strike: strike * multi, vol, rate, actual: actualJS, expected
+              if (expected > smallLimit) {
+                totalErrorLVJS += errorJS;
+                countLVJS++;
+                // relative error is in percentage
+                if (maxRelErrorJS < errorJS) {
+                  maxRelErrorJS = errorJS;
+                  maxRelErrorParamsJS = {
+                    expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+                  }
                 }
-              }
-
-              // absolute error is in currency
-              const absError = Math.abs(actualJS - expected);
-              if (maxAbsErrorJS < absError) {
-                maxAbsErrorJS = absError;
-                // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
-                maxAbsErrorParamsJS = {
-                  exp, strike: strike * multi, vol, rate, actual: actualJS, expected
+              } else if (expected <= smallLimit && expected > 0) {
+                totalErrorSVJS += Math.abs(actualJS - expected);
+                countSVJS++;
+                // absolute error is in currency
+                const absError = Math.abs(actualJS - expected);
+                if (maxAbsErrorJS < absError) {
+                  maxAbsErrorJS = absError;
+                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+                  maxAbsErrorParamsJS = {
+                    expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+                  }
                 }
+              } else if(expected === 0) {
+                countZeroJS++;
               }
             }
 
             // SOL
             if (duoTest) {
+              let actualSOL = 0;
               if (isCall) {
                 actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
               } else {
@@ -272,34 +284,40 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               const errorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
 
               // we don't care about small values
-              if (expected > 0.001) {
-                totalErrorNSVSOL += errorSOL;
-                countNSV++;
-              }
-              // relative error is in percentage
-              if (maxRelErrorSOL < errorSOL && expected > 0.001) {
-                maxRelErrorSOL = errorSOL;
-                maxRelErrorParamsSOL = {
-                  exp, strike: strike * multi, vol, rate, actual: actualSOL, expected
+              if (expected > smallLimit) {
+                totalErrorLVSOL += errorSOL;
+                countLVSOL++;
+                // relative error is in percentage
+                if (maxRelErrorSOL < errorSOL && expected > smallLimit) {
+                  maxRelErrorSOL = errorSOL;
+                  maxRelErrorParamsSOL = {
+                    expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+                  }
                 }
-              }
-
-              // absolute error is in currency
-              const absError = Math.abs(actualSOL - expected);
-              if (maxAbsErrorSOL < absError) {
-                maxAbsErrorSOL = absError;
-                // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
-                maxAbsErrorParamsSOL = {
-                  exp, strike: strike * multi, vol, rate, actual: actualSOL, expected
+              } else if (expected <= smallLimit && expected > 0) {
+                totalErrorSVSOL += Math.abs(actualSOL - expected);
+                countSVSOL++;
+                // absolute error is in currency
+                const absError = Math.abs(actualSOL - expected);
+                if (maxAbsErrorSOL < absError) {
+                  maxAbsErrorSOL = absError;
+                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+                  maxAbsErrorParamsSOL = {
+                    expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+                  }
                 }
+              } else if(expected === 0) {
+                countZeroSOL++;
               }
             }
 
-            count++;
+            countTotal++;
 
             // print progress
-            if (count % Math.round(totalPoints / 20) === 0) {
-              log && console.log("Progress:", (count / totalPoints * 100).toFixed(0) + "%, Max abs error:", "$" + (maxAbsErrorJS ? maxAbsErrorJS.toFixed(6) : "0"));
+            if (countTotal % Math.round(totalPoints / 20) === 0) {
+              log && console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
+                "%, Max abs error:", "$" + (maxAbsErrorJS ? maxAbsErrorJS.toFixed(6) : "0") +
+                ", Max rel error:", (maxRelErrorJS ? maxRelErrorJS.toFixed(6) + "%" : "0"));
             }
           }
         }
@@ -307,16 +325,31 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
 
     if (log) {
-      const avgError = totalErrorNSVJS / countNSV;
-      console.log("totalError NSV: " + totalErrorNSVJS, "count NonSmallValue (NSV): " + countNSV);
+      // JS
+      const avgRelErrorJS = totalErrorLVJS / countLVJS;
+      const avgAbsErrorJS = totalErrorSVJS / countSVJS;
+      console.log();
+      console.log("REPORT JS");
+      console.log("LV/SV/ZERO/total: " + countLVJS + "/" + countSVJS + "/" + countZeroJS + "/" + countTotal, "(" + ((countLVJS / countTotal) * 100).toFixed(2) + "%)");
   
-      // console.log("Total tests: " + count);
-      // console.log("Table (map) size: ", blackScholesJS.lookupTable.size);
-      console.log("Avg rel NSV error: " + avgError.toFixed(6) + "%,", "Max rel NSV error: " + maxRelErrorJS.toFixed(6) + "%,", "Max abs error:", "$" + maxAbsErrorJS.toFixed(6) + ",", "Total tests: ", count, "Total NSV tests: ", countNSV, "NSV/total ratio: ", ((countNSV / count) * 100).toFixed(2) + "%");
+      console.log("Relative error for LV: Avg: " + avgRelErrorJS.toFixed(6) + "%,", "Max: " + maxRelErrorJS.toFixed(6) + "%");
+      console.log("Absolute error for SV: Avg: $" + avgAbsErrorJS.toFixed(6) + ",", "Max: " + "$" + maxAbsErrorJS.toFixed(6));
+
       console.log("Max rel error params JS: ", maxRelErrorParamsJS);
-      console.log("Max abs error params JS: ", maxAbsErrorParamsJS, convertSeconds(maxAbsErrorParamsJS ? maxAbsErrorParamsJS.exp : 1));
+      console.log("Max abs error params JS: ", maxAbsErrorParamsJS, convertSeconds(maxAbsErrorParamsJS ? maxAbsErrorParamsJS.expiration : 1));
+
+      // SOL
+      const avgRelErrorSOL = totalErrorLVSOL / countLVSOL;
+      const avgAbsErrorSOL = totalErrorSVSOL / countSVSOL;
+      console.log();
+      console.log("REPORT SOL");
+      console.log("LV/SV/ZERO/total: " + countLVSOL + "/" + countSVSOL + "/" + countZeroSOL + "/" + countTotal, "(" + ((countLVSOL / countTotal) * 100).toFixed(2) + "%)");
+  
+      console.log("Relative error for LV: Avg: " + avgRelErrorSOL.toFixed(6) + "%,", "Max: " + maxRelErrorSOL.toFixed(6) + "%");
+      console.log("Absolute error for SV: Avg: $" + avgAbsErrorSOL.toFixed(6) + ",", "Max: " + "$" + maxAbsErrorSOL.toFixed(6));
+
       console.log("Max rel error params SOL: ", maxRelErrorParamsSOL);
-      console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.exp : 1));
+      console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.expiration : 1));
     }
 
     assert.isBelow(maxAbsErrorJS, allowedAbsError); // max error is below max allowed absolute error
@@ -625,10 +658,17 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
 
         describe("random tests", function () {
-          it("gets multiple call prices: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
             const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 20 : 600, false);
             const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 20 : 600, true);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000094, !fastTest);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000094, 10, !fastTest);
+          });
+
+          it.only("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 20 : 600, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 20 : 600, true);
+            const largeScale = 1; //1e12;
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000094 * largeScale, 10 * largeScale, true);
           });
         });
 
@@ -638,7 +678,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 20 && value <= 90)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000023, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000023, 10, false);
           });
 
           it("gets multiple call prices: $900 - $990, limit time and vol %", async function () {
@@ -646,7 +686,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 90 && value <= 99)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000014, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000014, 10, false);
           });
 
           it("gets multiple call prices: $990 - $1010, limit time and vol %", async function () {
@@ -654,7 +694,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 99 && value <= 101)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000021, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000021, 10, false);
           });
 
           it("gets multiple call prices: $1010 - $1100, limit time and vol %", async function () {
@@ -662,7 +702,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 101 && value <= 110)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000015, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000015, 10, false);
           });
 
           it("gets multiple call prices: $1100 - $1300, limit time and vol %", async function () {
@@ -670,7 +710,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 110 && value <= 130)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000015, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000015, 10, false);
           });
 
           it("gets multiple call prices: $1300 - $2000, limit time and vol %", async function () {
@@ -678,7 +718,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 130 && value <= 200)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000018, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000018, 10, false);
           });
 
           it("gets multiple call prices: $2000 - $5000, limit time and vol %", async function () {
@@ -686,7 +726,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const strikes2 = (testStrikePoints.filter(value => value >= 200 && value <= 500)).slice(-10);
             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000016, false);
+            await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, 0.000016, 10, false);
           });
         });
 
@@ -694,43 +734,43 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           it("gets multiple call prices: $200 - $900, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052, 10);
           });
 
           it("gets multiple call prices: $900 - $990, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073, 10);
           });
 
           it("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
             const timeSubArray = testTimePoints.filter(value => value >= 900);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 10, 0.000072, 10); // todo [0.01, VOL_FIXED, 1.92]
           });
 
           it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075, 10);
           });
 
           it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092, 10);
           });
 
           it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091, 10);
           });
 
           it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066, 10);
           });
         });
       });
@@ -917,7 +957,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets multiple put prices: random " + (fastTest ? "FAST" : "SLOW"), async function () {
           const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 20 : 600, false);
           const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 20 : 600, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000110, !fastTest);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000110, 10, !fastTest);
         });
       });
 
@@ -927,7 +967,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 20 && value <= 90)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000023, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000023, 10, false);
         });
 
         it("gets multiple put prices: $900 - $990, limit time and vol %", async function () {
@@ -935,7 +975,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 90 && value <= 99)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000014, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000014, 10, false);
         });
 
         it("gets multiple put prices: $990 - $1010, limit time and vol %", async function () {
@@ -943,7 +983,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 99 && value <= 101)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000021, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000021, 10, false);
         });
 
         it("gets multiple put prices: $1010 - $1100, limit time and vol %", async function () {
@@ -951,7 +991,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 101 && value <= 110)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000015, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000015, 10, false);
         });
 
         it("gets multiple put prices: $1100 - $1300, limit time and vol %", async function () {
@@ -959,7 +999,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 110 && value <= 130)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000015, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000015, 10, false);
         });
 
         it("gets multiple put prices: $1300 - $2000, limit time and vol %", async function () {
@@ -967,7 +1007,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 130 && value <= 200)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000018, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000018, 10, false);
         });
 
         it("gets multiple put prices: $2000 - $5000, limit time and vol %", async function () {
@@ -975,7 +1015,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes2 = (testStrikePoints.filter(value => value >= 200 && value <= 500)).slice(-10);
           const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
           const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000016, false);
+          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], false, 0.000016, 10, false);
         });
       });
 
@@ -983,43 +1023,43 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets multiple put prices: $200 - $900, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
           const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 200);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000052, 10);
         });
 
         it("gets multiple put prices: $900 - $990, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
           const timeSubArray = testTimePoints.filter(value => value >= 145);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000073, 10);
         });
 
         it("gets multiple put prices: $990 - $1010, 500s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
           const timeSubArray = testTimePoints.filter(value => value >= 900);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000072); // todo [0.01, VOL_FIXED, 1.92]
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000072, 10); // todo [0.01, VOL_FIXED, 1.92]
         });
 
         it("gets multiple put prices: $1010 - $1100, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000075, 10);
         });
 
         it("gets multiple put prices: $1100 - $1300, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000092, 10);
         });
 
         it("gets multiple put prices: $1300 - $2000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000091, 10);
         });
 
         it("gets multiple put prices: $2000 - $5000, 240s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
           const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066, 10);
         });
       });
 
