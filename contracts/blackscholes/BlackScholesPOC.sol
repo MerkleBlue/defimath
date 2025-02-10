@@ -55,10 +55,10 @@ contract BlackScholesPOC {
             if (MAX_SPOT <= spot) revert OutOfBoundsError(2);
             if (strike * MAX_STRIKE_SPOT_RATIO < spot) revert OutOfBoundsError(3);
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert OutOfBoundsError(4);
-            if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(1);
-            if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(2);
-            if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(3);
-            if (MAX_RATE <= rate) revert OutOfBoundsError(4);
+            if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(5);
+            if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(6);
+            if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(7);
+            if (MAX_RATE <= rate) revert OutOfBoundsError(8);
 
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
