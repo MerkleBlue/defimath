@@ -62,6 +62,16 @@ export class BlackScholesJS {
   };
 
   getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
+    // step 0) check inputs
+    if (spot < MIN_SPOT) throw new Error(1);
+    if (spot > MAX_SPOT) throw new Error(2);
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
+    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
+    if (timeToExpirySec > MAX_EXPIRATION) throw new Error(5);
+    if (vol < MIN_VOLATILITY) throw new Error(6);
+    if (vol > MAX_VOLATILITY) throw new Error(7);
+    if (rate > MAX_RATE) throw new Error(8);
+
     // step 1: set the overall scale first
     const spotScale = spot / SPOT_FIXED;
 
