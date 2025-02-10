@@ -12,10 +12,12 @@ contract BlackScholesPOC {
     uint256 internal constant STRIKE_INDEX_MULTIPLIER = 100;
 
     // limits
+    uint256 public constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
+    uint256 public constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
     uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
     uint256 public constant MIN_VOLATILITY = 1e16 - 1;         // 1% volatility
     uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
-    uint256 public constant MAX_RATE = 2001;                   // 20% risk-free rate
+    uint256 public constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
 
     // error
     error OutOfBoundsError(uint256);
@@ -48,10 +50,12 @@ contract BlackScholesPOC {
     ) external view returns (uint256 price) {
         unchecked {
             // step 0) check inputs
-            if (MAX_EXPIRATION <= timeToExpirySec) revert  OutOfBoundsError(1);
-            if (volatility <= MIN_VOLATILITY) revert  OutOfBoundsError(2);
-            if (MAX_VOLATILITY <= volatility) revert  OutOfBoundsError(3);
-            if (MAX_RATE <= rate) revert  OutOfBoundsError(4);
+            if (spot <= MIN_SPOT) revert OutOfBoundsError(1);
+            if (MAX_SPOT <= spot) revert OutOfBoundsError(2);
+            if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(1);
+            if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(2);
+            if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(3);
+            if (MAX_RATE <= rate) revert OutOfBoundsError(4);
 
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;

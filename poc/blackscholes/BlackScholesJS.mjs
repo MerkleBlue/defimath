@@ -10,6 +10,8 @@ export const STRIKE_MAX = 500;                // 500;
 export const STRIKE_INDEX_MULTIPLIER = 100;
 
 // limits
+export const MIN_SPOT = 0.000001;             // 1 milionth of a $
+export const MAX_SPOT = 1e15;                 // 1 quadrillion $
 export const MAX_EXPIRATION = 63072000;       // 2 years
 export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
@@ -24,6 +26,8 @@ export class BlackScholesJS {
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
     // step 0) check inputs
+    if (spot < MIN_SPOT) throw new Error(1);
+    if (spot > MAX_SPOT) throw new Error(2);
     if (timeToExpirySec > MAX_EXPIRATION) throw new Error(1);
     if (vol < MIN_VOLATILITY) throw new Error(2);
     if (vol > MAX_VOLATILITY) throw new Error(3);

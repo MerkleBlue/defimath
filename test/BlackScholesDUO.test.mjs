@@ -16,7 +16,7 @@ function tokens(value) {
   return hre.ethers.parseUnits(value.toString(), 18).toString();
 }
 
-export const assertRevertError = async (contract, method, arg) => {
+async function assertRevertError(contract, method, arg) {
   await expect(method).to.be.revertedWithCustomError(
     contract,
     "OutOfBoundsError"
@@ -735,7 +735,31 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe("failure", function () {
+      describe.only("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getCallOptionPrice(0.00000099, 930, 50000, 0.6, 0.05)).to.throw("1");
+          expect(() => blackScholesJS.getCallOptionPrice(0, 930, 50000, 0.6, 0.05)).to.throw("1");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 1);
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 1);
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getCallOptionPrice(1e15 + 1, 930, 50000, 1.920000001, 0.05)).to.throw("2");
+          expect(() => blackScholesJS.getCallOptionPrice(1e18, 930, 50000, 10_000, 0.05)).to.throw("2");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1e15 + 1), tokens(930), 50000, tokens(1.920000001), Math.round(0.05 * 10_000)), 2);
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice("100000000000000000000000000000000000", tokens(930), 50000, tokens(10_000), Math.round(0.05 * 10_000)), 2);
+          }
+        });
+
         it("rejects when time > max time", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
