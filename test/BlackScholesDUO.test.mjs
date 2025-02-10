@@ -19,7 +19,7 @@ function tokens(value) {
 export const assertRevertError = async (contract, method, arg) => {
   await expect(method).to.be.revertedWithCustomError(
     contract,
-    "InputArgumentsError"
+    "OutOfBoundsError"
   ).withArgs(arg);
 };
 
@@ -735,7 +735,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe.only("failure", function () {
+      describe("failure", function () {
         it("rejects when time > max time", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
@@ -779,7 +779,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0.6, 50)).to.throw("4");
 
           if (duoTest) {
-            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), Math.round(0.2001 * 10_000)), 4);
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), 2001), 4);
             await assertRevertError(blackScholesPOC, blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), 65535), 4);
           }
         });

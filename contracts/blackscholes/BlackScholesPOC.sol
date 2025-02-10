@@ -18,7 +18,7 @@ contract BlackScholesPOC {
     uint256 public constant MAX_RATE = 2001;                   // 20% risk-free rate
 
     // error
-    error InputArgumentsError(uint256);
+    error OutOfBoundsError(uint256);
 
     // bool log = false;
 
@@ -48,10 +48,10 @@ contract BlackScholesPOC {
     ) external view returns (uint256 price) {
         unchecked {
             // step 0) check inputs
-            if (MAX_EXPIRATION <= timeToExpirySec) revert  InputArgumentsError(1);
-            if (volatility <= MIN_VOLATILITY) revert  InputArgumentsError(2);
-            if (MAX_VOLATILITY <= volatility) revert  InputArgumentsError(3);
-            if (MAX_RATE <= rate) revert  InputArgumentsError(4);
+            if (MAX_EXPIRATION <= timeToExpirySec) revert  OutOfBoundsError(1);
+            if (volatility <= MIN_VOLATILITY) revert  OutOfBoundsError(2);
+            if (MAX_VOLATILITY <= volatility) revert  OutOfBoundsError(3);
+            if (MAX_RATE <= rate) revert  OutOfBoundsError(4);
 
             // step 1: set the overall scale first
             uint256 spotScale = uint256(spot) / SPOT_FIXED;
