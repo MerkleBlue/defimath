@@ -1022,6 +1022,112 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000066);
         });
       });
+
+      describe("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("1");
+          expect(() => blackScholesJS.getPutOptionPrice(0, 0, 50000, 0.6, 0.05)).to.throw("1");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 1);
+            await blackScholesPOC.getPutOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000));
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 1);
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("2");
+          expect(() => blackScholesJS.getPutOptionPrice(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("2");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000)), 2);
+            await blackScholesPOC.getPutOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000));
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000)), 2);
+          }
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("3");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 0, 50000, 0.6, 0.05)).to.throw("3");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), Math.round(0.05 * 10_000)), 3);
+            await blackScholesPOC.getPutOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000))
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), "0", 50000, tokens(0.6), Math.round(0.05 * 10_000)), 3);
+          }
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("4");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 100000, 50000, 10_000, 0.05)).to.throw("4");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), Math.round(0.05 * 10_000)), 4);
+            await blackScholesPOC.getPutOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000));
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), Math.round(0.05 * 10_000)), 4);
+          }
+        });
+
+        it("rejects when time > max time", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 4294967295, 0.60, 0.05)).to.throw("5");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 63072001, 0.60, 0.05)).to.throw("5");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), Math.round(0.05 * 10_000)), 5);
+            await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), Math.round(0.05 * 10_000)); // todo: check value when 2 years in another test
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), Math.round(0.05 * 10_000)), 5);
+          }
+        });
+
+        it("rejects when vol < min volatility", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.009999999999, 0.05)).to.throw("6");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0, 0.05)).to.throw("6");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, "9999999999999999", Math.round(0.05 * 10_000)), 6);
+            await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, "10000000000000000", Math.round(0.05 * 10_000));
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0), Math.round(0.05 * 10_000)), 6);
+          }
+        });
+
+        it("rejects when vol > max volatility", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 1.920000001, 0.05)).to.throw("7");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 10_000, 0.05)).to.throw("7");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, "1920000000000000001", Math.round(0.05 * 10_000)), 7);
+            await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, "1920000000000000000", Math.round(0.05 * 10_000))
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(10_000), Math.round(0.05 * 10_000)), 7);
+          }
+        });
+
+        it("rejects when rate > max volatility", async function () {
+          const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.6, 0.200000001)).to.throw("8");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.6, 50)).to.throw("8");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), 2001), 8);
+            await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), 2000);
+            await assertRevertError(blackScholesPOC, blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), 65535), 8);
+          }
+        });
+      });
     });
 
     describe("getIndexFromTime " + (fastTest ? "FAST" : "SLOW"), function () {
