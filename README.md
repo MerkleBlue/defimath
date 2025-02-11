@@ -37,8 +37,7 @@ The following limitations apply to the lookup table:
 
 # Precision
 
-Maximum error is either less than $0.0001 or less than 0.001% of the option price for a $1000 spot price.
-The average error is tbd.   
+Maximum error is either less than $0.00006 or less than 0.0001% of the option price for a $1000 spot price.  
 Maximum error is $0.000061 when called within limitations for a $1000 spot price. For example, for ETH options when ETH is trading around $4000, max error is $0.000244 (less than 1/40 of a cent).
 
 # Performance
