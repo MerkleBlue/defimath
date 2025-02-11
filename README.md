@@ -43,7 +43,7 @@ Maximum error is $0.000061 when called within limitations for a $1000 spot price
 
 # Performance
 
-BlackScholes contract costs on average around 6400 gas to calculate option price (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.
+BlackScholes contract costs on average around 7500 gas to calculate option price (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.
 
 # Sample Hardhat Project
 

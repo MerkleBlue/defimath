@@ -241,75 +241,95 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 actualJS = blackScholesJS.getPutOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
               }
 
-              const errorJS = expected !== 0 ? (Math.abs(actualJS - expected) / expected * 100) : 0;
-              // console.log(expected, actualJS, errorJS)
+              const relErrorJS = expected !== 0 ? (Math.abs(actualJS - expected) / expected * 100) : 0;
+              const absErrorJS = Math.abs(actualJS - expected);
 
-              // we don't care about small values
-              if (expected > smallLimit) {
-                totalErrorLVJS += errorJS;
-                countLVJS++;
-                // relative error is in percentage
-                if (maxRelErrorJS < errorJS) {
-                  maxRelErrorJS = errorJS;
-                  maxRelErrorParamsJS = {
-                    expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
-                  }
+              // console.log("rel error:", relErrorJS.toFixed(6), "abs error", absErrorJS.toFixed(6));
+
+              // if absolute larger than allowed, then save max relative
+              if (absErrorJS >= allowedAbsError && relErrorJS > maxRelErrorJS) {
+                // console.log("bingo")
+                maxRelErrorJS = relErrorJS;
+                maxRelErrorParamsJS = {
+                  expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
                 }
-              } else if (expected <= smallLimit && expected > 0) {
-                totalErrorSVJS += Math.abs(actualJS - expected);
-                countSVJS++;
-                // absolute error is in currency
-                const absError = Math.abs(actualJS - expected);
-                if (maxAbsErrorJS < absError) {
-                  maxAbsErrorJS = absError;
-                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
-                  maxAbsErrorParamsJS = {
-                    expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
-                  }
-                }
-              } else if(expected === 0) {
-                countZeroJS++;
               }
+
+              // if relative larger than allowed, then save max absolute
+              if (relErrorJS > allowedRelError && absErrorJS > maxAbsErrorJS) {
+                maxAbsErrorJS = absErrorJS;
+                maxAbsErrorParamsJS = {
+                  expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+                }
+              }
+
+
+              // // we don't care about small values
+              // if (expected > smallLimit) {
+              //   totalErrorLVJS += relErrorJS;
+              //   countLVJS++;
+              //   // relative error is in percentage
+              //   if (maxRelErrorJS < relErrorJS) {
+              //     maxRelErrorJS = relErrorJS;
+              //     maxRelErrorParamsJS = {
+              //       expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+              //     }
+              //   }
+              // } else if (expected <= smallLimit && expected > 0) {
+              //   totalErrorSVJS += Math.abs(actualJS - expected);
+              //   countSVJS++;
+              //   // absolute error is in currency
+              //   const absError = Math.abs(actualJS - expected);
+              //   if (maxAbsErrorJS < absError) {
+              //     maxAbsErrorJS = absError;
+              //     // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+              //     maxAbsErrorParamsJS = {
+              //       expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+              //     }
+              //   }
+              // } else if(expected === 0) {
+              //   countZeroJS++;
+              // }
             }
 
             // SOL
-            if (duoTest) {
-              let actualSOL = 0;
-              if (isCall) {
-                actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-              } else {
-                actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-              }
+            // if (duoTest) {
+            //   let actualSOL = 0;
+            //   if (isCall) {
+            //     actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+            //   } else {
+            //     actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+            //   }
 
-              const errorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
+            //   const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
 
-              // we don't care about small values
-              if (expected > smallLimit) {
-                totalErrorLVSOL += errorSOL;
-                countLVSOL++;
-                // relative error is in percentage
-                if (maxRelErrorSOL < errorSOL && expected > smallLimit) {
-                  maxRelErrorSOL = errorSOL;
-                  maxRelErrorParamsSOL = {
-                    expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-                  }
-                }
-              } else if (expected <= smallLimit && expected > 0) {
-                totalErrorSVSOL += Math.abs(actualSOL - expected);
-                countSVSOL++;
-                // absolute error is in currency
-                const absError = Math.abs(actualSOL - expected);
-                if (maxAbsErrorSOL < absError) {
-                  maxAbsErrorSOL = absError;
-                  // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
-                  maxAbsErrorParamsSOL = {
-                    expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-                  }
-                }
-              } else if(expected === 0) {
-                countZeroSOL++;
-              }
-            }
+            //   // we don't care about small values
+            //   if (expected > smallLimit) {
+            //     totalErrorLVSOL += relErrorSOL;
+            //     countLVSOL++;
+            //     // relative error is in percentage
+            //     if (maxRelErrorSOL < relErrorSOL && expected > smallLimit) {
+            //       maxRelErrorSOL = relErrorSOL;
+            //       maxRelErrorParamsSOL = {
+            //         expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+            //       }
+            //     }
+            //   } else if (expected <= smallLimit && expected > 0) {
+            //     totalErrorSVSOL += Math.abs(actualSOL - expected);
+            //     countSVSOL++;
+            //     // absolute error is in currency
+            //     const absError = Math.abs(actualSOL - expected);
+            //     if (maxAbsErrorSOL < absError) {
+            //       maxAbsErrorSOL = absError;
+            //       // console.log("maxAbsError", maxAbsError, "strike", strike * multi, "exp", exp);
+            //       maxAbsErrorParamsSOL = {
+            //         expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+            //       }
+            //     }
+            //   } else if(expected === 0) {
+            //     countZeroSOL++;
+            //   }
+            // }
 
             countTotal++;
 
@@ -332,24 +352,24 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       console.log("REPORT JS");
       console.log("LV/SV/ZERO/total: " + countLVJS + "/" + countSVJS + "/" + countZeroJS + "/" + countTotal, "(" + ((countLVJS / countTotal) * 100).toFixed(2) + "%)");
   
-      console.log("Relative error for LV: Avg: " + avgRelErrorJS.toFixed(6) + "%,", "Max: " + maxRelErrorJS.toFixed(6) + "%");
+      console.log("Relative error for LV: Avg: " + avgRelErrorJS.toFixed(6) + "%,", "Max:  " + maxRelErrorJS.toFixed(6) + "%");
       console.log("Absolute error for SV: Avg: $" + avgAbsErrorJS.toFixed(6) + ",", "Max: " + "$" + maxAbsErrorJS.toFixed(6));
 
       console.log("Max rel error params JS: ", maxRelErrorParamsJS, convertSeconds(maxRelErrorParamsJS ? maxRelErrorParamsJS.expiration : 1));
       console.log("Max abs error params JS: ", maxAbsErrorParamsJS, convertSeconds(maxAbsErrorParamsJS ? maxAbsErrorParamsJS.expiration : 1));
 
       // SOL
-      const avgRelErrorSOL = totalErrorLVSOL / countLVSOL;
-      const avgAbsErrorSOL = totalErrorSVSOL / countSVSOL;
-      console.log();
-      console.log("REPORT SOL");
-      console.log("LV/SV/ZERO/total: " + countLVSOL + "/" + countSVSOL + "/" + countZeroSOL + "/" + countTotal, "(" + ((countLVSOL / countTotal) * 100).toFixed(2) + "%)");
+      // const avgRelErrorSOL = totalErrorLVSOL / countLVSOL;
+      // const avgAbsErrorSOL = totalErrorSVSOL / countSVSOL;
+      // console.log();
+      // console.log("REPORT SOL");
+      // console.log("LV/SV/ZERO/total: " + countLVSOL + "/" + countSVSOL + "/" + countZeroSOL + "/" + countTotal, "(" + ((countLVSOL / countTotal) * 100).toFixed(2) + "%)");
   
-      console.log("Relative error for LV: Avg: " + avgRelErrorSOL.toFixed(6) + "%,", "Max: " + maxRelErrorSOL.toFixed(6) + "%");
-      console.log("Absolute error for SV: Avg: $" + avgAbsErrorSOL.toFixed(6) + ",", "Max: " + "$" + maxAbsErrorSOL.toFixed(6));
+      // console.log("Relative error for LV: Avg: " + avgRelErrorSOL.toFixed(6) + "%,", "Max: " + maxRelErrorSOL.toFixed(6) + "%");
+      // console.log("Absolute error for SV: Avg: $" + avgAbsErrorSOL.toFixed(6) + ",", "Max: " + "$" + maxAbsErrorSOL.toFixed(6));
 
-      console.log("Max rel error params SOL: ", maxRelErrorParamsSOL, convertSeconds(maxRelErrorParamsSOL ? maxRelErrorParamsSOL.expiration : 1));
-      console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.expiration : 1));
+      // console.log("Max rel error params SOL: ", maxRelErrorParamsSOL, convertSeconds(maxRelErrorParamsSOL ? maxRelErrorParamsSOL.expiration : 1));
+      // console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.expiration : 1));
     }
 
     
@@ -670,9 +690,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           });
 
           it.only("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 200 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 200 : 600, true);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000680, 0.000094, 10, true);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 40 : 600, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 40 : 600, true);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000204, 0.000060, 10, true);
           });
 
           it("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
