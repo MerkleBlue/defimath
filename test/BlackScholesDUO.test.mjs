@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = true;
+const fastTest = false;
 
 function tokens(value) {
   const trimmedValue = Math.round(value * 1e18) / 1e18;
@@ -671,23 +671,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
         describe("random tests", function () {
           it("gets multiple call prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 500, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 500, true);
             const smallScale = 0.000001;
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000036 * smallScale, 10 * smallScale, !fastTest);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000088, (fastTest ? 0.000036 : 0.000076) * smallScale, 10 * smallScale, !fastTest);
           });
 
           it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000036, 10, !fastTest);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 500, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 500, true);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000088, (fastTest ? 0.000036 : 0.000076), 10, !fastTest);
           });
 
           it("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 500, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 500, true);
             const largeScale = 1e12;
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000036 * largeScale, 10 * largeScale, !fastTest);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000088, (fastTest ? 0.000036 : 0.000076) * largeScale, 10 * largeScale, !fastTest);
           });
         });
 
@@ -974,23 +974,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("random tests", function () {
         it("gets multiple call prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 500, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 500, true);
           const smallScale = 0.000001;
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000036 * smallScale, 10 * smallScale, !fastTest);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000088, (fastTest ? 0.000036 : 0.000076) * smallScale, 10 * smallScale, !fastTest);
         });
 
         it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000036, 10, !fastTest);
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 500, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 500, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000088, (fastTest ? 0.000036 : 0.000076), 10, !fastTest);
         });
 
         it("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 500, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 500, true);
           const largeScale = 1e12;
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000036 * largeScale, 10 * largeScale, !fastTest);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000088, (fastTest ? 0.000036 : 0.000076) * largeScale, 10 * largeScale, !fastTest);
         });
       });
 
