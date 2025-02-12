@@ -221,7 +221,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     let maxRelErrorJS = 0, maxAbsErrorJS = 0, totalErrorRelJS = 0, totalErrorAbsJS = 0;
     let maxRelErrorSOL = 0, maxAbsErrorSOL = 0, totalErrorRelSOL = 0, totalErrorAbsSOL = 0;
     let maxRelErrorParamsJS = null, maxAbsErrorParamsJS = null, maxRelErrorParamsSOL = null, maxAbsErrorParamsSOL = null;
-    let countAbsJS = 0, countRelJS = 0, countTotal = 0;
+    let countTotal = 0;
     let countAbsSOL = 0, countRelSOL = 0;
 
     const totalPoints = strikePoints.length * timePoints.length * volPoints.length;
@@ -250,28 +250,28 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               }
               errorsJS.push({ absErrorJS, relErrorJS, errorParamsJS });
 
-              // count absolutes and relatives
-              if (absErrorJS < allowedAbsError) {
-                countAbsJS++;
-              } else if (relErrorJS < allowedRelError) {
-                countRelJS++;
-              }
+              // // count absolutes and relatives
+              // if (absErrorJS < allowedAbsError) {
+              //   countAbsJS++;
+              // } else if (relErrorJS < allowedRelError) {
+              //   countRelJS++;
+              // }
 
-              // if absolute larger than allowed, then save max relative
-              if (absErrorJS >= allowedAbsError && relErrorJS > maxRelErrorJS) {
-                maxRelErrorJS = relErrorJS;
-                maxRelErrorParamsJS = {
-                  expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
-                }
-              }
+              // // if absolute larger than allowed, then save max relative
+              // if (absErrorJS >= allowedAbsError && relErrorJS > maxRelErrorJS) {
+              //   maxRelErrorJS = relErrorJS;
+              //   maxRelErrorParamsJS = {
+              //     expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+              //   }
+              // }
 
-              // if relative larger than allowed, then save max absolute
-              if (relErrorJS > allowedRelError && absErrorJS > maxAbsErrorJS) {
-                maxAbsErrorJS = absErrorJS;
-                maxAbsErrorParamsJS = {
-                  expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
-                }
-              }
+              // // if relative larger than allowed, then save max absolute
+              // if (relErrorJS > allowedRelError && absErrorJS > maxAbsErrorJS) {
+              //   maxAbsErrorJS = absErrorJS;
+              //   maxAbsErrorParamsJS = {
+              //     expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
+              //   }
+              // }
             }
 
             // SOL
@@ -324,37 +324,26 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
 
     console.log("Allowed abs error: $" + allowedAbsError);
+    console.log("Allowed rel error: " + allowedRelError + "%");
 
-    // filter errors - use abs errors > allowedAbsError
+    // filter errors - find errors where abs error > allowedAbsError
     const filteredErrorsJS = errorsJS.filter(error => error.absErrorJS > allowedAbsError);
     // sort filtered errors by relative error descending
     filteredErrorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
-    console.log(filteredErrorsJS.slice(0, 1));
-    if (filteredErrorsJS.length > 0) {
-      // go through filtered errors and assert that relative error is below allowedRelError
-      for (let i = 0; i < filteredErrorsJS.length; i++) {
-        assert.isBelow(filteredErrorsJS[i].relErrorJS, allowedRelError);
-      }
-    }
 
-    //console.log(errorsJS);
-
-    // 
-    // errorsJS.sort((a, b) => b.absErrorJS - a.absErrorJS);
-
-    // console.log(errorsJS.slice(0, 20));
 
     if (log) {
+      const countAbsJS = countTotal - filteredErrorsJS.length;
       // JS
       console.log();
       console.log("REPORT JS");
-      console.log("Errors Abs/Rel/Total: " + countAbsJS + "/" + countRelJS + "/" + countTotal, "(" + ((countAbsJS / countTotal) * 100).toFixed(2) + "%)");
+      console.log("Errors Abs/Rel/Total: " + countAbsJS + "/" + filteredErrorsJS.length + "/" + countTotal, "(" + ((countAbsJS / countTotal) * 100).toFixed(2) + "%)");
   
-      console.log("Absolute error: Max: " + "$" + (maxAbsErrorJS / (0.1 * multi)).toFixed(6), "(normalized)");
-      console.log("Relative error: Max:  " + maxRelErrorJS.toFixed(6) + "%");
+      // console.log("Absolute error: Max: " + "$" + (filteredErrorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6), "(normalized)");
+      // console.log("Relative error: Max:  " + maxRelErrorJS.toFixed(6) + "%");
 
-      console.log("Max abs error params JS: ", maxAbsErrorParamsJS, convertSeconds(maxAbsErrorParamsJS ? maxAbsErrorParamsJS.expiration : 1));
-      console.log("Max rel error params JS: ", maxRelErrorParamsJS, convertSeconds(maxRelErrorParamsJS ? maxRelErrorParamsJS.expiration : 1));
+      console.log("Max abs error params JS: ", filteredErrorsJS[0], convertSeconds(filteredErrorsJS[0] ? filteredErrorsJS[0].errorParamsJS.expiration : 1));
+      // console.log("Max rel error params JS: ", maxRelErrorParamsJS, convertSeconds(maxRelErrorParamsJS ? maxRelErrorParamsJS.expiration : 1));
 
       // SOL
       console.log();
@@ -367,6 +356,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.expiration : 1));
       console.log("Max rel error params SOL: ", maxRelErrorParamsSOL, convertSeconds(maxRelErrorParamsSOL ? maxRelErrorParamsSOL.expiration : 1));
     }
+
+      // verify - go through filtered errors and assert that relative error is below allowedRelError
+      for (let i = 0; i < filteredErrorsJS.length; i++) {
+        assert.isBelow(filteredErrorsJS[i].relErrorJS, allowedRelError);
+      }
 
     
     // assert.isBelow(maxRelErrorJS, allowedRelError);
