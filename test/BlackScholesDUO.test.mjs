@@ -218,14 +218,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
     // SV = small values (less than $1 on a $1000 spot), LV = large values, Zero = zero
-    let maxRelErrorJS = 0, maxAbsErrorJS = 0, totalErrorRelJS = 0, totalErrorAbsJS = 0;
-    let maxRelErrorSOL = 0, maxAbsErrorSOL = 0, totalErrorRelSOL = 0, totalErrorAbsSOL = 0;
-    let maxRelErrorParamsJS = null, maxAbsErrorParamsJS = null, maxRelErrorParamsSOL = null, maxAbsErrorParamsSOL = null;
+    let maxRelErrorJS = 0, maxAbsErrorJS = 0;
     let countTotal = 0;
-    let countAbsSOL = 0, countRelSOL = 0;
 
     const totalPoints = strikePoints.length * timePoints.length * volPoints.length;
-    const errorsJS = [];
+    const errorsJS = [], errorsSOL = [];
     for (let strike of strikePoints) {
       for(let exp of timePoints) {
         for (let vol of volPoints) {
@@ -286,88 +283,89 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
               const absErrorSOL = Math.abs(actualSOL - expected);
 
-              // count absolutes and relatives
-              if (absErrorSOL < allowedAbsError) {
-                countAbsSOL++;
-              } else if (relErrorSOL < allowedRelError) {
-                countRelSOL++;
+              const errorParamsSOL = {
+                expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
               }
+              errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
 
-              // if absolute larger than allowed, then save max relative
-              if (absErrorSOL >= allowedAbsError && relErrorSOL > maxRelErrorSOL) {
-                maxRelErrorSOL = relErrorSOL;
-                maxRelErrorParamsSOL = {
-                  expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-                }
-              }
+              // // count absolutes and relatives
+              // if (absErrorSOL < allowedAbsError) {
+              //   countAbsSOL++;
+              // } else if (relErrorSOL < allowedRelError) {
+              //   countRelSOL++;
+              // }
 
-              // if relative larger than allowed, then save max absolute
-              if (relErrorSOL > allowedRelError && absErrorSOL > maxAbsErrorJS) {
-                maxAbsErrorSOL = absErrorSOL;
-                maxAbsErrorParamsSOL = {
-                  expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-                }
-              }
+              // // if absolute larger than allowed, then save max relative
+              // if (absErrorSOL >= allowedAbsError && relErrorSOL > maxRelErrorSOL) {
+              //   maxRelErrorSOL = relErrorSOL;
+              //   maxRelErrorParamsSOL = {
+              //     expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+              //   }
+              // }
+
+              // // if relative larger than allowed, then save max absolute
+              // if (relErrorSOL > allowedRelError && absErrorSOL > maxAbsErrorJS) {
+              //   maxAbsErrorSOL = absErrorSOL;
+              //   maxAbsErrorParamsSOL = {
+              //     expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+              //   }
+              // }
             }
 
             countTotal++;
 
             // print progress
             if (countTotal % Math.round(totalPoints / 20) === 0) {
+              errorsJS.sort((a, b) => b.absErrorJS - a.absErrorJS);
               log && console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
-                "%, Max abs error:", "$" + (maxAbsErrorJS ? (maxAbsErrorJS / (0.1 * multi)).toFixed(6) : "0") +
-                ", Max rel error:", (maxRelErrorJS ? maxRelErrorJS.toFixed(6) + "%" : "0"));
+                "%, Max abs error:", "$" + (errorsJS[0] ? (errorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6) : "0"));
+                // ", Max rel error:", (maxRelErrorJS ? maxRelErrorJS.toFixed(6) + "%" : "0"));
             }
           }
         }
       }
     }
 
-    console.log("Allowed abs error: $" + allowedAbsError);
-    console.log("Allowed rel error: " + allowedRelError + "%");
+
 
     // filter errors - find errors where abs error > allowedAbsError
     const filteredErrorsJS = errorsJS.filter(error => error.absErrorJS > allowedAbsError);
     // sort filtered errors by relative error descending
     filteredErrorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
 
+    // filter errors - find errors where abs error > allowedAbsError
+    const filteredErrorsSOL = errorsSOL.filter(error => error.absErrorSOL > allowedAbsError);
+    // sort filtered errors by relative error descending
+    filteredErrorsSOL.sort((a, b) => b.relErrorSOL - a.relErrorSOL);
 
     if (log) {
-      const countAbsJS = countTotal - filteredErrorsJS.length;
+      console.log("Allowed abs error: $" + allowedAbsError);
+      console.log("Allowed rel error: " + allowedRelError + "%");
+
       // JS
+      const countAbsJS = countTotal - filteredErrorsJS.length;
       console.log();
       console.log("REPORT JS");
       console.log("Errors Abs/Rel/Total: " + countAbsJS + "/" + filteredErrorsJS.length + "/" + countTotal, "(" + ((countAbsJS / countTotal) * 100).toFixed(2) + "%)");
-  
-      // console.log("Absolute error: Max: " + "$" + (filteredErrorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6), "(normalized)");
-      // console.log("Relative error: Max:  " + maxRelErrorJS.toFixed(6) + "%");
 
       console.log("Max abs error params JS: ", filteredErrorsJS[0], convertSeconds(filteredErrorsJS[0] ? filteredErrorsJS[0].errorParamsJS.expiration : 1));
-      // console.log("Max rel error params JS: ", maxRelErrorParamsJS, convertSeconds(maxRelErrorParamsJS ? maxRelErrorParamsJS.expiration : 1));
 
       // SOL
+      const countAbsSOL = countTotal - filteredErrorsSOL.length;
       console.log();
-      console.log("REPORT SOL");
-      console.log("Errors Abs/Rel/total: " + countAbsSOL + "/" + countRelSOL + "/" + countTotal, "(" + ((countAbsSOL / countTotal) * 100).toFixed(2) + "%)");
-  
-      console.log("Absolute error: Max: " + "$" + (maxAbsErrorSOL / (0.1 * multi)).toFixed(6), "(normalized)");
-      console.log("Relative error: Max:  " + maxRelErrorSOL.toFixed(6) + "%");
+      console.log("REPORT JS");
+      console.log("Errors Abs/Rel/Total: " + countAbsSOL + "/" + filteredErrorsSOL.length + "/" + countTotal, "(" + ((countAbsSOL / countTotal) * 100).toFixed(2) + "%)");
 
-      console.log("Max abs error params SOL: ", maxAbsErrorParamsSOL, convertSeconds(maxAbsErrorParamsSOL ? maxAbsErrorParamsSOL.expiration : 1));
-      console.log("Max rel error params SOL: ", maxRelErrorParamsSOL, convertSeconds(maxRelErrorParamsSOL ? maxRelErrorParamsSOL.expiration : 1));
+      console.log("Max abs error params SOL: ", filteredErrorsSOL[0], convertSeconds(filteredErrorsSOL[0] ? filteredErrorsSOL[0].errorParamsSOL.expiration : 1));
     }
 
-      // verify - go through filtered errors and assert that relative error is below allowedRelError
-      for (let i = 0; i < filteredErrorsJS.length; i++) {
-        assert.isBelow(filteredErrorsJS[i].relErrorJS, allowedRelError);
-      }
-
-    
-    // assert.isBelow(maxRelErrorJS, allowedRelError);
-    // assert.isBelow(maxRelErrorSOL, allowedRelError);
-
-    // assert.isBelow(maxAbsErrorJS, allowedAbsError);
-    // assert.isBelow(maxAbsErrorSOL, allowedAbsError);
+    // verify - go through filtered errors and assert that relative error is below allowedRelError
+    for (let i = 0; i < filteredErrorsJS.length; i++) {
+      assert.isBelow(filteredErrorsJS[i].relErrorJS, allowedRelError);
+    }
+    for (let i = 0; i < filteredErrorsSOL.length; i++) {
+      assert.isBelow(filteredErrorsSOL[i].relErrorSOL, allowedRelError);
+    }
   }
 
   async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125, log = true) { // %0.00125
@@ -671,25 +669,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
 
 
-        describe.only("random tests", function () {
+        describe("random tests", function () {
           it("gets multiple call prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 600, true);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
             const smallScale = 0.000001;
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000040 * smallScale, 10 * smallScale, true);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000036 * smallScale, 10 * smallScale, !fastTest);
           });
 
           it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 250 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 250 : 600, true);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000040, 10, true);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000036, 10, !fastTest);
           });
 
           it("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 600, false);
-            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 600, true);
+            const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
+            const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
             const largeScale = 1e12;
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000040 * largeScale, 10 * largeScale, true);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, 0.000100, 0.000036 * largeScale, 10 * largeScale, !fastTest);
           });
         });
 
@@ -975,24 +973,24 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("random tests", function () {
-        it("gets multiple put prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 600, true);
+        it("gets multiple call prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
           const smallScale = 0.000001;
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000060 * smallScale, 10 * smallScale, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000036 * smallScale, 10 * smallScale, !fastTest);
         });
 
-        it("gets multiple put prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 600, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000060, 10, true);
+        it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000036, 10, !fastTest);
         });
 
-        it("gets multiple put prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 600, false);
-          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 600, true);
+        it("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 30 : 600, false);
+          const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 30 : 600, true);
           const largeScale = 1e12;
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000060 * largeScale, 10 * largeScale, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, 0.000100, 0.000036 * largeScale, 10 * largeScale, !fastTest);
         });
       });
 
