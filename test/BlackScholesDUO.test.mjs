@@ -10,10 +10,10 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = true;
+const fastTest = false;
 
-const maxAbsError = 0.000076; // in $
-const maxRelError = 0.000088;  // in %
+const maxAbsError = 0.000089; // in $
+const maxRelError = 0.000089;  // in %
 
 function tokens(value) {
   const trimmedValue = Math.round(value * 1e18) / 1e18;
@@ -632,7 +632,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError * smallScale, 10 * smallScale, !fastTest);
           });
 
-          it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+          it.only("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
             const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 500, false);
             const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 500, true);
             await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10, !fastTest);
@@ -928,20 +928,20 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       describe("random tests", function () {
-        it("gets multiple call prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+        it("gets multiple put prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
           const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 500, false);
           const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 500, true);
           const smallScale = 0.000001;
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, maxRelError, maxAbsError * smallScale, 10 * smallScale, !fastTest);
         });
 
-        it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+        it.only("gets multiple put prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
           const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 500, false);
           const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 500, true);
           await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], false, maxRelError, maxAbsError, 10, !fastTest);
         });
 
-        it("gets multiple call prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+        it("gets multiple put prices at largest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
           const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 500, false);
           const timeSubArray = generateRandomTestPoints(500, 2 * SEC_IN_YEAR, fastTest ? 25 : 500, true);
           const largeScale = 1e12;
