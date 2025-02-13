@@ -303,15 +303,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       console.log("REPORT JS");
       console.log("Errors Abs/Rel/Total: " + countAbsJS + "/" + filteredErrorsJS.length + "/" + countTotal, "(" + ((countAbsJS / countTotal) * 100).toFixed(2) + "%)");
 
-      console.log("Max abs error params JS: ", filteredErrorsJS[0], convertSeconds(filteredErrorsJS[0] ? filteredErrorsJS[0].errorParamsJS.expiration : 1));
+      console.log("Max abs error params JS: ", filteredErrorsJS[0], convertSeconds(filteredErrorsJS[0] ? filteredErrorsJS[0].errorParamsJS.expiration : 0));
 
       // SOL
       const countAbsSOL = countTotal - filteredErrorsSOL.length;
       console.log();
-      console.log("REPORT JS");
+      console.log("REPORT SOL");
       console.log("Errors Abs/Rel/Total: " + countAbsSOL + "/" + filteredErrorsSOL.length + "/" + countTotal, "(" + ((countAbsSOL / countTotal) * 100).toFixed(2) + "%)");
 
-      console.log("Max abs error params SOL: ", filteredErrorsSOL[0], convertSeconds(filteredErrorsSOL[0] ? filteredErrorsSOL[0].errorParamsSOL.expiration : 1));
+      console.log("Max abs error params SOL: ", filteredErrorsSOL[0], convertSeconds(filteredErrorsSOL[0] ? filteredErrorsSOL[0].errorParamsSOL.expiration : 0));
     }
 
     // verify - go through filtered errors and assert that relative error is below allowedRelError
@@ -611,14 +611,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           it("gets a single call price: debug", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = bs.blackScholes(1000, 901.9375000000001, 144 / SEC_IN_YEAR, 0.01, 0, "call");
+            const expected = bs.blackScholes(1000, 993.5081617605824, 805174 / SEC_IN_YEAR, 0.01, 0, "put");
 
-            const actualJS = blackScholesJS.getCallOptionPrice(1000, 901.9375000000001, 144, 0.01, 0);
-            // console.log("expected:", expected, "actual JS :", actualJS);
+            const actualJS = blackScholesJS.getPutOptionPrice(1000, 993.5081617605824, 805174, 0.01, 0);
+            console.log("expected:", expected, "actual JS :", actualJS);
 
             if (duoTest) {
-              const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(901.9375000000001), 145, tokens(0.01), 0);
-              // console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
+              const actualSOL = await blackScholesPOC.getPutOptionPrice(tokens(1000), tokens(993.5081617605824), 805174, tokens(0.01), 0);
+              console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
             }
           });
         });

@@ -18,6 +18,8 @@ export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
 export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
+const log = false;
+
 export class BlackScholesJS {
 
   constructor(lookupTable) {
@@ -95,8 +97,10 @@ export class BlackScholesJS {
 
     // finally, scale the price back to the original spot
     const callPrice = finalPrice * spotScale;
+    log && console.log("call price:", finalPrice);
+    log && console.log(callPrice, discountedStrike, spot);
 
-    return callPrice + discountedStrike - spot;
+    return Math.max(0, callPrice + discountedStrike - spot);
   };
 
   // NOTE: rate: 20% and time: 1 year gives max error of 0.000045%
@@ -139,8 +143,6 @@ export class BlackScholesJS {
   interpolatePrice(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
-    const log = false;
-
     // step 1) get the specific cell
     const { strikeIndex, strikeWeight, strikeStep } = this.getIndexAndWeightFromStrike(strikeScaled);
     const timeToExpiryIndex = this.getIndexFromTime(Math.floor(timeToExpirySecScaled));
@@ -156,7 +158,7 @@ export class BlackScholesJS {
     // const strikeStep = this.getStrikeStepAndBoundary(strikeScaled).step;
     // const strikeWeight = deltaStrike / strikeStep;
     log && console.log("strikeScaled", strikeScaled, "strikeFromIndex:", this.getStrikeFromIndex(strikeIndex));
-    log && console.log("deltaStrike:", deltaStrike);
+    log && console.log("strikeStep:", strikeStep);
     log && console.log("strikeWeight:", strikeWeight);
 
     let finalPrice;

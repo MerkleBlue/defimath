@@ -114,7 +114,10 @@ contract BlackScholesPOC {
             uint256 callPrice = finalPrice * spotScale / 1e18;
 
             // finally, calculate the put price using put-call parity
-            price = callPrice + discountedStrike - spot;
+            uint256 callPlusStrike = callPrice + discountedStrike;
+            if (callPlusStrike > spot) {
+                price = callPlusStrike - spot;
+            }
         }
     }
 
