@@ -279,7 +279,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 if (errorsJS[0].absErrorJS < allowedAbsError) {
                   console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
                   "%, Max abs error:", "$" + (errorsJS[0] ? (errorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6) : "0") + 
-                  "(", (new Date().getTime() - startTime) + "mS)");
+                  " (" + (new Date().getTime() - startTime) + "mS)");
                 } else {
                   const filteredErrorsJS = errorsJS.filter(error => error.absErrorJS > allowedAbsError);
                   // sort filtered errors by relative error descending
@@ -287,7 +287,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                   console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
                   "%, Max abs error:", "$" + (filteredErrorsJS[0] ? (filteredErrorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6) : "0") + 
                   ", Max rel error:", (filteredErrorsJS[0] ? filteredErrorsJS[0].relErrorJS.toFixed(6) + "%" : "0") + 
-                  "(", (new Date().getTime() - startTime) + "mS)");
+                  " (" + (new Date().getTime() - startTime) + "mS)");
                 }
               }
             }
@@ -727,9 +727,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
           });
 
-          it.only("gets multiple call prices: $990 - $1010, 500s - 2y, 12%", async function () {
-            const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
-            const timeSubArray = testTimePoints.filter(value => value >= 900);
+          it.only("gets multiple call prices: $990 - $999, 500s - 2y, 12%", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 99.9);
+            const timeSubArray = testTimePoints.filter(value => value >= 500);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          });
+
+          it.only("gets multiple call prices: $999 - $1001, 500s - 2y, 12%", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 100.1);
+            const timeSubArray = testTimePoints.filter(value => value >= 500);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          });
+
+          it.only("gets multiple call prices: $1001 - $1010, 500s - 2y, 12%", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 100.1 && value <= 101);
+            const timeSubArray = testTimePoints.filter(value => value >= 500);
             await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
           });
 
