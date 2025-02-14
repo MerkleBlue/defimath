@@ -70,7 +70,7 @@ contract BlackScholesPOC {
             uint256 volRatio = uint256(volatility) * VOL_FIXED_MULTIPLIER / 1e16; // gas 35
             if (log) console.log("volRatio:", volRatio); 
             if (log) console.log("uint256(timeToExpirySec) * (volRatio ** 2):", uint256(timeToExpirySec) * (volRatio ** 2));
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e36; // gas 98
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e18; // NOTE: 18 decimals format for precision. gas 98
 
             // step 4: interpolate price
             uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled); // 
@@ -109,7 +109,7 @@ contract BlackScholesPOC {
             uint256 volRatio = uint256(volatility) * VOL_FIXED_MULTIPLIER / 1e16; // gas 35
             if (log) console.log("volRatio:", volRatio); 
             if (log) console.log("uint256(timeToExpirySec) * (volRatio ** 2):", uint256(timeToExpirySec) * (volRatio ** 2));
-            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volRatio) ** 2) / 1e36;
+            uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (uint256(volRatio) ** 2) / 1e18; // NOTE: 18 decimals format for precision.  
 
             // step 4: interpolate price
             uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled);
@@ -368,7 +368,7 @@ contract BlackScholesPOC {
         unchecked {
             // step 1) get the specific cell
             (uint256 strikeIndex, int256 strikeWeight, uint256 strikeB) = getIndexAndWeightFromStrike(strikeScaled); // gas 332
-            uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled); // gas 361
+            uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled / 1e18); // gas
             uint256 cell = lookupTable[strikeIndex * 1000 + timeToExpiryIndex]; // gas 2199
 
             if (log) console.log("strikeIndex:", strikeIndex);
@@ -387,7 +387,7 @@ contract BlackScholesPOC {
                 // step 3) calculate timeToExpiry weight
                 uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
                 uint256 expirationStep = maxUint256(1, 2 ** (timeToExpiryIndex / 10 - 3)); // todo: what if negative???
-                int256 timeToExpiryWeight = int256((timeToExpirySecScaled - timeToExpiryFromIndex) * 1e18 / expirationStep); // gas 482 3 lines above
+                int256 timeToExpiryWeight = int256((timeToExpirySecScaled - timeToExpiryFromIndex * 1e18) / expirationStep); // gas 482 3 lines above
                 if (log) console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
                 if (log) console.log("expirationStep: %d", expirationStep);
                 if (log) { if (timeToExpiryWeight > 0) { console.log("timeToExpiryWeight: %d", uint256(timeToExpiryWeight)); } else { console.log("timeToExpiryWeight: -%d", uint256(-timeToExpiryWeight)); }}

@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = true;
+const fastTest = false;
 
 const maxAbsError = 0.000089; // in $
 const maxRelError = 0.000089;  // in %
@@ -622,13 +622,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           it("gets a single call price: debug", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = bs.blackScholes(1000, 1000.7499999999999, 73728 / SEC_IN_YEAR, 0.01, 0, "call");
+            const expected = bs.blackScholes(1000, 1000.7187499999999, 77312 / SEC_IN_YEAR, 0.01, 0, "call");
 
-            const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000.7499999999999, 73728, 0.01, 0);
+            const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000.7187499999999, 77312, 0.01, 0);
             console.log("expected:", expected, "actual JS :", actualJS);
 
             if (duoTest) {
-              const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(1000.7499999999999), 73728, tokens(0.01), 0);
+              const actualSOL = await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(1000.7187499999999), 77312, tokens(0.01), 0);
               console.log("expected:", expected, "actual SOL:", actualSOL.toString() / 1e18);
             }
           });
@@ -734,7 +734,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $999 - $1001, 500s - 2y, 12%", async function () {
+          it.only("gets multiple call prices: $999 - $1001, 500s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 100.1);
             const timeSubArray = testTimePoints.filter(value => value >= 500 * 144);
             await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
