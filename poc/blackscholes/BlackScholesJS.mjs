@@ -47,6 +47,8 @@ export class BlackScholesJS {
 
     // step 3: set the expiration based on volatility
     const volRatio = vol / VOL_FIXED;
+    log && console.log("volRatio:", volRatio);
+    log && console.log("timeToExpirySec * (volRatio * volRatio):", timeToExpirySec * (volRatio * volRatio));
     const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio); //Math.floor(timeToExpirySec * (volRatio * volRatio));
     // console.log("timeToExpiryScaled (not rounded)", timeToExpirySec * (volRatio * volRatio));
     // console.log("strikeScaled", strikeScaled, "timeToExpirySecScaled", timeToExpirySecScaled, timeToExpirySec);
