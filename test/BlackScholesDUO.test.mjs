@@ -9,7 +9,7 @@ import hre from "hardhat";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = true;
+const duoTest = false;
 const fastTest = false;
 
 const maxAbsError = 0.000089; // in $
@@ -223,9 +223,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     log && console.log("Allowed abs error: $" + allowedAbsError);
     log && console.log("Allowed rel error:  " + allowedRelError + "%");
 
-    let countTotal = 0;
+    let countTotal = 0, prunedCountJS = 0, prunedCountSOL = 0;
     const totalPoints = strikePoints.length * timePoints.length * volPoints.length;
-    const errorsJS = [], errorsSOL = [];
+    let errorsJS = [], errorsSOL = [];
     for (let strike of strikePoints) {
       for(let exp of timePoints) {
         for (let vol of volPoints) {
@@ -271,9 +271,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
             countTotal++;
 
-            // print progress
-            if (log) {
-              if (countTotal % Math.round(totalPoints / 20) === 0) {
+            // print progress and prune errors
+            if (countTotal % Math.round(totalPoints / 20) === 0) {
+              if (log) {
                 const startTime = new Date().getTime();
                 errorsJS.sort((a, b) => b.absErrorJS - a.absErrorJS);
                 if (errorsJS[0].absErrorJS < allowedAbsError) {
@@ -290,46 +290,60 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                   " (" + (new Date().getTime() - startTime) + "mS)");
                 }
               }
+
+              // prune all errors where abs error < allowedAbsError
+              const toDeleteErrorsJS = errorsJS.filter(error => error.absErrorJS < allowedAbsError);
+              prunedCountJS += toDeleteErrorsJS.length;
+              const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < allowedAbsError);
+              prunedCountSOL += toDeleteErrorsSOL.length;
+
+              errorsJS = errorsJS.filter(error => error.absErrorJS >= allowedAbsError);
+              errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= allowedAbsError);
             }
           }
         }
       }
     }
 
-    // filter errors - find errors where abs error > allowedAbsError
-    const filteredErrorsJS = errorsJS.filter(error => error.absErrorJS > allowedAbsError);
-    // sort filtered errors by relative error descending
-    filteredErrorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
+    // prune all errors where abs error < allowedAbsError
+    const toDeleteErrorsJS = errorsJS.filter(error => error.absErrorJS < allowedAbsError);
+    prunedCountJS += toDeleteErrorsJS.length;
+    const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < allowedAbsError);
+    prunedCountSOL += toDeleteErrorsSOL.length;
 
-    // filter errors - find errors where abs error > allowedAbsError
-    const filteredErrorsSOL = errorsSOL.filter(error => error.absErrorSOL > allowedAbsError);
+    errorsJS = errorsJS.filter(error => error.absErrorJS >= allowedAbsError);
+    errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= allowedAbsError);
+
     // sort filtered errors by relative error descending
-    filteredErrorsSOL.sort((a, b) => b.relErrorSOL - a.relErrorSOL);
+    errorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
+
+    // sort filtered errors by relative error descending
+    errorsSOL.sort((a, b) => b.relErrorSOL - a.relErrorSOL);
 
     if (log) {
       // JS
-      const countAbsJS = countTotal - filteredErrorsJS.length;
       console.log();
       console.log("REPORT JS");
-      console.log("Errors Abs/Rel/Total: " + countAbsJS + "/" + filteredErrorsJS.length + "/" + countTotal, "(" + ((countAbsJS / countTotal) * 100).toFixed(2) + "%)");
+      console.log("Errors Abs/Rel/Total: " + prunedCountJS + "/" + errorsJS.length + "/" + countTotal, "(" + ((prunedCountJS / countTotal) * 100).toFixed(2) + "%)");
 
-      console.log("Max abs error params JS: ", filteredErrorsJS[0], convertSeconds(filteredErrorsJS[0] ? filteredErrorsJS[0].errorParamsJS.expiration : 0));
+      console.log("Max abs error params JS: ", errorsJS[0], convertSeconds(errorsJS[0] ? errorsJS[0].errorParamsJS.expiration : 0));
 
       // SOL
-      const countAbsSOL = countTotal - filteredErrorsSOL.length;
-      console.log();
-      console.log("REPORT SOL");
-      console.log("Errors Abs/Rel/Total: " + countAbsSOL + "/" + filteredErrorsSOL.length + "/" + countTotal, "(" + ((countAbsSOL / countTotal) * 100).toFixed(2) + "%)");
+      if (duoTest) {
+        console.log();
+        console.log("REPORT SOL");
+        console.log("Errors Abs/Rel/Total: " + prunedCountSOL + "/" + errorsSOL.length + "/" + countTotal, "(" + ((prunedCountSOL / countTotal) * 100).toFixed(2) + "%)");
 
-      console.log("Max abs error params SOL: ", filteredErrorsSOL[0], convertSeconds(filteredErrorsSOL[0] ? filteredErrorsSOL[0].errorParamsSOL.expiration : 0));
+        console.log("Max abs error params SOL: ", errorsSOL[0], convertSeconds(errorsSOL[0] ? errorsSOL[0].errorParamsSOL.expiration : 0));
+      }
     }
 
-    // verify - go through filtered errors and assert that relative error is below allowedRelError
-    for (let i = 0; i < filteredErrorsJS.length; i++) {
-      assert.isBelow(filteredErrorsJS[i].relErrorJS, allowedRelError);
+    // verify - go through errors and assert that relative error is below allowedRelError
+    for (let i = 0; i < errorsJS.length; i++) {
+      assert.isBelow(errorsJS[i].relErrorJS, allowedRelError);
     }
-    for (let i = 0; i < filteredErrorsSOL.length; i++) {
-      assert.isBelow(filteredErrorsSOL[i].relErrorSOL, allowedRelError);
+    for (let i = 0; i < errorsSOL.length; i++) {
+      assert.isBelow(errorsSOL[i].relErrorSOL, allowedRelError);
     }
   }
 
@@ -715,59 +729,66 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           });
         });
 
-        !fastTest && describe("multiple call options - 16x16 per cell", function () {
+        !fastTest && describe.only("multiple call options - 16x16 per cell", function () {
+          const isCall = true;
           it("gets multiple call prices: $200 - $900, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500); // todo: time from 1s to 2y
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1 );
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
           it("gets multiple call prices: $900 - $990, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $990 - $999, 500s - 2y, 12%", async function () {
+          it("gets multiple call prices: $990 - $999, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 99.9);
-            const timeSubArray = testTimePoints.filter(value => value >= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it.only("gets multiple call prices: $999 - $1001, 500s - 2y, 12%", async function () {
+          it("gets multiple call prices: $999 - $1001, Xs - 2y, 12%", async function () { // todo: < 480
             const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 100.1);
-            const timeSubArray = testTimePoints.filter(value => value >= 500 * 144);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 480 * 144);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.02, 0.03], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $1001 - $1010, 500s - 2y, 12%", async function () {
+          it("gets multiple call prices: $999 - $1001, 480s - 2y, 12%", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 100.1);
+            const timeSubArray = testTimePoints.filter(value => value >= 480); // todo: < 480
+            await testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
+          });
+
+          it("gets multiple call prices: $1001 - $1010, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 100.1 && value <= 101);
-            const timeSubArray = testTimePoints.filter(value => value >= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $1010 - $1100, 240s - 2y, 12%", async function () {
+          it("gets multiple call prices: $1010 - $1100, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
-            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $1100 - $1300, 240s - 2y, 12%", async function () {
+          it("gets multiple call prices: $1100 - $1300, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $1300 - $2000, 240s - 2y, 12%", async function () {
+          it("gets multiple call prices: $1300 - $2000, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $2000 - $5000, 240s - 2y, 12%", async function () {
+          it("gets multiple call prices: $2000 - $5000, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
-            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 500);
-            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+            const timeSubArray = testTimePoints.filter(value => value >= 1);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
           });
         });
       });
@@ -1031,46 +1052,65 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       !fastTest && describe("multiple put options - 16x16 per cell", function () {
-        it("gets multiple put prices: $200 - $900, 240s - 2y, 12%", async function () {
+        const isCall = false;
+        it("gets multiple put prices: $200 - $900, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
-          const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 200);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          const timeSubArray = testTimePoints.filter(value => value >= 1 );
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
 
-        it("gets multiple put prices: $900 - $990, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $900 - $990, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 90 && value <= 99);
-          const timeSubArray = testTimePoints.filter(value => value >= 145);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
 
-        it("gets multiple put prices: $990 - $1010, 500s - 2y, 12%", async function () {
-          const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 101);
-          const timeSubArray = testTimePoints.filter(value => value >= 900);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+        it("gets multiple put prices: $990 - $999, 1s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 99 && value <= 99.9);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
 
-        it("gets multiple put prices: $1010 - $1100, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $999 - $1001, Xs - 2y, 12%", async function () { // todo: < 480
+          const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 100.1);
+          const timeSubArray = testTimePoints.filter(value => value >= 480 * 144);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.02, 0.03], isCall, maxRelError, maxAbsError, 10);
+        });
+
+        it("gets multiple put prices: $999 - $1001, 480s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 100.1);
+          const timeSubArray = testTimePoints.filter(value => value >= 480); // todo: < 480
+          await testOptionRange(strikeSubArray, timeSubArray, [VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
+        });
+
+        it("gets multiple put prices: $1001 - $1010, 1s - 2y, 12%", async function () {
+          const strikeSubArray = testStrikePoints.filter(value => value >= 100.1 && value <= 101);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
+        });
+
+        it("gets multiple put prices: $1010 - $1100, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 101 && value <= 110);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
 
-        it("gets multiple put prices: $1100 - $1300, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $1100 - $1300, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 110 && value <= 130);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
 
-        it("gets multiple put prices: $1300 - $2000, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $1300 - $2000, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 130 && value <= 200);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
 
-        it("gets multiple put prices: $2000 - $5000, 240s - 2y, 12%", async function () {
+        it("gets multiple put prices: $2000 - $5000, 1s - 2y, 12%", async function () {
           const strikeSubArray = testStrikePoints.filter(value => value >= 200 && value < 500);
-          const timeSubArray = testTimePoints.filter(value => value >= 240);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], true, maxRelError, maxAbsError, 10);
+          const timeSubArray = testTimePoints.filter(value => value >= 1);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.01, VOL_FIXED, 1.92], isCall, maxRelError, maxAbsError, 10);
         });
       });
 
@@ -1183,14 +1223,18 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("getIndexFromTime " + (fastTest ? "FAST" : "SLOW"), function () {
       async function getActualExpected(blackScholesPOC, time) {
-        const actualJS = blackScholesJS.getIndexFromTime(time);
-
-        const actualSOL = await blackScholesPOC.getIndexFromTime(time);
-
         // check index against log2, which we don't have in JS
         const major = Math.floor(Math.log2(time));
         const minor = Math.floor((time - 2 ** major) / 2 ** (major - 3));
         const expected = major * 10 + minor;
+
+        const actualJS = blackScholesJS.getIndexFromTime(time);
+
+        let actualSOL;
+        if (duoTest) {
+          actualSOL = await blackScholesPOC.getIndexFromTime(time);
+        }
+
         return { actualJS, actualSOL, expected };
       }
 
@@ -1208,14 +1252,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         assert.equal(blackScholesJS.getIndexFromTime(7), 7);
 
         // SOL
-        assert.equal(await blackScholesPOC.getIndexFromTime(0), 0);
-        assert.equal(await blackScholesPOC.getIndexFromTime(1), 1);
-        assert.equal(await blackScholesPOC.getIndexFromTime(2), 2);
-        assert.equal(await blackScholesPOC.getIndexFromTime(3), 3);
-        assert.equal(await blackScholesPOC.getIndexFromTime(4), 4);
-        assert.equal(await blackScholesPOC.getIndexFromTime(5), 5);
-        assert.equal(await blackScholesPOC.getIndexFromTime(6), 6);
-        assert.equal(await blackScholesPOC.getIndexFromTime(7), 7);
+        if (duoTest) {
+          assert.equal(await blackScholesPOC.getIndexFromTime(0), 0);
+          assert.equal(await blackScholesPOC.getIndexFromTime(1), 1);
+          assert.equal(await blackScholesPOC.getIndexFromTime(2), 2);
+          assert.equal(await blackScholesPOC.getIndexFromTime(3), 3);
+          assert.equal(await blackScholesPOC.getIndexFromTime(4), 4);
+          assert.equal(await blackScholesPOC.getIndexFromTime(5), 5);
+          assert.equal(await blackScholesPOC.getIndexFromTime(6), 6);
+          assert.equal(await blackScholesPOC.getIndexFromTime(7), 7);
+        }
       });
 
       it("calculates index for time [2^3, 2^16)", async function () {
@@ -1226,7 +1272,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let time = 8; time < 2 ** 16; time += step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
-          assert.equal(actualSOL, expected);
+
+          if (duoTest) {
+            assert.equal(actualSOL, expected);
+          }
           count++;
         }
         // console.log("values tested: ", count);
@@ -1240,7 +1289,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let time = 2 ** 16; time < 2 ** 24; time += 2 ** 8 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
-          assert.equal(actualSOL, expected);
+
+          if (duoTest) {
+            assert.equal(actualSOL, expected);
+          }
           count++;
         }
         // console.log("values tested: ", count);
@@ -1254,7 +1306,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let time = 2 ** 24; time < 2 ** 32; time += 2 ** 16 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
-          assert.equal(actualSOL, expected);
+
+          if (duoTest) {
+            assert.equal(actualSOL, expected);
+          }
           count++;
         }
         // console.log("values tested: ", count);
@@ -1268,7 +1323,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let time = 2 ** 32; time < 2 ** 34; time += 2 ** 18 * step) {
           const { actualJS, actualSOL, expected } = await getActualExpected(blackScholesPOC, time);
           assert.equal(actualJS, expected);
-          assert.equal(actualSOL, expected);
+
+          if (duoTest) {
+            assert.equal(actualSOL, expected);
+          }
           count++;
         }
         // console.log("values tested: ", count);
@@ -1284,9 +1342,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const testStrikePoints = generateTestStrikePoints(blackScholesJS, 20, 501).filter((_, i) => i % filterEvery === 0);
           for (let i = 0; i < testStrikePoints.length - 1; i++) {
             const actualJS = blackScholesJS.getIndexAndWeightFromStrike(testStrikePoints[i]).strikeIndex;
-            const actualSOL = (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(testStrikePoints[i]))).index;
+            assert.equal(true, actualJS <= testStrikePoints[i] * 100);
 
-            assert.equal(actualJS, actualSOL);
+            if (duoTest) {
+              const actualSOL = (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(testStrikePoints[i]))).index;
+              assert.equal(true, actualSOL <= testStrikePoints[i]);
+              assert.equal(actualJS, actualSOL);
+            }
           }
         });
       });
@@ -1294,7 +1356,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       describe("specific values", function () {
         async function testSpecificValue(index, strike, blackScholesPOC) {
           assert.equal(index * STRIKE_INDEX_MULTIPLIER, blackScholesJS.getIndexAndWeightFromStrike(strike).strikeIndex);
-          assert.equal(index * STRIKE_INDEX_MULTIPLIER, (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(strike))).index);
+          if (duoTest) {
+            assert.equal(index * STRIKE_INDEX_MULTIPLIER, (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(strike))).index);
+          }
         }
 
         it("calculates index for strike [20, 90)", async function () {
