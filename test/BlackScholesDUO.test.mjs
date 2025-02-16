@@ -9,10 +9,10 @@ import hre from "hardhat";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = false;
+const duoTest = true;
 const fastTest = false;
 
-const maxAbsError = 0.000089; // in $
+const maxAbsError = 0.000089;  // in $, for an option on a $1000 spot price
 const maxRelError = 0.000089;  // in %
 
 function tokens(value) {
@@ -89,8 +89,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return futurePrice;
   }
 
-  function findMinAndMax(map) {
+  function findMinAndMax(map, timeLimit, lowerThanLimit) {
     // Initialize min and max objects with Infinity and -Infinity respectively
+    console.log("Interpolation parameters: timeIndex", (lowerThanLimit ? "< " : ">= ") + timeLimit);
     const inf = Infinity;
     const result = {
         min: { intrinsicPriceAA: inf, intrinsicPriceBAdiff: inf, a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf },
@@ -108,7 +109,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     const nonSmallTimeMap = new Map(nonZeroMap);
     for (let [key, value] of map) {
-      if (key % 1000 >= 160) { // 160 is actually 2 ^ 16 secs
+      if (lowerThanLimit && (key % 1000 >= timeLimit)) { // 160 is actually 2 ^ 16 secs
+        nonSmallTimeMap.delete(key);
+      }
+      if (!lowerThanLimit && (key % 1000 < timeLimit)) { // 160 is actually 2 ^ 16 secs
         nonSmallTimeMap.delete(key);
       }
     }
@@ -136,6 +140,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             }
         }
     });
+
+    // for each attribute in result.min and result.max, print min and max
+    for (const key of Object.keys(result.min)) {
+      if (key !== undefined) {
+        console.log(key, "[", result.min[key], "-", result.max[key], "]");
+      }
+    }
 
     return result;
   }
@@ -416,15 +427,18 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
     console.log("lookupTable size: ", count, "intrinsic zero count: ", intrinsicZeroCount, (intrinsicZeroCount / count * 100).toFixed(2) + "%");
 
-    // find min and max for parameters
-    const result = findMinAndMax(lookupTable);
+    // find min and max for parameters, 160 is hardcoded in contract
+    findMinAndMax(lookupTable, 160, false);
+    findMinAndMax(lookupTable, 160, true);
 
-    // for each attribute in result.min and result.max, print min and max
-    for (const key of Object.keys(result.min)) {
-      if (key !== undefined) {
-        console.log(key, "[", result.min[key], "-", result.max[key], "]");
-      }
-    }
+    const specialAreaMap = new Map(
+      [...lookupTable]
+      .filter(([k, v]) => (k > 9990000 && k <= 9990087) || (k > 9995000 && k <= 9995087) || (k > 10000000 && k <= 10000087) || (k > 10005000 && k <= 10005087))
+    );
+
+    // console.log(specialAreaMap);
+    findMinAndMax(specialAreaMap, 1000000, true);
+
 
     // reduce decimals to 6 decimals, all but c3w which is 5 decimals, with almost same precision
     lookupTable.forEach((value, key) => {
@@ -453,7 +467,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe("performance", function () {
+  duoTest && describe.only("performance", function () {
     it("getCallOptionPrice gas single call", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 
