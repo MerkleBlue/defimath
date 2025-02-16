@@ -648,7 +648,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           });
         });
 
-
         describe("random tests", function () {
           it("gets multiple call prices at smallest scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
             const strikeSubArray = generateRandomTestPoints(20, 500, fastTest ? 25 : 500, false);
@@ -729,7 +728,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           });
         });
 
-        !fastTest && describe.only("multiple call options - 16x16 per cell", function () {
+        !fastTest && describe("multiple call options - 16x16 per cell", function () {
           const isCall = true;
           it("gets multiple call prices: $200 - $900, 1s - 2y, 12%", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 20 && value <= 90);
