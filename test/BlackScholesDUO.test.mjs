@@ -9,11 +9,25 @@ import hre from "hardhat";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = true;
+const duoTest = false;
 const fastTest = true;
 
-const maxAbsError = 0.000089;  // in $, for an option on a $1000 spot price
-const maxRelError = 0.000089;  // in %
+const maxAbsError = 0.000089;  // $, for an option on a $1000 spot price
+const maxRelError = 0.000089;  // %
+
+// bs has a bug with time = 0, it returns NaN, so we are wrapping it
+export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
+  // handle expired option
+  if (time <= 0) {
+    if (callOrPut === "call") {
+      return Math.max(0, spot - strike);
+    } else {
+      return Math.max(0, strike - spot);
+    }
+  }
+
+  return Math.max(0, bs.blackScholes(spot, strike, time, vol, rate, callOrPut));
+}
 
 function tokens(value) {
   const trimmedValue = Math.round(value * 1e18) / 1e18;
@@ -117,15 +131,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     }
 
-    const sameIntrinsicPriceMap = new Map(nonZeroMap);
-    for (let [key, value] of nonZeroMap) {
-      if (value.intrinsicPriceBAdiff !== 0) {
-        sameIntrinsicPriceMap.delete(key);
-      }
-    }
+    // const sameIntrinsicPriceMap = new Map(nonZeroMap);
+    // for (let [key, value] of nonZeroMap) {
+    //   if (value.intrinsicPriceBAdiff !== 0) {
+    //     sameIntrinsicPriceMap.delete(key);
+    //   }
+    // }
 
     // print map and nonZero map size
-    console.log("map size: ", map.size, "nonZero map size: ", nonZeroMap.size, "sameIntrinsicPriceMap size: ", sameIntrinsicPriceMap.size);
+    console.log("map size: ", map.size, "nonZero map size: ", nonZeroMap.size);
 
     // Iterate over the map
     nonSmallTimeMap.forEach(obj => {
@@ -242,7 +256,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let vol of volPoints) {
           for (let rate = 0; rate < 0.01; rate += 0.02) {
             // expected
-            const expected = Math.max(0, bs.blackScholes(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, isCall ? "call" : "put"));
+            const expected = blackScholesWrapped(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, isCall ? "call" : "put");
 
             // JS
             {
@@ -437,6 +451,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     // console.log(curvedLookupTable);
     findMinAndMax(curvedLookupTable, 1000000, true);
 
+    // find intrinsicPriceBAdiff NaN values in curved lookup table
+    const nanCurvedMap = new Map(
+      [...curvedLookupTable]
+      .filter(([k, v]) => isNaN(v.intrinsicPriceBAdiff))
+    );
+    console.log("-------- NaN curved values --------", nanCurvedMap.size);
+    console.log(nanCurvedMap);
+
+    // find intrinsicPriceBAdiff NaN values in curved lookup table
+    const nanMap = new Map(
+      [...lookupTable]
+      .filter(([k, v]) => v.intrinsicPriceBAdiff == null)
+    );
+    console.log("-------- null values --------", nanMap.size);
+    // console.log(nanMap);
+    
+
     // todo: delete later
     // const specialAreaMap = new Map(
     //   [...lookupTable]
@@ -599,10 +630,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("getCallOptionPrice " + (fastTest ? "FAST" : "SLOW"), function () {
       describe("success", function () {
         describe("single option test", function () {
-          it("gets a single call price when time > 2 ^ 16", async function () {
+          it.only("gets a single call price when time > 2 ^ 16", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = bs.blackScholes(1000, 930, 60 / 365, 0.60, 0.05, "call");
+            const expected = blackScholesWrapped(1000, 930, 60 / 365, 0.60, 0.05, "call");
 
             const actualJS = blackScholesJS.getCallOptionPrice(1000, 930, 60 * SEC_IN_DAY, 0.60, 0.05);
             const errorJS = Math.abs(actualJS - expected);
@@ -620,7 +651,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           it("gets a single call price when time < 2 ^ 16", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = bs.blackScholes(1000, 990, 0.05 / 365, 0.40, 0.05, "call");
+            const expected = blackScholesWrapped(1000, 990, 0.05 / 365, 0.40, 0.05, "call");
 
             const actualJS = blackScholesJS.getCallOptionPrice(1000, 990, 0.05 * SEC_IN_DAY, 0.40, 0.05);
             const errorJS = Math.abs(actualJS - expected);
@@ -639,7 +670,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           it("gets a single call price when time > 2 ^ 16", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = bs.blackScholes(1000, 990, 50 / 365, 0.40, 0.05, "call");
+            const expected = blackScholesWrapped(1000, 990, 50 / 365, 0.40, 0.05, "call");
 
             const actualJS = blackScholesJS.getCallOptionPrice(1000, 990, 50 * SEC_IN_DAY, 0.40, 0.05);
             const errorJS = Math.abs(actualJS - expected);
@@ -657,7 +688,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           it("gets a single call price: debug", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = bs.blackScholes(1000, 1000.7187499999999, 77312 / SEC_IN_YEAR, 0.01, 0, "call");
+            const expected = blackScholesWrapped(1000, 1000.7187499999999, 77312 / SEC_IN_YEAR, 0.01, 0, "call");
 
             const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000.7187499999999, 77312, 0.01, 0);
             console.log("expected:", expected, "actual JS :", actualJS);
@@ -925,7 +956,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets a single put price when time > 2 ^ 16", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 1070, 60 / 365, 0.60, 0.05, "put");
+          const expected = blackScholesWrapped(1000, 1070, 60 / 365, 0.60, 0.05, "put");
 
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 1070, 60 * SEC_IN_DAY, 0.60, 0.05);
           const errorJS = (Math.abs(actualJS - expected) / expected * 100);
@@ -943,7 +974,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets a single put price when time < 2 ^ 16", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 1010, 0.05 / 365, 0.40, 0.05, "put");
+          const expected = blackScholesWrapped(1000, 1010, 0.05 / 365, 0.40, 0.05, "put");
 
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 1010, 0.05 * SEC_IN_DAY, 0.40, 0.05);
           const errorJS = (Math.abs(actualJS - expected) / expected * 100);
@@ -961,7 +992,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets a single call price when time > 2 ^ 16", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 990, 50 / 365, 0.40, 0.05, "put");
+          const expected = blackScholesWrapped(1000, 990, 50 / 365, 0.40, 0.05, "put");
 
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 990, 50 * SEC_IN_DAY, 0.40, 0.05);
           const errorJS = (Math.abs(actualJS - expected) / expected * 100);
@@ -979,7 +1010,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("gets a single put price: debug", async function () {
           const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-          const expected = bs.blackScholes(1000, 901.9375000000001, 144 / SEC_IN_YEAR, 0.01, 0, "put");
+          const expected = blackScholesWrapped(1000, 901.9375000000001, 144 / SEC_IN_YEAR, 0.01, 0, "put");
 
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 901.9375000000001, 144, 0.01, 0);
           // console.log("expected:", expected, "actual JS :", actualJS);

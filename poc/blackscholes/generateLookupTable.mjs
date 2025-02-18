@@ -3,6 +3,7 @@ import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 import { MAX_MAJOR, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "./BlackScholesJS.mjs";
 import { mkConfig} from "export-to-csv";
 import { promises as fs } from "fs";
+import { blackScholesWrapped } from "../../test/BlackScholesDUO.test.mjs";
 const jsonConfig = mkConfig({ useKeysAsHeaders: true, showColumnHeaders: false, useBom: false });
 
 function quadraticFit([a, b]) {
@@ -66,21 +67,21 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
   for (let i = 0; i < strikes.length - 1; i++) {
     for (let j = 0; j < expirationSecs.length - 1; j++) {
       const progress = ++count / totalCount * 100;
-      if (progress % 10 === 0) console.log("Processing : ", progress.toFixed(0) + "%");
+      if (progress % 10 === 0) console.log("Generating: ", progress.toFixed(0) + "%");
 
       // for each element calculate Black Scholes
       const spot = 100;
       const vol = VOL_FIXED;
       const strikeA = strikes[i];
       const strikeB = strikes[i + 1];
-      const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
-      const expirationYearsB = expirationSecs[j + 1] / (365 * 24 * 60 * 60);
+      const expirationYearsA = Math.max(0, expirationSecs[j] / (365 * 24 * 60 * 60));
+      const expirationYearsB = Math.max(0, expirationSecs[j + 1] / (365 * 24 * 60 * 60));
 
       // NOTE: AB means strike A and expiration B
-      const optionPriceAA = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsA, vol, 0, "call"));
-      const optionPriceAB = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsB, vol, 0, "call"));
-      const optionPriceBA = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsA, vol, 0, "call"));
-      const optionPriceBB = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsB, vol, 0, "call"));
+      const optionPriceAA = blackScholesWrapped(spot, strikeA, expirationYearsA, vol, 0, "call");
+      const optionPriceAB = blackScholesWrapped(spot, strikeA, expirationYearsB, vol, 0, "call");
+      const optionPriceBA = blackScholesWrapped(spot, strikeB, expirationYearsA, vol, 0, "call");
+      const optionPriceBB = blackScholesWrapped(spot, strikeB, expirationYearsB, vol, 0, "call");
 
       const intrinsicPriceAA = optionPriceAA - Math.max(0, spot - strikeA);
       const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
@@ -92,7 +93,6 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
     
       if (writeToFile) {
         const fitPoints = 50;
-        const initialValues = [0, 0];
         const initialValuesCube = [0, 0, 0];
         const initialValuesFourth = [0, 0, 0, 0];
 
@@ -103,8 +103,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           
           const tpmTime = expirationYearsA + k * timeChunk;
       
-          const optionPriceAT = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
-          const optionPriceBT = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
+          const optionPriceAT = blackScholesWrapped(spot, strikeA, tpmTime, vol, 0, "call");
+          const optionPriceBT = blackScholesWrapped(spot, strikeB, tpmTime, vol, 0, "call");
           const intrinsicPriceAT = Math.max(optionPriceAT - Math.max(0, spot - strikeA));
           const intrinsicPriceBT = Math.max(optionPriceBT - Math.max(0, spot - strikeB));
       
@@ -131,8 +131,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
           
           const tpmStrike = strikeA + k * strikeChunk;
       
-          const optionPriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
-          const optionPriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
+          const optionPriceTA = blackScholesWrapped(spot, tpmStrike, expirationYearsA, vol, 0, "call");
+          const optionPriceTB = blackScholesWrapped(spot, tpmStrike, expirationYearsB, vol, 0, "call");
 
           const y3wtemp = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA); // strike weights are always in [0, 1]
           const y4wtemp = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB);
@@ -239,7 +239,8 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       }
 
       // pack for JS lookup table
-      const index = blackScholesJS.getIndexFromStrike(strikes[i] + 0.0000001) * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
+      const { strikeIndex } = blackScholesJS.getIndexAndWeightFromStrike(strikes[i] + 0.0000001);
+      const index = strikeIndex * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
       lookupTable.set(index, el);
     }
   }
@@ -407,21 +408,21 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
   for (let i = 0; i < strikes.length - 1; i++) {
     for (let j = 0; j < expirationSecs.length - 1; j++) {
       const progress = ++count / totalCount * 100;
-      if (progress % 10 === 0) console.log("Processing : ", progress.toFixed(0) + "%");
+      if (progress % 10 === 0) console.log("Generating: ", progress.toFixed(0) + "%");
 
       // for each element calculate Black Scholes
       const spot = 100;
       const vol = VOL_FIXED;
       const strikeA = strikes[i];
       const strikeB = strikes[i + 1];
-      const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
-      const expirationYearsB = expirationSecs[j + 1] / (365 * 24 * 60 * 60);
+      const expirationYearsA = Math.max(0, expirationSecs[j] / (365 * 24 * 60 * 60));
+      const expirationYearsB = Math.max(0, expirationSecs[j + 1] / (365 * 24 * 60 * 60));
 
       // NOTE: AB means strike A and expiration B
-      const optionPriceAA = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsA, vol, 0, "call"));
-      const optionPriceAB = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsB, vol, 0, "call"));
-      const optionPriceBA = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsA, vol, 0, "call"));
-      const optionPriceBB = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsB, vol, 0, "call"));
+      const optionPriceAA = blackScholesWrapped(spot, strikeA, expirationYearsA, vol, 0, "call");
+      const optionPriceAB = blackScholesWrapped(spot, strikeA, expirationYearsB, vol, 0, "call");
+      const optionPriceBA = blackScholesWrapped(spot, strikeB, expirationYearsA, vol, 0, "call");
+      const optionPriceBB = blackScholesWrapped(spot, strikeB, expirationYearsB, vol, 0, "call");
 
       const intrinsicPriceAA = optionPriceAA - Math.max(0, spot - strikeA);
       const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
@@ -440,8 +441,8 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
         
         const tpmTime = expirationYearsA + k * timeChunk;
     
-        const optionPriceAT = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
-        const optionPriceBT = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
+        const optionPriceAT = blackScholesWrapped(spot, strikeA, tpmTime, vol, 0, "call");
+        const optionPriceBT = blackScholesWrapped(spot, strikeB, tpmTime, vol, 0, "call");
         const intrinsicPriceAT = Math.max(optionPriceAT - Math.max(0, spot - strikeA));
         const intrinsicPriceBT = Math.max(optionPriceBT - Math.max(0, spot - strikeB));
     
@@ -468,8 +469,8 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
         
         const tpmStrike = strikeA + k * strikeChunk;
     
-        const optionPriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
-        const optionPriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
+        const optionPriceTA = blackScholesWrapped(spot, tpmStrike, expirationYearsA, vol, 0, "call");
+        const optionPriceTB = blackScholesWrapped(spot, tpmStrike, expirationYearsB, vol, 0, "call");
 
         const y3wtemp = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA); // strike weights are always in [0, 1]
         const y4wtemp = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB);
