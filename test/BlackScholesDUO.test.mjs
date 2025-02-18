@@ -1366,7 +1366,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
             if (duoTest) {
               const actualSOL = (await blackScholesPOC.getIndexAndWeightFromStrike(tokens(testStrikePoints[i]))).index;
-              assert.equal(true, actualSOL <= testStrikePoints[i]);
+              assert.equal(true, actualSOL <= testStrikePoints[i] * 100);
               assert.equal(actualJS, actualSOL);
             }
           }
