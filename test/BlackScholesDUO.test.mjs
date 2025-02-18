@@ -108,9 +108,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     console.log("Interpolation parameters: timeIndex", (lowerThanLimit ? "< " : ">= ") + timeLimit);
     const inf = Infinity;
     const result = {
-        min: { intrinsicPriceAA: inf, intrinsicPriceBAdiff: inf, a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf },
-        max: { intrinsicPriceAA: -inf, intrinsicPriceBAdiff: -inf, a1: -inf, b1: -inf, c1: -inf, a2diff: -inf, b2diff: -inf, c2diff: -inf, a3w: -inf, b3w: -inf, c3w: -inf, a4wdiff: -inf, b4wdiff: -inf, c4wdiff: -inf },
-        absMin: { a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf }
+        min: { intrinsicPriceAA: inf, intrinsicPriceBAdiff: inf, a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, d3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf, d4wdiff: inf },
+        max: { intrinsicPriceAA: -inf, intrinsicPriceBAdiff: -inf, a1: -inf, b1: -inf, c1: -inf, a2diff: -inf, b2diff: -inf, c2diff: -inf, a3w: -inf, b3w: -inf, c3w: -inf, d3w: -inf, a4wdiff: -inf, b4wdiff: -inf, c4wdiff: -inf, d4wdiff: -inf }
+        // absMin: { a1: inf, b1: inf, c1: inf, a2diff: inf, b2diff: inf, c2diff: inf, a3w: inf, b3w: inf, c3w: inf, a4wdiff: inf, b4wdiff: inf, c4wdiff: inf }
     };
 
     // make map copy and remove elements with intrinsic price 0
@@ -148,9 +148,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             if (obj[key] !== undefined) {
                 result.min[key] = Math.min(result.min[key], obj[key]);
                 result.max[key] = Math.max(result.max[key], obj[key]);
-                if (Math.abs(obj[key]) >= 0) {
-                  result.absMin[key] = Math.min(result.absMin[key], Math.abs(obj[key]));
-                }
+                // if (Math.abs(obj[key]) >= 0) {
+                //   result.absMin[key] = Math.min(result.absMin[key], Math.abs(obj[key]));
+                // }
             }
         }
     });
@@ -448,7 +448,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     findMinAndMax(lookupTable, 160, true);
     findMinAndMax(lookupTable, 160, false);
 
-    // console.log(curvedLookupTable);
+    console.log(curvedLookupTable);
     findMinAndMax(curvedLookupTable, 1000000, true);
 
     // find intrinsicPriceBAdiff NaN values in curved lookup table

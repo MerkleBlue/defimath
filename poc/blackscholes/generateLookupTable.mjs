@@ -582,20 +582,22 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
   return { lookupTable, lookupTableSOL };
 }
 
-// intrinsicPriceAA [ 0 - 0.018677 ]                // 15 bits, 6 decimals
-// intrinsicPriceBAdiff [ -0.015259 - 0.015253 ]    // 15 bits, 6 decimals
+// intrinsicPriceAA [ -0 - 0.017387 ]               // 15 bits, 6 decimals
+// intrinsicPriceBAdiff [ -0.014668 - 0.014663 ]    // 15 bits, 6 decimals
 // a1 [ -0.000045 - 0 ]                             // 6 bits, 6 decimals
 // b1 [ -0.000019 - 0.000055 ]                      // 7 bits, 6 decimals
 // c1 [ 0 - 0.00085 ]                               // 7 bits, 6 decimals
 // a2diff [ -0.000059 - 0.000038 ]                  // 7 bits, 6 decimals
 // b2diff [ -0.000032 - 0.000065 ]                  // 7 bits, 6 decimals
 // c2diff [ -0.000567 - 0.000536 ]                  // 11 bits, 6 decimals
-// a3w [ -0.31261 - 8.184084 ]                      // 22.5 bits for each of 8 numbers left, should be enough
-// b3w [ -14.254104 - 0.27579 ]
-// c3w [ 1.000001 - 7.271892 ]
-// a4wdiff [ -0.016531 - 0.402532 ]
-// b4wdiff [ -0.658297 - 0.027673 ]
-// c4wdiff [ -0.014163 - 0.264859 ]
+// a3w [ -22.010157 - 0.088111 ]                    // 25 bits, 6 decimals
+// b3w [ -0.183281 - 49.845413 ]                    // 26 bits, 6 decimals
+// c3w [ -38.286092 - 0.022202 ]                    // 26 bits, 6 decimals
+// d3w [ 1.000029 - 11.315035 ]                     // 24 bits, 6 decimals
+// a4wdiff [ -1.819879 - 0.097595 ]                 // 21 bits, 6 decimals
+// b4wdiff [ -0.152703 - 3.72748 ]                  // 22 bits, 6 decimals
+// c4wdiff [ -2.399463 - 0.071786 ]                 // 22 bits, 6 decimals
+// d4wdiff [ -0.017018 - 0.475413 ]                 // 19 bits, 6 decimals
 
 function replacer(key, value) {
   if(value instanceof Map) {
