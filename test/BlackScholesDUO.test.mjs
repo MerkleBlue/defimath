@@ -2,7 +2,7 @@
 import { assert, expect } from "chai";
 import bs from "black-scholes";
 import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FIXED } from "../poc/blackscholes/BlackScholesJS.mjs";
-import { generateLookupTable, generateStrikePoints, generateTimePoints } from "../poc/blackscholes/generateLookupTable.mjs";
+import { generateCurvedAreaLookupTable, generateLookupTable, generateStrikePoints, generateTimePoints } from "../poc/blackscholes/generateLookupTable.mjs";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import hre from "hardhat";
 
@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = false;
+const fastTest = true;
 
 const maxAbsError = 0.000089;  // in $, for an option on a $1000 spot price
 const maxRelError = 0.000089;  // in %
@@ -413,7 +413,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   before(async () => {
     testTimePoints = generateTestTimePoints();
     testStrikePoints = generateTestStrikePoints(new BlackScholesJS(), STRIKE_MIN, STRIKE_MAX);
-    const { lookupTable, rows } = await generateLookupTable(new BlackScholesJS(), true);
+    const { lookupTable } = await generateLookupTable(new BlackScholesJS(), true);
+    const curvedLookupTable  = (await generateCurvedAreaLookupTable(new BlackScholesJS())).lookupTable;
+    // console.log("curvedLookupTable");
+    // console.log(curvedLookupTable);
     blackScholesJS = new BlackScholesJS(lookupTable);
 
     // profile factors
@@ -428,19 +431,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     console.log("lookupTable size: ", count, "intrinsic zero count: ", intrinsicZeroCount, (intrinsicZeroCount / count * 100).toFixed(2) + "%");
 
     // find min and max for parameters, 160 is hardcoded in contract
-    findMinAndMax(lookupTable, 160, false);
     findMinAndMax(lookupTable, 160, true);
+    findMinAndMax(lookupTable, 160, false);
 
-    const specialAreaMap = new Map(
-      [...lookupTable]
-      .filter(([k, v]) => (k > 9990000 && k <= 9990087) || (k > 9995000 && k <= 9995087) || (k > 10000000 && k <= 10000087) || (k > 10005000 && k <= 10005087))
-    );
+    // console.log(curvedLookupTable);
+    findMinAndMax(curvedLookupTable, 1000000, true);
 
-    // console.log(specialAreaMap);
-    findMinAndMax(specialAreaMap, 1000000, true);
+    // todo: delete later
+    // const specialAreaMap = new Map(
+    //   [...lookupTable]
+    //   .filter(([k, v]) => (k > 9990000 && k <= 9990087) || (k > 9995000 && k <= 9995087) || (k > 10000000 && k <= 10000087) || (k > 10005000 && k <= 10005087))
+    // );
+
+    // // console.log(specialAreaMap);
+    // findMinAndMax(specialAreaMap, 1000000, true);
 
 
-    // reduce decimals to 6 decimals, all but c3w which is 5 decimals, with almost same precision
+    // reduce decimals to 6 decimals
     lookupTable.forEach((value, key) => {
       value.intrinsicPriceBAdiff =  Math.round(value.intrinsicPriceBAdiff * 1e6) / 1e6,
 
@@ -453,7 +460,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       value.a3w = Math.round(value.a3w * 1e6) / 1e6,
       value.b3w = Math.round(value.b3w * 1e6) / 1e6,
-      value.c3w = Math.round(value.c3w * 1e5) / 1e5,
+      value.c3w = Math.round(value.c3w * 1e6) / 1e6,
       value.a4wdiff = Math.round(value.a4wdiff * 1e6) / 1e6,
       value.b4wdiff = Math.round(value.b4wdiff * 1e6) / 1e6,
       value.c4wdiff = Math.round(value.c4wdiff * 1e6) / 1e6
@@ -467,7 +474,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe.only("performance", function () {
+  duoTest && describe("performance", function () {
     it("getCallOptionPrice gas single call", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
 

@@ -83,9 +83,7 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const optionPriceBB = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsB, vol, 0, "call"));
 
       const intrinsicPriceAA = optionPriceAA - Math.max(0, spot - strikeA);
-      const intrinsicPriceAB = optionPriceAB - Math.max(0, spot - strikeA);
       const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
-      const intrinsicPriceBB = optionPriceBB - Math.max(0, spot - strikeB);
       
       let x12 = new Array(10), x34 = new Array(10), x34w = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10), y3w = new Array(10), y4w = new Array(10);;
       let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0;
@@ -391,6 +389,197 @@ function getLookupTableSOL(lookupTable) {
 }
 
 // special area
+
+export async function generateCurvedAreaLookupTable(blackScholesJS) {
+  console.log("Generating curved area lookup table...");
+
+  // first dimension is spot strike ratio, second is expiration times
+  const strikes = generateStrikePoints(blackScholesJS, 99.9, 100.15);
+  const expirationSecs = generateTimePoints().filter(t => t < 480);
+
+  const lookupTable = new Map();
+
+  console.log("strikes", strikes);
+  console.log("expirationSecs", expirationSecs);
+
+  const totalCount = (strikes.length - 1) * (expirationSecs.length - 1);
+  let count = 0;
+  for (let i = 0; i < strikes.length - 1; i++) {
+    for (let j = 0; j < expirationSecs.length - 1; j++) {
+      const progress = ++count / totalCount * 100;
+      if (progress % 10 === 0) console.log("Processing : ", progress.toFixed(0) + "%");
+
+      // for each element calculate Black Scholes
+      const spot = 100;
+      const vol = VOL_FIXED;
+      const strikeA = strikes[i];
+      const strikeB = strikes[i + 1];
+      const expirationYearsA = expirationSecs[j] / (365 * 24 * 60 * 60);
+      const expirationYearsB = expirationSecs[j + 1] / (365 * 24 * 60 * 60);
+
+      // NOTE: AB means strike A and expiration B
+      const optionPriceAA = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsA, vol, 0, "call"));
+      const optionPriceAB = Math.max(0, bs.blackScholes(spot, strikeA, expirationYearsB, vol, 0, "call"));
+      const optionPriceBA = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsA, vol, 0, "call"));
+      const optionPriceBB = Math.max(0, bs.blackScholes(spot, strikeB, expirationYearsB, vol, 0, "call"));
+
+      const intrinsicPriceAA = optionPriceAA - Math.max(0, spot - strikeA);
+      const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
+      
+      let x12 = new Array(10), x34w = new Array(10), y1 = new Array(10), y2 = new Array(10), y3w = new Array(10), y4w = new Array(10);
+      let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0;
+
+      const fitPoints = 50;
+      const initialValuesCube = [0, 0, 0];
+      const initialValuesFourth = [0, 0, 0, 0];
+
+      // time points
+      // calculated as difference between intrinsic prices of AA and AT, and AB and BT
+      const timeChunk  = (expirationYearsB - expirationYearsA) / fitPoints;
+      for (let k = 0; k < fitPoints; k++) {
+        
+        const tpmTime = expirationYearsA + k * timeChunk;
+    
+        const optionPriceAT = Math.max(0, bs.blackScholes(spot, strikeA, tpmTime, vol, 0, "call"));
+        const optionPriceBT = Math.max(0, bs.blackScholes(spot, strikeB, tpmTime, vol, 0, "call"));
+        const intrinsicPriceAT = Math.max(optionPriceAT - Math.max(0, spot - strikeA));
+        const intrinsicPriceBT = Math.max(optionPriceBT - Math.max(0, spot - strikeB));
+    
+        x12[k] = k * timeChunk / (expirationYearsB - expirationYearsA);
+        y1[k] = intrinsicPriceAT - intrinsicPriceAA;
+        y2[k] = intrinsicPriceBT - intrinsicPriceBA;
+      }
+
+      let resultCube = levenbergMarquardt({ x: x12, y: y1 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
+      a1 = resultCube.parameterValues[0];
+      b1 = resultCube.parameterValues[1];
+      c1 = resultCube.parameterValues[2];
+
+      resultCube = levenbergMarquardt({ x: x12, y: y2 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
+      a2 = resultCube.parameterValues[0];
+      b2 = resultCube.parameterValues[1];
+      c2 = resultCube.parameterValues[2];
+
+
+      // strike points
+      // calculated as strike weights between AA and TA, and AB and TB, always in [0, 1]
+      const strikeChunk  = (strikeB - strikeA) / fitPoints;
+      for (let k = 0; k < fitPoints; k++) {
+        
+        const tpmStrike = strikeA + k * strikeChunk;
+    
+        const optionPriceTA = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsA, vol, 0, "call"));
+        const optionPriceTB = Math.max(0, bs.blackScholes(spot, tpmStrike, expirationYearsB, vol, 0, "call"));
+
+        const y3wtemp = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA); // strike weights are always in [0, 1]
+        const y4wtemp = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB);
+
+        x34w[k] = (k * strikeChunk) / (strikeB - strikeA);
+        y3w[k] = y3wtemp ? y3wtemp : 0;
+        y4w[k] = y4wtemp ? y4wtemp : 0; 
+      }
+      x34w[fitPoints] = 1;
+      y3w[fitPoints] = 1;
+      y4w[fitPoints] = 1;
+
+      // 4th order fit will be used for extra low time values (< 90 secs)
+      resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
+      const a3w = resultCube.parameterValues[0];
+      const b3w = resultCube.parameterValues[1];
+      const c3w = resultCube.parameterValues[2];
+      const d3w = resultCube.parameterValues[3];
+
+      resultCube = levenbergMarquardt({ x: x34w, y: y4w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
+      const a4w = resultCube.parameterValues[0];
+      const b4w = resultCube.parameterValues[1];
+      const c4w = resultCube.parameterValues[2];
+      const d4w = resultCube.parameterValues[3];
+
+      // if (expirationSecs[j] === 60 && strikeA === 99.95) {
+      //   console.log("BINGO");
+      //   console.log("x34w", x34w);
+      //   console.log("y3w", y3w);
+      //   console.log("y4w", y4w);
+
+      //   // // for time interpolation
+      //   // console.log("x12 and y1");
+      //   // const checkArray = [];
+      //   // for (let k = 0; k < fitPoints; k++) {
+      //   //   const x = k * timeChunk / (expirationYearsB - expirationYearsA);
+      //   //   checkArray.push(a1 * x ** 3 + b1 * x ** 2 + c1 * x);
+      //   // }
+
+      //   // for (let i = 0; i < fitPoints; i++) {
+      //   //   console.log(x12[i].toFixed(2) + ",", y1[i].toFixed(6) + ",", checkArray[i].toFixed(6));
+      //   // }
+
+      //   // for strike interpolation
+      //   const checkArray3w3 = [], checkArray3w4 = [], checkArray4w3 = [], checkArray4w4 = [], checkArray3wn = [], checkArray4wn = []
+      //   for (let k = 0; k < fitPoints; k++) {
+      //     const x = (k * strikeChunk) / (strikeB - strikeA);
+      //     checkArray3w3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
+      //     checkArray4w3.push(a4w * x ** 3 + b4w * x ** 2 + c4w * x);
+      //   }
+      //   console.log("Print 3 and 4")
+      //   console.log("x34w, actual y3w, check 3w");          
+      //   for (let i = 0; i < fitPoints; i++) {
+      //     console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6));
+      //   }
+      //   console.log("x34w, actual y4w, check 4w");          
+      //   for (let i = 0; i < fitPoints; i++) {
+      //     console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
+      //   }
+      // }
+
+
+      // reduce prices and factors to 6 decimals
+      const el = {
+        intrinsicPriceAA: Math.round(intrinsicPriceAA * 1e6) / 1e6,
+        intrinsicPriceBAdiff: Math.round((intrinsicPriceAA - intrinsicPriceBA) * 1e6) / 1e6,
+
+        a1: Math.round(a1 * 1e6) / 1e6,
+        b1: Math.round(b1 * 1e6) / 1e6,
+        c1: Math.round(c1 * 1e6) / 1e6,
+        a2diff: Math.round((a1 - a2) * 1e6) / 1e6,
+        b2diff: Math.round((b1 - b2) * 1e6) / 1e6,
+        c2diff: Math.round((c1 - c2) * 1e6) / 1e6,
+
+        a3w: Math.round(a3w * 1e6) / 1e6,
+        b3w: Math.round(b3w * 1e6) / 1e6,
+        c3w: Math.round(c3w * 1e6) / 1e6,
+        d3w: Math.round(d3w * 1e6) / 1e6,
+        a4wdiff: Math.round((a3w - a4w) * 1e6) / 1e6,
+        b4wdiff: Math.round((b3w - b4w) * 1e6) / 1e6,
+        c4wdiff: Math.round((c3w - c4w) * 1e6) / 1e6,
+        d4wdiff: Math.round((d3w - d4w) * 1e6) / 1e6,
+      };
+
+      // optimization: reduce a3w, b3w, c3w, a4wdiff, b4wdiff, c4wdiff to 0 if all others are 0
+      // or if intrinsicPriceBAdiff is 0, and a2diff, b2diff, c2diff are 0
+      if ((el.intrinsicPriceAA === 0 && el.intrinsicPriceBAdiff === 0 && el.a1 === 0 && el.b1 === 0 && el.c1 === 0 && el.a2diff === 0 && el.b2diff === 0 && el.c2diff === 0)
+      || (el.intrinsicPriceBAdiff === 0 && el.a2diff === 0 && el.b2diff === 0 && el.c2diff === 0)) {
+        el.a3w = 0;
+        el.b3w = 0;
+        el.c3w = 0;
+        el.d3w = 0;
+        el.a4wdiff = 0;
+        el.b4wdiff = 0;
+        el.c4wdiff = 0;
+        el.d4wdiff = 0;
+      }
+
+      // pack for JS lookup table
+      const { strikeIndex } = blackScholesJS.getIndexAndWeightFromStrike(strikes[i] + 0.0000001);
+      const index = strikeIndex * 1000 + blackScholesJS.getIndexFromTime(expirationSecs[j]);
+      lookupTable.set(index, el);
+    }
+  }
+
+  // create lookupTable for Solidity
+  const lookupTableSOL = null; //getLookupTableSOL(lookupTable);
+
+  return { lookupTable, lookupTableSOL };
+}
 
 // intrinsicPriceAA [ 0 - 0.018677 ]                // 15 bits, 6 decimals
 // intrinsicPriceBAdiff [ -0.015259 - 0.015253 ]    // 15 bits, 6 decimals
