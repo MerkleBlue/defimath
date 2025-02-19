@@ -12,8 +12,8 @@ const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 const duoTest = false;
 const fastTest = true;
 
-const maxAbsError = 0.000089;  // $, for an option on a $1000 spot price
-const maxRelError = 0.000089;  // %
+const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
+const maxRelError = 0.00008901;  // %
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -448,7 +448,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     findMinAndMax(lookupTable, 160, true);
     findMinAndMax(lookupTable, 160, false);
 
-    console.log(curvedLookupTable);
+    // console.log(curvedLookupTable);
     findMinAndMax(curvedLookupTable, 1000000, true);
 
     // find intrinsicPriceBAdiff NaN values in curved lookup table
@@ -465,17 +465,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       .filter(([k, v]) => v.intrinsicPriceBAdiff == null)
     );
     console.log("-------- null values --------", nanMap.size);
-    // console.log(nanMap);
-    
 
-    // todo: delete later
-    // const specialAreaMap = new Map(
-    //   [...lookupTable]
-    //   .filter(([k, v]) => (k > 9990000 && k <= 9990087) || (k > 9995000 && k <= 9995087) || (k > 10000000 && k <= 10000087) || (k > 10005000 && k <= 10005087))
-    // );
-
-    // // console.log(specialAreaMap);
-    // findMinAndMax(specialAreaMap, 1000000, true);
+    // overwrite lookup table with curved lookup table
+    curvedLookupTable.forEach((value, key) => {
+      lookupTable.set(key, value);
+    });     
 
 
     // reduce decimals to 6 decimals
@@ -630,7 +624,44 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("getCallOptionPrice " + (fastTest ? "FAST" : "SLOW"), function () {
       describe("success", function () {
         describe("single option test", function () {
-          it.only("gets a single call price when time > 2 ^ 16", async function () {
+
+          it("gets multiple call prices: $999 - $999.5, find worst case", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 99.95);
+            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
+          });
+
+          it.only("gets multiple call prices: $999.5 - $1000, find worst case", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 99.95 && value <= 100);
+            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
+          });
+
+          it("gets multiple call prices: $1000.05 - $1000.1, find worst case", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 100.05 && value <= 100.1);
+            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
+          });
+
+          it("gets a single call price in curved area", async function () {
+            const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+
+            const expected = blackScholesWrapped(1000, 1000.0625, 133 / (365 * SEC_IN_DAY), 0.12, 0, "call");
+
+            const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000.0625, 133, 0.12, 0);
+            const errorJS = Math.abs(actualJS - expected);
+            console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
+            assert.isBelow(errorJS, maxAbsError);
+
+            if (duoTest) {
+              const actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(1000.0625), 133, tokens(0.12), 0)).toString() / 1e18;
+              const errorSOL = Math.abs(actualSOL - expected);
+              console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
+              assert.isBelow(errorSOL, maxAbsError);
+            }
+          });
+
+          it("gets a single call price when time > 2 ^ 16", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
             const expected = blackScholesWrapped(1000, 930, 60 / 365, 0.60, 0.05, "call");

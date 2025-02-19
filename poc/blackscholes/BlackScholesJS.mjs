@@ -59,7 +59,18 @@ export class BlackScholesJS {
     }
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
+
+    // if (strikeScaled >= 99 && strikeScaled <= 100.05 && timeToExpirySecScaled < 480) {
+    //   console.log("Curved interpolation");
+
+    //   const finalPrice = this.interpolatePrice3(strikeScaled, timeToExpirySecScaled);
+
+    //   // finally, scale the price back to the original spot
+    //   return finalPrice * spotScale;
+    // }
+
+
+    const finalPrice = this.interpolatePrice3(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     return finalPrice * spotScale;
@@ -95,7 +106,7 @@ export class BlackScholesJS {
     }
 
     // step 4: interpolate price
-    const finalPrice = this.interpolatePrice(strikeScaled, timeToExpirySecScaled);
+    const finalPrice = this.interpolatePrice3(strikeScaled, timeToExpirySecScaled);
 
     // finally, scale the price back to the original spot
     const callPrice = finalPrice * spotScale;
@@ -142,7 +153,7 @@ export class BlackScholesJS {
     return discountedStrikePrice;
   };
 
-  interpolatePrice(strikeScaled, timeToExpirySecScaled) {
+  interpolatePrice3(strikeScaled, timeToExpirySecScaled) {
     // todo: handle 0 time and 0 strike
 
     // step 1) get the specific cell
@@ -182,12 +193,24 @@ export class BlackScholesJS {
       log && console.log("interpolatedPrice1", interpolatedPrice1);
       log && console.log("interpolatedPrice2", interpolatedPrice2);
 
-      const a4w = cell.a3w - cell.a4wdiff;
-      const b4w = cell.b3w - cell.b4wdiff;
-      const c4w = cell.c3w - cell.c4wdiff;
-      const interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
-      const interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
-      let interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
+      let interpolatedStrikeWeightw, interpolatedStrikeWeight3w, interpolatedStrikeWeight4w;
+      if (strikeIndex >= 9900 && strikeIndex < 10010 && timeToExpirySecScaled < 480) {
+        // console.log("--> Curved interpolation");
+        const a4w = cell.a3w - cell.a4wdiff;
+        const b4w = cell.b3w - cell.b4wdiff;
+        const c4w = cell.c3w - cell.c4wdiff;
+        const d4w = cell.d3w - cell.d4wdiff;
+        interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 4) + cell.b3w * (strikeWeight ** 3) + cell.c3w * (strikeWeight ** 2) + cell.d3w * strikeWeight;
+        interpolatedStrikeWeight4w = a4w * (strikeWeight ** 4) + b4w * (strikeWeight ** 3) + c4w * (strikeWeight ** 2) + d4w * strikeWeight;
+      } else {
+        const a4w = cell.a3w - cell.a4wdiff;
+        const b4w = cell.b3w - cell.b4wdiff;
+        const c4w = cell.c3w - cell.c4wdiff;
+        interpolatedStrikeWeight3w = cell.a3w * (strikeWeight ** 3) + cell.b3w * (strikeWeight ** 2) + cell.c3w * strikeWeight;
+        interpolatedStrikeWeight4w = a4w * (strikeWeight ** 3) + b4w * (strikeWeight ** 2) + c4w * strikeWeight;
+      }
+
+      interpolatedStrikeWeightw = Math.min(1, interpolatedStrikeWeight3w + timeToExpiryWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w)); // todo: weight should be always positive
       // if factors are zeroed, use default strike weight
       if (interpolatedStrikeWeightw === 0) {
         interpolatedStrikeWeightw = strikeWeight;
