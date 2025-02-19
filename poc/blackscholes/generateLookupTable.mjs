@@ -84,7 +84,10 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       const optionPriceBB = blackScholesWrapped(spot, strikeB, expirationYearsB, vol, 0, "call");
 
       const intrinsicPriceAA = optionPriceAA - Math.max(0, spot - strikeA);
+      const intrinsicPriceAB = optionPriceAB - Math.max(0, spot - strikeA);
       const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
+      const intrinsicPriceBB = optionPriceBB - Math.max(0, spot - strikeB);
+      
       
       let x12 = new Array(10), x34 = new Array(10), x34w = new Array(10), y1 = new Array(10), y2 = new Array(10), y3 = new Array(10), y4 = new Array(10), y3w = new Array(10), y4w = new Array(10);;
       let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0;
@@ -133,17 +136,19 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
       
           const optionPriceTA = blackScholesWrapped(spot, tpmStrike, expirationYearsA, vol, 0, "call");
           const optionPriceTB = blackScholesWrapped(spot, tpmStrike, expirationYearsB, vol, 0, "call");
-
-          const y3wtemp = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA); // strike weights are always in [0, 1]
-          const y4wtemp = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB);
+          const intrinsicPriceTA = Math.max(optionPriceTA - Math.max(0, spot - tpmStrike));
+          const intrinsicPriceTB = Math.max(optionPriceTB - Math.max(0, spot - tpmStrike));
+  
+          const y3wtemp = (intrinsicPriceAA - intrinsicPriceTA) / (intrinsicPriceAA - intrinsicPriceBA); // strike weights are always in [0, 1]
+          const y4wtemp = (intrinsicPriceAB - intrinsicPriceTB) / (intrinsicPriceAB - intrinsicPriceBB);
 
           x34w[k] = (k * strikeChunk) / (strikeB - strikeA);
           y3w[k] = y3wtemp ? y3wtemp : 0;
           y4w[k] = y4wtemp ? y4wtemp : 0; 
         }
-        x34w[fitPoints] = 1;
-        y3w[fitPoints] = 1;
-        y4w[fitPoints] = 1;
+        // x34w[fitPoints] = 1;
+        // y3w[fitPoints] = 1;
+        // y4w[fitPoints] = 1;
 
         resultCube = levenbergMarquardt({ x: x34w, y: y3w }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
         a3w = resultCube.parameterValues[0] ? resultCube.parameterValues[0] : 0;
@@ -168,41 +173,41 @@ export async function generateLookupTable(blackScholesJS, writeToFile) {
         // const c4w4 = resultCube.parameterValues[2];
         // const d4w4 = resultCube.parameterValues[3];
 
-        if (expirationSecs[j] === 60 && strikeA === 99.95) {
-          console.log("BINGO");
-          console.log("x34w", x34w);
-          console.log("y3w", y3w);
-          console.log("y4w", y4w);
+        // if (expirationSecs[j] === 60 && strikeA === 99.95) {
+        //   console.log("BINGO");
+        //   console.log("x34w", x34w);
+        //   console.log("y3w", y3w);
+        //   console.log("y4w", y4w);
   
-          // // for time interpolation
-          // console.log("x12 and y1");
-          // const checkArray = [];
-          // for (let k = 0; k < fitPoints; k++) {
-          //   const x = k * timeChunk / (expirationYearsB - expirationYearsA);
-          //   checkArray.push(a1 * x ** 3 + b1 * x ** 2 + c1 * x);
-          // }
+        //   // // for time interpolation
+        //   // console.log("x12 and y1");
+        //   // const checkArray = [];
+        //   // for (let k = 0; k < fitPoints; k++) {
+        //   //   const x = k * timeChunk / (expirationYearsB - expirationYearsA);
+        //   //   checkArray.push(a1 * x ** 3 + b1 * x ** 2 + c1 * x);
+        //   // }
 
-          // for (let i = 0; i < fitPoints; i++) {
-          //   console.log(x12[i].toFixed(2) + ",", y1[i].toFixed(6) + ",", checkArray[i].toFixed(6));
-          // }
+        //   // for (let i = 0; i < fitPoints; i++) {
+        //   //   console.log(x12[i].toFixed(2) + ",", y1[i].toFixed(6) + ",", checkArray[i].toFixed(6));
+        //   // }
   
-          // for strike interpolation
-          const checkArray3w3 = [], checkArray3w4 = [], checkArray4w3 = [], checkArray4w4 = [], checkArray3wn = [], checkArray4wn = []
-          for (let k = 0; k < fitPoints; k++) {
-            const x = (k * strikeChunk) / (strikeB - strikeA);
-            checkArray3w3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
-            checkArray4w3.push(a4w * x ** 3 + b4w * x ** 2 + c4w * x);
-          }
-          console.log("Print 3 and 4")
-          console.log("x34w, actual y3w, check 3w");          
-          for (let i = 0; i < fitPoints; i++) {
-            console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6));
-          }
-          console.log("x34w, actual y4w, check 4w");          
-          for (let i = 0; i < fitPoints; i++) {
-            console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
-          }
-        }
+        //   // for strike interpolation
+        //   const checkArray3w3 = [], checkArray3w4 = [], checkArray4w3 = [], checkArray4w4 = [], checkArray3wn = [], checkArray4wn = []
+        //   for (let k = 0; k < fitPoints; k++) {
+        //     const x = (k * strikeChunk) / (strikeB - strikeA);
+        //     checkArray3w3.push(a3w * x ** 3 + b3w * x ** 2 + c3w * x);
+        //     checkArray4w3.push(a4w * x ** 3 + b4w * x ** 2 + c4w * x);
+        //   }
+        //   console.log("Print 3 and 4")
+        //   console.log("x34w, actual y3w, check 3w");          
+        //   for (let i = 0; i < fitPoints; i++) {
+        //     console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w3[i].toFixed(6));
+        //   }
+        //   console.log("x34w, actual y4w, check 4w");          
+        //   for (let i = 0; i < fitPoints; i++) {
+        //     console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
+        //   }
+        // }
       }
 
       // reduce prices and factors to 6 decimals
@@ -425,7 +430,10 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
       const optionPriceBB = blackScholesWrapped(spot, strikeB, expirationYearsB, vol, 0, "call");
 
       const intrinsicPriceAA = optionPriceAA - Math.max(0, spot - strikeA);
+      const intrinsicPriceAB = optionPriceAB - Math.max(0, spot - strikeA);
       const intrinsicPriceBA = optionPriceBA - Math.max(0, spot - strikeB);
+      const intrinsicPriceBB = optionPriceBB - Math.max(0, spot - strikeB);
+
       
       let x12 = new Array(10), x34w = new Array(10), y1 = new Array(10), y2 = new Array(10), y3w = new Array(10), y4w = new Array(10);
       let a1 = 0, b1 = 0, c1 = 0, a2 = 0, b2 = 0, c2 = 0;
@@ -471,17 +479,19 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
     
         const optionPriceTA = blackScholesWrapped(spot, tpmStrike, expirationYearsA, vol, 0, "call");
         const optionPriceTB = blackScholesWrapped(spot, tpmStrike, expirationYearsB, vol, 0, "call");
+        const intrinsicPriceTA = Math.max(optionPriceTA - Math.max(0, spot - tpmStrike));
+        const intrinsicPriceTB = Math.max(optionPriceTB - Math.max(0, spot - tpmStrike));
 
-        const y3wtemp = (optionPriceAA - optionPriceTA) / (optionPriceAA - optionPriceBA); // strike weights are always in [0, 1]
-        const y4wtemp = (optionPriceAB - optionPriceTB) / (optionPriceAB - optionPriceBB);
+        const y3wtemp = (intrinsicPriceAA - intrinsicPriceTA) / (intrinsicPriceAA - intrinsicPriceBA); // strike weights are always in [0, 1]
+        const y4wtemp = (intrinsicPriceAB - intrinsicPriceTB) / (intrinsicPriceAB - intrinsicPriceBB);
 
         x34w[k] = (k * strikeChunk) / (strikeB - strikeA);
         y3w[k] = y3wtemp ? y3wtemp : 0;
         y4w[k] = y4wtemp ? y4wtemp : 0; 
       }
-      x34w[fitPoints] = 1;
-      y3w[fitPoints] = 1;
-      y4w[fitPoints] = 1;
+      // x34w[fitPoints] = 1;
+      // y3w[fitPoints] = 1;
+      // y4w[fitPoints] = 1;
 
       // 4th order fit will be used for extra low time values (< 90 secs)
       resultCube = levenbergMarquardt({ x: x34w, y: y3w }, fourOrderFit, { initialValues: initialValuesFourth, maxIterations: 200, errorTolerance: 1e-10 });
@@ -496,7 +506,7 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
       const c4w = resultCube.parameterValues[2];
       const d4w = resultCube.parameterValues[3];
 
-      if (expirationSecs[j] === 128 && strikeA === 100) {
+      if (expirationSecs[j] === 88 && strikeA === 99.95) {
         console.log("BINGO");
         console.log("accurate option price AT", blackScholesWrapped(spot, 100, 133 / (365 * 24 * 60 * 60), 0.12, 0, "call"));
         console.log("accurate option price BT", blackScholesWrapped(spot, 100.05, 133 / (365 * 24 * 60 * 60), 0.12, 0, "call"));
@@ -521,17 +531,17 @@ export async function generateCurvedAreaLookupTable(blackScholesJS) {
         for (let k = 0; k < fitPoints; k++) {
           const x = (k * strikeChunk) / (strikeB - strikeA);
           checkArray3w4.push(a3w * x ** 4 + b3w * x ** 3 + c3w * x ** 2 + d3w * x);
-          // checkArray4w3.push(a4w * x ** 3 + b4w * x ** 2 + c4w * x);
+          checkArray4w3.push(a4w * x ** 4 + b4w * x ** 3 + c4w * x ** 2 + d4w * x);
         }
         console.log("Print 3 and 4")
         console.log("x34w, actual y3w, check 3w");          
         for (let i = 0; i < fitPoints; i++) {
           console.log(x34w[i].toFixed(3) + ",", y3w[i].toFixed(6) + ",", checkArray3w4[i].toFixed(6));
         }
-        // console.log("x34w, actual y4w, check 4w");          
-        // for (let i = 0; i < fitPoints; i++) {
-        //   console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
-        // }
+        console.log("x34w, actual y4w, check 4w");          
+        for (let i = 0; i < fitPoints; i++) {
+          console.log(x34w[i].toFixed(3) + ",", y4w[i].toFixed(6) + ",", checkArray4w3[i].toFixed(6));
+        }
       }
 
 

@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = false;
-const fastTest = true;
+const fastTest = false;
 
 const maxAbsError = 0.00009502;  // $, for an option on a $1000 spot price
 const maxRelError = 0.00008901;  // %
@@ -655,7 +655,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
-          it.only("gets a single call price in curved area", async function () {
+          // this is what I am testing, don't delete this test
+          it("gets a single call price in curved area", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
             const expected = blackScholesWrapped(1000, 999.9375, 90 / (365 * SEC_IN_DAY), 0.12, 0, "call");

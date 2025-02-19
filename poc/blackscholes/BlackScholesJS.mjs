@@ -20,7 +20,7 @@ export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
 export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
-const log = true;
+const log = false;
 
 export class BlackScholesJS {
 
@@ -236,22 +236,57 @@ export class BlackScholesJS {
 
       log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT));
 
-
-
-
       finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
       log && console.log("finalPrice", finalPrice);
 
-      console.log("-- ALTERNATIVE WAY --");
 
 
+      log && console.log("-- ALTERNATIVE WAY --");
       const extrinsicPriceAW = Math.max(0, 100 - strikeScaled);
-      console.log("extrinsicPriceAW", extrinsicPriceAW);
+      log && console.log("extrinsicPriceAW", extrinsicPriceAW);
 
       const intrinsicPriceATAW = cell.intrinsicPriceAA + interpolatedPrice1;
       const intrinsicPriceBTAW = intrinsicPriceBA + interpolatedPrice2;
+      log && console.log("intrinsicPriceATAW", intrinsicPriceATAW, "option price in AT", (0.05 + intrinsicPriceATAW).toFixed(7), blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex), timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call").toFixed(7));
+      log && console.log("intrinsicPriceBTAW", intrinsicPriceBTAW, "option price in BT", intrinsicPriceBTAW.toFixed(7), blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex) + strikeStep, timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call").toFixed(7));
+      log && console.log("Good to here");
+      log && console.log("");
+      log && console.log("If I used actual and interpolated strike weight of 0.875, I would strike3 get: 0.65588325, but I get 0.654412");
+      log && console.log("If I used actual and interpolated strike weight of 0.875, I would strike4 get: 0.66792625, but I get 0.666630")
+      log && console.log("For interpolatedStrikeWeightw I would get: 0.658894, but I get 0.6574669");
+      log && console.log("And I would get good finalPrice of 0.115933, correct is 0.115935");
+      log && console.log("Conclusion: strike interpolation is not acurate enough!!!");
+      
       const intrinsicDiffAW = intrinsicPriceATAW - intrinsicPriceBTAW;
-      console.log("intrinsicDiffAW", intrinsicDiffAW);
+      log && console.log("intrinsicDiffAW", intrinsicDiffAW);
+      log && console.log("interpolatedStrikeWeightw * (intrinsicPriceATAW - intrinsicPriceBTAW)", interpolatedStrikeWeightw * (intrinsicPriceATAW - intrinsicPriceBTAW));
+
+      finalPrice = extrinsicPriceAW + intrinsicPriceATAW - interpolatedStrikeWeightw * (intrinsicPriceATAW - intrinsicPriceBTAW);
+      log && console.log("finalPriceAW", finalPrice);
+
+
+
+      // console.log("-- ALTERNATIVE WAY 2 --");
+      // // calculate strike interpolation on time A
+      // const abcA = interpolatedStrikeWeight3w * (intrinsicPriceBA - cell.intrinsicPriceAA);
+      // console.log("abcA", abcA);
+
+      // // calculate strike interpolation on time B
+      // const intrinsicPriceAB = cell.a1 + cell.b1 + cell.c1;
+      // const intrinsicPriceBB = a2 + b2 + c2;
+      // console.log("intrinsicPriceAB", intrinsicPriceAB);
+      // console.log("intrinsicPriceBB", intrinsicPriceBB);
+      // const abcB = interpolatedStrikeWeight4w * (intrinsicPriceBB - intrinsicPriceAB);
+      // console.log("abcB", abcB);
+
+      // const finalStrikeIntrinsic = abcA - timeToExpiryWeight * (abcA - abcB);
+      // console.log("finalStrikeIntrinsic", finalStrikeIntrinsic);
+
+      // const finalTimeInterpolated = interpolatedStrikeWeightw * (interpolatedPrice1 - interpolatedPrice2);
+      // console.log("finalTimeInterpolated", finalTimeInterpolated);
+
+      // finalPrice = extrinsicPriceAW + cell.intrinsicPriceAA + finalStrikeIntrinsic - finalTimeInterpolated;
+      // log && console.log("finalPrice", finalPrice);
 
     } else {
       const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
