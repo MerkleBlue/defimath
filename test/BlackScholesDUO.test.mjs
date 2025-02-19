@@ -12,7 +12,7 @@ const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 const duoTest = false;
 const fastTest = true;
 
-const maxAbsError = 0.00009802;  // $, for an option on a $1000 spot price
+const maxAbsError = 0.00009502;  // $, for an option on a $1000 spot price
 const maxRelError = 0.00008901;  // %
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
@@ -625,7 +625,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       describe("success", function () {
         describe("single option test", function () {
 
-          it("gets multiple call prices: $999 - $999.5, find worst case", async function () {
+          it.only("gets multiple call prices: $999 - $999.5, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 99.95);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
@@ -643,7 +643,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
-          it("gets multiple call prices: $1000.05 - $1000.1, find worst case", async function () {
+          it.only("gets multiple call prices: $1000.05 - $1000.1, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 100.05 && value <= 100.1);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
