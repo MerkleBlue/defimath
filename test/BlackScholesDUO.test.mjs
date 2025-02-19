@@ -625,42 +625,48 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       describe("success", function () {
         describe("single option test", function () {
 
-          it.only("gets multiple call prices: $999 - $999.5, find worst case", async function () {
+          it("gets multiple call prices: $999 - $999.5, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99.9 && value <= 99.95);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
-          it.only("gets multiple call prices: $999.5 - $1000, find worst case", async function () {
+          it("gets multiple call prices: $999.5 - $1000, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99.95 && value <= 100);
             const timeSubArray = testTimePoints.filter(value => value >= 110 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
-          it.only("gets multiple call prices: $1000 - $1000.05, find worst case", async function () {
+          it("gets multiple call prices: $1000 - $1000.05, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 100 && value <= 100.05);
             const timeSubArray = testTimePoints.filter(value => value >= 150 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
-          it.only("gets multiple call prices: $1000.05 - $1000.1, find worst case", async function () {
+          it("gets multiple call prices: $1000.05 - $1000.1, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 100.05 && value <= 100.1);
             const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
-          it("gets a single call price in curved area", async function () {
+          it("gets multiple call prices: $999.5 - $1000, find worst case", async function () {
+            const strikeSubArray = testStrikePoints.filter(value => value >= 99.95 && value <= 100);
+            const timeSubArray = testTimePoints.filter(value => value >= 90 && value <= 110);
+            await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
+          });
+
+          it.only("gets a single call price in curved area", async function () {
             const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
 
-            const expected = blackScholesWrapped(1000, 1000.0625, 133 / (365 * SEC_IN_DAY), 0.12, 0, "call");
+            const expected = blackScholesWrapped(1000, 999.9375, 90 / (365 * SEC_IN_DAY), 0.12, 0, "call");
 
-            const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000.0625, 133, 0.12, 0);
+            const actualJS = blackScholesJS.getCallOptionPrice(1000, 999.9375, 90, 0.12, 0);
             const errorJS = Math.abs(actualJS - expected);
             console.log("expected:", expected.toFixed(6), "actual JS :", actualJS.toFixed(6));
             assert.isBelow(errorJS, maxAbsError);
 
             if (duoTest) {
-              const actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(1000.0625), 133, tokens(0.12), 0)).toString() / 1e18;
+              const actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(1000), tokens(999.9375), 90, tokens(0.12), 0)).toString() / 1e18;
               const errorSOL = Math.abs(actualSOL - expected);
               console.log("expected:", expected.toFixed(6), "actual SOL:", actualSOL.toFixed(6));
               assert.isBelow(errorSOL, maxAbsError);

@@ -1,3 +1,5 @@
+import { blackScholesWrapped } from "../../test/BlackScholesDUO.test.mjs";
+
 // fix the spot price in table to $100, and volatilty to 100%
 export const SPOT_FIXED = 100;
 export const VOL_FIXED = 0.12;
@@ -18,7 +20,7 @@ export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
 export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
-const log = false;
+const log = true;
 
 export class BlackScholesJS {
 
@@ -229,12 +231,28 @@ export class BlackScholesJS {
       const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
       const optionPriceBT = extrinsicPriceBA + intrinsicPriceBA + interpolatedPrice2;
       log && console.log("-----------------")
-      log && console.log("optionPriceAT", optionPriceAT, "ok");
-      log && console.log("optionPriceBT", optionPriceBT, "ok");
+      log && console.log("optionPriceAT", optionPriceAT, "bs", blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex), timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call"));
+      log && console.log("optionPriceBT", optionPriceBT, "bs", blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex) + strikeStep, timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call"));
 
-      log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT))
+      log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT));
+
+
+
 
       finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
+      log && console.log("finalPrice", finalPrice);
+
+      console.log("-- ALTERNATIVE WAY --");
+
+
+      const extrinsicPriceAW = Math.max(0, 100 - strikeScaled);
+      console.log("extrinsicPriceAW", extrinsicPriceAW);
+
+      const intrinsicPriceATAW = cell.intrinsicPriceAA + interpolatedPrice1;
+      const intrinsicPriceBTAW = intrinsicPriceBA + interpolatedPrice2;
+      const intrinsicDiffAW = intrinsicPriceATAW - intrinsicPriceBTAW;
+      console.log("intrinsicDiffAW", intrinsicDiffAW);
+
     } else {
       const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
       const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
