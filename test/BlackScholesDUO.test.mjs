@@ -5,12 +5,13 @@ import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FI
 import { generateCurvedAreaLookupTable, generateLookupTable, generateStrikePoints, generateTimePoints } from "../poc/blackscholes/generateLookupTable.mjs";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import hre from "hardhat";
+import blackScholes from "black-scholes";
 
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = false;
-const fastTest = false;
+const duoTest = true;
+const fastTest = true;
 
 const maxAbsError = 0.00009502;  // $, for an option on a $1000 spot price
 const maxRelError = 0.00008901;  // %
@@ -49,9 +50,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   async function deploy() {
     const [owner] = await ethers.getSigners();
 
-    // deploy contract
+    // deploy contracts
     const BlackScholesPOC = await ethers.getContractFactory("BlackScholesPOC");
     const blackScholesPOC = await BlackScholesPOC.deploy();
+
+    const BlackScholesNUM = await ethers.getContractFactory("BlackScholesNUM");
+    const blackScholesNUM = await BlackScholesNUM.deploy();
 
     // populate lookup table
     const { lookupTableSOL } = await generateLookupTable(new BlackScholesJS(), true);
@@ -93,7 +97,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     console.log("Init done. Total gas spent:", Math.round(totalGas / 1e6), "M");
 
-    return { owner, blackScholesPOC };
+    return { owner, blackScholesPOC, blackScholesNUM };
   }
 
   function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -542,18 +546,40 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       console.log("Gas spent [avg]:", Math.round(totalGas / count), "tests:", count);
     });
 
-    it("getIndexFromTime gas", async function () {
-      const { blackScholesPOC } = await loadFixture(deploy);
+    // it.only("standardDistributionFunction gas", async function () {
+    //   const { blackScholesPOC } = await loadFixture(deploy);
 
-      let count = 0;
-      let totalGas = 0;
-      for (let i = 4; i < 32; i++) {
-        const gasUsed = await blackScholesPOC.getIndexFromTimeMeasureGas(2 ** i + 1);
-        totalGas += parseInt(gasUsed);
-        count++;
-      }
-      console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
-    });
+    //   let count = 0;
+    //   let totalGas = 0;
+    //   for (let i = 4; i < 32; i++) {
+    //     const gasUsed = await blackScholesPOC.standardDistributionFunctionMeasureGas(2 ** i + 1);
+    //     totalGas += parseInt(gasUsed);
+    //     count++;
+    //   }
+    //   console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
+    // });
+
+    // it.only("ln gas", async function () {
+    //   const { blackScholesPOC } = await loadFixture(deploy);
+
+    //   let count = 0;
+    //   let totalGas = 0;
+    //   for (let i = 4; i < 32; i++) {
+    //     const gasUsed = await blackScholesPOC.lnMeasureGas(tokens(i));
+    //     totalGas += parseInt(gasUsed);
+    //     count++;
+    //   }
+    //   console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
+    // });
+
+    // it.only("ln accuracy", async function () {
+    //   const { blackScholesPOC } = await loadFixture(deploy);
+
+    //   for (let i = 0; i < 10; i++) {
+    //     const result = await blackScholesPOC.ln.staticCallResult();
+    //     console.log(result.toString(), Math.log(i));
+    //   }
+    // });
 
     it("getFuturePrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);

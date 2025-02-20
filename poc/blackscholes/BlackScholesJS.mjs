@@ -222,22 +222,22 @@ export class BlackScholesJS {
       log && console.log("interpolatedStrikeWeightw", interpolatedStrikeWeightw);
 
       // step 5) calculate the final price
-      const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
-      const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
-      log && console.log("extrinsicPriceAA", extrinsicPriceAA);
-      log && console.log("extrinsicPriceBA", extrinsicPriceBA);
+      // const extrinsicPriceAA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex));
+      // const extrinsicPriceBA = Math.max(0, 100 - this.getStrikeFromIndex(strikeIndex) - strikeStep);
+      // log && console.log("extrinsicPriceAA", extrinsicPriceAA);
+      // log && console.log("extrinsicPriceBA", extrinsicPriceBA);
 
       const intrinsicPriceBA = cell.intrinsicPriceAA - cell.intrinsicPriceBAdiff;
-      const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
-      const optionPriceBT = extrinsicPriceBA + intrinsicPriceBA + interpolatedPrice2;
-      log && console.log("-----------------")
-      log && console.log("optionPriceAT", optionPriceAT, "bs", blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex), timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call"));
-      log && console.log("optionPriceBT", optionPriceBT, "bs", blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex) + strikeStep, timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call"));
+      // const optionPriceAT = extrinsicPriceAA + cell.intrinsicPriceAA + interpolatedPrice1;
+      // const optionPriceBT = extrinsicPriceBA + intrinsicPriceBA + interpolatedPrice2;
+      // log && console.log("-----------------")
+      // log && console.log("optionPriceAT", optionPriceAT, "bs", blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex), timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call"));
+      // log && console.log("optionPriceBT", optionPriceBT, "bs", blackScholesWrapped(100, this.getStrikeFromIndex(strikeIndex) + strikeStep, timeToExpirySecScaled / (365 * 24 * 60 * 60), 0.12, 0, "call"));
 
-      log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT));
+      // log && console.log("interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT)", interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT));
 
-      finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
-      log && console.log("finalPrice", finalPrice);
+      // finalPrice = optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT);
+      // log && console.log("finalPrice", finalPrice);
 
 
 

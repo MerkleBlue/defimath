@@ -22,7 +22,7 @@ contract BlackScholesPOC {
     // error
     error OutOfBoundsError(uint256);
 
-    // bool log = false;
+    bool log = false;
 
     // single mapping is faster than map of map, uint is faster than struct
     mapping(uint256 => uint256) private lookupTable;
@@ -138,6 +138,9 @@ contract BlackScholesPOC {
             // NOTE: this is slower than below
             // uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
             // uint256 x = rate * timeToExpiryYears / 1e13;
+
+            // todo: if precise enough for [0, 0.1], we can use e ^ 0.1 * e ^ 0.1 * e ^ 0.1 = e ^ 0.3
+
 
             // NOTE: this is faster than the above 
             uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
@@ -371,30 +374,29 @@ contract BlackScholesPOC {
             uint256 timeToExpiryIndex = getIndexFromTime(timeToExpirySecScaled / 1e18); // gas
             uint256 cell = lookupTable[strikeIndex * 1000 + timeToExpiryIndex]; // gas 2199
 
-            // if (log) console.log("strikeIndex:", strikeIndex);
-            // if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
-            // if (log) console.log("timeToExpiryIndex:", timeToExpiryIndex);
-            // if (log) console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
-            // if (log) console.log("cell:", cell);
+            if (log) console.log("strikeIndex:", strikeIndex);
+            if (log) console.log("timeToExpirySecScaled:", timeToExpirySecScaled);
+            if (log) console.log("timeToExpiryIndex:", timeToExpiryIndex);
+            if (log) console.log("cell index:", strikeIndex * 1000 + timeToExpiryIndex);
+            if (log) console.log("cell:", cell);
 
             // step 2) calculate strike weight
 
             uint256 strikeA = strikeIndex * 1e16; // gas 21
+            uint256 _strikeScaled = strikeScaled;
 
-            // if (log) { if (strikeWeight > 0) { console.log("strikeWeight: %d", uint256(strikeWeight)); } else { console.log("strikeWeight: -%d", uint256(-strikeWeight)); }}
+            if (log) { if (strikeWeight > 0) { console.log("strikeWeight: %d", uint256(strikeWeight)); } else { console.log("strikeWeight: -%d", uint256(-strikeWeight)); }}
 
             if (cell > 0) {
                 // step 3) calculate timeToExpiry weight
                 uint256 timeToExpiryFromIndex = getTimeFromIndex(timeToExpiryIndex);
                 uint256 expirationStep = maxUint256(1, 2 ** (timeToExpiryIndex / 10 - 3)); // todo: what if negative???
                 int256 timeToExpiryWeight = int256((timeToExpirySecScaled - timeToExpiryFromIndex * 1e18) / expirationStep); // gas 482 3 lines above
-                // if (log) console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
-                // if (log) console.log("expirationStep: %d", expirationStep);
-                // if (log) { if (timeToExpiryWeight > 0) { console.log("timeToExpiryWeight: %d", uint256(timeToExpiryWeight)); } else { console.log("timeToExpiryWeight: -%d", uint256(-timeToExpiryWeight)); }}
+                if (log) console.log("timeToExpiryFromIndex: %d", timeToExpiryFromIndex);
+                if (log) console.log("expirationStep: %d", expirationStep);
+                if (log) { if (timeToExpiryWeight > 0) { console.log("timeToExpiryWeight: %d", uint256(timeToExpiryWeight)); } else { console.log("timeToExpiryWeight: -%d", uint256(-timeToExpiryWeight)); }}
 
                 // step 4) 
-
-
                 bool isLowerTime = timeToExpiryIndex < 160;
                 (int256 interpolatedPrice1, int256 interpolatedPrice2) = getInterpolatedPrice12(cell, timeToExpiryWeight, isLowerTime); // gas 717
 
@@ -403,7 +405,7 @@ contract BlackScholesPOC {
                 // uint256 endGas = gasleft();
                 // console.log("Gas in segment: %d", (startGas - endGas));
                 // step 5)
-                finalPrice = step5(cell, strikeA, strikeB, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
+                finalPrice = step5(cell, _strikeScaled, interpolatedPrice1, interpolatedPrice2, interpolatedStrikeWeightw, isLowerTime);
 
             } else {
                 finalPrice = finalStep(strikeA, strikeB, uint256(strikeWeight));
@@ -418,40 +420,40 @@ contract BlackScholesPOC {
     ) private view returns (int256 interpolatedPrice1, int256 interpolatedPrice2) {
         unchecked {
             if (isLowerTime) {
-                int256 a1 = int256((cell << 256 - 179 - 7) >> 256 - 7) - 54;
-                int256 b1 = int256((cell << 256 - 170 - 9) >> 256 - 9) - 299;
-                int256 c1 = int256((cell << 256 - 156 - 14) >> 256 - 14);
-                // if (log) { if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }}
-                // if (log) { if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }}
-                // if (log) { if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }}
+                int256 a1 = int256((cell << 256 - 181 - 7) >> 256 - 7) - 54;
+                int256 b1 = int256((cell << 256 - 172 - 9) >> 256 - 9) - 299;
+                int256 c1 = int256((cell << 256 - 158 - 14) >> 256 - 14);
+                if (log) { if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }}
+                if (log) { if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }}
+                if (log) { if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }}
 
-                int256 a2 = a1 - (int256((cell << 256 - 149 - 7) >> 256 - 7) - 81);
-                int256 b2 = b1 - (int256((cell << 256 - 141 - 8) >> 256 - 8) - 43);
-                int256 c2 = c1 - (int256((cell << 256 - 130 - 11) >> 256 - 11) - 770);
-                // if (log) { if (a2 > 0) { console.log("a2: %d", uint256(a2)); } else { console.log("a2: -%d", uint256(-a2)); }}
-                // if (log) { if (b2 > 0) { console.log("b2: %d", uint256(b2)); } else { console.log("b2: -%d", uint256(-b2)); }}
-                // if (log) { if (c2 > 0) { console.log("c2: %d", uint256(c2)); } else { console.log("c2: -%d", uint256(-c2)); }}
+                int256 a2 = a1 - (int256((cell << 256 - 151 - 7) >> 256 - 7) - 81);
+                int256 b2 = b1 - (int256((cell << 256 - 143 - 8) >> 256 - 8) - 43);
+                int256 c2 = c1 - (int256((cell << 256 - 132 - 11) >> 256 - 11) - 770);
+                if (log) { if (a2 > 0) { console.log("a2: %d", uint256(a2)); } else { console.log("a2: -%d", uint256(-a2)); }}
+                if (log) { if (b2 > 0) { console.log("b2: %d", uint256(b2)); } else { console.log("b2: -%d", uint256(-b2)); }}
+                if (log) { if (c2 > 0) { console.log("c2: %d", uint256(c2)); } else { console.log("c2: -%d", uint256(-c2)); }}
 
                 interpolatedPrice1 = timeWeight * (a1 * timeWeight ** 2 + b1 * timeWeight * 1e18 + c1 * 1e36) / 1e42;
                 interpolatedPrice2 = timeWeight * (a2 * timeWeight ** 2 + b2 * timeWeight * 1e18 + c2 * 1e36) / 1e42;
             } else {
-                int256 a1 = int256((cell << 256 - 191 - 15) >> 256 - 15) - 5256;
-                int256 b1 = int256((cell << 256 - 172 - 19) >> 256 - 19) - 236590;
-                int256 c1 = int256((cell << 256 - 149 - 23) >> 256 - 23);
-                // if (log) { if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }}
-                // if (log) { if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }}
-                // if (log) { if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }}
+                int256 a1 = int256((cell << 256 - 189 - 15) >> 256 - 15) - 5256;
+                int256 b1 = int256((cell << 256 - 170 - 19) >> 256 - 19) - 236590;
+                int256 c1 = int256((cell << 256 - 147 - 23) >> 256 - 23);
+                if (log) { if (a1 > 0) { console.log("a1: %d", uint256(a1)); } else { console.log("a1: -%d", uint256(-a1)); }}
+                if (log) { if (b1 > 0) { console.log("b1: %d", uint256(b1)); } else { console.log("b1: -%d", uint256(-b1)); }}
+                if (log) { if (c1 > 0) { console.log("c1: %d", uint256(c1)); } else { console.log("c1: -%d", uint256(-c1)); }}
 
-                int256 a2 = a1 - (int256((cell << 256 - 140 - 9) >> 256 - 9) - 134);
-                int256 b2 = b1 - (int256((cell << 256 - 127 - 13) >> 256 - 13) - 2580);
-                int256 c2 = c1 - (int256((cell << 256 - 111 - 16) >> 256 - 16) - 25636);
+                int256 a2 = a1 - (int256((cell << 256 - 138 - 9) >> 256 - 9) - 134);
+                int256 b2 = b1 - (int256((cell << 256 - 125 - 13) >> 256 - 13) - 2580);
+                int256 c2 = c1 - (int256((cell << 256 - 109 - 16) >> 256 - 16) - 25636);
 
                 interpolatedPrice1 = timeWeight * (a1 * timeWeight ** 2 + b1 * timeWeight * 1e18 + c1 * 1e36) / 1e42;
                 interpolatedPrice2 = timeWeight * (a2 * timeWeight ** 2 + b2 * timeWeight * 1e18 + c2 * 1e36) / 1e42;
             }
 
-            // if (log) { if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }}
-            // if (log) { if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }}
+            if (log) { if (interpolatedPrice1 > 0) { console.log("interpolatedPrice1: %d", uint256(interpolatedPrice1)); } else { console.log("interpolatedPrice1: -%d", uint256(-interpolatedPrice1)); }}
+            if (log) { if (interpolatedPrice2 > 0) { console.log("interpolatedPrice2: %d", uint256(interpolatedPrice2)); } else { console.log("interpolatedPrice2: -%d", uint256(-interpolatedPrice2)); }}
         }
     }
 
@@ -465,52 +467,52 @@ contract BlackScholesPOC {
             int256 interpolatedStrikeWeight3w;
             int256 interpolatedStrikeWeight4w;
             if (isLowerTime) {
-                int256 a3w = int256((cell << 256 - 106 - 24) >> 256 - 24) - 312610;
-                int256 b3w = int256((cell << 256 - 81 - 25) >> 256 - 25) - 14254104;
-                int256 c3w = int256((cell << 256 - 58 - 23) >> 256 - 23);
-                // if (log) { if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }}
-                // if (log) { if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }}
-                // if (log) { if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }}
+                int256 a3w = int256((cell << 256 - 108 - 24) >> 256 - 24);
+                int256 b3w = int256((cell << 256 - 84 - 24) >> 256 - 24) - 14818033;
+                int256 c3w = int256((cell << 256 - 61 - 23) >> 256 - 23);
+                if (log) { if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }}
+                if (log) { if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }}
+                if (log) { if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }}
 
-                int256 a4w = a3w - (int256((cell << 256 - 39 - 19) >> 256 - 19) - 16531);
-                int256 b4w = b3w - (int256((cell << 256 - 19 - 20) >> 256 - 20) - 667013);
-                // c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 14163;
-                int256 c4w = c3w - (int256(cell & 0x7FFFF) - 14163);
-                // if (log) { if (a4w > 0) { console.log("a4w: %d", uint256(a4w)); } else { console.log("a4w: -%d", uint256(-a4w)); }}
-                // if (log) { if (b4w > 0) { console.log("b4w: %d", uint256(b4w)); } else { console.log("b4w: -%d", uint256(-b4w)); }}
-                // if (log) { if (c4w > 0) { console.log("c4w: %d", uint256(c4w)); } else { console.log("c4w: -%d", uint256(-c4w)); }}
+                int256 a4w = a3w - (int256((cell << 256 - 40 - 21) >> 256 - 21) - 666006);
+                int256 b4w = b3w - (int256((cell << 256 - 19 - 21) >> 256 - 21) - 689389);
+                // c4wdiff = int256((cell << 256 - 19) >> 256 - 19) - 163537;
+                int256 c4w = c3w - (int256(cell & 0x7FFFF) - 163537);
+                if (log) { if (a4w > 0) { console.log("a4w: %d", uint256(a4w)); } else { console.log("a4w: -%d", uint256(-a4w)); }}
+                if (log) { if (b4w > 0) { console.log("b4w: %d", uint256(b4w)); } else { console.log("b4w: -%d", uint256(-b4w)); }}
+                if (log) { if (c4w > 0) { console.log("c4w: %d", uint256(c4w)); } else { console.log("c4w: -%d", uint256(-c4w)); }}
 
                 interpolatedStrikeWeight3w = strikeWeight * (a3w * strikeWeight ** 2 + b3w * strikeWeight * 1e18 + c3w * 1e36);
                 interpolatedStrikeWeight4w = strikeWeight * (a4w * strikeWeight ** 2 + b4w * strikeWeight * 1e18 + c4w * 1e36);
             } else {
-                int256 a3w = int256((cell << 256 - 93 - 18) >> 256 - 18) - 735;
-                int256 b3w = int256((cell << 256 - 73 - 20) >> 256 - 20) - 758836;
-                int256 c3w = int256((cell << 256 - 52 - 21) >> 256 - 21);
-                // if (log) { if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }}
-                // if (log) { if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }}
-                // if (log) { if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }}
+                int256 a3w = int256((cell << 256 - 91 - 18) >> 256 - 18) - 106;
+                int256 b3w = int256((cell << 256 - 71 - 20) >> 256 - 20) - 760470;
+                int256 c3w = int256((cell << 256 - 50 - 21) >> 256 - 21);
+                if (log) { if (a3w > 0) { console.log("a3w: %d", uint256(a3w)); } else { console.log("a3w: -%d", uint256(-a3w)); }}
+                if (log) { if (b3w > 0) { console.log("b3w: %d", uint256(b3w)); } else { console.log("b3w: -%d", uint256(-b3w)); }}
+                if (log) { if (c3w > 0) { console.log("c3w: %d", uint256(c3w)); } else { console.log("c3w: -%d", uint256(-c3w)); }}
 
-                int256 a4w = a3w - (int256((cell << 256 - 36 - 16) >> 256 - 16) - 102);
-                int256 b4w = b3w - (int256((cell << 256 - 18 - 18) >> 256 - 18) - 100020);
-                // c4wdiff = int256((cell << 256 - 18) >> 256 - 18) - 973;
-                int256 c4w = c3w - (int256(cell & 0x1FFFF) - 973);
-                // if (log) { if (a4w > 0) { console.log("a4w: %d", uint256(a4w)); } else { console.log("a4w: -%d", uint256(-a4w)); }}
-                // if (log) { if (b4w > 0) { console.log("b4w: %d", uint256(b4w)); } else { console.log("b4w: -%d", uint256(-b4w)); }}
-                // if (log) { if (c4w > 0) { console.log("c4w: %d", uint256(c4w)); } else { console.log("c4w: -%d", uint256(-c4w)); }}
+                int256 a4w = a3w - (int256((cell << 256 - 34 - 16) >> 256 - 16) - 107);
+                int256 b4w = b3w - (int256((cell << 256 - 17 - 17) >> 256 - 17) - 100450);
+                int256 c4w = c3w - (int256((cell << 256 - 17) >> 256 - 17) - 34106);
+                // int256 c4w = c3w - (int256(cell & 0x1FFFF) - 973);
+                if (log) { if (a4w > 0) { console.log("a4w: %d", uint256(a4w)); } else { console.log("a4w: -%d", uint256(-a4w)); }}
+                if (log) { if (b4w > 0) { console.log("b4w: %d", uint256(b4w)); } else { console.log("b4w: -%d", uint256(-b4w)); }}
+                if (log) { if (c4w > 0) { console.log("c4w: %d", uint256(c4w)); } else { console.log("c4w: -%d", uint256(-c4w)); }}
 
                 interpolatedStrikeWeight3w = strikeWeight * (a3w * strikeWeight ** 2 + b3w * strikeWeight * 1e18 + c3w * 1e36);
                 interpolatedStrikeWeight4w = strikeWeight * (a4w * strikeWeight ** 2 + b4w * strikeWeight * 1e18 + c4w * 1e36);
             }
 
-            // if (log) { if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }}
-            // if (log) { if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }}
+            if (log) { if (interpolatedStrikeWeight3w > 0) { console.log("interpolatedStrikeWeight3w: %d", uint256(interpolatedStrikeWeight3w)); } else { console.log("interpolatedStrikeWeight3w: -%d", uint256(-interpolatedStrikeWeight3w)); }}
+            if (log) { if (interpolatedStrikeWeight4w > 0) { console.log("interpolatedStrikeWeight4w: %d", uint256(interpolatedStrikeWeight4w)); } else { console.log("interpolatedStrikeWeight4w: -%d", uint256(-interpolatedStrikeWeight4w)); }}
 
             int256 interpolatedStrikeWeightw = (interpolatedStrikeWeight3w + timeWeight * (interpolatedStrikeWeight4w - interpolatedStrikeWeight3w) / 1e18) / 1e42; // todo: Math.min(1, ...)
             // if factors are zeroed, use default strike weight
             if (interpolatedStrikeWeightw == 0) {
                 interpolatedStrikeWeightw = strikeWeight;
             }
-            // if (log) { if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }}
+            if (log) { if (interpolatedStrikeWeightw > 0) { console.log("interpolatedStrikeWeightw: %d", uint256(interpolatedStrikeWeightw)); } else { console.log("interpolatedStrikeWeightw: -%d", uint256(-interpolatedStrikeWeightw)); }}
 
 
             return interpolatedStrikeWeightw;
@@ -519,45 +521,45 @@ contract BlackScholesPOC {
 
     function step5(
         uint256 cell,
-        uint256 strikeA,
-        uint256 strikeB,
+        uint256 strike,
         int256 interpolatedPrice1, 
         int256 interpolatedPrice2,
         int256 interpolatedStrikeWeightw,
         bool isLowerTime
     ) private view returns (uint256 finalPrice) {
         unchecked {
-            uint256 extrinsicPriceAA;
-            if (SPOT_FIXED * 1e18 > strikeA) {
-                extrinsicPriceAA = SPOT_FIXED * 1e18 - strikeA;
+            int256 extrinsicPriceAW;
+            if (SPOT_FIXED * 1e18 > strike) {
+                extrinsicPriceAW = int256(SPOT_FIXED * 1e18 - strike);
             }
-            uint256 extrinsicPriceBA;
-            if (SPOT_FIXED * 1e18 > strikeB) {
-                extrinsicPriceBA = SPOT_FIXED * 1e18 - strikeB;
-            }
-            // if (log) { console.log("extrinsicPriceAA: %d", extrinsicPriceAA);}
+            // uint256 extrinsicPriceBA;
+            // if (SPOT_FIXED * 1e18 > strikeB) {
+            //     extrinsicPriceBA = SPOT_FIXED * 1e18 - strikeB;
+            // }
+            if (log) { if (extrinsicPriceAW > 0) { console.log("extrinsicPriceAW: %d", uint256(extrinsicPriceAW)); } else { console.log("extrinsicPriceAW: -%d", uint256(-extrinsicPriceAW)); }}
+
             // if (log) { console.log("extrinsicPriceBA: %d", extrinsicPriceBA);}
 
             int256 intrinsicPriceAA;
             int256 intrinsicPriceBA;
             if (isLowerTime) {
-                intrinsicPriceAA = int256((cell << 256 - 202 - 18) >> 256 - 18);
-                intrinsicPriceBA = intrinsicPriceAA - (int256((cell << 256 - 186 - 16) >> 256 - 16) - 24112);
-                // if (log) { if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }}
-                // if (log) { if (intrinsicPriceBA > 0) { console.log("intrinsicPriceBA: %d", uint256(intrinsicPriceBA)); } else { console.log("intrinsicPriceBA: -%d", uint256(-intrinsicPriceBA)); }}
+                intrinsicPriceAA = int256((cell << 256 - 204 - 18) >> 256 - 18);
+                intrinsicPriceBA = intrinsicPriceAA - (int256((cell << 256 - 188 - 16) >> 256 - 16) - 24112);
+                if (log) { if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }}
+                if (log) { if (intrinsicPriceBA > 0) { console.log("intrinsicPriceBA: %d", uint256(intrinsicPriceBA)); } else { console.log("intrinsicPriceBA: -%d", uint256(-intrinsicPriceBA)); }}
             } else {
-                intrinsicPriceAA = int256((cell << 256 - 226 - 27) >> 256 - 27);
-                intrinsicPriceBA = intrinsicPriceAA - (int256((cell << 256 - 206 - 20) >> 256 - 20) - 452963);
-                // if (log) { if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }}
-                // if (log) { if (intrinsicPriceBA > 0) { console.log("intrinsicPriceBA: %d", uint256(intrinsicPriceBA)); } else { console.log("intrinsicPriceBA: -%d", uint256(-intrinsicPriceBA)); }}
+                intrinsicPriceAA = int256((cell << 256 - 224 - 27) >> 256 - 27);
+                intrinsicPriceBA = intrinsicPriceAA - (int256((cell << 256 - 204 - 20) >> 256 - 20) - 452963);
+                if (log) { if (intrinsicPriceAA > 0) { console.log("intrinsicPriceAA: %d", uint256(intrinsicPriceAA)); } else { console.log("intrinsicPriceAA: -%d", uint256(-intrinsicPriceAA)); }}
+                if (log) { if (intrinsicPriceBA > 0) { console.log("intrinsicPriceBA: %d", uint256(intrinsicPriceBA)); } else { console.log("intrinsicPriceBA: -%d", uint256(-intrinsicPriceBA)); }}
             }
 
-            int256 optionPriceAT = int256(extrinsicPriceAA) + intrinsicPriceAA * 1e12 + interpolatedPrice1;
-            int256 optionPriceBT = int256(extrinsicPriceBA) + intrinsicPriceBA * 1e12 + interpolatedPrice2;
-            // if (log) { if (optionPriceAT > 0) { console.log("optionPriceAT: %d", uint256(optionPriceAT)); } else { console.log("optionPriceAT: -%d", uint256(-optionPriceAT)); }}
-            // if (log) { if (optionPriceBT > 0) { console.log("optionPriceBT: %d", uint256(optionPriceBT)); } else { console.log("optionPriceBT: -%d", uint256(-optionPriceBT)); }}
+            int256 intrinsicPriceAT = intrinsicPriceAA * 1e12 + interpolatedPrice1;
+            int256 intrinsicPriceBT = intrinsicPriceBA * 1e12 + interpolatedPrice2;
+            if (log) { if (intrinsicPriceAT > 0) { console.log("intrinsicPriceAT: %d", uint256(intrinsicPriceAT)); } else { console.log("intrinsicPriceAT: -%d", uint256(-intrinsicPriceAT)); }}
+            if (log) { if (intrinsicPriceBT > 0) { console.log("intrinsicPriceBT: %d", uint256(intrinsicPriceBT)); } else { console.log("intrinsicPriceBT: -%d", uint256(-intrinsicPriceBT)); }}
 
-            finalPrice = uint256(maxInt256(0, optionPriceAT - interpolatedStrikeWeightw * (optionPriceAT - optionPriceBT) / 1e18));
+            finalPrice = uint256(maxInt256(0, extrinsicPriceAW + intrinsicPriceAT - interpolatedStrikeWeightw * (intrinsicPriceAT - intrinsicPriceBT) / 1e18));
         }
     }
 
