@@ -361,9 +361,19 @@ export class BlackScholesJS {
       return { step: 0.1, boundary: 90 };
     }
 
-    if (strike >= 99 && strike < 101) {
+    // new code, more resolution in [99.95 - 100.05)
+    if (strike >= 99 && strike < 99.95) {
       return { step: 0.05, boundary: 99 };
     }
+
+    if (strike >= 99.95 && strike < 100.05) {
+      return { step: 0.01, boundary: 99.95 };
+    }
+
+    if (strike >= 100.05 && strike < 101) {
+      return { step: 0.05, boundary: 100.05 };
+    }
+    // end new code
 
     if (strike >= 101 && strike < 110) {
       return { step: 0.1, boundary: 101 };

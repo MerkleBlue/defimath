@@ -5,15 +5,14 @@ import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FI
 import { generateCurvedAreaLookupTable, generateLookupTable, generateStrikePoints, generateTimePoints } from "../poc/blackscholes/generateLookupTable.mjs";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import hre from "hardhat";
-import blackScholes from "black-scholes";
 
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = true;
-const fastTest = true;
+const duoTest = false;
+const fastTest = false;
 
-const maxAbsError = 0.00009502;  // $, for an option on a $1000 spot price
+const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
 const maxRelError = 0.00008901;  // %
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
@@ -659,13 +658,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
           it("gets multiple call prices: $999.5 - $1000, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 99.95 && value <= 100);
-            const timeSubArray = testTimePoints.filter(value => value >= 110 && value <= 480);
+            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
           it("gets multiple call prices: $1000 - $1000.05, find worst case", async function () {
             const strikeSubArray = testStrikePoints.filter(value => value >= 100 && value <= 100.05);
-            const timeSubArray = testTimePoints.filter(value => value >= 150 && value <= 480);
+            const timeSubArray = testTimePoints.filter(value => value >= 1 && value <= 480);
             await testOptionRange(strikeSubArray, timeSubArray, [0.12], true, maxRelError, maxAbsError, 10);
           });
 
