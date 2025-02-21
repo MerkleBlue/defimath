@@ -5,6 +5,7 @@ import { BlackScholesJS, STRIKE_INDEX_MULTIPLIER, STRIKE_MAX, STRIKE_MIN, VOL_FI
 import { generateCurvedAreaLookupTable, generateLookupTable, generateStrikePoints, generateTimePoints } from "../poc/blackscholes/generateLookupTable.mjs";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import hre from "hardhat";
+import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
@@ -43,6 +44,7 @@ async function assertRevertError(contract, method, arg) {
 
 describe("BlackScholesDUO (SOL and JS)", function () {
   let blackScholesJS;
+  let blackScholesNUMJS;
   let testTimePoints;
   let testStrikePoints;
 
@@ -435,6 +437,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     // console.log("curvedLookupTable");
     // console.log(curvedLookupTable);
     blackScholesJS = new BlackScholesJS(lookupTable);
+    blackScholesNUMJS = new BlackScholesNUMJS();
+
 
     // profile factors
     let count = 0, intrinsicZeroCount = 0;
@@ -502,6 +506,70 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
+  describe("numerical", function () {
+    it.only("test getFuturePrice", async function () {
+      const rates = [0.00001, 0.00002, 0.001, 0.05, 0.1, 0.15, 0.2, 0.56, 0.57, 0.58, 1, 1.0001, 1.001, 1.01, 2, 5, 10, 10.1];
+
+      for (let rate = 0; rate < 4; rate += 0.001) { 
+        const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
+        const actualJS = blackScholesNUMJS.getFuturePrice(100, SEC_IN_YEAR, rate);
+        const absError = Math.abs(actualJS - expected);
+        const relError = absError / expected * 100;
+        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+        assert.isBelow(absError, 0.00000440); // in $ on a $100 spot
+        assert.isBelow(relError, 0.00000006); // in %
+      }
+    });
+
+    it.only("test ln(x)", async function () {
+
+      const ratios = [2]; // [1.01, 1.02, 1.05, 1.1, 1.15, 1.2, 2, 3, 4, 5];
+
+      for (let ratio of ratios) { 
+        const expected = Math.log(ratio);
+        const actualJS = blackScholesNUMJS.ln(ratio);
+
+        console.log("ratio: ", ratio, "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
+      }
+    });
+
+        // it.only("standardDistributionFunction gas", async function () {
+  //   const { blackScholesPOC } = await loadFixture(deploy);
+
+  //   let count = 0;
+  //   let totalGas = 0;
+  //   for (let i = 4; i < 32; i++) {
+  //     const gasUsed = await blackScholesPOC.standardDistributionFunctionMeasureGas(2 ** i + 1);
+  //     totalGas += parseInt(gasUsed);
+  //     count++;
+  //   }
+  //   console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
+  // });
+
+  // it.only("ln gas", async function () {
+  //   const { blackScholesPOC } = await loadFixture(deploy);
+
+  //   let count = 0;
+  //   let totalGas = 0;
+  //   for (let i = 4; i < 32; i++) {
+  //     const gasUsed = await blackScholesPOC.lnMeasureGas(tokens(i));
+  //     totalGas += parseInt(gasUsed);
+  //     count++;
+  //   }
+  //   console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
+  // });
+
+  // it.only("ln accuracy", async function () {
+  //   const { blackScholesPOC } = await loadFixture(deploy);
+
+  //   for (let i = 0; i < 10; i++) {
+  //     const result = await blackScholesPOC.ln.staticCallResult();
+  //     console.log(result.toString(), Math.log(i));
+  //   }
+  // });
+
+  });
+
   duoTest && describe("performance", function () {
     it("getCallOptionPrice gas single call", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);
@@ -544,41 +612,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
       console.log("Gas spent [avg]:", Math.round(totalGas / count), "tests:", count);
     });
-
-    // it.only("standardDistributionFunction gas", async function () {
-    //   const { blackScholesPOC } = await loadFixture(deploy);
-
-    //   let count = 0;
-    //   let totalGas = 0;
-    //   for (let i = 4; i < 32; i++) {
-    //     const gasUsed = await blackScholesPOC.standardDistributionFunctionMeasureGas(2 ** i + 1);
-    //     totalGas += parseInt(gasUsed);
-    //     count++;
-    //   }
-    //   console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
-    // });
-
-    // it.only("ln gas", async function () {
-    //   const { blackScholesPOC } = await loadFixture(deploy);
-
-    //   let count = 0;
-    //   let totalGas = 0;
-    //   for (let i = 4; i < 32; i++) {
-    //     const gasUsed = await blackScholesPOC.lnMeasureGas(tokens(i));
-    //     totalGas += parseInt(gasUsed);
-    //     count++;
-    //   }
-    //   console.log("Gas spent [avg]: ", parseInt(totalGas / count), "tests:", count);
-    // });
-
-    // it.only("ln accuracy", async function () {
-    //   const { blackScholesPOC } = await loadFixture(deploy);
-
-    //   for (let i = 0; i < 10; i++) {
-    //     const result = await blackScholesPOC.ln.staticCallResult();
-    //     console.log(result.toString(), Math.log(i));
-    //   }
-    // });
 
     it("getFuturePrice gas", async function () {
       const { blackScholesPOC } = await loadFixture(deploy);

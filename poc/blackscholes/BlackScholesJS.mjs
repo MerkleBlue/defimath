@@ -118,31 +118,29 @@ export class BlackScholesJS {
     return Math.max(0, callPrice + discountedStrike - spot);
   };
 
-  // NOTE: rate: 20% and time: 1 year gives max error of 0.000045%
-  // same for rate: 10% and time: 2 years
-  // So basically, if rate * years < 0.2, we are good, if not, use other method maybe?
   getFuturePrice(spot, timeToExpirySec, rate) {
+    const E_TO_005 = 1.051271096376024; // e ^ 0.05
+    let exp1 = 1;
 
     const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
-    const x = rate * timeToExpiryYears;
-    if (x <= 0.2) {
-      // we use Pade approximation for exp(x)
-      // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-      const numerator = (x + 3) ** 2 + 3;
-      const denominator = (x - 3) ** 2 + 3;
-      const futurePrice = spot * (numerator / denominator);
-
-      return futurePrice;
+    let x = rate * timeToExpiryYears;
+    if (x >= 0.05) {
+      const exponent = Math.floor(x / 0.05);
+      x = x - exponent * 0.05;
+      exp1 = E_TO_005 ** exponent;
     }
 
-    // todo: implement other method, this method gives error when x > 0.2
+    // we use Pade approximation for exp(x)
+    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
-    const futurePrice = spot * (numerator / denominator);
+    const exp2 = (numerator / denominator);
+
+    const futurePrice = spot * exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
 
     return futurePrice;
   };
-
+  
   getDiscountedStrikePrice(strike, timeToExpirySec, rate) {
     // we use Pade approximation for exp(x)
     // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
