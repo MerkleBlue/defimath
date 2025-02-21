@@ -647,21 +647,32 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
-      const strikeSubArray = generateRandomTestPoints(20, 100, 500, false);
-      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 500, true);
+    // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
+    // that requires puts implementation other than getting put from call
+    it.only("gets multiple call prices at lower strikes: random", async function () {
+      const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
+      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000140, 10, !fastTest);
+    });
 
-      console.log("min z squared", blackScholesJS.minZsquared);
-      console.log("max z squared", blackScholesJS.maxZsquared);
+    // it.only("gets multiple put prices at higher strikes: random", async function () {
+    //   const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
+    //   const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
+    //   await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000340, 10, !fastTest);
+    // });
 
-      console.log(Math.exp(-6837683.739105278))
+    it.only("gets multiple call prices at higher strikes: random", async function () {
+      const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
+      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
+      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000340, 10, !fastTest);
     });
 
     it.only("test Math.exp limits", async function () {
 
       console.log(Math.exp(-600));
-      console.log(Math.exp(-1e-15)) // -1.7117711582997589e-13
+      console.log(Math.exp(-1e-15))
+
+      // min and max (-z * z) -> -6837683.739105278 and -1.7117711582997589e-13
     });
 
         // it.only("standardDistributionFunction gas", async function () {

@@ -20,11 +20,6 @@ const log = false;
 
 export class BlackScholesNUMJS {
 
-  constructor() {
-    this.minZsquared = Infinity;
-    this.maxZsquared = -Infinity;
-  }
-
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
     // step 0) check inputs
@@ -58,31 +53,12 @@ export class BlackScholesNUMJS {
     if (vol > MAX_VOLATILITY) throw new Error(7);
     if (rate > MAX_RATE) throw new Error(8);
 
-    // step 1: set the overall scale first
-    const spotScale = spot / SPOT_FIXED;
+    const timeYear = timeSec / SECONDS_IN_YEAR;
 
-    // step 2: calculate strike scaled and discounted strike
-    const discountedStrike = this.getDiscountedStrike(strike, rate, timeToExpirySec);
-    const strikeScaled = (discountedStrike / spot) * SPOT_FIXED;
-
-    // step 3: set the expiration based on volatility
-    const volRatio = vol / VOL_FIXED;
-    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio);
-    // console.log("timeToExpiryScaled (not rounded)", timeToExpirySec * (volRatio * volRatio));
-    // console.log("strikeScaled", strikeScaled, "timeToExpirySecScaled", timeToExpirySecScaled, timeToExpirySec);
-
-    // handle when time is 0
-    if (timeToExpirySecScaled === 0) {
-      return Math.max(0, strike - spot);
-    }
-
-    // step 4: interpolate price
-    const finalPrice = this.interpolatePrice3(strikeScaled, timeToExpirySecScaled);
-
-    // finally, scale the price back to the original spot
-    const callPrice = finalPrice * spotScale;
-    log && console.log("call price:", finalPrice);
-    log && console.log(callPrice, discountedStrike, spot);
+    const d1 = this.getD1(spot, strike, timeYear, vol, rate);
+    const d2 = this.getD2(d1, timeYear, vol);
+    const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
+    const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
     return Math.max(0, callPrice + discountedStrike - spot);
   };
@@ -166,7 +142,7 @@ export class BlackScholesNUMJS {
   };
 
   getD1(spot, strike, timeToExpiryYear, vol, rate) {
-    const d1 = (rate * timeToExpiryYear + Math.pow(vol, 2) * timeToExpiryYear / 2 - Math.log(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
+    const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.ln(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
 
     return d1;
   }
@@ -250,38 +226,17 @@ export class BlackScholesNUMJS {
   
   // using erf function, abs error is up to $0.000100
   stdNormCDF(x) {
-
-
-    // OLD CODE
-    // // taylor series approximation
-    // function erf2(z) {
-    //   const TWO_SQRT_PI = 2 / Math.sqrt(Math.PI);
-
-    //   const result = TWO_SQRT_PI * (z - (z ** 3) / 3 + (z ** 5) / 10 - (z ** 7) / 42 + (z ** 9) / 216);
-      
-    //   return result;
-    // }
-    
-    return 0.5 * (1 + this.erf(x / Math.sqrt(2)));
+    return 0.5 * (1 + this.erf(x * 0.707106781186548)); // 1 / sqrt(2)
   }
 
   // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
-
   erf(z) {
     // Approximation of error function
     const t = 1 / (1 + 0.3275911 * Math.abs(z));
     const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
     
     const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
-    const approx = 1 - poly * this.exp(-z * z); // todo: replace with this.exp(-z * z)
-
-    // record max and min z squared
-    if (-z * z < this.minZsquared) {
-      this.minZsquared = -z * z;
-    }
-    if (-z * z > this.maxZsquared) {
-      this.maxZsquared = -z * z;
-    }
+    const approx = 1 - poly * this.exp(-z * z);
     
     return z >= 0 ? approx : -approx;
   }
