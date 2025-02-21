@@ -146,6 +146,11 @@ export class BlackScholesNUMJS {
   }
 
   ln(x) {
+    // handle special case where x = 1
+    if (x === 1) {
+      return 0;
+    }
+
     const LN_1_20 = 0.182321556793955;
     let multiplier = 0;
 

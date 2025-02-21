@@ -522,14 +522,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     it.only("test ln(x)", async function () {
-
-      const ratios = [2]; // [1.01, 1.02, 1.05, 1.1, 1.15, 1.2, 2, 3, 4, 5];
-
-      for (let ratio of ratios) { 
+      for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(ratio);
         const actualJS = blackScholesNUMJS.ln(ratio);
-
-        console.log("ratio: ", ratio, "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+        assert.isBelow(absError, 0.00000001);
+        assert.isBelow(relError, 0.00000006);
       }
     });
 
