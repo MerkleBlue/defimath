@@ -5,6 +5,7 @@ export const SPOT_FIXED = 100;
 export const VOL_FIXED = 0.12;
 export const MAX_MAJOR = 34;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
+export const SECONDS_IN_YEAR = 365 * SECONDS_IN_DAY;
 
 // strike price +-5x from spot price
 export const STRIKE_MIN = 20;                 // 20;
@@ -40,42 +41,15 @@ export class BlackScholesNUMJS {
     if (vol > MAX_VOLATILITY) throw new Error(7);
     if (rate > MAX_RATE) throw new Error(8);
 
-    // step 1: set the overall scale first
-    const spotScale = spot / SPOT_FIXED;
+    let d1 = this.getD1(spot, strike, timeToExpirySec / SECONDS_IN_YEAR, vol, rate);
+    let d2 = this.getD2(d1, timeToExpirySec / SECONDS_IN_YEAR, vol);
 
-    // step 2: calculate strike scaled
-    const future = this.getFuturePrice(spot, rate, timeToExpirySec);
-    const strikeScaled = (strike / future) * SPOT_FIXED;
+    // console.log("d1", d1, "d2", d2);
 
-    // step 3: set the expiration based on volatility
-    const volRatio = vol / VOL_FIXED;
-    log && console.log("volRatio:", volRatio);
-    log && console.log("timeToExpirySec * (volRatio * volRatio):", timeToExpirySec * (volRatio * volRatio));
-    const timeToExpirySecScaled = timeToExpirySec * (volRatio * volRatio); //Math.floor(timeToExpirySec * (volRatio * volRatio));
-    // console.log("timeToExpiryScaled (not rounded)", timeToExpirySec * (volRatio * volRatio));
-    // console.log("strikeScaled", strikeScaled, "timeToExpirySecScaled", timeToExpirySecScaled, timeToExpirySec);
+    let discountedStrike = this.getDiscountedStrikePrice(strike, timeToExpirySec, rate);
+    let price = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
-    // handle when time is 0
-    if (timeToExpirySecScaled === 0) {
-      return Math.max(0, spot - strike);
-    }
-
-    // step 4: interpolate price
-
-    // if (strikeScaled >= 99 && strikeScaled <= 100.05 && timeToExpirySecScaled < 480) {
-    //   console.log("Curved interpolation");
-
-    //   const finalPrice = this.interpolatePrice3(strikeScaled, timeToExpirySecScaled);
-
-    //   // finally, scale the price back to the original spot
-    //   return finalPrice * spotScale;
-    // }
-
-
-    const finalPrice = this.interpolatePrice3(strikeScaled, timeToExpirySecScaled);
-
-    // finally, scale the price back to the original spot
-    return finalPrice * spotScale;
+    return price;
   };
 
   getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
@@ -118,11 +92,12 @@ export class BlackScholesNUMJS {
     return Math.max(0, callPrice + discountedStrike - spot);
   };
 
+  // todo: implement exp function
   getFuturePrice(spot, timeToExpirySec, rate) {
     const E_TO_005 = 1.051271096376024; // e ^ 0.05
     let exp1 = 1;
 
-    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    const timeToExpiryYears = timeToExpirySec / SECONDS_IN_YEAR;
     let x = rate * timeToExpiryYears;
     if (x >= 0.05) {
       const exponent = Math.floor(x / 0.05);
@@ -171,7 +146,23 @@ export class BlackScholesNUMJS {
     return finalLN;
   };
 
-  stdNormCDF(x) {
+  getD1(spot, strike, timeToExpiryYear, vol, rate) {
+    const d1 = (rate * timeToExpiryYear + Math.pow(vol, 2) * timeToExpiryYear / 2 - Math.log(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
+
+
+    // const discountedStrike = this.getDiscountedStrikePrice(strike, rate, timeToExpiryYear * SECONDS_IN_YEAR);
+    // const d1 = this.ln(spot / discountedStrike) / vol / Math.sqrt(timeToExpiryYear) + 0.5 * vol * Math.sqrt(timeToExpiryYear);
+
+    return d1;
+  }
+
+  getD2(d1, timeToExpiryYear, vol) {
+    const d2 = d1 - vol * Math.sqrt(timeToExpiryYear);
+
+    return d2;
+  }
+
+  stdNormCDF2(x) {
     const SQRT2PI = 2.506628274631001;
 
     return 0.5 + x / SQRT2PI - (x ** 3) / (6 * SQRT2PI) + (x ** 5) / (40 * SQRT2PI) - (x ** 7) / (336 * SQRT2PI) + (x ** 9) / (3456 * SQRT2PI) - (x ** 11) / (21120 * SQRT2PI);
@@ -182,6 +173,94 @@ export class BlackScholesNUMJS {
     // by chatgpt, doesn't work
     // return 0.5 + 0.196854 * x + 0.115194 * (x ** 2) + 0.000344 * (x ** 3) + 0.019527 * (x ** 4);
   };
+
+  // stdNormCDF(x) {
+  //   const SQRT2PI = 2.506628274631001;
+
+  //   return 0.5 + x / SQRT2PI - (x ** 3) / (6 * SQRT2PI) + (x ** 5) / (40 * SQRT2PI) - (x ** 7) / (336 * SQRT2PI) + (x ** 9) / (3456 * SQRT2PI) - (x ** 11) / (21120 * SQRT2PI) + (x ** 13) / (599040 * SQRT2PI)
+
+  //   // errors on 3rd decimal
+  //   // return 1 / (1 + Math.exp(-1.65451 * x));
+
+  //   // by chatgpt, doesn't work
+  //   // return 0.5 + 0.196854 * x + 0.115194 * (x ** 2) + 0.000344 * (x ** 3) + 0.019527 * (x ** 4);
+  // };
+
+  // from bs
+  stdNormCDF3(x)
+  {
+    var probability = 0;
+    // avoid divergence in the series which happens around +/-8 when summing the
+    // first 100 terms
+    if(x >= 8)
+    {
+      probability = 1;
+    }
+    else if(x <= -8)
+    {
+      probability = 0;
+    }
+    else
+    {
+      for(var i = 0; i < 100; i++)
+      {
+        probability += (Math.pow(x, 2*i+1)/this._doubleFactorial(2*i+1));
+      }
+      probability *= Math.pow(Math.E, -0.5*Math.pow(x, 2));
+      probability /= Math.sqrt(2*Math.PI);
+      probability += 0.5;
+    }
+    return probability;
+  }
+
+  _doubleFactorial(n)
+  {
+    var val = 1;
+    for(var i = n; i > 1; i-=2)
+    {
+      val *= i;
+    }
+    return val;
+  }
+
+  _abs(x) {
+    return x < 0 ? -x : x;
+  }
+
+  
+  // Exponentiation function (this is an approximation for exp() as it's not available in basic JS)
+  expE(x) {
+    return Math.exp(x / PRECISE_UNIT);
+  }
+  
+  // using erf function, error is abs error is $0.000100
+  stdNormCDF(x) {
+
+    // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
+    function erf(z) {
+      // Approximation of error function
+      const t = 1 / (1 + 0.3275911 * Math.abs(z));
+      const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+      
+      const poly = a1 * t + a2 * t**2 + a3 * t**3 + a4 * t**4 + a5 * t**5;
+      const approx = 1 - poly * Math.exp(-z * z);
+      
+      return z >= 0 ? approx : -approx;
+    }
+
+    // taylor series approximation
+    function erf2(z) {
+      const TWO_SQRT_PI = 2 / Math.sqrt(Math.PI);
+
+      const result = TWO_SQRT_PI * (z - (z ** 3) / 3 + (z ** 5) / 10 - (z ** 7) / 42 + (z ** 9) / 216);
+      
+      return result;
+    }
+    
+    return 0.5 * (1 + erf(x / Math.sqrt(2)));
+  }
+
+
 
   getDiscountedStrikePrice(strike, timeToExpirySec, rate) {
     // we use Pade approximation for exp(x)

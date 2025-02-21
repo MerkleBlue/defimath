@@ -436,7 +436,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const curvedLookupTable  = (await generateCurvedAreaLookupTable(new BlackScholesJS())).lookupTable;
     // console.log("curvedLookupTable");
     // console.log(curvedLookupTable);
-    blackScholesJS = new BlackScholesJS(lookupTable);
+    blackScholesJS = new BlackScholesNUMJS();; //new BlackScholesJS(lookupTable);
     blackScholesNUMJS = new BlackScholesNUMJS();
 
 
@@ -507,7 +507,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("numerical", function () {
-    it.only("test getFuturePrice", async function () {
+    it("test getFuturePrice", async function () {
       for (let rate = 0; rate < 4; rate += 0.001) { 
         const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
         const actualJS = blackScholesNUMJS.getFuturePrice(100, SEC_IN_YEAR, rate);
@@ -519,7 +519,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("test ln(x)", async function () {
+    it("test ln(x)", async function () {
       for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(ratio);
         const actualJS = blackScholesNUMJS.ln(ratio);
@@ -531,16 +531,80 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("test stdCDF(x)", async function () {
-      for (let x = 0; x < 1; x += 0.1) { 
-        const expected = bs.stdNormCDF(x);
-        const actualJS = blackScholesNUMJS.stdNormCDF(x);
-        //const absError = Math.abs(actualJS - expected);
-        // const relError = expected !== 0 ? absError / expected * 100 : 0;
-        console.log("Rel error for x: ", x.toFixed(1), "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
-        //assert.isBelow(absError, 0.00000001);
+    it("test stdCDF", async function () {
+      // for (let x = 0; x < 1; x += 0.1) { 
+      //   const expected = bs.stdNormCDF(x);
+      //   const actualJS = blackScholesNUMJS.stdNormCDF(x);
+      //   //const absError = Math.abs(actualJS - expected);
+      //   // const relError = expected !== 0 ? absError / expected * 100 : 0;
+      //   console.log("Rel error for x: ", x.toFixed(1), "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
+      //   //assert.isBelow(absError, 0.00000001);
+      //   // assert.isBelow(relError, 0.00000006);
+      // }
+
+      let expected = bs.stdNormCDF(0.6100358074173348);
+      let actualJS = blackScholesNUMJS.stdNormCDF(0.6100358074173348);
+      console.log("exp: " + expected.toFixed(10));
+      console.log("act: " + actualJS.toFixed(10));
+      console.log("diff:", Math.abs(expected - actualJS));
+
+      expected = bs.stdNormCDF(0.6100358074173348);
+      actualJS = blackScholesNUMJS.stdNormCDF2(0.6100358074173348);
+      console.log("exp: " + expected.toFixed(10));
+      console.log("act: " + actualJS.toFixed(10));
+      console.log("diff:", Math.abs(expected - actualJS));
+      // d1 0.6100358074173348 d2 0.2115455057186043
+    });
+
+    it("test getD1", async function () {
+      for (let i = 0; i < 200; i++) { 
+        const t = (10 + i) / 365;
+        const expected = bs.getW(1000, 1000 - i, t, 0.60, 0);
+        const actualJS = blackScholesNUMJS.getD1(1000, 1000 - i, t, 0.60, 0);
+
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
+        assert.isBelow(absError, 0.00000040);
+        assert.isBelow(relError, 0.00000006);
+      }
+    });
+
+    it("test getD2", async function () {
+      for (let i = 0; i < 200; i++) {
+        const t = (10 + i) / 365;
+        const expectedD1 = bs.getW(1000, 1000 - i, t, 0.60, 0);
+        const expected = expectedD1 - 0.60 * Math.sqrt(t);
+
+        const actualD1 = blackScholesNUMJS.getD1(1000, 1000 - i, t, 0.60, 0);
+        const actualJS = blackScholesNUMJS.getD2(actualD1, t, 0.60);
+
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        // console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
+        assert.isBelow(absError, 0.00000040);
+        assert.isBelow(relError, 0.00000006);
+      }
+    });
+
+    it("test getCallPrice", async function () {
+      for (let i = 0; i < 200; i++) {
+        const t = (10 + i) / 365;
+        const expected = bs.blackScholes(1000, 1000 - i, t, 0.60, 0, "call");
+        const actualJS = blackScholesNUMJS.getCallOptionPrice(1000, 1000 - i, t * SEC_IN_YEAR, 0.60, 0);
+
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
+        assert.isBelow(absError, 0.000290);
         // assert.isBelow(relError, 0.00000006);
       }
+    });
+
+    it.only("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+      const strikeSubArray = generateRandomTestPoints(20, 100, 500, false);
+      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 500, true);
+      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.02, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000140, 10, !fastTest);
     });
 
         // it.only("standardDistributionFunction gas", async function () {
