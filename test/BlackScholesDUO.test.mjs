@@ -508,8 +508,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("numerical", function () {
     it.only("test getFuturePrice", async function () {
-      const rates = [0.00001, 0.00002, 0.001, 0.05, 0.1, 0.15, 0.2, 0.56, 0.57, 0.58, 1, 1.0001, 1.001, 1.01, 2, 5, 10, 10.1];
-
       for (let rate = 0; rate < 4; rate += 0.001) { 
         const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
         const actualJS = blackScholesNUMJS.getFuturePrice(100, SEC_IN_YEAR, rate);
@@ -530,6 +528,18 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
         assert.isBelow(absError, 0.00000001);
         assert.isBelow(relError, 0.00000006);
+      }
+    });
+
+    it.only("test stdCDF(x)", async function () {
+      for (let x = 0; x < 1; x += 0.1) { 
+        const expected = bs.stdNormCDF(x);
+        const actualJS = blackScholesNUMJS.stdNormCDF(x);
+        //const absError = Math.abs(actualJS - expected);
+        // const relError = expected !== 0 ? absError / expected * 100 : 0;
+        console.log("Rel error for x: ", x.toFixed(1), "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
+        //assert.isBelow(absError, 0.00000001);
+        // assert.isBelow(relError, 0.00000006);
       }
     });
 

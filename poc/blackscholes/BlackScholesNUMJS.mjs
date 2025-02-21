@@ -171,6 +171,18 @@ export class BlackScholesNUMJS {
     return finalLN;
   };
 
+  stdNormCDF(x) {
+    const SQRT2PI = 2.506628274631001;
+
+    return 0.5 + x / SQRT2PI - (x ** 3) / (6 * SQRT2PI) + (x ** 5) / (40 * SQRT2PI) - (x ** 7) / (336 * SQRT2PI) + (x ** 9) / (3456 * SQRT2PI) - (x ** 11) / (21120 * SQRT2PI);
+
+    // errors on 3rd decimal
+    // return 1 / (1 + Math.exp(-1.65451 * x));
+
+    // by chatgpt, doesn't work
+    // return 0.5 + 0.196854 * x + 0.115194 * (x ** 2) + 0.000344 * (x ** 3) + 0.019527 * (x ** 4);
+  };
+
   getDiscountedStrikePrice(strike, timeToExpirySec, rate) {
     // we use Pade approximation for exp(x)
     // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
