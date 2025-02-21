@@ -20,6 +20,11 @@ const log = false;
 
 export class BlackScholesNUMJS {
 
+  constructor() {
+    this.minZsquared = Infinity;
+    this.maxZsquared = -Infinity;
+  }
+
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
     // step 0) check inputs
@@ -98,6 +103,16 @@ export class BlackScholesNUMJS {
 
   // x must be > 0, [0, 4]
   exp(x) {
+    // handle special case where x = 0
+    if( x === 0) {
+      return 1;
+    }
+
+    const isPositive = x > 0;
+    x = Math.abs(x);
+
+    // todo: always reduce x to < 1 (if x is 50 then: return 1 / exp(1/50))
+
     const E_TO_005 = 1.051271096376024; // e ^ 0.05
     let exp1 = 1;
 
@@ -113,7 +128,11 @@ export class BlackScholesNUMJS {
     const denominator = (x - 3) ** 2 + 3;
     const exp2 = (numerator / denominator);
 
-    return exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
+    if (isPositive) {
+      return exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
+    } else {
+      return 1 / (exp1 * exp2);
+    }
   };
 
   ln(x) {
@@ -231,17 +250,7 @@ export class BlackScholesNUMJS {
   
   // using erf function, abs error is up to $0.000100
   stdNormCDF(x) {
-    // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
-    function erf(z) {
-      // Approximation of error function
-      const t = 1 / (1 + 0.3275911 * Math.abs(z));
-      const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
-      
-      const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
-      const approx = 1 - poly * Math.exp(-z * z); // todo: replace with this.exp(-z * z)
-      
-      return z >= 0 ? approx : -approx;
-    }
+
 
     // OLD CODE
     // // taylor series approximation
@@ -253,7 +262,28 @@ export class BlackScholesNUMJS {
     //   return result;
     // }
     
-    return 0.5 * (1 + erf(x / Math.sqrt(2)));
+    return 0.5 * (1 + this.erf(x / Math.sqrt(2)));
+  }
+
+  // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
+
+  erf(z) {
+    // Approximation of error function
+    const t = 1 / (1 + 0.3275911 * Math.abs(z));
+    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+    
+    const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
+    const approx = 1 - poly * this.exp(-z * z); // todo: replace with this.exp(-z * z)
+
+    // record max and min z squared
+    if (-z * z < this.minZsquared) {
+      this.minZsquared = -z * z;
+    }
+    if (-z * z > this.maxZsquared) {
+      this.maxZsquared = -z * z;
+    }
+    
+    return z >= 0 ? approx : -approx;
   }
 
   // helper function used only for ln(x) calculation, used only integers

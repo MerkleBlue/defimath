@@ -514,7 +514,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("numerical", function () {
-    it.only("exp", async function () {
+    it.only("exp positive", async function () {
       for (let x = 0; x < 4; x += 0.001) { 
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
@@ -526,7 +526,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("ln", async function () {
+    it.only("exp negative", async function () {
+      for (let x = 0; x > -4; x -= 0.001) { 
+        const expected = Math.exp(x);
+        const actualJS = blackScholesNUMJS.exp(x);
+        const absError = Math.abs(actualJS - expected);
+        const relError = absError / expected * 100;
+        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+        assert.isBelow(absError, 0.00000003);
+        assert.isBelow(relError, 0.00000006);
+      }
+    });
+
+    it("ln", async function () {
       for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(ratio);
         const actualJS = blackScholesNUMJS.ln(ratio);
@@ -538,7 +550,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("getFuturePrice", async function () {
+    it("getFuturePrice", async function () {
       for (let rate = 0; rate < 4; rate += 0.001) { 
         const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
         const actualJS = blackScholesNUMJS.getFuturePrice(100, SEC_IN_YEAR, rate);
@@ -550,7 +562,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("getDiscountedStrike", async function () {
+    it("getDiscountedStrike", async function () {
       for (let rate = 0; rate < 4; rate += 0.001) { 
         const expected = getDiscountedStrike(100, SEC_IN_YEAR, rate);
         const actualJS = blackScholesNUMJS.getDiscountedStrike(100, SEC_IN_YEAR, rate);
@@ -627,6 +639,17 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 500, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 500, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000140, 10, !fastTest);
+
+      console.log("min z squared", blackScholesJS.minZsquared);
+      console.log("max z squared", blackScholesJS.maxZsquared);
+
+      console.log(Math.exp(-6837683.739105278))
+    });
+
+    it.only("test Math.exp limits", async function () {
+
+      console.log(Math.exp(-600));
+      console.log(Math.exp(-1e-15)) // -1.7117711582997589e-13
     });
 
         // it.only("standardDistributionFunction gas", async function () {
