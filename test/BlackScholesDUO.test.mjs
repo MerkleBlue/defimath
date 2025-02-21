@@ -509,13 +509,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   describe("numerical", function () {
     it.only("test exp", async function () {
       for (let x = 0; x < 4; x += 0.001) { 
-        const expected = Math.exp(rate);
+        const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
         const absError = Math.abs(actualJS - expected);
         const relError = absError / expected * 100;
         // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000440); // in $ on a $100 spot
-        assert.isBelow(relError, 0.00000006); // in %
+        assert.isBelow(absError, 0.00000003);
+        assert.isBelow(relError, 0.00000006);
+      }
+    });
+
+    it("test ln(x)", async function () {
+      for (let ratio = 1; ratio < 5; ratio += 0.001) { 
+        const expected = Math.log(ratio);
+        const actualJS = blackScholesNUMJS.ln(ratio);
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+        assert.isBelow(absError, 0.00000001);
+        assert.isBelow(relError, 0.00000006);
       }
     });
 
@@ -531,17 +543,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it("test ln(x)", async function () {
-      for (let ratio = 1; ratio < 5; ratio += 0.001) { 
-        const expected = Math.log(ratio);
-        const actualJS = blackScholesNUMJS.ln(ratio);
-        const absError = Math.abs(actualJS - expected);
-        const relError = expected !== 0 ? absError / expected * 100 : 0;
-        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000001);
-        assert.isBelow(relError, 0.00000006);
-      }
-    });
+
 
     it("test stdCDF", async function () {
 
