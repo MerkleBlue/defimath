@@ -90,27 +90,13 @@ export class BlackScholesNUMJS {
   };
 
   getDiscountedStrike(strike, timeSec, rate) {
-
     const timeYears = timeSec / SECONDS_IN_YEAR;
     const x = rate * timeYears;
 
     return strike / this.exp(x);
-
-    // // we use Pade approximation for exp(x)
-    // // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    // const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
-    // const x = rate * timeToExpiryYears;
-    // const numerator = (x + 3) ** 2 + 3;
-    // const denominator = (x - 3) ** 2 + 3;
-    // const discountedStrikePrice = strike * (denominator / numerator);
-
-    // const timeYears = timeSec / SECONDS_IN_YEAR;
-    // const x = rate * timeYears;
-
-    // return discountedStrikePrice;
   };
 
-  // x is from 0 to 4
+  // x must be > 0, [0, 4]
   exp(x) {
     const E_TO_005 = 1.051271096376024; // e ^ 0.05
     let exp1 = 1;
