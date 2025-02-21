@@ -36,7 +36,7 @@ export class BlackScholesNUMJS {
 
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
     const d2 = this.getD2(d1, timeYear, vol);
-    const discountedStrike = this.getDiscountedStrikePrice(strike, timeSec, rate);
+    const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
     const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
     return callPrice;
@@ -57,7 +57,7 @@ export class BlackScholesNUMJS {
     const spotScale = spot / SPOT_FIXED;
 
     // step 2: calculate strike scaled and discounted strike
-    const discountedStrike = this.getDiscountedStrikePrice(strike, rate, timeToExpirySec);
+    const discountedStrike = this.getDiscountedStrike(strike, rate, timeToExpirySec);
     const strikeScaled = (discountedStrike / spot) * SPOT_FIXED;
 
     // step 3: set the expiration based on volatility
@@ -82,28 +82,32 @@ export class BlackScholesNUMJS {
     return Math.max(0, callPrice + discountedStrike - spot);
   };
 
-  // todo: implement exp function
-  getFuturePrice(spot, timeToExpirySec, rate) {
-    const E_TO_005 = 1.051271096376024; // e ^ 0.05
-    let exp1 = 1;
+  getFuturePrice(spot, timeSec, rate) {
+    const timeYears = timeSec / SECONDS_IN_YEAR;
+    const x = rate * timeYears;
 
-    const timeToExpiryYears = timeToExpirySec / SECONDS_IN_YEAR;
-    let x = rate * timeToExpiryYears;
-    if (x >= 0.05) {
-      const exponent = Math.floor(x / 0.05);
-      x = x - exponent * 0.05;
-      exp1 = E_TO_005 ** exponent;
-    }
+    return spot * this.exp(x);
+  };
 
-    // we use Pade approximation for exp(x)
-    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    const numerator = (x + 3) ** 2 + 3;
-    const denominator = (x - 3) ** 2 + 3;
-    const exp2 = (numerator / denominator);
+  getDiscountedStrike(strike, timeSec, rate) {
 
-    const futurePrice = spot * exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
+    const timeYears = timeSec / SECONDS_IN_YEAR;
+    const x = rate * timeYears;
 
-    return futurePrice;
+    return strike / this.exp(x);
+
+    // // we use Pade approximation for exp(x)
+    // // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    // const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    // const x = rate * timeToExpiryYears;
+    // const numerator = (x + 3) ** 2 + 3;
+    // const denominator = (x - 3) ** 2 + 3;
+    // const discountedStrikePrice = strike * (denominator / numerator);
+
+    // const timeYears = timeSec / SECONDS_IN_YEAR;
+    // const x = rate * timeYears;
+
+    // return discountedStrikePrice;
   };
 
   // x is from 0 to 4
@@ -270,18 +274,4 @@ export class BlackScholesNUMJS {
     
     return 0.5 * (1 + erf(x / Math.sqrt(2)));
   }
-
-
-
-  getDiscountedStrikePrice(strike, timeToExpirySec, rate) {
-    // we use Pade approximation for exp(x)
-    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
-    const x = rate * timeToExpiryYears;
-    const numerator = (x + 3) ** 2 + 3;
-    const denominator = (x - 3) ** 2 + 3;
-    const discountedStrikePrice = strike * (denominator / numerator);
-
-    return discountedStrikePrice;
-  };
 }

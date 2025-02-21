@@ -108,6 +108,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return futurePrice;
   }
 
+  function getDiscountedStrike(strike, timeToExpirySec, rate) {
+    // discounted = strike / e^(rT)
+    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    const discountedStrike = strike / Math.exp(rate * timeToExpiryYears);
+    return discountedStrike;
+  }
+
   function findMinAndMax(map, timeLimit, lowerThanLimit) {
     // Initialize min and max objects with Infinity and -Infinity respectively
     console.log("Interpolation parameters: timeIndex", (lowerThanLimit ? "< " : ">= ") + timeLimit);
@@ -507,7 +514,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("numerical", function () {
-    it.only("test exp", async function () {
+    it.only("exp", async function () {
       for (let x = 0; x < 4; x += 0.001) { 
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
@@ -519,7 +526,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it("test ln(x)", async function () {
+    it.only("ln", async function () {
       for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(ratio);
         const actualJS = blackScholesNUMJS.ln(ratio);
@@ -531,19 +538,29 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it("test getFuturePrice", async function () {
+    it.only("getFuturePrice", async function () {
       for (let rate = 0; rate < 4; rate += 0.001) { 
         const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
         const actualJS = blackScholesNUMJS.getFuturePrice(100, SEC_IN_YEAR, rate);
         const absError = Math.abs(actualJS - expected);
         const relError = absError / expected * 100;
         // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000440); // in $ on a $100 spot
+        assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
         assert.isBelow(relError, 0.00000006); // in %
       }
     });
 
-
+    it.only("getDiscountedStrike", async function () {
+      for (let rate = 0; rate < 4; rate += 0.001) { 
+        const expected = getDiscountedStrike(100, SEC_IN_YEAR, rate);
+        const actualJS = blackScholesNUMJS.getDiscountedStrike(100, SEC_IN_YEAR, rate);
+        const absError = Math.abs(actualJS - expected);
+        const relError = absError / expected * 100;
+        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+        assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
+        assert.isBelow(relError, 0.00000006); // in %
+      }
+    });
 
     it("test stdCDF", async function () {
 
@@ -606,7 +623,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
+    it.only("gets multiple call prices at normal scale: random " + (fastTest ? "FAST" : "SLOW"), async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 500, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 500, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000140, 10, !fastTest);
