@@ -514,7 +514,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("numerical", function () {
-    it.only("exp positive", async function () {
+    it("exp positive", async function () {
       for (let x = 0; x < 4; x += 0.001) { 
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
@@ -526,7 +526,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("exp negative", async function () {
+    it("exp negative", async function () {
       for (let x = 0; x > -4; x -= 0.001) { 
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
@@ -538,10 +538,22 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it("ln", async function () {
+    it.only("ln larger than 1", async function () {
       for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(ratio);
         const actualJS = blackScholesNUMJS.ln(ratio);
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+        assert.isBelow(absError, 0.00000001);
+        assert.isBelow(relError, 0.00000006);
+      }
+    });
+
+    it.only("ln smaller than 1", async function () {
+      for (let ratio = 1; ratio < 5; ratio += 0.001) { 
+        const expected = Math.log(1 / ratio);
+        const actualJS = blackScholesNUMJS.ln(1 / ratio);
         const absError = Math.abs(actualJS - expected);
         const relError = expected !== 0 ? absError / expected * 100 : 0;
         // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));

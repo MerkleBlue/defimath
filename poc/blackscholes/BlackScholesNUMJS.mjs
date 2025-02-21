@@ -111,12 +111,11 @@ export class BlackScholesNUMJS {
     const isPositive = x > 0;
     x = Math.abs(x);
 
-    // todo: always reduce x to < 1 (if x is 50 then: return 1 / exp(1/50))
-
     const E_TO_005 = 1.051271096376024; // e ^ 0.05
     let exp1 = 1;
 
     if (x > 0.05) {
+      // todo: this can be optimized
       const exponent = Math.floor(x / 0.05);
       x -= exponent * 0.05;
       exp1 = E_TO_005 ** exponent;
@@ -127,14 +126,12 @@ export class BlackScholesNUMJS {
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
     const exp2 = (numerator / denominator);
+    const result = exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
 
-    if (isPositive) {
-      return exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
-    } else {
-      return 1 / (exp1 * exp2);
-    }
+    return isPositive ? result : 1 / result;
   };
 
+  // x must be positive
   ln(x) {
     // handle special case where x = 1
     if (x === 1) {
@@ -144,7 +141,14 @@ export class BlackScholesNUMJS {
     const LN_1_20 = 0.182321556793955;
     let multiplier = 0;
 
+    const isLargerThan1 = x > 1;
+
+    if (!isLargerThan1) {
+      x = 1 / x;
+    }
+
     if (x > 1.2) {
+      // todo: always reduce x to < 1 (if x is 5 then: return -exp(1/5))
       multiplier = Math.floor(this.getBaseLog(1.2, x));
       x = x / (1.2 ** multiplier);
     }
@@ -158,15 +162,11 @@ export class BlackScholesNUMJS {
     
     const finalLN = naturalLog * 2 + LN_1_20 * multiplier; // using ln(a * b) = ln(a) + ln(b)
 
-    return finalLN;
+    return isLargerThan1 ? finalLN : -finalLN;
   };
 
   getD1(spot, strike, timeToExpiryYear, vol, rate) {
     const d1 = (rate * timeToExpiryYear + Math.pow(vol, 2) * timeToExpiryYear / 2 - Math.log(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
-
-
-    // const discountedStrike = this.getDiscountedStrikePrice(strike, rate, timeToExpiryYear * SECONDS_IN_YEAR);
-    // const d1 = this.ln(spot / discountedStrike) / vol / Math.sqrt(timeToExpiryYear) + 0.5 * vol * Math.sqrt(timeToExpiryYear);
 
     return d1;
   }
