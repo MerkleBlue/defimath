@@ -1,16 +1,11 @@
 import { blackScholesWrapped } from "../../test/BlackScholesDUO.test.mjs";
 
-// fix the spot price in table to $100, and volatilty to 100%
-export const SPOT_FIXED = 100;
-export const VOL_FIXED = 0.12;
-export const MAX_MAJOR = 34;
 export const SECONDS_IN_DAY = 24 * 60 * 60;
 export const SECONDS_IN_YEAR = 365 * SECONDS_IN_DAY;
 
 // strike price +-5x from spot price
 export const STRIKE_MIN = 20;                 // 20;
 export const STRIKE_MAX = 500;                // 500;
-export const STRIKE_INDEX_MULTIPLIER = 100;
 
 // limits
 export const MIN_SPOT = 0.000001;             // 1 milionth of a $
@@ -25,31 +20,26 @@ const log = false;
 
 export class BlackScholesNUMJS {
 
-  constructor(lookupTable) {
-    this.lookupTable = lookupTable;
-  }
-
   // vol and rate is in decimal format, e.g. 0.1 for 10%
-  getCallOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
+  getCallOptionPrice(spot, strike, timeSec, vol, rate) {
     // step 0) check inputs
     if (spot < MIN_SPOT) throw new Error(1);
     if (spot > MAX_SPOT) throw new Error(2);
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
-    if (timeToExpirySec > MAX_EXPIRATION) throw new Error(5);
+    if (timeSec > MAX_EXPIRATION) throw new Error(5);
     if (vol < MIN_VOLATILITY) throw new Error(6);
     if (vol > MAX_VOLATILITY) throw new Error(7);
     if (rate > MAX_RATE) throw new Error(8);
 
-    let d1 = this.getD1(spot, strike, timeToExpirySec / SECONDS_IN_YEAR, vol, rate);
-    let d2 = this.getD2(d1, timeToExpirySec / SECONDS_IN_YEAR, vol);
+    const timeYear = timeSec / SECONDS_IN_YEAR;
 
-    // console.log("d1", d1, "d2", d2);
+    const d1 = this.getD1(spot, strike, timeYear, vol, rate);
+    const d2 = this.getD2(d1, timeYear, vol);
+    const discountedStrike = this.getDiscountedStrikePrice(strike, timeSec, rate);
+    const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
-    let discountedStrike = this.getDiscountedStrikePrice(strike, timeToExpirySec, rate);
-    let price = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
-
-    return price;
+    return callPrice;
   };
 
   getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
@@ -116,6 +106,27 @@ export class BlackScholesNUMJS {
     return futurePrice;
   };
 
+  // x is from 0 to 4
+  exp(x) {
+    const E_TO_005 = 1.051271096376024; // e ^ 0.05
+    let exp1 = 1;
+
+    if (x > 0.05) {
+      const exponent = Math.floor(x / 0.05);
+      x -= exponent * 0.05;
+      exp1 = E_TO_005 ** exponent;
+    }
+
+    // we use Pade approximation for exp(x)
+    // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    const numerator = (x + 3) ** 2 + 3;
+    const denominator = (x - 3) ** 2 + 3;
+    const exp2 = (numerator / denominator);
+
+    return exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
+  };
+
+  // helper function used only for ln(x) calculation, used only integers
   getBaseLog(x, y) {
     return Math.log(y) / Math.log(x);
   }
@@ -233,29 +244,29 @@ export class BlackScholesNUMJS {
     return Math.exp(x / PRECISE_UNIT);
   }
   
-  // using erf function, error is abs error is $0.000100
+  // using erf function, abs error is up to $0.000100
   stdNormCDF(x) {
-
     // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
     function erf(z) {
       // Approximation of error function
       const t = 1 / (1 + 0.3275911 * Math.abs(z));
       const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
       
-      const poly = a1 * t + a2 * t**2 + a3 * t**3 + a4 * t**4 + a5 * t**5;
+      const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
       const approx = 1 - poly * Math.exp(-z * z);
       
       return z >= 0 ? approx : -approx;
     }
 
-    // taylor series approximation
-    function erf2(z) {
-      const TWO_SQRT_PI = 2 / Math.sqrt(Math.PI);
+    // OLD CODE
+    // // taylor series approximation
+    // function erf2(z) {
+    //   const TWO_SQRT_PI = 2 / Math.sqrt(Math.PI);
 
-      const result = TWO_SQRT_PI * (z - (z ** 3) / 3 + (z ** 5) / 10 - (z ** 7) / 42 + (z ** 9) / 216);
+    //   const result = TWO_SQRT_PI * (z - (z ** 3) / 3 + (z ** 5) / 10 - (z ** 7) / 42 + (z ** 9) / 216);
       
-      return result;
-    }
+    //   return result;
+    // }
     
     return 0.5 * (1 + erf(x / Math.sqrt(2)));
   }
