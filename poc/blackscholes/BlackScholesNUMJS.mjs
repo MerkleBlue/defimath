@@ -116,11 +116,6 @@ export class BlackScholesNUMJS {
     return exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
   };
 
-  // helper function used only for ln(x) calculation, used only integers
-  getBaseLog(x, y) {
-    return Math.log(y) / Math.log(x);
-  }
-
   ln(x) {
     // handle special case where x = 1
     if (x === 1) {
@@ -243,7 +238,7 @@ export class BlackScholesNUMJS {
       const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
       
       const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
-      const approx = 1 - poly * Math.exp(-z * z);
+      const approx = 1 - poly * Math.exp(-z * z); // todo: replace with this.exp(-z * z)
       
       return z >= 0 ? approx : -approx;
     }
@@ -259,5 +254,10 @@ export class BlackScholesNUMJS {
     // }
     
     return 0.5 * (1 + erf(x / Math.sqrt(2)));
+  }
+
+  // helper function used only for ln(x) calculation, used only integers
+  getBaseLog(x, y) {
+    return Math.log(y) / Math.log(x);
   }
 }
