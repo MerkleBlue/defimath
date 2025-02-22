@@ -22,7 +22,6 @@ export class BlackScholesNUMJS {
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
-    // step 0) check inputs
     if (spot < MIN_SPOT) throw new Error(1);
     if (spot > MAX_SPOT) throw new Error(2);
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
@@ -37,26 +36,12 @@ export class BlackScholesNUMJS {
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
     const d2 = this.getD2(d1, timeYear, vol);
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
+    const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
-    // OLD CODE
-    // const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
-    // return callPrice;
-
-    // NEW CODE
-    if(strike <= spot) {
-      const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
-      return callPrice;
-    } else {
-      const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
-
-      return putPrice - (strike - spot);
-    }
-
-    // return callPrice;
+    return callPrice;
   };
 
   getPutOptionPrice(spot, strike, timeSec, vol, rate) {
-    // step 0) check inputs
     if (spot < MIN_SPOT) throw new Error(1);
     if (spot > MAX_SPOT) throw new Error(2);
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
@@ -66,22 +51,12 @@ export class BlackScholesNUMJS {
     if (vol > MAX_VOLATILITY) throw new Error(7);
     if (rate > MAX_RATE) throw new Error(8);
 
-    // const timeYear = timeSec / SECONDS_IN_YEAR;
-
-    // const d1 = this.getD1(spot, strike, timeYear, vol, rate);
-    // const d2 = this.getD2(d1, timeYear, vol);
-    // const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
-    // const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
-
-    // return Math.max(0, callPrice + discountedStrike - spot);
     const timeYear = timeSec / SECONDS_IN_YEAR;
 
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
     const d2 = this.getD2(d1, timeYear, vol);
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
     const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
-
-    // price = k * Math.pow(Math.E, -1 * r * t) * stdNormCDF(v * Math.sqrt(t) - w) - s * stdNormCDF(-w);
 
     return putPrice;
   };
@@ -175,79 +150,8 @@ export class BlackScholesNUMJS {
 
     return d2;
   }
-
-  stdNormCDF2(x) {
-    const SQRT2PI = 2.506628274631001;
-
-    return 0.5 + x / SQRT2PI - (x ** 3) / (6 * SQRT2PI) + (x ** 5) / (40 * SQRT2PI) - (x ** 7) / (336 * SQRT2PI) + (x ** 9) / (3456 * SQRT2PI) - (x ** 11) / (21120 * SQRT2PI);
-
-    // errors on 3rd decimal
-    // return 1 / (1 + Math.exp(-1.65451 * x));
-
-    // by chatgpt, doesn't work
-    // return 0.5 + 0.196854 * x + 0.115194 * (x ** 2) + 0.000344 * (x ** 3) + 0.019527 * (x ** 4);
-  };
-
-  // stdNormCDF(x) {
-  //   const SQRT2PI = 2.506628274631001;
-
-  //   return 0.5 + x / SQRT2PI - (x ** 3) / (6 * SQRT2PI) + (x ** 5) / (40 * SQRT2PI) - (x ** 7) / (336 * SQRT2PI) + (x ** 9) / (3456 * SQRT2PI) - (x ** 11) / (21120 * SQRT2PI) + (x ** 13) / (599040 * SQRT2PI)
-
-  //   // errors on 3rd decimal
-  //   // return 1 / (1 + Math.exp(-1.65451 * x));
-
-  //   // by chatgpt, doesn't work
-  //   // return 0.5 + 0.196854 * x + 0.115194 * (x ** 2) + 0.000344 * (x ** 3) + 0.019527 * (x ** 4);
-  // };
-
-  // from bs
-  stdNormCDF3(x)
-  {
-    var probability = 0;
-    // avoid divergence in the series which happens around +/-8 when summing the
-    // first 100 terms
-    if(x >= 8)
-    {
-      probability = 1;
-    }
-    else if(x <= -8)
-    {
-      probability = 0;
-    }
-    else
-    {
-      for(var i = 0; i < 100; i++)
-      {
-        probability += (Math.pow(x, 2*i+1)/this._doubleFactorial(2*i+1));
-      }
-      probability *= Math.pow(Math.E, -0.5*Math.pow(x, 2));
-      probability /= Math.sqrt(2*Math.PI);
-      probability += 0.5;
-    }
-    return probability;
-  }
-
-  _doubleFactorial(n)
-  {
-    var val = 1;
-    for(var i = n; i > 1; i-=2)
-    {
-      val *= i;
-    }
-    return val;
-  }
-
-  _abs(x) {
-    return x < 0 ? -x : x;
-  }
-
   
-  // Exponentiation function (this is an approximation for exp() as it's not available in basic JS)
-  expE(x) {
-    return Math.exp(x / PRECISE_UNIT);
-  }
-  
-  // using erf function, abs error is up to $0.000100
+  // using erf function
   stdNormCDF(x) {
     return 0.5 * (1 + this.erf(x * 0.707106781186548)); // 1 / sqrt(2)
   }
