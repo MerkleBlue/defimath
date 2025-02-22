@@ -18,6 +18,13 @@ export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
 const log = false;
 
+// solidity: 
+// sqrt = 800
+// exp = 340
+// ln = 400
+// stdNormCDF = 600 x 2 = 1200
+// TOTAL: 2740 gas
+
 export class BlackScholesNUMJS {
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
