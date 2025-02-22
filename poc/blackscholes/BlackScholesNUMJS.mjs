@@ -25,6 +25,8 @@ const log = false;
 // stdNormCDF = 600 x 2 = 1200
 // TOTAL: 2740 gas
 
+// NOTE: sqrt(time) = e ^ (1/2 * ln(time)) => could be optimized below 800 gas
+
 export class BlackScholesNUMJS {
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
