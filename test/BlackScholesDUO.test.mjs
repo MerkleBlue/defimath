@@ -649,22 +649,28 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
     // that requires puts implementation other than getting put from call
-    it.only("gets multiple call prices at lower strikes: random", async function () {
+    it("gets multiple call prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000140, 10, !fastTest);
     });
 
-    // it.only("gets multiple put prices at higher strikes: random", async function () {
-    //   const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
-    //   const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
-    //   await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000340, 10, !fastTest);
-    // });
+    it("gets multiple put prices at lower strikes: random", async function () {
+      const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
+      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
+      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000180, 0.000140, 10, !fastTest);
+    });
+
+    it("gets multiple put prices at higher strikes: random", async function () {
+      const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
+      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
+      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000180, 0.000140, 10, !fastTest);
+    });
 
     it.only("gets multiple call prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
-      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000340, 10, !fastTest);
+      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000180, 0.000300, 10, !fastTest);
     });
 
     it.only("test Math.exp limits", async function () {

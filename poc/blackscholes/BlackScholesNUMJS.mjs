@@ -37,30 +37,53 @@ export class BlackScholesNUMJS {
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
     const d2 = this.getD2(d1, timeYear, vol);
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
-    const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
-    return callPrice;
+    // OLD CODE
+    // const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
+    // return callPrice;
+
+    // NEW CODE
+    if(strike <= spot) {
+      const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
+      return callPrice;
+    } else {
+      const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
+
+      return putPrice - (strike - spot);
+    }
+
+    // return callPrice;
   };
 
-  getPutOptionPrice(spot, strike, timeToExpirySec, vol, rate) {
+  getPutOptionPrice(spot, strike, timeSec, vol, rate) {
     // step 0) check inputs
     if (spot < MIN_SPOT) throw new Error(1);
     if (spot > MAX_SPOT) throw new Error(2);
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
-    if (timeToExpirySec > MAX_EXPIRATION) throw new Error(5);
+    if (timeSec > MAX_EXPIRATION) throw new Error(5);
     if (vol < MIN_VOLATILITY) throw new Error(6);
     if (vol > MAX_VOLATILITY) throw new Error(7);
     if (rate > MAX_RATE) throw new Error(8);
 
+    // const timeYear = timeSec / SECONDS_IN_YEAR;
+
+    // const d1 = this.getD1(spot, strike, timeYear, vol, rate);
+    // const d2 = this.getD2(d1, timeYear, vol);
+    // const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
+    // const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
+
+    // return Math.max(0, callPrice + discountedStrike - spot);
     const timeYear = timeSec / SECONDS_IN_YEAR;
 
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
     const d2 = this.getD2(d1, timeYear, vol);
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
-    const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
+    const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
 
-    return Math.max(0, callPrice + discountedStrike - spot);
+    // price = k * Math.pow(Math.E, -1 * r * t) * stdNormCDF(v * Math.sqrt(t) - w) - s * stdNormCDF(-w);
+
+    return putPrice;
   };
 
   getFuturePrice(spot, timeSec, rate) {
