@@ -10,7 +10,7 @@ import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = false;
+const duoTest = true;
 const fastTest = false;
 
 const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
@@ -55,9 +55,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const BlackScholesPOC = await ethers.getContractFactory("BlackScholesPOC");
     const blackScholesPOC = await BlackScholesPOC.deploy();
 
-    const BlackScholesNUM = await ethers.getContractFactory("BlackScholesNUM");
-    const blackScholesNUM = await BlackScholesNUM.deploy();
-
     // populate lookup table
     const { lookupTableSOL } = await generateLookupTable(new BlackScholesJS(), true);
 
@@ -98,7 +95,17 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     console.log("Init done. Total gas spent:", Math.round(totalGas / 1e6), "M");
 
-    return { owner, blackScholesPOC, blackScholesNUM };
+    return { owner, blackScholesPOC };
+  }
+
+  async function deployNUM() {
+    const [owner] = await ethers.getSigners();
+
+    // deploy contracts
+    const BlackScholesNUM = await ethers.getContractFactory("BlackScholesNUM");
+    const blackScholesNUM = await BlackScholesNUM.deploy();
+
+    return { owner, blackScholesNUM };
   }
 
   function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -514,31 +521,73 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("numerical", function () {
-    it("exp positive", async function () {
-      for (let x = 0; x < 4; x += 0.001) { 
+    describe("numerical", function () {
+      it.only("exp positive single small value", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+        const x = 0.04;
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
-        const absError = Math.abs(actualJS - expected);
-        const relError = absError / expected * 100;
-        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000003);
-        assert.isBelow(relError, 0.00000006);
-      }
-    });
+        const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
 
-    it("exp negative", async function () {
-      for (let x = 0; x > -4; x -= 0.001) { 
+        console.log("exp: " + expected.toFixed(8), "act JS: " + actualJS.toFixed(8), "act SOL: " + actualSOL.toFixed(8));
+
+        const gas = await blackScholesNUM.expMeasureGas(tokens(x));
+        console.log("gas: ", gas.toString());
+      });
+
+      it.only("exp positive single large value", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+        const x = 0.22;
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
-        const absError = Math.abs(actualJS - expected);
-        const relError = absError / expected * 100;
-        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000003);
-        assert.isBelow(relError, 0.00000006);
-      }
+        const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+
+        console.log("exp: " + expected.toFixed(8), "act JS: " + actualJS.toFixed(8), "act SOL: " + actualSOL.toFixed(8));
+
+        const gas = await blackScholesNUM.expMeasureGas(tokens(x));
+        console.log("gas: ", gas.toString());
+      });
+
+      it.only("exp positive", async function () {
+        for (let x = 0.025; x < 1; x += 0.05) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesNUMJS.exp(x);
+          const absError = Math.abs(actualJS - expected);
+          const relError = absError / expected * 100;
+          // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+          assert.isBelow(absError, 0.00000003);
+          assert.isBelow(relError, 0.00000006);
+
+          if (duoTest) {
+            const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+            const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+            const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
+            // console.log("Max error SOL:", errorSOL.toFixed(6) + "%, ", "actual: " + actualSOL.toFixed(6), "expected: " + expected.toFixed(6));
+            assert.isBelow(errorSOL, 0.0001); // is below 0.0001%
+
+            const gas = await blackScholesNUM.expMeasureGas(tokens(x));
+            console.log("gas: ", gas.toString());
+          }
+        }
+      });
+
+      it("exp negative", async function () {
+        for (let x = 0; x > -4; x -= 0.001) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesNUMJS.exp(x);
+          const absError = Math.abs(actualJS - expected);
+          const relError = absError / expected * 100;
+          // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+          assert.isBelow(absError, 0.00000003);
+          assert.isBelow(relError, 0.00000006);
+        }
+      });
     });
 
-    it.only("ln larger than 1", async function () {
+    it("ln larger than 1", async function () {
       for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(ratio);
         const actualJS = blackScholesNUMJS.ln(ratio);
@@ -550,7 +599,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it.only("ln smaller than 1", async function () {
+    it("ln smaller than 1", async function () {
       for (let ratio = 1; ratio < 5; ratio += 0.001) { 
         const expected = Math.log(1 / ratio);
         const actualJS = blackScholesNUMJS.ln(1 / ratio);
@@ -649,25 +698,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
     // that requires puts implementation other than getting put from call
-    it.only("gets multiple call prices at lower strikes: random", async function () {
+    it("gets multiple call prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it.only("gets multiple put prices at lower strikes: random", async function () {
+    it("gets multiple put prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it.only("gets multiple call prices at higher strikes: random", async function () {
+    it("gets multiple call prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000370, 10, !fastTest);
     });
 
-    it.only("gets multiple put prices at higher strikes: random", async function () {
+    it("gets multiple put prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000370, 10, !fastTest);

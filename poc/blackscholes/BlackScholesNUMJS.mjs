@@ -103,12 +103,14 @@ export class BlackScholesNUMJS {
       x -= exponent * 0.05;
       exp1 = E_TO_005 ** exponent;
     }
+    log && console.log("exp1 JS:", exp1);
 
     // we use Pade approximation for exp(x)
     // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
     const exp2 = (numerator / denominator);
+    log && console.log("exp2 JS:", exp2);
     const result = exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
 
     return isPositive ? result : 1 / result;
