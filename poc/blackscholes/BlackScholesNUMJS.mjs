@@ -16,6 +16,8 @@ export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
 export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
+export const E_TO_005 = 1.051271096376024040; // e ^ 0.05
+
 const log = false;
 
 // solidity: 
@@ -28,6 +30,7 @@ const log = false;
 // NOTE: sqrt(time) = e ^ (1/2 * ln(time)) => could be optimized below 800 gas
 
 export class BlackScholesNUMJS {
+  
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
@@ -94,14 +97,12 @@ export class BlackScholesNUMJS {
     const isPositive = x > 0;
     x = Math.abs(x);
 
-    const E_TO_005 = 1.051271096376024; // e ^ 0.05
     let exp1 = 1;
 
     if (x > 0.05) {
-      // todo: this can be optimized
       const exponent = Math.floor(x / 0.05);
       x -= exponent * 0.05;
-      exp1 = E_TO_005 ** exponent;
+      exp1 = this.getExp1Precalculated(exponent);
     }
     log && console.log("exp1 JS:", exp1);
 
@@ -115,6 +116,10 @@ export class BlackScholesNUMJS {
 
     return isPositive ? result : 1 / result;
   };
+
+  getExp1Precalculated(exponent) {
+    return E_TO_005 ** exponent;
+  }
 
   // x must be positive
   ln(x) {

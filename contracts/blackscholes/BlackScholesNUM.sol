@@ -19,7 +19,7 @@ contract BlackScholesNUM {
     int internal constant SCALE_SIGNED = 1e18;
     int internal constant SCALE_DOWN_SIGNED = 1e9;
 
-    uint256 internal constant E_TO_005 = 1_051271096376024040; // e ^ 0.05 // todo: check this value
+    int256 internal constant E_TO_005 = 1_051271096376024040; // e ^ 0.05 // todo: check this value
 
     bool log = false;
 
@@ -71,6 +71,7 @@ contract BlackScholesNUM {
         }
     }
 
+    // gas 592 when x > 0.05
     function exp(int256 x) public view returns (uint256) {
         unchecked {
             // handle special case where x = 0
@@ -86,17 +87,10 @@ contract BlackScholesNUM {
             int256 exp1 = 1e18;
 
             if (x > 5e16) {
-                if (x > 1e18) {
-                    // uint256[4] memory exp1s;
-                    // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
-                }
-                // uint256[4] memory exp1s;
-                // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
-                // todo: this can be optimized
                 uint256 exponent = uint(x) / 5e16;
                 x -= int256(exponent * 5e16);
-                exp1 = int256(E_TO_005 ** exponent / (10 ** (18 * (exponent - 1))));
-            }
+                exp1 = getExp1Precalculated(exponent); // int256(E_TO_005 ** exponent / (10 ** (18 * (exponent - 1))));
+            } 
             // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
             
 
@@ -115,19 +109,44 @@ contract BlackScholesNUM {
         }
     }
 
+    function getExp1Precalculated(uint256 exponent) private pure returns (int256) {
+        // use >=, fastest
+        // if (exponent > 0) {
+
+
+
+
+
+        if (exponent >= 3) {
+            if (exponent >= 4) {
+                return 1_221402758160170000; // 4
+            } else {
+                return 1_161834242728283000; // 3
+            }
+        } else {
+            if (exponent >= 2) {
+                return 1_105170918075648000; // 2
+            } else {
+                return E_TO_005;    // 1 
+            }
+        }
+        // }
+
+    }
+
     // todo: delete
     function expMeasureGas(int256 x) public view returns (uint256) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        // exp(x);
+        exp(x);
 
-                if (0 <= x) {
-                    exp(x);
-                    // uint256[4] memory exp1s;
-                    // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
-                }
+                // if (0 <= x) {
+                //     exp(x);
+                //     // uint256[4] memory exp1s;
+                //     // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
+                // }
 
         endGas = gasleft();
         return startGas - endGas;
