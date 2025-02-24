@@ -7,72 +7,72 @@ import "hardhat/console.sol";
 contract BlackScholesNUM {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
-    uint internal constant SQRT_2XPI = 2506628274631000502415765285;  // sqrt(2 * PI)
-    uint internal constant SCALE = 1e18;
-    uint internal constant SCALE_DOWN = 1e9;
+    // uint internal constant SQRT_2XPI = 2506628274631000502415765285;  // sqrt(2 * PI)
+    // uint internal constant SCALE = 1e18;
+    // uint internal constant SCALE_DOWN = 1e9;
 
-    uint internal constant PRECISE_UNIT = 1e27;
-    int internal constant STD_NORMAL_CDF_MINIMUM = -4 * int(PRECISE_UNIT);   // -4
-    int internal constant STD_NORMAL_CDF_MAXIMUM = 10 * int(PRECISE_UNIT);   // +10
-    int internal constant LOG2_E_SIGNED = 1_442695040888963407;       // log2(e)
-    int internal constant HALF_SCALE_SIGNED = 5e17;                   // 0.5 * 10 ** 18
-    int internal constant SCALE_SIGNED = 1e18;
-    int internal constant SCALE_DOWN_SIGNED = 1e9;
+    // uint internal constant PRECISE_UNIT = 1e27;
+    // int internal constant STD_NORMAL_CDF_MINIMUM = -4 * int(PRECISE_UNIT);   // -4
+    // int internal constant STD_NORMAL_CDF_MAXIMUM = 10 * int(PRECISE_UNIT);   // +10
+    // int internal constant LOG2_E_SIGNED = 1_442695040888963407;       // log2(e)
+    // int internal constant HALF_SCALE_SIGNED = 5e17;                   // 0.5 * 10 ** 18
+    // int internal constant SCALE_SIGNED = 1e18;
+    // int internal constant SCALE_DOWN_SIGNED = 1e9;
 
     int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
     int256 internal constant E = 2_718281828459045235;                      // e
     int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
 
 
-    bool log = true;
+    // bool log = true;
 
     constructor() {
     }
 
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
-        unchecked {
-            return _getFuturePrice(spot, timeToExpirySec, rate);
-        }
-    }
+    // function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
+    //     unchecked {
+    //         return _getFuturePrice(spot, timeToExpirySec, rate);
+    //     }
+    // }
 
-    function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
-        unchecked {
-            // we use Pade approximation for exp(x)
-            // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    // function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
+    //     unchecked {
+    //         // we use Pade approximation for exp(x)
+    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
 
-            // NOTE: this is slower than below
-            // uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
-            // uint256 x = rate * timeToExpiryYears / 1e13;
+    //         // NOTE: this is slower than below
+    //         // uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
+    //         // uint256 x = rate * timeToExpiryYears / 1e13;
 
-            // NOTE: this is faster than the above 
-            uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
+    //         // NOTE: this is faster than the above 
+    //         uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
 
-            // todo: check x is not more than 0.2
+    //         // todo: check x is not more than 0.2
 
-            uint256 numerator = (x + 3e9) ** 2 + 3e18;
-            uint256 denominator = (3e9 - x) ** 2 + 3e18;
+    //         uint256 numerator = (x + 3e9) ** 2 + 3e18;
+    //         uint256 denominator = (3e9 - x) ** 2 + 3e18;
 
-            return numerator * spot / denominator;
-        }
-    }
+    //         return numerator * spot / denominator;
+    //     }
+    // }
 
-    function _getDiscountedStrikePrice(uint128 strike, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
-        unchecked {
-            // we use Pade approximation for exp(x)
-            // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    // function _getDiscountedStrikePrice(uint128 strike, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
+    //     unchecked {
+    //         // we use Pade approximation for exp(x)
+    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
 
-            // NOTE: this is faster than the above 
-            uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
+    //         // NOTE: this is faster than the above 
+    //         uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
 
-            // todo: check x is not more than 0.2
+    //         // todo: check x is not more than 0.2
 
-            uint256 numerator = (x + 3e9) ** 2 + 3e18;
-            uint256 denominator = (3e9 - x) ** 2 + 3e18;
+    //         uint256 numerator = (x + 3e9) ** 2 + 3e18;
+    //         uint256 denominator = (3e9 - x) ** 2 + 3e18;
 
-            return denominator * strike / numerator;
-        }
-    }
+    //         return denominator * strike / numerator;
+    //     }
+    // }
 
     function exp(uint256 x) public pure returns (uint256) {
         unchecked {
@@ -464,13 +464,79 @@ contract BlackScholesNUM {
         }
     }
 
+    function testIf(uint256 exponent) public view returns (uint256) {
+        if (exponent >= 16) { // 16
+            if (exponent >= 24) { // 24
+                if (exponent >= 28) { // 28
+                    if (exponent >= 30) { // 30
+                        if (exponent >= 31) { // 31
+                            return 2_634649088815631111;
+                        } else {
+                            return 2_553589458062926873;
+                        }
+                    } else {
+                        if (exponent >= 29) { // 29
+                            return 2_475023769963025215;
+                        } else {
+                            return 2_398875293967097914;
+                        }
+                    }
+                } else {
+                    if (exponent >= 26) { // 26
+                        if (exponent >= 27) { // 27
+                            return 2_325069660277121051;
+                        } else {
+                            return 2_253534787213208545;
+                        }
+                    } else {
+                        if (exponent >= 25) { // 25
+                            return 2_184200810815617925;
+                        } else {
+                            return 2_117000016612674669;
+                        }
+                    }
+                }
+            } else {
+                if (exponent >= 20) { // 20
+                    if (exponent >= 22) { // 22
+                        if (exponent >= 23) { // 23
+                            return 2_051866773487976824;
+                        } else {
+                            return 1_988737469582291831;
+                        }
+                    } else {
+                        if (exponent >= 21) { // 21
+                            return 1_927550450167544665;
+                        } else {
+                            return 1_868245957432222407;
+                        }
+                    }
+                } else {
+                    if (exponent >= 18) { // 18
+                        if (exponent >= 19) { // 19
+                            return 1_810766072119387164;
+                        } else {
+                            return 1_755054656960298557;
+                        }
+                    } else {
+                        if (exponent >= 17) { // 17
+                            return 1_701057301848400679;
+                        } else {
+                            return 1_648721270700128147;
+                        }
+                    }
+                }
+            }
+        } 
+    }
+
     // todo: delete
-    function expMeasureGas(uint256 x) public view returns (uint256) {
+    function testIfMeasureGas(uint256 exponent) public view returns (uint256) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        exp(x);
+        testIf(exponent);
 
                 // if (0 <= x) {
                 //     exp(x);
@@ -482,9 +548,9 @@ contract BlackScholesNUM {
         return startGas - endGas;
     }
 
-    function _abs(int x) internal pure returns (uint result) {
-        unchecked {
-            result = uint(x < 0 ? -x : x);
-        }
-    }
+    // function _abs(int x) internal pure returns (uint result) {
+    //     unchecked {
+    //         result = uint(x < 0 ? -x : x);
+    //     }
+    // }
 }

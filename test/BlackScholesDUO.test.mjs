@@ -522,7 +522,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("numerical", function () {
     describe("exp", function () {
-      it("exp positive single x < 0.0325 value", async function () {
+      it.only("exp positive single x < 0.0325 value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
         const x = 0.03;
