@@ -16,7 +16,9 @@ export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
 export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
-export const E_TO_0_03125 = 1.031743407499103; // e ^ 0.03125
+export const E_TO_0_03125 = 1.031743407499103;          // e ^ 0.03125
+export const E = 2.7182818284590452354;                 // e
+export const E_TO_32 = 78962960182680.695160978022635;  // e ^ 32
 
 const log = false;
 
@@ -98,27 +100,45 @@ export class BlackScholesNUMJS {
     x = Math.abs(x);
 
     let exp1 = 1;
+    let exp2 = 1;
+    let exp3 = 1;
 
+    if (x > 32) {
+      const exponent = Math.floor(x / 32);
+      x -= exponent * 32;
+      exp1 = this.getExpPrecalculated(E_TO_32, exponent);
+    }
+
+    if (x > 1) {
+      const exponent = Math.floor(x);
+      x -= exponent;
+      exp2 = this.getExpPrecalculated(E, exponent);
+    }
+
+    // below 1
     if (x > 0.03125) {
       const exponent = Math.floor(x / 0.03125);
       x -= exponent * 0.03125;
-      exp1 = this.getExp1Precalculated(exponent);
+      exp1 = this.getExpPrecalculated(E_TO_0_03125, exponent);
     }
+
+
     log && console.log("exp1 JS:", exp1);
 
     // we use Pade approximation for exp(x)
     // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
-    const exp2 = (numerator / denominator);
-    log && console.log("exp2 JS:", exp2);
-    const result = exp1 * exp2; // using e ^ (a + b) = e ^ a * e ^ b
+    const exp4 = (numerator / denominator);
+    log && console.log("exp4 JS:", exp4);
+    const result = exp1 * exp2 * exp3 * exp4; // using e ^ (a + b) = e ^ a * e ^ b
 
     return isPositive ? result : 1 / result;
   };
 
-  getExp1Precalculated(exponent) {
-    return E_TO_0_03125 ** exponent;
+  getExpPrecalculated(base, exponent) {
+    // NOTE: nothing is precalculated in JS
+    return base ** exponent;
   }
 
   // x must be positive
