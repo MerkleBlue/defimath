@@ -550,17 +550,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("gas: ", gas.toString());
       });
 
-      it.only("exp positive below 0.03125", async function () {
+      it.only("exp positive < 0.03125", async function () {
         let totalGas = 0, count = 0;
         for (let x = 0; x < 0.03125; x += 0.0001) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesNUMJS.exp(x);
           const absError = Math.abs(actualJS - expected);
           const relError = absError / expected * 100;
-          // console.log("x: ", x.toFixed(3), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
-          // assert.equal(expected.toFixed(8), actualJS.toFixed(8));
-          assert.isBelow(absError, 0.00000000005);
-          assert.isBelow(relError, 0.000000005);
+          // console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
+          assert.isBelow(absError, 0.000000000050); // 1e-12 
+          assert.isBelow(relError, 0.000000004200); // 1e-12 
 
           if (duoTest) {
             const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
@@ -574,10 +573,91 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
             totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
             count++;
-            // console.log("gas: ", gas.toString());
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count));
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it.only("exp positive [0.03125, 1)", async function () {
+        let totalGas = 0, count = 0;
+        for (let x = 0.03125; x < 1; x += 0.0005) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesNUMJS.exp(x);
+          const absError = Math.abs(actualJS - expected);
+          const relError = absError / expected * 100;
+          // console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
+          assert.isBelow(absError, 0.000000000110); // 1e-12 
+          assert.isBelow(relError, 0.000000004200); // 1e-12 
+
+          // if (duoTest) {
+          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+          //   const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+          //   const absError = Math.abs(actualSOL - expected);
+          //   const relError = absError / expected * 100;
+          //   // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+          //   assert.isBelow(absError, 0.00000001);
+          //   assert.isBelow(relError, 0.00000005);
+
+          //   totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          //   count++;
+          // }
+        }
+        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it.only("exp positive [1, 32)", async function () {
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 32; x += 0.016) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesNUMJS.exp(x);
+          const absError = Math.abs(actualJS - expected);
+          const relError = absError / expected * 100;
+          /// console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
+          assert.isBelow(relError, 0.000000004200); // 1e-12 
+
+          // if (duoTest) {
+          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+          //   const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+          //   const absError = Math.abs(actualSOL - expected);
+          //   const relError = absError / expected * 100;
+          //   // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+          //   assert.isBelow(absError, 0.00000001);
+          //   assert.isBelow(relError, 0.00000005);
+
+          //   totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          //   count++;
+          // }
+        }
+        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it.only("exp positive [32, 256)", async function () {
+        let totalGas = 0, count = 0;
+        for (let x = 32; x < 256; x += 0.256) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesNUMJS.exp(x);
+          const absError = Math.abs(actualJS - expected);
+          const relError = absError / expected * 100;
+          //console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
+          assert.isBelow(relError, 0.000000004200); // 1e-12 
+
+          // if (duoTest) {
+          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+          //   const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+          //   const absError = Math.abs(actualSOL - expected);
+          //   const relError = absError / expected * 100;
+          //   // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+          //   assert.isBelow(absError, 0.00000001);
+          //   assert.isBelow(relError, 0.00000005);
+
+          //   totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          //   count++;
+          // }
+        }
+        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp negative", async function () {

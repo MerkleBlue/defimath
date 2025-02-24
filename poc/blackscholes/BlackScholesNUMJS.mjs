@@ -119,7 +119,7 @@ export class BlackScholesNUMJS {
     if (x > 0.03125) {
       const exponent = Math.floor(x / 0.03125);
       x -= exponent * 0.03125;
-      exp1 = this.getExpPrecalculated(E_TO_0_03125, exponent);
+      exp3 = this.getExpPrecalculated(E_TO_0_03125, exponent);
     }
 
 
