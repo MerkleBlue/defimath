@@ -568,8 +568,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const absError = Math.abs(actualSOL - expected);
             const relError = absError / expected * 100;
             // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(absError, 0.00000001);
-            assert.isBelow(relError, 0.00000005);
+            assert.isBelow(absError, 0.000000000050); // 1e-12 
+            assert.isBelow(relError, 0.000000004200); // 1e-12 
 
             totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
             count++;
