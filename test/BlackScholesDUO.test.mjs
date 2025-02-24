@@ -522,10 +522,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("numerical", function () {
     describe("exp", function () {
-      it.only("exp positive single small value", async function () {
+      it.only("exp positive single x < 0.0325 value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
-        const x = 0.04;
+        const x = 0.03;
         const expected = Math.exp(x);
         const actualJS = blackScholesNUMJS.exp(x);
         const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
@@ -558,8 +558,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const relError = absError / expected * 100;
           console.log("x: ", x.toFixed(3), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
           // assert.equal(expected.toFixed(8), actualJS.toFixed(8));
-          assert.isBelow(absError, 0.00000001);
-          assert.isBelow(relError, 0.00000005);
+          assert.isBelow(absError, 0.00000000004);
+          assert.isBelow(relError, 0.000000004);
 
           if (duoTest) {
             const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };

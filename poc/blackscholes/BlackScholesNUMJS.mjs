@@ -16,7 +16,7 @@ export const MIN_VOLATILITY = 0.01;           // 1% volatility
 export const MAX_VOLATILITY = 1.92;           // 192% volatility
 export const MAX_RATE = 0.2;                  // 20% risk-free rate
 
-export const E_TO_005 = 1.051271096376024040; // e ^ 0.05
+export const E_TO_0_03125 = 1.031743407499103; // e ^ 0.03125
 
 const log = false;
 
@@ -99,9 +99,9 @@ export class BlackScholesNUMJS {
 
     let exp1 = 1;
 
-    if (x > 0.05) {
-      const exponent = Math.floor(x / 0.05);
-      x -= exponent * 0.05;
+    if (x > 0.03125) {
+      const exponent = Math.floor(x / 0.03125);
+      x -= exponent * 0.03125;
       exp1 = this.getExp1Precalculated(exponent);
     }
     log && console.log("exp1 JS:", exp1);
@@ -118,7 +118,7 @@ export class BlackScholesNUMJS {
   };
 
   getExp1Precalculated(exponent) {
-    return E_TO_005 ** exponent;
+    return E_TO_0_03125 ** exponent;
   }
 
   // x must be positive
