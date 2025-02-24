@@ -19,7 +19,7 @@ contract BlackScholesNUM {
     int internal constant SCALE_SIGNED = 1e18;
     int internal constant SCALE_DOWN_SIGNED = 1e9;
 
-    int256 internal constant E_TO_005 = 1_031743407499102671;               // e ^ 0.03125
+    int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
     int256 internal constant E = 2_718281828459045235;                      // e
     int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
 
@@ -120,29 +120,136 @@ contract BlackScholesNUM {
         }
     }
 
-    function getExp1Precalculated(uint256 exponent) private pure returns (int256) {
+    function getExp1Precalculated(uint256 exponent) private pure returns (int256 result) {
         // use >=, fastest
-        // if (exponent > 0) {
 
+        // base is 1.031743407499102671
 
-
-
-
-        if (exponent >= 3) {
-            if (exponent >= 4) {
-                return 1_221402758160170000; // 4
+        if (exponent >= 16) { // 16
+            if (exponent >= 24) { // 24
+                if (exponent >= 28) { // 28
+                    if (exponent >= 30) { // 30
+                        if (exponent >= 31) { // 31
+                            result = 2_634649088815631111;
+                        } else {
+                            result = 2_553589458062926873;
+                        }
+                    } else {
+                        if (exponent >= 29) { // 29
+                            result = 2_475023769963025215;
+                        } else {
+                            result = 2_398875293967097914;
+                        }
+                    }
+                } else {
+                    if (exponent >= 26) { // 26
+                        if (exponent >= 27) { // 27
+                            result = 2_325069660277121051;
+                        } else {
+                            result = 2_253534787213208545;
+                        }
+                    } else {
+                        if (exponent >= 25) { // 25
+                            result = 2_184200810815617925;
+                        } else {
+                            result = 2_117000016612674669;
+                        }
+                    }
+                }
             } else {
-                return 1_161834242728283000; // 3
+                if (exponent >= 20) { // 20
+                    if (exponent >= 22) { // 22
+                        if (exponent >= 23) { // 23
+                            result = 2_051866773487976824;
+                        } else {
+                            result = 1_988737469582291831;
+                        }
+                    } else {
+                        if (exponent >= 21) { // 21
+                            result = 1_927550450167544665;
+                        } else {
+                            result = 1_868245957432222407;
+                        }
+                    }
+                } else {
+                    if (exponent >= 18) { // 18
+                        if (exponent >= 19) { // 19
+                            result = 1_810766072119387164;
+                        } else {
+                            result = 1_755054656960298557;
+                        }
+                    } else {
+                        if (exponent >= 17) { // 17
+                            result = 1_701057301848400679;
+                        } else {
+                            result = 1_648721270700128147;
+                        }
+                    }
+                }
             }
         } else {
-            if (exponent >= 2) {
-                return 1_105170918075648000; // 2
+            if (exponent >= 8) { // 8
+                if (exponent >= 12) { // 12
+                    if (exponent >= 14) { // 14
+                        if (exponent >= 15) { // 15
+                            result = 1_597995449950633268;
+                        } else {
+                            result = 1_548830298634133098;
+                        }
+                    } else {
+                        if (exponent >= 13) { // 13
+                            result = 1_501177800000122752;
+                        } else {
+                            result = 1_454991414618201336;
+                        }
+                    }
+                } else {
+                    if (exponent >= 10) { // 10
+                        if (exponent >= 11) { // 11
+                            result = 1_410226034925710706;
+                        } else {
+                            result = 1_366837941173796363;
+                        }
+                    } else {
+                        if (exponent >= 9) { // 9
+                            result = 1_324784758728865569;
+                        } else {
+                            result = 1_284025416687741484;
+                        }
+                    }
+                }
             } else {
-                return E_TO_005;    // 1 
+                if (exponent >= 4) { // 4
+                    if (exponent >= 6) { // 6
+                        if (exponent >= 7) { // 7
+                            result = 1_244520107766095155;
+                        } else {
+                            result = 1_206230249420980711;
+                        }
+                    } else {
+                        if (exponent >= 5) { // 5
+                            result = 1_169118446169504402;
+                        } else {
+                            result = 1_133148453066826317;
+                        }
+                    }
+                } else {
+                    if (exponent >= 2) { // 2
+                        if (exponent >= 3) { // 3
+                            result = 1_098285140307825849;
+                        } else {
+                            result = 1_064494458917859430;
+                        }
+                    } else {
+                        if (exponent >= 1) { // 1
+                            result = 1_031743407499102671;
+                        } else {
+                            result = 1e18;
+                        }
+                    }
+                }
             }
-        }
-        // }
-
+        } 
     }
 
     // todo: delete
