@@ -522,7 +522,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("numerical", function () {
     describe("exp", function () {
-      it.only("exp positive single x < 0.0325 value", async function () {
+      it("exp positive single x < 0.0325 value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
         const x = 0.03;
@@ -536,7 +536,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("gas: ", gas.toString());
       });
 
-      it.only("exp positive single medium value", async function () {
+      it("exp positive single medium value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
         const x = 0.22;
@@ -550,7 +550,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("gas: ", gas.toString());
       });
 
-      it.only("exp positive < 0.03125", async function () {
+      it("exp positive < 0.03125", async function () {
         let totalGas = 0, count = 0;
         for (let x = 0; x < 0.03125; x += 0.0001) { 
           const expected = Math.exp(x);
@@ -578,7 +578,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it.only("exp positive [0.03125, 1)", async function () {
+      it("exp positive [0.03125, 1)", async function () {
         let totalGas = 0, count = 0;
         for (let x = 0.03125; x < 1; x += 0.0005) { 
           const expected = Math.exp(x);
@@ -616,21 +616,20 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           /// console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
           assert.isBelow(relError, 0.000000004200); // 1e-12 
 
-          // if (duoTest) {
-          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+          if (duoTest) {
+            const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
-          //   const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
-          //   const absError = Math.abs(actualSOL - expected);
-          //   const relError = absError / expected * 100;
-          //   // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-          //   assert.isBelow(absError, 0.00000001);
-          //   assert.isBelow(relError, 0.00000005);
+            const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+            const absError = Math.abs(actualSOL - expected);
+            const relError = absError / expected * 100;
+            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+            assert.isBelow(relError, 0.000000004200); // 1e-12 
 
-          //   totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-          //   count++;
-          // }
+            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+            count++;
+          }
         }
-        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it.only("exp positive [32, 256)", async function () {
