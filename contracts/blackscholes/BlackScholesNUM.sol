@@ -97,8 +97,8 @@ contract BlackScholesNUM {
             //     exp2 = getExp2Precalculated(exponent);
             // }
             // {
-                // uint256 exponent2 = ;x / 1e18
-                uint256 exp2 = getExp2Precalculated(x / 1e18);
+                // uint256 exponent2 = x / 1e18
+                uint256 exp23 = getExp2Precalculated(x / 1e18);
                 x %= 1e18;
 
             // }
@@ -109,7 +109,7 @@ contract BlackScholesNUM {
             // x: [0.03125, 1)
             // {
                 // uint256 exponent3 = ;
-                uint256 exp3 = getExp3Precalculated(x / 3125e13);
+                exp23 *= getExp3Precalculated(x / 3125e13);
                 x %= 3125e13;
 
             // }
@@ -128,7 +128,7 @@ contract BlackScholesNUM {
             // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
             // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
 
-            uint256 result = uint(exp2 * exp3 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
+            uint256 result = uint(exp23 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
 
             return result;
         }
