@@ -550,7 +550,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("gas: ", gas.toString());
       });
 
-      it("exp positive < 0.03125", async function () {
+      it.only("exp positive < 0.03125", async function () {
         let totalGas = 0, count = 0;
         for (let x = 0; x < 0.03125; x += 0.0001) { 
           const expected = Math.exp(x);
@@ -578,7 +578,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it("exp positive [0.03125, 1)", async function () {
+      it.only("exp positive [0.03125, 1)", async function () {
         let totalGas = 0, count = 0;
         for (let x = 0.03125; x < 1; x += 0.0005) { 
           const expected = Math.exp(x);

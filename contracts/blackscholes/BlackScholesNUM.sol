@@ -78,9 +78,9 @@ contract BlackScholesNUM {
     function exp(int256 x) public pure returns (uint256) {
         unchecked {
             // handle special case where x = 0
-            if (x == 0) {
-                return 1e18;
-            }
+            // if (x == 0) {
+            //     return 1e18;
+            // }
 
             bool isPositive = x >= 0;
             if (!isPositive) {
@@ -91,30 +91,20 @@ contract BlackScholesNUM {
             int256 exp2 = 1e18;
             int256 exp3 = 1e18;
 
-            // x: (1, 32]
+            // x: [1, 32)
             if (x >= 1e18) {
-                if (x > 1e18) {
-                    int256 exponent = x / 1e18;
-                    x -= exponent * 1e18;
-                    exp2 = getExp2Precalculated(exponent);
-                } else {
-                    x = 0;
-                    exp2 = E;
-                }
+                int256 exponent = x / 1e18;
+                x %= 1e18;
+                exp2 = getExp2Precalculated(exponent);
             }
             // if (log) { if (x >= 0) { console.log("x SOL: %d", uint256(x)); } else { console.log("x SOL: -%d", uint256(-x)); }}
 
 
-            // x: (0.03125, 1]
+            // x: [0.03125, 1)
             if (x >= 3125e13) {
-                if (x > 3125e13) {
-                    int256 exponent = x / 3125e13;
-                    x -= exponent * 3125e13;
-                    exp3 = getExp3Precalculated(exponent);
-                } else {
-                    x = 0;
-                    exp2 = E_TO_003125;
-                }
+                int256 exponent = x / 3125e13;
+                x %= 3125e13;
+                exp3 = getExp3Precalculated(exponent);
             } 
             // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
             
@@ -136,7 +126,7 @@ contract BlackScholesNUM {
         }
     }
 
-        function getExp2Precalculated(int256 exponent) private pure returns (int256) {
+    function getExp2Precalculated(int256 exponent) private pure returns (int256) {
         // use >=, fastest
 
         // base is e
@@ -274,6 +264,10 @@ contract BlackScholesNUM {
 
         // base is 1.031743407499102671
         unchecked {
+            // if (exponent == 32) {
+            //     return E;
+            // }
+
             if (exponent >= 16) { // 16
                 if (exponent >= 24) { // 24
                     if (exponent >= 28) { // 28
