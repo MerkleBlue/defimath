@@ -19,7 +19,10 @@ contract BlackScholesNUM {
     int internal constant SCALE_SIGNED = 1e18;
     int internal constant SCALE_DOWN_SIGNED = 1e9;
 
-    int256 internal constant E_TO_005 = 1_051271096376024040; // e ^ 0.05 // todo: check this value
+    int256 internal constant E_TO_005 = 1_031743407499102671;               // e ^ 0.03125
+    int256 internal constant E = 2_718281828459045235;                      // e
+    int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
+
 
     bool log = false;
 
@@ -85,10 +88,18 @@ contract BlackScholesNUM {
             }
 
             int256 exp1 = 1e18;
+            int256 exp2 = 1e18;
+            int256 exp3 = 1e18;
 
-            if (x > 5e16) {
-                uint256 exponent = uint(x) / 5e16;
-                x -= int256(exponent * 5e16);
+            // if (x > 1) {
+            //     const exponent = Math.floor(x);
+            //     x -= exponent;
+            //     exp2 = this.getExpPrecalculated(E, exponent);
+            // }
+
+            if (x > 3125e13) {
+                uint256 exponent = uint(x) / 3125e13;
+                x -= int256(exponent * 3125e13);
                 exp1 = getExp1Precalculated(exponent); // int256(E_TO_005 ** exponent / (10 ** (18 * (exponent - 1))));
             } 
             // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
