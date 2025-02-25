@@ -231,11 +231,13 @@ contract BlackScholesNUM {
                                 return 7_389056098930650;
                             }
                         } else {
-                            if (exponent >= 1) { // 1
-                                return 2_718281828459045;
-                            } else {
-                                return 1e15;
-                            }
+                            // there is no 0
+                            return 2_718281828459045;
+                            // if (exponent >= 1) { // 1
+                            //     return 2_718281828459045;
+                            // } else {
+                            //     return 1e15;
+                            // }
                         }
                     }
                 }
@@ -368,11 +370,13 @@ contract BlackScholesNUM {
                                 return 1_064494458917859;
                             }
                         } else {
-                            if (exponent >= 1) { // 1
-                                return 1_031743407499103;
-                            } else {
-                                return 1e15;
-                            }
+                            // there is no 0
+                            return 1_031743407499103;
+                            // if (exponent >= 1) { // 1
+                            //     return 1_031743407499103;
+                            // } else {
+                            //     return 1e15;
+                            // }
                         }
                     }
                 }
