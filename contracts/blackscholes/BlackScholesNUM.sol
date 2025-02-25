@@ -112,8 +112,7 @@ contract BlackScholesNUM {
             if (x >= 1_090507732665257659) {
                 uint256 divider;
                 (divider, multiplier) = getLnPrecalculated(x);
-                x *= 1e18;
-                x /= divider;
+                x = x * 1e18 / divider;
             }
 
             // we use Pade approximation for ln(x)
