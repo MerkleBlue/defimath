@@ -94,7 +94,7 @@ contract BlackScholesNUM {
 
             // if (log) { console.log("SOL x / 32e18: %d", uint256(x / 32e18)); }
 
-            uint256 exp123 = getExp1Precalculated(x / 32e18) / 1e18;
+            uint256 exp123 = getExp1Precalculated(x / 32e18);
             x %= 32e18;
             // if (log) { console.log("SOL exp123: %d", uint256(exp123)); }
             // if (log) { console.log("SOL x: %d", uint256(x)); }
@@ -207,12 +207,12 @@ contract BlackScholesNUM {
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
         unchecked {
             if (exponent >= 2) { // 2
-                return uint256(78962960182680_695160978022635499) ** 2 / 1e18; //6235149080811616882949999999_999999999999999999;
+                return uint256(78962960182681) ** 2; //6235149080811616882949999999_999999999999999999;
             } else {
                 if (exponent >= 1) { // 1
-                    return 78962960182680_695160978022635499; // 78962960182680695160978022635499
+                    return 78962960182681; // 78962960182680_695160978022635499, 78962960182680.695160978
                 } else {
-                    return 1e18;
+                    return 1;
                 }
             }
         }

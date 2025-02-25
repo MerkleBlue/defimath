@@ -10,7 +10,7 @@ import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = false;
+const duoTest = true;
 const fastTest = false;
 
 const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
@@ -797,25 +797,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
     // that requires puts implementation other than getting put from call
-    it.only("gets multiple call prices at lower strikes: random", async function () {
+    it("gets multiple call prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it.only("gets multiple put prices at lower strikes: random", async function () {
+    it("gets multiple put prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it.only("gets multiple call prices at higher strikes: random", async function () {
+    it("gets multiple call prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000370, 10, !fastTest);
     });
 
-    it.only("gets multiple put prices at higher strikes: random", async function () {
+    it("gets multiple put prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000370, 10, !fastTest);
