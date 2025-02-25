@@ -8,6 +8,10 @@ import "./Math.sol";
 contract BlackScholesNUM {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
+    // int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
+    // int256 internal constant E = 2_718281828459045235;                      // e
+    // int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
+
     // uint internal constant SQRT_2XPI = 2506628274631000502415765285;  // sqrt(2 * PI)
     // uint internal constant SCALE = 1e18;
     // uint internal constant SCALE_DOWN = 1e9;
@@ -20,16 +24,8 @@ contract BlackScholesNUM {
     // int internal constant SCALE_SIGNED = 1e18;
     // int internal constant SCALE_DOWN_SIGNED = 1e9;
 
-    int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
-    int256 internal constant E = 2_718281828459045235;                      // e
-    int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
-                //     // 
-
 
     bool log = true;
-
-    constructor() {
-    }
 
 
     // function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
@@ -80,28 +76,19 @@ contract BlackScholesNUM {
         unchecked {
             uint256 exp123 = 1;
 
-            // x: [1, 32)
+            // x: [32, 50)
             if (x >= 32e18) {
                 exp123 = getExp1Precalculated(x / 32e18);
                 x %= 32e18;
             }
 
             // x: [1, 32)
-            // if (x >= 1e18) {
-            //     int256 exponent = x / 1e18;
-            //     x %= 1e18;
-            //     exp2 = getExp2Precalculated(exponent);
-            // }
-            // {
             if (x >= 1e18) {
                 exp123 *= getExp2Precalculated(x / 1e18);
                 x %= 1e18;
             } else {
                 exp123 *= 1e18;
             }
-
-            // if (log) { if (x >= 0) { console.log("x SOL: %d", uint256(x)); } else { console.log("x SOL: -%d", uint256(-x)); }}
-
 
             // x: [0.03125, 1)
             if (x >= 3125e13) {
@@ -112,22 +99,18 @@ contract BlackScholesNUM {
             }
 
             // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
-            
 
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
             uint256 numerator = ((x + 3e18) ** 2) + 3e36;
             uint256 denominator = ((3e18 - x) ** 2) + 3e36;
-            // int256 exp2 = (numerator * 1e18) / denominator;
 
             // if (log) { if (exp2 >= 0) { console.log("exp2 SOL: %d", uint256(exp2)); } else { console.log("exp2 SOL: -%d", uint256(-exp2)); }}
             // if (log) { if (exp3 >= 0) { console.log("exp3 SOL: %d", uint256(exp3)); } else { console.log("exp3 SOL: -%d", uint256(-exp3)); }}
             // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
             // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
 
-            uint256 result = uint(exp123 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
-
-            return result;
+            return uint(exp123 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
         }
     }
 
