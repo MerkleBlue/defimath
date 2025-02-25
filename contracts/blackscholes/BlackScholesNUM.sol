@@ -124,9 +124,9 @@ contract BlackScholesNUM {
             uint256 fraction2 = fraction * fraction / 1e18;
             uint256 fraction4 = fraction2 * fraction2 / 1e18;
             uint256 fraction6 = fraction2 * fraction4 / 1e18;
-            uint256 naturalLog = fraction * (1e36 + 333333333333333334 * fraction2 + 200000000000000000 * fraction4 + 142857142857142857 * fraction6);
+            uint256 naturalLog = fraction * (1e18 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7);
             
-            return 2 * naturalLog / 1e36 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
+            return 2 * naturalLog / 1e18 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
         }
     }
 
