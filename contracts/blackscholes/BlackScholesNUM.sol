@@ -108,7 +108,7 @@ contract BlackScholesNUM {
         unchecked {
             uint256 multiplier;
 
-            // x: [1, 16)
+            // x: [1.0905, 16)
             if (x >= 1_090507732665257659) {
                 uint256 divider;
                 (divider, multiplier) = getLnPrecalculated(x);
@@ -121,8 +121,8 @@ contract BlackScholesNUM {
             uint256 fraction = (x - 1e18) * 1e18 / (x + 1e18);
             // if (log) { console.log("SOL fraction: %d", fraction); }
 
-            uint256 fraction2 = fraction ** 2 / 1e18;
-            uint256 fraction4 = fraction2 ** 2 / 1e18;
+            uint256 fraction2 = fraction * fraction / 1e18;
+            uint256 fraction4 = fraction2 * fraction2 / 1e18;
             uint256 fraction6 = fraction2 * fraction4 / 1e18;
             uint256 naturalLog = fraction * (1e36 + 333333333333333334 * fraction2 + 200000000000000000 * fraction4 + 142857142857142857 * fraction6);
             
