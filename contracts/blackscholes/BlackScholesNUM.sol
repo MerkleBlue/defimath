@@ -107,21 +107,19 @@ contract BlackScholesNUM {
     function ln(uint256 x) public pure returns (uint256) {
         unchecked {
             uint256 multiplier;
-            // if (log) { console.log("--- SOL start x: %d", x); }
+
             // x: [1, 16)
             if (x >= 1_090507732665257659) {
                 uint256 divider;
                 (divider, multiplier) = getLnPrecalculated(x);
-                // if (log) { console.log("SOL divider: %d", divider); }
                 x *= 1e18;
                 x /= divider;
             }
 
             // we use Pade approximation for ln(x)
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
-            uint256 numerator = x - 1e18;
-            uint256 denominator = x + 1e18;
-            uint256 fraction = numerator * 1e18 / denominator;
+            // fraction = (x - 1) / (x + 1)
+            uint256 fraction = (x - 1e18) * 1e18 / (x + 1e18);
             // if (log) { console.log("SOL fraction: %d", fraction); }
 
             uint256 fraction2 = fraction ** 2 / 1e18;
