@@ -206,15 +206,18 @@ contract BlackScholesNUM {
 
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
         unchecked {
-            if (exponent >= 2) { // 2
-                return uint256(78962960182681) ** 2; //6235149080811616882949999999_999999999999999999;
-            } else {
-                if (exponent >= 1) { // 1
-                    return 78962960182681; // 78962960182680_695160978022635499, 78962960182680.695160978
-                } else {
-                    return 1;
-                }
-            }
+            return 78962960182681 ** exponent;
+
+
+            // if (exponent >= 2) { // 2
+            //     return uint256(78962960182681) ** 2; //6235149080811616882949999999_999999999999999999;
+            // } else {
+            //     if (exponent >= 1) { // 1
+            //         return 78962960182681; // 78962960182680_695160978022635499, 78962960182680.695160978
+            //     } else {
+            //         return 1;
+            //     }
+            // }
         }
     }
 
