@@ -150,13 +150,15 @@ export class BlackScholesNUMJS {
   }
 
   // x must be positive
+  // x is in range [1, 16]
   ln(x) {
     // handle special case where x = 1
     if (x === 1) {
       return 0;
     }
 
-    const LN_1_20 = 0.182321556793955;
+    const LN_1_20 = 0.086643397569993; // ln(1.090507732665258)
+    const ROOT_32_OF_16 = 1.090507732665258;
     let multiplier = 0;
 
     const isLargerThan1 = x > 1;
@@ -165,10 +167,10 @@ export class BlackScholesNUMJS {
       x = 1 / x;
     }
 
-    if (x > 1.2) {
+    if (x > ROOT_32_OF_16) {
       // todo: always reduce x to < 1 (if x is 5 then: return -exp(1/5))
-      multiplier = Math.floor(this.getBaseLog(1.2, x));
-      x = x / (1.2 ** multiplier);
+      multiplier = Math.floor(this.getBaseLog(ROOT_32_OF_16, x));
+      x = x / (ROOT_32_OF_16 ** multiplier);
     }
 
     // we use Pade approximation for ln(x)
