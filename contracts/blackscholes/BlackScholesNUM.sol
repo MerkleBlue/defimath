@@ -72,7 +72,7 @@ contract BlackScholesNUM {
     //     }
     // }
 
-    function exp(uint256 x) public view returns (uint256) {
+    function exp(uint256 x) public pure returns (uint256) {
         unchecked {
             uint256 exp123 = 1;
 
@@ -113,66 +113,6 @@ contract BlackScholesNUM {
             return uint(exp123 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
         }
     }
-
-
-    // gas 592 when x > 0.05
-    // function expPosNeg(int256 x) public pure returns (uint256) {
-    //     unchecked {
-    //         // handle special case where x = 0
-    //         // if (x == 0) {
-    //         //     return 1e18;
-    //         // }
-
-    //         bool isPositive = x >= 0;
-    //         if (!isPositive) {
-    //             x = -x;
-    //         }
-
-    //         // int256 exp1 = 1e18;
-    //         // int256 exp2 = 1e18;
-    //         // int256 exp3 = 1e18;
-
-    //         // x: [1, 32)
-    //         // if (x >= 1e18) {
-    //         //     int256 exponent = x / 1e18;
-    //         //     x %= 1e18;
-    //         //     exp2 = getExp2Precalculated(exponent);
-    //         // }
-    //         // {
-    //             int256 exponent2 = x / 1e18;
-    //             x %= 1e18;
-    //             int256 exp2 = exponent2 == 0 ? int256(1e18) : getExp2Precalculated(exponent2);
-    //         // }
-
-    //         // if (log) { if (x >= 0) { console.log("x SOL: %d", uint256(x)); } else { console.log("x SOL: -%d", uint256(-x)); }}
-
-
-    //         // x: [0.03125, 1)
-    //         // {
-    //             int256 exponent3 = x / 3125e13;
-    //             x %= 3125e13;
-    //             int256 exp3 = exponent3 == 0 ? int256(1e18) : getExp3Precalculated(exponent3);
-    //         // }
-
-    //         // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
-            
-
-    //         // we use Pade approximation for exp(x)
-    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    //         int256 numerator = ((x + 3e18) ** 2) + 3e36;
-    //         int256 denominator = ((3e18 - x) ** 2) + 3e36;
-    //         // int256 exp2 = (numerator * 1e18) / denominator;
-
-    //         // if (log) { if (exp2 >= 0) { console.log("exp2 SOL: %d", uint256(exp2)); } else { console.log("exp2 SOL: -%d", uint256(-exp2)); }}
-    //         // if (log) { if (exp3 >= 0) { console.log("exp3 SOL: %d", uint256(exp3)); } else { console.log("exp3 SOL: -%d", uint256(-exp3)); }}
-    //         // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
-    //         // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
-
-    //         uint256 result = uint(exp2 * exp3 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
-
-    //         return isPositive ? result : 1 / result;
-    //     }
-    // }
 
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
         unchecked {
@@ -449,6 +389,66 @@ contract BlackScholesNUM {
             } 
         }
     }
+
+
+    // gas 592 when x > 0.05
+    // function expPosNeg(int256 x) public pure returns (uint256) {
+    //     unchecked {
+    //         // handle special case where x = 0
+    //         // if (x == 0) {
+    //         //     return 1e18;
+    //         // }
+
+    //         bool isPositive = x >= 0;
+    //         if (!isPositive) {
+    //             x = -x;
+    //         }
+
+    //         // int256 exp1 = 1e18;
+    //         // int256 exp2 = 1e18;
+    //         // int256 exp3 = 1e18;
+
+    //         // x: [1, 32)
+    //         // if (x >= 1e18) {
+    //         //     int256 exponent = x / 1e18;
+    //         //     x %= 1e18;
+    //         //     exp2 = getExp2Precalculated(exponent);
+    //         // }
+    //         // {
+    //             int256 exponent2 = x / 1e18;
+    //             x %= 1e18;
+    //             int256 exp2 = exponent2 == 0 ? int256(1e18) : getExp2Precalculated(exponent2);
+    //         // }
+
+    //         // if (log) { if (x >= 0) { console.log("x SOL: %d", uint256(x)); } else { console.log("x SOL: -%d", uint256(-x)); }}
+
+
+    //         // x: [0.03125, 1)
+    //         // {
+    //             int256 exponent3 = x / 3125e13;
+    //             x %= 3125e13;
+    //             int256 exp3 = exponent3 == 0 ? int256(1e18) : getExp3Precalculated(exponent3);
+    //         // }
+
+    //         // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
+            
+
+    //         // we use Pade approximation for exp(x)
+    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+    //         int256 numerator = ((x + 3e18) ** 2) + 3e36;
+    //         int256 denominator = ((3e18 - x) ** 2) + 3e36;
+    //         // int256 exp2 = (numerator * 1e18) / denominator;
+
+    //         // if (log) { if (exp2 >= 0) { console.log("exp2 SOL: %d", uint256(exp2)); } else { console.log("exp2 SOL: -%d", uint256(-exp2)); }}
+    //         // if (log) { if (exp3 >= 0) { console.log("exp3 SOL: %d", uint256(exp3)); } else { console.log("exp3 SOL: -%d", uint256(-exp3)); }}
+    //         // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
+    //         // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
+
+    //         uint256 result = uint(exp2 * exp3 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
+
+    //         return isPositive ? result : 1 / result;
+    //     }
+    // }
 
     function testIfMeasureGas(uint256 exponent) public view returns (uint256) {
         uint256 startGas;
