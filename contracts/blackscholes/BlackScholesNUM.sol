@@ -74,7 +74,7 @@ contract BlackScholesNUM {
                 exp123 *= getExp2Precalculated(x / 1e18);
                 x %= 1e18;
             } else {
-                exp123 *= 1e18;
+                exp123 *= 1e15;
             }
 
             // x: [0.03125, 1)
@@ -82,22 +82,25 @@ contract BlackScholesNUM {
                 exp123 *= getExp3Precalculated(x / 3125e13);
                 x %= 3125e13;
             } else {
-                exp123 *= 1e18;
+                exp123 *= 1e15;
             }
 
             // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
 
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 numerator = ((x + 3e18) ** 2) + 3e36;
+            //uint256 x12 = x / 1e12;
             uint256 denominator = ((3e18 - x) ** 2) + 3e36;
+            x /= 1e6;
+            uint256 numerator = ((x + 3e12) ** 2) + 3e24;
+
 
             // if (log) { if (exp2 >= 0) { console.log("exp2 SOL: %d", uint256(exp2)); } else { console.log("exp2 SOL: -%d", uint256(-exp2)); }}
             // if (log) { if (exp3 >= 0) { console.log("exp3 SOL: %d", uint256(exp3)); } else { console.log("exp3 SOL: -%d", uint256(-exp3)); }}
             // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
             // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
 
-            return uint(exp123 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
+            return exp123 * numerator / denominator; // using e ^ (a + b) = e ^ a * e ^ b
         }
     }
 
@@ -117,29 +120,29 @@ contract BlackScholesNUM {
                     if (exponent >= 28) { // 28
                         if (exponent >= 30) { // 30
                             if (exponent >= 31) { // 31
-                                return 29048849665247_425231085682112499;
+                                return 29048849665247_425231085682112;
                             } else {
-                                return 10686474581524_462146990468651499;
+                                return 10686474581524_462146990468651;
                             }
                         } else {
                             if (exponent >= 29) { // 29
-                                return 3931334297144_042074388620581499;
+                                return 3931334297144_042074388620581;
                             } else {
-                                return 1446257064291_475173677047423499;
+                                return 1446257064291_475173677047423;
                             }
                         }
                     } else {
                         if (exponent >= 26) { // 26
                             if (exponent >= 27) { // 27
-                                return 532048240601_798616683747304499;
+                                return 532048240601_798616683747304;
                             } else {
-                                return 195729609428_838764269776398499;
+                                return 195729609428_838764269776398;
                             }
                         } else {
                             if (exponent >= 25) { // 25
-                                return 72004899337_385872524161351499;
+                                return 72004899337_385872524161351;
                             } else {
-                                return 26489122129_843472294139162499;
+                                return 26489122129_843472294139162;
                             }
                         }
                     }
@@ -147,29 +150,29 @@ contract BlackScholesNUM {
                     if (exponent >= 20) { // 20
                         if (exponent >= 22) { // 22
                             if (exponent >= 23) { // 23
-                                return 9744803446_248902600034633499;
+                                return 9744803446_248902600034633;
                             } else {
-                                return 3584912846_131591561681164999;
+                                return 3584912846_131591561681164;
                             }
                         } else {
                             if (exponent >= 21) { // 21
-                                return 1318815734_483214697209999499;
+                                return 1318815734_483214697209999;
                             } else {
-                                return 485165195_409790277969107499;
+                                return 485165195_409790277969107;
                             }
                         }
                     } else {
                         if (exponent >= 18) { // 18
                             if (exponent >= 19) { // 19
-                                return 178482300_963187260844914999;
+                                return 178482300_963187260844914;
                             } else {
-                                return 65659969_137330511138787499; // 65659969137330511138787499
+                                return 65659969_137330511138787; // 65659969137330511138787499
                             }
                         } else {
                             if (exponent >= 17) { // 17
-                                return 24154952_753575298214775499;
+                                return 24154952_753575298214775;
                             } else {
-                                return 8886110_520507872636763499;
+                                return 8886110_520507872636763;
                             }
                         }
                     }
@@ -179,29 +182,29 @@ contract BlackScholesNUM {
                     if (exponent >= 12) { // 12
                         if (exponent >= 14) { // 14
                             if (exponent >= 15) { // 15
-                                return 3269017_372472110639302499;
+                                return 3269017_372472110639302;
                             } else {
-                                return 1202604_284164776777749499;
+                                return 1202604_284164776777749;
                             }
                         } else {
                             if (exponent >= 13) { // 13
-                                return 442413_392008920503326499;
+                                return 442413_392008920503326;
                             } else {
-                                return 162754_791419003920808499;
+                                return 162754_791419003920808;
                             }
                         }
                     } else {
                         if (exponent >= 10) { // 10
                             if (exponent >= 11) { // 11
-                                return 59874_141715197818455499;
+                                return 59874_141715197818455;
                             } else {
-                                return 22026_465794806716517499;
+                                return 22026_465794806716517;
                             }
                         } else {
                             if (exponent >= 9) { // 9
-                                return 8103_083927575384007749;
+                                return 8103_083927575384008;
                             } else {
-                                return 2980_957987041728274749;
+                                return 2980_957987041728275;
                             }
                         }
                     }
@@ -209,29 +212,29 @@ contract BlackScholesNUM {
                     if (exponent >= 4) { // 4
                         if (exponent >= 6) { // 6
                             if (exponent >= 7) { // 7
-                                return 1096_633158428458599349;
+                                return 1096_633158428458599;
                             } else {
-                                return 403_428793492735122615;
+                                return 403_428793492735123;
                             }
                         } else {
                             if (exponent >= 5) { // 5
-                                return 148_413159102576603425;
+                                return 148_413159102576603;
                             } else {
-                                return 54_598150033144239078;
+                                return 54_598150033144239;
                             }
                         }
                     } else {
                         if (exponent >= 2) { // 2
                             if (exponent >= 3) { // 3
-                                return 20_085536923187667741;
+                                return 20_085536923187668;
                             } else {
-                                return 7_389056098930650227;
+                                return 7_389056098930650;
                             }
                         } else {
                             if (exponent >= 1) { // 1
-                                return 2_718281828459045235;
+                                return 2_718281828459045;
                             } else {
-                                return 1e18;
+                                return 1e15;
                             }
                         }
                     }
@@ -254,29 +257,29 @@ contract BlackScholesNUM {
                     if (exponent >= 28) { // 28
                         if (exponent >= 30) { // 30
                             if (exponent >= 31) { // 31
-                                return 2_634649088815631111;
+                                return 2_634649088815631;
                             } else {
-                                return 2_553589458062926873;
+                                return 2_553589458062927;
                             }
                         } else {
                             if (exponent >= 29) { // 29
-                                return 2_475023769963025215;
+                                return 2_475023769963025;
                             } else {
-                                return 2_398875293967097914;
+                                return 2_398875293967098;
                             }
                         }
                     } else {
                         if (exponent >= 26) { // 26
                             if (exponent >= 27) { // 27
-                                return 2_325069660277121051;
+                                return 2_325069660277121;
                             } else {
-                                return 2_253534787213208545;
+                                return 2_253534787213208;
                             }
                         } else {
                             if (exponent >= 25) { // 25
-                                return 2_184200810815617925;
+                                return 2_184200810815618;
                             } else {
-                                return 2_117000016612674669;
+                                return 2_117000016612675;
                             }
                         }
                     }
@@ -284,29 +287,29 @@ contract BlackScholesNUM {
                     if (exponent >= 20) { // 20
                         if (exponent >= 22) { // 22
                             if (exponent >= 23) { // 23
-                                return 2_051866773487976824;
+                                return 2_051866773487977;
                             } else {
-                                return 1_988737469582291831;
+                                return 1_988737469582292;
                             }
                         } else {
                             if (exponent >= 21) { // 21
-                                return 1_927550450167544665;
+                                return 1_927550450167545;
                             } else {
-                                return 1_868245957432222407;
+                                return 1_868245957432222;
                             }
                         }
                     } else {
                         if (exponent >= 18) { // 18
                             if (exponent >= 19) { // 19
-                                return 1_810766072119387164;
+                                return 1_810766072119387;
                             } else {
-                                return 1_755054656960298557;
+                                return 1_755054656960299;
                             }
                         } else {
                             if (exponent >= 17) { // 17
-                                return 1_701057301848400679;
+                                return 1_701057301848401;
                             } else {
-                                return 1_648721270700128147;
+                                return 1_648721270700128;
                             }
                         }
                     }
@@ -316,29 +319,29 @@ contract BlackScholesNUM {
                     if (exponent >= 12) { // 12
                         if (exponent >= 14) { // 14
                             if (exponent >= 15) { // 15
-                                return 1_597995449950633268;
+                                return 1_597995449950633;
                             } else {
-                                return 1_548830298634133098;
+                                return 1_548830298634133;
                             }
                         } else {
                             if (exponent >= 13) { // 13
-                                return 1_501177800000122752;
+                                return 1_501177800000123;
                             } else {
-                                return 1_454991414618201336;
+                                return 1_454991414618201;
                             }
                         }
                     } else {
                         if (exponent >= 10) { // 10
                             if (exponent >= 11) { // 11
-                                return 1_410226034925710706;
+                                return 1_410226034925711;
                             } else {
-                                return 1_366837941173796363;
+                                return 1_366837941173796;
                             }
                         } else {
                             if (exponent >= 9) { // 9
-                                return 1_324784758728865569;
+                                return 1_324784758728866;
                             } else {
-                                return 1_284025416687741484;
+                                return 1_284025416687741;
                             }
                         }
                     }
@@ -346,29 +349,29 @@ contract BlackScholesNUM {
                     if (exponent >= 4) { // 4
                         if (exponent >= 6) { // 6
                             if (exponent >= 7) { // 7
-                                return 1_244520107766095155;
+                                return 1_244520107766095;
                             } else {
-                                return 1_206230249420980711;
+                                return 1_206230249420981;
                             }
                         } else {
                             if (exponent >= 5) { // 5
-                                return 1_169118446169504402;
+                                return 1_169118446169504;
                             } else {
-                                return 1_133148453066826317;
+                                return 1_133148453066826;
                             }
                         }
                     } else {
                         if (exponent >= 2) { // 2
                             if (exponent >= 3) { // 3
-                                return 1_098285140307825849;
+                                return 1_098285140307826;
                             } else {
-                                return 1_064494458917859430;
+                                return 1_064494458917859;
                             }
                         } else {
                             if (exponent >= 1) { // 1
-                                return 1_031743407499102671;
+                                return 1_031743407499103;
                             } else {
-                                return 1e18;
+                                return 1e15;
                             }
                         }
                     }
