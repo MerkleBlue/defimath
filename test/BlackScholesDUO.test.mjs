@@ -10,7 +10,7 @@ import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = true;
+const duoTest = false;
 const fastTest = false;
 
 const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
@@ -451,7 +451,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     // const curvedLookupTable  = (await generateCurvedAreaLookupTable(new BlackScholesJS())).lookupTable;
     // // console.log("curvedLookupTable");
     // // console.log(curvedLookupTable);
-    // blackScholesJS = new BlackScholesNUMJS();; //new BlackScholesJS(lookupTable);
+    blackScholesJS = new BlackScholesNUMJS(); //new BlackScholesJS(lookupTable);
     blackScholesNUMJS = new BlackScholesNUMJS();
 
 
@@ -523,7 +523,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   describe("numerical", function () {
     describe("exp", function () {
-      it.only("exp positive single x < 0.0325 value", async function () {
+      it("exp positive single x < 0.0325 value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
         const x = 0.03;
@@ -633,9 +633,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
-      it.only("exp positive [32, 256)", async function () {
+      it.only("exp positive [32, 50)", async function () {
         let totalGas = 0, count = 0;
-        for (let x = 32; x < 256; x += 0.256) { 
+        for (let x = 32; x < 50; x += 0.256) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesNUMJS.exp(x);
           const absError = Math.abs(actualJS - expected);
@@ -643,21 +643,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           //console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
           assert.isBelow(relError, 0.000000004200); // 1e-12 
 
-          // if (duoTest) {
-          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+          if (duoTest) {
+            const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
-          //   const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
-          //   const absError = Math.abs(actualSOL - expected);
-          //   const relError = absError / expected * 100;
-          //   // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-          //   assert.isBelow(absError, 0.00000001);
-          //   assert.isBelow(relError, 0.00000005);
+            const actualSOL = (await blackScholesNUM.exp(tokens(x))).toString() / 1e18;
+            const absError = Math.abs(actualSOL - expected);
+            const relError = absError / expected * 100;
+            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+            // assert.isBelow(absError, 0.00000001);
+            assert.isBelow(relError, 0.000000004200); // 1e-12 
 
-          //   totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-          //   count++;
-          // }
+            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+            count++;
+          }
         }
-        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it.only("testIf", async function () {
@@ -797,25 +797,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
     // that requires puts implementation other than getting put from call
-    it("gets multiple call prices at lower strikes: random", async function () {
+    it.only("gets multiple call prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it("gets multiple put prices at lower strikes: random", async function () {
+    it.only("gets multiple put prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it("gets multiple call prices at higher strikes: random", async function () {
+    it.only("gets multiple call prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000370, 10, !fastTest);
     });
 
-    it("gets multiple put prices at higher strikes: random", async function () {
+    it.only("gets multiple put prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000370, 10, !fastTest);

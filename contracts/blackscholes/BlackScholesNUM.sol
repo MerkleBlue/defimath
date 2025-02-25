@@ -26,7 +26,7 @@ contract BlackScholesNUM {
                 //     // 
 
 
-    // bool log = true;
+    bool log = true;
 
     constructor() {
     }
@@ -76,7 +76,7 @@ contract BlackScholesNUM {
     //     }
     // }
 
-    function exp(uint256 x) public pure returns (uint256) {
+    function exp(uint256 x) public view returns (uint256) {
         unchecked {
             // handle special case where x = 0
             // if (x == 0) {
@@ -92,6 +92,14 @@ contract BlackScholesNUM {
             // uint256 exp2 = 1e18;
             // uint256 exp3 = 1e18;
 
+            // if (log) { console.log("SOL x / 32e18: %d", uint256(x / 32e18)); }
+
+            uint256 exp123 = getExp1Precalculated(x / 32e18) / 1e18;
+            x %= 32e18;
+            // if (log) { console.log("SOL exp123: %d", uint256(exp123)); }
+            // if (log) { console.log("SOL x: %d", uint256(x)); }
+
+
             // x: [1, 32)
             // if (x >= 1e18) {
             //     int256 exponent = x / 1e18;
@@ -100,7 +108,7 @@ contract BlackScholesNUM {
             // }
             // {
                 // uint256 exponent2 = x / 1e18
-                uint256 exp23 = getExp2Precalculated(x / 1e18);
+                exp123 *= getExp2Precalculated(x / 1e18);
                 x %= 1e18;
 
             // }
@@ -111,7 +119,7 @@ contract BlackScholesNUM {
             // x: [0.03125, 1)
             // {
                 // uint256 exponent3 = ;
-                exp23 *= getExp3Precalculated(x / 3125e13);
+                exp123 *= getExp3Precalculated(x / 3125e13);
                 x %= 3125e13;
 
             // }
@@ -130,7 +138,7 @@ contract BlackScholesNUM {
             // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
             // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
 
-            uint256 result = uint(exp23 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
+            uint256 result = uint(exp123 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
 
             return result;
         }
@@ -202,7 +210,7 @@ contract BlackScholesNUM {
                 return uint256(78962960182680_695160978022635499) ** 2 / 1e18; //6235149080811616882949999999_999999999999999999;
             } else {
                 if (exponent >= 1) { // 1
-                    return 78962960182680_695160978022635499;
+                    return 78962960182680_695160978022635499; // 78962960182680695160978022635499
                 } else {
                     return 1e18;
                 }
@@ -266,7 +274,7 @@ contract BlackScholesNUM {
                             if (exponent >= 19) { // 19
                                 return 178482300_963187260844914999;
                             } else {
-                                return 65659969_137330511138787499;
+                                return 65659969_137330511138787499; // 65659969137330511138787499
                             }
                         } else {
                             if (exponent >= 17) { // 17
