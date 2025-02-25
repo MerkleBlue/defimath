@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
+import "./Math.sol";
 
 contract BlackScholesNUM {
 
@@ -22,6 +23,7 @@ contract BlackScholesNUM {
     int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
     int256 internal constant E = 2_718281828459045235;                      // e
     int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
+                //     // 
 
 
     // bool log = true;
@@ -193,6 +195,20 @@ contract BlackScholesNUM {
     //         return isPositive ? result : 1 / result;
     //     }
     // }
+
+    function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
+        unchecked {
+            if (exponent >= 2) { // 2
+                return uint256(78962960182680_695160978022635499) ** 2 / 1e18; //6235149080811616882949999999_999999999999999999;
+            } else {
+                if (exponent >= 1) { // 1
+                    return 78962960182680_695160978022635499;
+                } else {
+                    return 1e18;
+                }
+            }
+        }
+    }
 
     function getExp2Precalculated(uint256 exponent) private pure returns (uint256) {
         // use >=, fastest
@@ -464,79 +480,18 @@ contract BlackScholesNUM {
         }
     }
 
-    function testIf(uint256 exponent) public view returns (uint256) {
-        if (exponent >= 16) { // 16
-            if (exponent >= 24) { // 24
-                if (exponent >= 28) { // 28
-                    if (exponent >= 30) { // 30
-                        if (exponent >= 31) { // 31
-                            return 2_634649088815631111;
-                        } else {
-                            return 2_553589458062926873;
-                        }
-                    } else {
-                        if (exponent >= 29) { // 29
-                            return 2_475023769963025215;
-                        } else {
-                            return 2_398875293967097914;
-                        }
-                    }
-                } else {
-                    if (exponent >= 26) { // 26
-                        if (exponent >= 27) { // 27
-                            return 2_325069660277121051;
-                        } else {
-                            return 2_253534787213208545;
-                        }
-                    } else {
-                        if (exponent >= 25) { // 25
-                            return 2_184200810815617925;
-                        } else {
-                            return 2_117000016612674669;
-                        }
-                    }
-                }
-            } else {
-                if (exponent >= 20) { // 20
-                    if (exponent >= 22) { // 22
-                        if (exponent >= 23) { // 23
-                            return 2_051866773487976824;
-                        } else {
-                            return 1_988737469582291831;
-                        }
-                    } else {
-                        if (exponent >= 21) { // 21
-                            return 1_927550450167544665;
-                        } else {
-                            return 1_868245957432222407;
-                        }
-                    }
-                } else {
-                    if (exponent >= 18) { // 18
-                        if (exponent >= 19) { // 19
-                            return 1_810766072119387164;
-                        } else {
-                            return 1_755054656960298557;
-                        }
-                    } else {
-                        if (exponent >= 17) { // 17
-                            return 1_701057301848400679;
-                        } else {
-                            return 1_648721270700128147;
-                        }
-                    }
-                }
-            }
-        } 
-    }
-
-    // todo: delete
     function testIfMeasureGas(uint256 exponent) public view returns (uint256) {
         uint256 startGas;
         uint256 endGas;
+        uint result;
         startGas = gasleft();
 
-        testIf(exponent);
+        result = Math.testIf(exponent);
+        // uint256[4] memory exp1s;
+        // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
+        // result = exp1s[exponent];
+
+
 
                 // if (0 <= x) {
                 //     exp(x);
@@ -545,6 +500,31 @@ contract BlackScholesNUM {
                 // }
 
         endGas = gasleft();
+
+        console.log("result: %d", result);
+        return startGas - endGas;
+    }
+
+    
+
+    // todo: delete
+    function expMeasureGas(uint256 x) public view returns (uint256) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        result = exp(x);
+
+                // if (0 <= x) {
+                //     exp(x);
+                //     // uint256[4] memory exp1s;
+                //     // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
+                // }
+
+        endGas = gasleft();
+
+
         return startGas - endGas;
     }
 

@@ -444,73 +444,74 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   // before all tests, called once
   before(async () => {
-    testTimePoints = generateTestTimePoints();
-    testStrikePoints = generateTestStrikePoints(new BlackScholesJS(), STRIKE_MIN, STRIKE_MAX);
-    const { lookupTable } = await generateLookupTable(new BlackScholesJS(), true);
-    const curvedLookupTable  = (await generateCurvedAreaLookupTable(new BlackScholesJS())).lookupTable;
-    // console.log("curvedLookupTable");
-    // console.log(curvedLookupTable);
-    blackScholesJS = new BlackScholesNUMJS();; //new BlackScholesJS(lookupTable);
+    // todo: uncomment if we go back to lookup table
+    // testTimePoints = generateTestTimePoints();
+    // testStrikePoints = generateTestStrikePoints(new BlackScholesJS(), STRIKE_MIN, STRIKE_MAX);
+    // const { lookupTable } = await generateLookupTable(new BlackScholesJS(), true);
+    // const curvedLookupTable  = (await generateCurvedAreaLookupTable(new BlackScholesJS())).lookupTable;
+    // // console.log("curvedLookupTable");
+    // // console.log(curvedLookupTable);
+    // blackScholesJS = new BlackScholesNUMJS();; //new BlackScholesJS(lookupTable);
     blackScholesNUMJS = new BlackScholesNUMJS();
 
 
-    // profile factors
-    let count = 0, intrinsicZeroCount = 0;
-    for (let [key, value] of lookupTable) {
-      // console.log(key + " is ", value);
-      if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBA === 0) {
-        intrinsicZeroCount++;
-      }
-      count++;
-    }
-    console.log("lookupTable size: ", count, "intrinsic zero count: ", intrinsicZeroCount, (intrinsicZeroCount / count * 100).toFixed(2) + "%");
+    // // profile factors
+    // let count = 0, intrinsicZeroCount = 0;
+    // for (let [key, value] of lookupTable) {
+    //   // console.log(key + " is ", value);
+    //   if (value.intrinsicPriceAA === 0 && value.intrinsicPriceBA === 0) {
+    //     intrinsicZeroCount++;
+    //   }
+    //   count++;
+    // }
+    // console.log("lookupTable size: ", count, "intrinsic zero count: ", intrinsicZeroCount, (intrinsicZeroCount / count * 100).toFixed(2) + "%");
 
-    // find min and max for parameters, 160 is hardcoded in contract
-    findMinAndMax(lookupTable, 160, true);
-    findMinAndMax(lookupTable, 160, false);
+    // // find min and max for parameters, 160 is hardcoded in contract
+    // findMinAndMax(lookupTable, 160, true);
+    // findMinAndMax(lookupTable, 160, false);
 
-    // console.log(curvedLookupTable);
-    findMinAndMax(curvedLookupTable, 1000000, true);
+    // // console.log(curvedLookupTable);
+    // findMinAndMax(curvedLookupTable, 1000000, true);
 
-    // find intrinsicPriceBAdiff NaN values in curved lookup table
-    const nanCurvedMap = new Map(
-      [...curvedLookupTable]
-      .filter(([k, v]) => isNaN(v.intrinsicPriceBAdiff))
-    );
-    console.log("-------- NaN curved values --------", nanCurvedMap.size);
-    console.log(nanCurvedMap);
+    // // find intrinsicPriceBAdiff NaN values in curved lookup table
+    // const nanCurvedMap = new Map(
+    //   [...curvedLookupTable]
+    //   .filter(([k, v]) => isNaN(v.intrinsicPriceBAdiff))
+    // );
+    // console.log("-------- NaN curved values --------", nanCurvedMap.size);
+    // console.log(nanCurvedMap);
 
-    // find intrinsicPriceBAdiff NaN values in curved lookup table
-    const nanMap = new Map(
-      [...lookupTable]
-      .filter(([k, v]) => v.intrinsicPriceBAdiff == null)
-    );
-    console.log("-------- null values --------", nanMap.size);
+    // // find intrinsicPriceBAdiff NaN values in curved lookup table
+    // const nanMap = new Map(
+    //   [...lookupTable]
+    //   .filter(([k, v]) => v.intrinsicPriceBAdiff == null)
+    // );
+    // console.log("-------- null values --------", nanMap.size);
 
-    // overwrite lookup table with curved lookup table
-    curvedLookupTable.forEach((value, key) => {
-      lookupTable.set(key, value);
-    });     
+    // // overwrite lookup table with curved lookup table
+    // curvedLookupTable.forEach((value, key) => {
+    //   lookupTable.set(key, value);
+    // });     
 
 
-    // reduce decimals to 6 decimals
-    lookupTable.forEach((value, key) => {
-      value.intrinsicPriceBAdiff =  Math.round(value.intrinsicPriceBAdiff * 1e6) / 1e6,
+    // // reduce decimals to 6 decimals
+    // lookupTable.forEach((value, key) => {
+    //   value.intrinsicPriceBAdiff =  Math.round(value.intrinsicPriceBAdiff * 1e6) / 1e6,
 
-      value.a1 = Math.round(value.a1 * 1e6) / 1e6,
-      value.b1 = Math.round(value.b1 * 1e6) / 1e6,
-      value.c1 = Math.round(value.c1 * 1e6) / 1e6,
-      value.a2diff = Math.round(value.a2diff * 1e6) / 1e6,
-      value.b2diff = Math.round(value.b2diff * 1e6) / 1e6,
-      value.c2diff = Math.round(value.c2diff * 1e6) / 1e6,
+    //   value.a1 = Math.round(value.a1 * 1e6) / 1e6,
+    //   value.b1 = Math.round(value.b1 * 1e6) / 1e6,
+    //   value.c1 = Math.round(value.c1 * 1e6) / 1e6,
+    //   value.a2diff = Math.round(value.a2diff * 1e6) / 1e6,
+    //   value.b2diff = Math.round(value.b2diff * 1e6) / 1e6,
+    //   value.c2diff = Math.round(value.c2diff * 1e6) / 1e6,
 
-      value.a3w = Math.round(value.a3w * 1e6) / 1e6,
-      value.b3w = Math.round(value.b3w * 1e6) / 1e6,
-      value.c3w = Math.round(value.c3w * 1e6) / 1e6,
-      value.a4wdiff = Math.round(value.a4wdiff * 1e6) / 1e6,
-      value.b4wdiff = Math.round(value.b4wdiff * 1e6) / 1e6,
-      value.c4wdiff = Math.round(value.c4wdiff * 1e6) / 1e6
-    });
+    //   value.a3w = Math.round(value.a3w * 1e6) / 1e6,
+    //   value.b3w = Math.round(value.b3w * 1e6) / 1e6,
+    //   value.c3w = Math.round(value.c3w * 1e6) / 1e6,
+    //   value.a4wdiff = Math.round(value.a4wdiff * 1e6) / 1e6,
+    //   value.b4wdiff = Math.round(value.b4wdiff * 1e6) / 1e6,
+    //   value.c4wdiff = Math.round(value.c4wdiff * 1e6) / 1e6
+    // });
   });
 
   duoTest && describe("deployment", function () {
@@ -657,6 +658,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           // }
         }
         //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it.only("testIf", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+        const x = 0.22;
+
+        const result = await blackScholesNUM.testIfMeasureGas(22);
+
+        // console.log("exp: " + expected.toFixed(8), "act JS: " + actualJS.toFixed(8), "act SOL: " + actualSOL.toFixed(8));
+
+        // const gas = await blackScholesNUM.expMeasureGas(tokens(x));
+        console.log("gas: ", result.toString());
       });
 
       it("exp negative", async function () {
