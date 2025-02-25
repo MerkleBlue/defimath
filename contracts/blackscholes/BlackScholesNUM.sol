@@ -12,19 +12,6 @@ contract BlackScholesNUM {
     // int256 internal constant E = 2_718281828459045235;                      // e
     // int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
 
-    // uint internal constant SQRT_2XPI = 2506628274631000502415765285;  // sqrt(2 * PI)
-    // uint internal constant SCALE = 1e18;
-    // uint internal constant SCALE_DOWN = 1e9;
-
-    // uint internal constant PRECISE_UNIT = 1e27;
-    // int internal constant STD_NORMAL_CDF_MINIMUM = -4 * int(PRECISE_UNIT);   // -4
-    // int internal constant STD_NORMAL_CDF_MAXIMUM = 10 * int(PRECISE_UNIT);   // +10
-    // int internal constant LOG2_E_SIGNED = 1_442695040888963407;       // log2(e)
-    // int internal constant HALF_SCALE_SIGNED = 5e17;                   // 0.5 * 10 ** 18
-    // int internal constant SCALE_SIGNED = 1e18;
-    // int internal constant SCALE_DOWN_SIGNED = 1e9;
-
-
     bool log = true;
 
 
