@@ -119,7 +119,6 @@ contract BlackScholesNUM {
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
             // fraction = (x - 1) / (x + 1)
             uint256 fraction = (x - 1e18) * 1e18 / (x + 1e18);
-            // if (log) { console.log("SOL fraction: %d", fraction); }
 
             uint256 fraction2 = fraction * fraction;
             uint256 fraction4 = fraction2 * fraction2 / 1e36;
