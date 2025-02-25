@@ -91,6 +91,14 @@ export class BlackScholesNUMJS {
 
   // x must be > 0, [0, 4]
   exp(x) {
+    // add limits to simulate solidity
+    if (x < -50) {
+      return 1e-18;
+    }
+    if (x > 50) {
+      return 1e18;
+    }
+
     // handle special case where x = 0
     if( x === 0) {
       return 1;
