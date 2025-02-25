@@ -78,27 +78,13 @@ contract BlackScholesNUM {
 
     function exp(uint256 x) public view returns (uint256) {
         unchecked {
-            // handle special case where x = 0
-            // if (x == 0) {
-            //     return 1e18;
-            // }
+            uint256 exp123 = 1;
 
-            // bool isPositive = x >= 0;
-            // if (!isPositive) {
-            //     x = -x;
-            // }
-
-            // int256 exp1 = 1e18;
-            // uint256 exp2 = 1e18;
-            // uint256 exp3 = 1e18;
-
-            // if (log) { console.log("SOL x / 32e18: %d", uint256(x / 32e18)); }
-
-            uint256 exp123 = getExp1Precalculated(x / 32e18);
-            x %= 32e18;
-            // if (log) { console.log("SOL exp123: %d", uint256(exp123)); }
-            // if (log) { console.log("SOL x: %d", uint256(x)); }
-
+            // x: [1, 32)
+            if (x >= 32e18) {
+                exp123 = getExp1Precalculated(x / 32e18);
+                x %= 32e18;
+            }
 
             // x: [1, 32)
             // if (x >= 1e18) {
@@ -107,22 +93,23 @@ contract BlackScholesNUM {
             //     exp2 = getExp2Precalculated(exponent);
             // }
             // {
-                // uint256 exponent2 = x / 1e18
+            if (x >= 1e18) {
                 exp123 *= getExp2Precalculated(x / 1e18);
                 x %= 1e18;
-
-            // }
+            } else {
+                exp123 *= 1e18;
+            }
 
             // if (log) { if (x >= 0) { console.log("x SOL: %d", uint256(x)); } else { console.log("x SOL: -%d", uint256(-x)); }}
 
 
             // x: [0.03125, 1)
-            // {
-                // uint256 exponent3 = ;
+            if (x >= 3125e13) {
                 exp123 *= getExp3Precalculated(x / 3125e13);
                 x %= 3125e13;
-
-            // }
+            } else {
+                exp123 *= 1e18;
+            }
 
             // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
             
@@ -207,17 +194,6 @@ contract BlackScholesNUM {
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
         unchecked {
             return 78962960182681 ** exponent;
-
-
-            // if (exponent >= 2) { // 2
-            //     return uint256(78962960182681) ** 2; //6235149080811616882949999999_999999999999999999;
-            // } else {
-            //     if (exponent >= 1) { // 1
-            //         return 78962960182681; // 78962960182680_695160978022635499, 78962960182680.695160978
-            //     } else {
-            //         return 1;
-            //     }
-            // }
         }
     }
 
