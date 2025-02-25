@@ -89,7 +89,6 @@ contract BlackScholesNUM {
 
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            //uint256 x12 = x / 1e12;
             uint256 denominator = ((3e18 - x) ** 2) + 3e36;
             x /= 1e6;
             uint256 numerator = ((x + 3e12) ** 2) + 3e24;
@@ -101,6 +100,36 @@ contract BlackScholesNUM {
             // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
 
             return exp123 * numerator / denominator; // using e ^ (a + b) = e ^ a * e ^ b
+        }
+    }
+
+    // x is in range [1, 16] 
+    function ln(uint256 x) public pure returns (uint256) {
+        unchecked {
+            uint256 multiplier;
+            // if (log) { console.log("--- SOL start x: %d", x); }
+            // x: [1, 16)
+            if (x >= 1_090507732665257659) {
+                uint256 divider;
+                (divider, multiplier) = getLnPrecalculated(x);
+                // if (log) { console.log("SOL divider: %d", divider); }
+                x *= 1e18;
+                x /= divider;
+            }
+
+            // we use Pade approximation for ln(x)
+            // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
+            uint256 numerator = x - 1e18;
+            uint256 denominator = x + 1e18;
+            uint256 fraction = numerator * 1e18 / denominator;
+            // if (log) { console.log("SOL fraction: %d", fraction); }
+
+            uint256 fraction2 = fraction ** 2 / 1e18;
+            uint256 fraction4 = fraction2 ** 2 / 1e18;
+            uint256 fraction6 = fraction2 * fraction4 / 1e18;
+            uint256 naturalLog = fraction * (1e36 + 333333333333333334 * fraction2 + 200000000000000000 * fraction4 + 142857142857142857 * fraction6);
+            
+            return 2 * naturalLog / 1e36 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
         }
     }
 
@@ -384,6 +413,139 @@ contract BlackScholesNUM {
         }
     }
 
+    function getLnPrecalculated(uint256 exponent) private pure returns (uint256, uint256) {
+        // use >=, fastest
+        unchecked {
+            if (exponent >= 4e18) { // 16
+                if (exponent >= 8e18) { // 24
+                    if (exponent >= 11_313708498984760395) { // 28
+                        if (exponent >= 13_454342644059432688) { // 30
+                            if (exponent >= 14_672064691274739708) { // 31
+                                return (14_672064691274739708, 31);
+                            } else {
+                                return (13_454342644059432688, 30);
+                            }
+                        } else {
+                            if (exponent >= 12_337686603263526589) { // 29
+                                return (12_337686603263526589, 29);
+                            } else {
+                                return (11_313708498984760395, 28);
+                            }
+                        }
+                    } else {
+                        if (exponent >= 9_513656920021768534) { // 26
+                            if (exponent >= 10_374716437208077327) { // 27
+                                return (10_374716437208077327, 27);
+                            } else {
+                                return (9_513656920021768534, 26);
+                            }
+                        } else {
+                            if (exponent >= 8_724061861322061274) { // 25
+                                return (8_724061861322061274, 25);
+                            } else {
+                                return (8e18, 24);
+                            }
+                        }
+                    }
+                } else {
+                    if (exponent >= 5_656854249492380195) { // 20
+                        if (exponent >= 6_727171322029716344) { // 22
+                            if (exponent >= 7_336032345637369854) { // 23
+                                return (7_336032345637369854, 23);
+                            } else {
+                                return (6_727171322029716344, 22);
+                            }
+                        } else {
+                            if (exponent >= 6_168843301631763294) { // 21
+                                return (6_168843301631763294, 21);
+                            } else {
+                                return (5_656854249492380195, 20);
+                            }
+                        }
+                    } else {
+                        if (exponent >= 4_756828460010884267) { // 18
+                            if (exponent >= 5_187358218604038664) { // 19
+                                return (5_187358218604038664, 19);
+                            } else {
+                                return (4_756828460010884267, 18);
+                            }
+                        } else {
+                            if (exponent >= 4_362030930661030637) { // 17
+                                return (4_362030930661030637, 17);
+                            } else {
+                                return (4e18, 16);
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (exponent >= 2e18) { // 8
+                    if (exponent >= 2_828427124746190098) { // 12
+                        if (exponent >= 3_363585661014858172) { // 14
+                            if (exponent >= 3_668016172818684927) { // 15
+                                return (3_668016172818684927, 15);
+                            } else {
+                                return (3_363585661014858172, 14);
+                            }
+                        } else {
+                            if (exponent >= 3_084421650815881647) { // 13
+                                return (3_084421650815881647, 13);
+                            } else {
+                                return (2_828427124746190098, 12);
+                            }
+                        }
+                    } else {
+                        if (exponent >= 2_378414230005442133) { // 10
+                            if (exponent >= 2_593679109302019332) { // 11
+                                return (2_593679109302019332, 11);
+                            } else {
+                                return (2_378414230005442133, 10);
+                            }
+                        } else {
+                            if (exponent >= 2_181015465330515318) { // 9
+                                return (2_181015465330515318, 9);
+                            } else {
+                                return (2e18, 8);
+                            }
+                        }
+                    }
+                } else {
+                    if (exponent >= 1_414213562373095049) { // 4
+                        if (exponent >= 1_681792830507429086) { // 6
+                            if (exponent >= 1_834008086409342464) { // 7
+                                return (1_834008086409342464, 7);
+                            } else {
+                                return (1_681792830507429086, 6);
+                            }
+                        } else {
+                            if (exponent >= 1_542210825407940824) { // 5
+                                return (1_542210825407940824, 5);
+                            } else {
+                                return (1_414213562373095049, 4);
+                            }
+                        }
+                    } else {
+                        if (exponent >= 1_189207115002721067) { // 2
+                            if (exponent >= 1_296839554651009666) { // 3
+                                return (1_296839554651009666, 3);
+                            } else {
+                                return (1_189207115002721067, 2);
+                            }
+                        } else {
+                            // there is no 0
+                            return (1_090507732665257659, 1);
+                            // if (exponent >= 1) { // 1
+                            //     return 1_031743407499103;
+                            // } else {
+                            //     return 1e15;
+                            // }
+                        }
+                    }
+                }
+            } 
+        }
+    }
+
 
     // gas 592 when x > 0.05
     // function expPosNeg(int256 x) public pure returns (uint256) {
@@ -480,15 +642,21 @@ contract BlackScholesNUM {
 
         result = exp(x);
 
-                // if (0 <= x) {
-                //     exp(x);
-                //     // uint256[4] memory exp1s;
-                //     // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
-                // }
-
         endGas = gasleft();
 
+        return startGas - endGas;
+    }
 
+    function lnMeasureGas(uint256 x) public view returns (uint256) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        result = ln(x);
+
+        endGas = gasleft();
+        
         return startGas - endGas;
     }
 

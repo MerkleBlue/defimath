@@ -158,7 +158,7 @@ export class BlackScholesNUMJS {
     }
 
     const LN_1_20 = 0.086643397569993; // ln(1.090507732665258)
-    const ROOT_32_OF_16 = 1.090507732665258;
+    const ROOT_32_OF_16 = 1.090507732665257659;
     let multiplier = 0;
 
     const isLargerThan1 = x > 1;
@@ -178,6 +178,13 @@ export class BlackScholesNUMJS {
     const numerator = x - 1;
     const denominator = x + 1;
     const fraction = numerator / denominator;
+    // console.log("JS fraction:", fraction);
+    // const fraction2 = fraction ** 2;
+    // const fraction4 = fraction ** 4;
+    // const fraction6 = fraction ** 6;
+    // console.log("JS fraction2:", fraction2);
+    // console.log("JS fraction4:", fraction4);
+    // console.log("JS fraction6:", fraction6);
     const naturalLog = fraction * (1 + 1/3 * fraction ** 2 + 1/5 * fraction ** 4 + 1/7 * fraction ** 6);
     
     const finalLN = naturalLog * 2 + LN_1_20 * multiplier; // using ln(a * b) = ln(a) + ln(b)

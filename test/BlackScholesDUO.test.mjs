@@ -522,7 +522,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   });
 
   describe("numerical", function () {
-    describe.only("exp", function () {
+    describe("exp", function () {
       it("exp positive single x < 0.0325 value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
 
@@ -681,29 +681,74 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe.only("ln", function () {
-      it("ln larger than 1", async function () {
-        for (let ratio = 1; ratio < 5; ratio += 0.001) { 
-          const expected = Math.log(ratio);
-          const actualJS = blackScholesNUMJS.ln(ratio);
+      // todo: test all limits like 1.090507732665257659
+      it("ln [1, 1.0905]", async function () {
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          const expected = Math.log(x);
+          const actualJS = blackScholesNUMJS.ln(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
           // assert.isBelow(absError, 0.00000001);
-          assert.isBelow(relError, 0.000000000160); // 1e-12 
+          assert.isBelow(relError, 0.000000000150); // 1e-12 
+
+          if (duoTest) {
+            const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+            const actualSOL = (await blackScholesNUM.ln(tokens(x))).toString() / 1e18;
+            const absError = Math.abs(actualSOL - expected);
+            const relError = expected !== 0 ? absError / expected * 100 : 0;
+            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+            // assert.isBelow(absError, 0.00000001);
+            assert.isBelow(relError, 0.000000000150); // 1e-12 
+
+            totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x)));
+            count++;
+          }
         }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("ln smaller than 1", async function () {
-        for (let ratio = 1; ratio < 5; ratio += 0.001) { 
-          const expected = Math.log(1 / ratio);
-          const actualJS = blackScholesNUMJS.ln(1 / ratio);
+      it("ln [1.0905, 16]", async function () {
+        let totalGas = 0, count = 0;
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          const expected = Math.log(x);
+          const actualJS = blackScholesNUMJS.ln(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
           // assert.isBelow(absError, 0.00000001);
-          assert.isBelow(relError, 0.000000000160); // 1e-12 
+          assert.isBelow(relError, 0.000000000150); // 1e-12 
+
+          if (duoTest) {
+            const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+            const actualSOL = (await blackScholesNUM.ln(tokens(x))).toString() / 1e18;
+            const absError = Math.abs(actualSOL - expected);
+            const relError = expected !== 0 ? absError / expected * 100 : 0;
+            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
+            // assert.isBelow(absError, 0.00000001);
+            assert.isBelow(relError, 0.000000000150); // 1e-12 
+
+            totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x)));
+            count++;
+          }
         }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
+
+      // it("ln smaller than 1", async function () {
+      //   for (let x = 1; x < 5; x += 0.001) { 
+      //     const expected = Math.log(1 / x);
+      //     const actualJS = blackScholesNUMJS.ln(1 / x);
+      //     const absError = Math.abs(actualJS - expected);
+      //     const relError = expected !== 0 ? absError / expected * 100 : 0;
+      //     // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+      //     // assert.isBelow(absError, 0.00000001);
+      //     assert.isBelow(relError, 0.000000000160); // 1e-12 
+      //   }
+      // });
     });
 
     it("getFuturePrice", async function () {
