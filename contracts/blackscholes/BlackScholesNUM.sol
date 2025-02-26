@@ -131,22 +131,19 @@ contract BlackScholesNUM {
 
     function sqrt(uint256 x) public pure returns (uint256) {
         unchecked {
-            int256 intX = int256(x);
-            intX -= 1e18;
-            // int256 result = 
-            int256 x2 = intX * intX / 1e18;
-            int256 x3 = x2 * intX / 1e18;
-            int256 x4 = x2 * x2 / 1e18;
-            int256 x5 = x3 * x2 / 1e18;
-            int256 x6 = x3 * x3 / 1e18;
-            int256 x7 = x4 * x3 / 1e18;
+            x -= 1e18;
+            uint256 x2 = x * x / 1e18;
+            uint256 x3 = x2 * x / 1e18;
+            uint256 x4 = x2 * x2 / 1e18;
+            uint256 x5 = x3 * x2 / 1e18;
+            uint256 x6 = x3 * x3 / 1e18;
+            uint256 x7 = x4 * x3 / 1e18;
             // int256 x8 = x4 * x4 / 1e18;
 
-            int256 result = 1e18 + intX / 2 - x2 / 8 + 3 * x3 / 48 - 15 * x4 / 384 + 105 * x5 / 3840 - 945 * x6 / 46080 + 10395 * x7 / 645120; // - 135135 * x8 / 10321920;
+            return 1e18 + x / 2 - x2 / 8 + 3 * x3 / 48 - 15 * x4 / 384 + 105 * x5 / 3840 - 945 * x6 / 46080 + 10395 * x7 / 645120; // - 135135 * x8 / 10321920;
 
 
             // const result = 1 + x/2 - 1/8 * x ** 2 + 3 / 48 * x ** 3 - 15 / 384 * x ** 4 + 105 / 3840 * x ** 5 - 945 / 46080 * x ** 6 + 10395 / 645120 * x ** 7 - 135135 / 10321920 * x ** 8;
-            return uint256(result);
         }
     }
 
