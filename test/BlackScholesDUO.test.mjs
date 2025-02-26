@@ -743,7 +743,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       // todo: test all limits like 1.04427
       it("sqrt [1, 1.04427]", async function () {
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.0442737824274138403; x += 0.0001) { // 1.03125
+        for (let x = 1; x < 1.0442737824274138403; x += 0.0001) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesNUMJS.sqrt(x);
           const absError = Math.abs(actualJS - expected);

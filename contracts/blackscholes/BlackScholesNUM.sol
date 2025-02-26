@@ -134,9 +134,9 @@ contract BlackScholesNUM {
             uint256 exp123 = 1e18;
 
             if(x >= 1_044273782427413840) {
-                uint256 divider;
-                (divider, exp123) = getSqrt3Precalculated(x);
-                x = x * 1e18 / divider;
+                exp123 = getSqrt3Precalculated(x);
+                // x = x * 1e18 / divider;
+                x = x * 1e36 / (exp123 * exp123);
             }
 
             // x: [1, 1.03125)
@@ -572,7 +572,7 @@ contract BlackScholesNUM {
         }
     }
 
-    function getSqrt3Precalculated(uint256 exponent) private pure returns (uint256, uint256) {
+    function getSqrt3Precalculated(uint256 exponent) private pure returns (uint256) {
         // use >=, fastest
 
         // base is e
@@ -581,29 +581,29 @@ contract BlackScholesNUM {
                 if (exponent >= 1_681792830507429086) { // 12
                     if (exponent >= 1_834008086409342464) { // 14
                         if (exponent >= 1_915206561397147294) { // 15
-                            return (1_915206561397147294, 1_383909881963831955);
+                            return 1_383909881963831955;
                         } else {
-                            return (1_834008086409342464, 1_354255546936892728);
+                            return 1_354255546936892728;
                         }
                     } else {
                         if (exponent >= 1_756252160373299483) { // 13
-                            return (1_756252160373299483, 1_325236643159741295);
+                            return 1_325236643159741295;
                         } else {
-                            return (1_681792830507429086, 1_296839554651009666);
+                            return 1_296839554651009666;
                         }
                     }
                 } else {
                     if (exponent >= 1_542210825407940824) { // 10
                         if (exponent >= 1_610490331949254308) { // 11
-                            return (1_610490331949254308, 1_269050957191733223);
+                            return 1_269050957191733223;
                         } else {
-                            return (1_542210825407940824, 1_241857812073484049);
+                            return 1_241857812073484049;
                         }
                     } else {
                         if (exponent >= 1_476826145939499311) { // 9
-                            return (1_476826145939499311, 1_215247359980468879);
+                            return 1_215247359980468879;
                         } else {
-                            return (1_414213562373095049, 1_189207115002721067);
+                            return 1_189207115002721067;
                         }
                     }
                 }
@@ -611,30 +611,30 @@ contract BlackScholesNUM {
                 if (exponent >= 1_189207115002721067) { // 4
                     if (exponent >= 1_296839554651009666) { // 6
                         if (exponent >= 1_354255546936892728) { // 7
-                            return (1_354255546936892728, 1_163724858777577514);
+                            return 1_163724858777577514;
                         } else {
-                            return (1_296839554651009666, 1_138788634756691654);
+                            return 1_138788634756691654;
                         }
                     } else {
                         if (exponent >= 1_241857812073484049) { // 5
-                            return (1_241857812073484049, 1_114386742595892536);
+                            return 1_114386742595892536;
                         } else {
-                            return (1_189207115002721067, 1_090507732665257659);
+                            return 1_090507732665257659;
                         }
                     }
                 } else {
                     if (exponent >= 1_090507732665257659) { // 2
                         if (exponent >= 1_138788634756691654) { // 3
-                            return (1_138788634756691654, 1_067140400676823618);
+                            return 1_067140400676823618;
                         } else {
-                            return (1_090507732665257659, 1_044273782427413840);
+                            return 1_044273782427413840;
                         }
                     } else {
                         // there is no 0
                         if (exponent >= 1_044273782427413840) { // 1
-                            return (1_044273782427413840, 1_021897148654116678);
+                            return 1_021897148654116678;
                         } else {
-                            return (1e18, 1e18);
+                            return 1e18;
                         }
                     }
                 }
