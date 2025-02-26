@@ -192,6 +192,14 @@ export class BlackScholesNUMJS {
     return isLargerThan1 ? finalLN : -finalLN;
   };
 
+  // Maclaurin series
+  // x: [1, 1.03125]
+  sqrt(x) {
+    x = x - 1;
+    const result = 1 + x/2 - 1/8 * x ** 2 + 3 / 48 * x ** 3 - 15 / 384 * x ** 4 + 105 / 3840 * x ** 5 - 945 / 46080 * x ** 6 + 10395 / 645120 * x ** 7 - 135135 / 10321920 * x ** 8;// + 2027025 / 185794560 * x ** 9 - 34459425 / 3715891200 * x ** 10 + 654729075 / 81749606400 * x ** 11 - 13749310575 / 1961511552000 * x ** 12 + 316234143225 / 50128896076800 * x ** 13 - 7905853580625 / 1371195958095360 * x ** 14 + 213458046676875 / 39346408075264000 * x ** 15; 
+    return result;
+  }
+
   getD1(spot, strike, timeToExpiryYear, vol, rate) {
     const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.ln(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
 
