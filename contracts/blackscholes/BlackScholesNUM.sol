@@ -141,16 +141,16 @@ contract BlackScholesNUM {
 
             // x: [1, 1.03125)
             x -= 1e18;
-            uint256 x2 = x * x / 1e18;
+            uint256 x2 = x  * x / 1e18;
             uint256 x3 = x2 * x / 1e18;
-            uint256 x4 = x2 * x2 / 1e18;
-            uint256 x5 = x3 * x2 / 1e18;
-            uint256 x6 = x3 * x3 / 1e18;
-            uint256 x7 = x4 * x3 / 1e18;
-            // int256 x8 = x4 * x4 / 1e18;
+            uint256 x4 = x3 * x / 1e18;
+            // uint256 x5 = x3 * x2 / 1e18;
+            // uint256 x6 = x3 * x3 / 1e18;
+            // uint256 x7 = x3 * x4 / 1e18;
+            // // int256 x8 = x4 * x4 / 1e18;
 
-            uint256 result = 1e18 + x / 2 - x2 / 8 + 3 * x3 / 48 - 15 * x4 / 384;
-            result += 105 * x5 / 3840 - 945 * x6 / 46080 + 10395 * x7 / 645120; // - 135135 * x8 / 10321920;
+            uint256 result = 1e18 + x / 2 - x2 / 8 + 3 * x3 / 48 - 15 * x4 / 384 + x3 * (105 * x2 / 3840 - 945 * x3 / 46080 + 10395 * x4 / 645120) / 1e18;
+            // result +=  // - 135135 * x8 / 10321920;
 
             return exp123 * result / 1e18;
 
