@@ -135,7 +135,7 @@ contract BlackScholesNUM {
             uint256 exp123 = 1e18;
 
 
-            if (x >= 100e18) {
+            if (x >= 1e20) {
                 zeroMultiplier = getSqrtZerosPrecompute(x);
                 x /= (zeroMultiplier * zeroMultiplier);
             }
@@ -853,19 +853,34 @@ contract BlackScholesNUM {
 
     function getSqrtZerosPrecompute(uint256 x) private pure returns (uint256) {
         // we only need up to a 100 million, which is 1e26
+        // return 10; 
+
+
+
         unchecked {
-            if (x >= 10000e18) { // 4
-                if (x >= 1000000e18) { // 6
+
+            // if (x >= 1e24) { // 8 + 18
+            //     return 1000;
+            // }
+
+            // if (x >= 1e22) { // 4 + 18
+            //     return 100;
+            // } else {
+            //     return 10;
+            // }
+
+            // return 100 * (x / 1e25) / 10 + 10 * (x >= 1e24) + 1 * (x >= 1e26);
+
+
+            if (x >= 1e22) { // 4 + 18
+                if (x >= 1e24) { // 6
                     return 1000;
                 } else {
                     return 100;
                 }
             } else {
-                if (x >= 100e8) { // 2
-                    return 10;
-                } else {
-                    return 1;
-                }
+                // x is always >= 100 
+                return 10;
             }
         }
     }
