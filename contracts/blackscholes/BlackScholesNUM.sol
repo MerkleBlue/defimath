@@ -135,7 +135,7 @@ contract BlackScholesNUM {
             uint256 zeros = 1;
             uint256 sqrtPrecompute = 1e18;
 
-            // x: [100, 1e8) use scalability rule: sqrt(1200) = 10 * sqrt(12);
+            // x: [100, 1e8) use scalability rule: sqrt(1234) = 10 * sqrt(12.34);
             if (x >= 1e20) {
                 zeros = getSqrtZerosPrecompute(x);
                 x /= zeros * zeros;
@@ -149,7 +149,7 @@ contract BlackScholesNUM {
 
             // x: [1, 1.076] use Maclaurin series
             x -= 1e18;
-            uint256 x2 = x  * x / 1e18;
+            uint256 x2 =  x * x / 1e18;
             uint256 x3 = x2 * x / 1e18;
             uint256 x4 = x3 * x / 1e18;
             uint256 sqrtAprox = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);

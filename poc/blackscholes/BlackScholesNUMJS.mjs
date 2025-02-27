@@ -199,7 +199,7 @@ export class BlackScholesNUMJS {
     let zeros = 1;
     let sqrtPrecompute = 1;
 
-    // x: [100, 1e8) use scalability rule: sqrt(1200) = 10 * sqrt(12);
+    // x: [100, 1e8) use scalability rule: sqrt(1234) = 10 * sqrt(12.34);
     if (x >= 100) {
       zeros = this.getSqrtZerosPrecompute(x);
       x /= zeros ** 2;
