@@ -192,12 +192,30 @@ export class BlackScholesNUMJS {
     return isLargerThan1 ? finalLN : -finalLN;
   };
 
-  // Maclaurin series
-  // x: [1, 1.03125]
+
+  // x: [1, 1e8]
   sqrt(x) {
-    x = x - 1;
-    const result = 1 + x/2 - 1/8 * x ** 2 + 3 / 48 * x ** 3 - 15 / 384 * x ** 4 + 105 / 3840 * x ** 5 - 945 / 46080 * x ** 6 + 10395 / 645120 * x ** 7 - 135135 / 10321920 * x ** 8;// + 2027025 / 185794560 * x ** 9 - 34459425 / 3715891200 * x ** 10 + 654729075 / 81749606400 * x ** 11 - 13749310575 / 1961511552000 * x ** 12 + 316234143225 / 50128896076800 * x ** 13 - 7905853580625 / 1371195958095360 * x ** 14 + 213458046676875 / 39346408075264000 * x ** 15; 
-    return result;
+    const ROOT_64_OF_100 = 1.074607828321317497;
+    let zeros = 1;
+    let exp123 = 1;
+
+    // x: [100, 1e8) use scalability rule: sqrt(1200) = 10 * sqrt(12);
+    if (x >= 100) {
+      zeros = this.getSqrtZerosPrecompute(x);
+      x /= zeros ** 2;
+    }
+
+    // x: [1.076, 100) use precomputed values
+    if (x >= ROOT_64_OF_100) {
+      exp123 = Math.sqrt(ROOT_64_OF_100 ** Math.floor(this.getBaseLog(ROOT_64_OF_100, x)));
+      x /= exp123 ** 2;
+    }
+
+    // x: [1, 1.076] use Maclaurin series
+    x -= 1;
+    const result = 1 + x/2 - 1/8 * x ** 2 + 3/48 * x ** 3 - 15/384 * x ** 4 + 105/3840 * x ** 5 - 945/46080 * x ** 6 + 10395/645120 * x ** 7 - 135135/10321920 * x ** 8;// + 2027025 / 185794560 * x ** 9 - 34459425 / 3715891200 * x ** 10 + 654729075 / 81749606400 * x ** 11 - 13749310575 / 1961511552000 * x ** 12 + 316234143225 / 50128896076800 * x ** 13 - 7905853580625 / 1371195958095360 * x ** 14 + 213458046676875 / 39346408075264000 * x ** 15; 
+    
+    return result * exp123 * zeros;
   }
 
   getD1(spot, strike, timeToExpiryYear, vol, rate) {
@@ -232,5 +250,18 @@ export class BlackScholesNUMJS {
   // helper function used only for ln(x) calculation, used only integers
   getBaseLog(x, y) {
     return Math.log(y) / Math.log(x);
+  }
+
+  getSqrtZerosPrecompute(x) {
+    if (x >= 1e4) { // 4 + 18
+      if (x >= 1e6) { // 6 + 18
+          return 1000;
+      } else {
+          return 100;
+      }
+    }
+  
+    // x is always >= 100 
+    return 10;
   }
 }
