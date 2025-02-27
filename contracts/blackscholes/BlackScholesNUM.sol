@@ -855,10 +855,9 @@ contract BlackScholesNUM {
         // we only need up to a 100 million, which is 1e26
         // return 10; 
 
-
-
         unchecked {
 
+            // Alternative way, cheaper for x > 1e6
             // if (x >= 1e24) { // 8 + 18
             //     return 1000;
             // }
@@ -869,19 +868,20 @@ contract BlackScholesNUM {
             //     return 10;
             // }
 
-            // return 100 * (x / 1e25) / 10 + 10 * (x >= 1e24) + 1 * (x >= 1e26);
-
-
             if (x >= 1e22) { // 4 + 18
-                if (x >= 1e24) { // 6
+                if (x >= 1e24) { // 6 + 18
                     return 1000;
                 } else {
                     return 100;
                 }
-            } else {
-                // x is always >= 100 
-                return 10;
             }
+            // } else {
+            //     // x is always >= 100 
+            //     return 10;
+            // }
+
+            // x is always >= 100 
+            return 10;
         }
     }
 
