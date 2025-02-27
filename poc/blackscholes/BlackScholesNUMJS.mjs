@@ -92,14 +92,14 @@ export class BlackScholesNUMJS {
   // x: [-50, 50]
   exp(x) {
     if (x >= 0) {
-      return this.expUpper(x);
+      return this.expPositive(x);
     }
 
-    return 1 / this.expUpper(x);
+    return 1 / this.expPositive(-x);
   };
 
-  // x must be > 0, [0, 4]
-  expUpper(x) {
+  // x: [0, 50]
+  expPositive(x) {
     // add limits to simulate solidity
     if (x > 50) {
       return 1e18;

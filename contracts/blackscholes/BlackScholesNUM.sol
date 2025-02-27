@@ -59,7 +59,11 @@ contract BlackScholesNUM {
     //     }
     // }
 
-    function exp(uint256 x) public pure returns (uint256) {
+    function expNegative(uint256 x) public pure returns (uint256) {
+        return 1e36 / expPositive(x);
+    }
+
+    function expPositive(uint256 x) public pure returns (uint256) {
         unchecked {
             uint256 exp123 = 1;
 
@@ -92,12 +96,6 @@ contract BlackScholesNUM {
             uint256 denominator = ((3e18 - x) ** 2) + 3e36;
             x /= 1e6;
             uint256 numerator = ((x + 3e12) ** 2) + 3e24;
-
-
-            // if (log) { if (exp2 >= 0) { console.log("exp2 SOL: %d", uint256(exp2)); } else { console.log("exp2 SOL: -%d", uint256(-exp2)); }}
-            // if (log) { if (exp3 >= 0) { console.log("exp3 SOL: %d", uint256(exp3)); } else { console.log("exp3 SOL: -%d", uint256(-exp3)); }}
-            // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
-            // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
 
             return exp123 * numerator / denominator; // using e ^ (a + b) = e ^ a * e ^ b
         }
@@ -968,7 +966,7 @@ contract BlackScholesNUM {
         uint256 endGas;
         startGas = gasleft();
 
-        result = exp(x);
+        result = expPositive(x);
 
         endGas = gasleft();
 
