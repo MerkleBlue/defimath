@@ -129,13 +129,12 @@ contract BlackScholesNUM {
         }
     }
 
-    function sqrt(uint256 x) public pure returns (uint256) {
+    function sqrt(uint256 x) public view returns (uint256) {
         unchecked {
             uint256 exp123 = 1e18;
 
-            if(x >= 1_044273782427413840) {
+            if (x >= 1_044273782427413840) {
                 exp123 = getSqrt3Precalculated(x);
-                // x = x * 1e18 / divider;
                 x = x * 1e36 / (exp123 * exp123);
             }
 
@@ -149,10 +148,21 @@ contract BlackScholesNUM {
             // uint256 x7 = x3 * x4 / 1e18;
             // // int256 x8 = x4 * x4 / 1e18;
 
-            uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120);
+            // console.log("x5 mul: ", (2734375e10 * x) / 1e18 * x4);
+            // console.log("x5 div: ", x4 * (105 * x / 3840) );
 
+            // console.log("x6 mul: ", (205078125e8 * x2) / 1e18 * x4);
+            // console.log("x6 div: ", x4 * (945 * x2 / 46080) );
+
+            // console.log("x7 mul: ", (1611328125e7 * x3) / 1e18 * x4);
+            // console.log("x7 div: ", x4 * (10395 * x3 / 645120) );
+
+            uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x3 * (105 * x2 / 3840 - 945 * x3 / 46080 + 10395 * x4 / 645120);            
             return exp123 * result / 1e36;
 
+            // this is 10 gas faster, but maybe there are overflows
+            // uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120);
+            // return exp123 * result / 1e54;
 
             // const result = 1 + x/2 - 1/8 * x^2 + 3/48 * x^3 - 15/384 * x^4 + 105/3840 * x^5 - 945/46080 * x^6 + 10395/645120 * x^7 - 135135/10321920 * x^8;
         }
