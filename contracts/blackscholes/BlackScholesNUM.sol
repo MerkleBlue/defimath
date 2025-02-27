@@ -131,7 +131,14 @@ contract BlackScholesNUM {
 
     function sqrt(uint256 x) public pure returns (uint256) {
         unchecked {
+            uint256 zeroMultiplier = 1;
             uint256 exp123 = 1e18;
+
+
+            if (x >= 100e18) {
+                zeroMultiplier = getSqrtZerosPrecompute(x);
+                x /= (zeroMultiplier * zeroMultiplier);
+            }
 
             if (x >= 1_074607828321317497) {
                 exp123 = getSqrt3Precalculated(x);
@@ -158,7 +165,7 @@ contract BlackScholesNUM {
             // console.log("x7 div: ", x4 * (10395 * x3 / 645120) );
 
             uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);            
-            return exp123 * result / 1e36;
+            return exp123 * result * zeroMultiplier / 1e36;
 
             // this is 10 gas faster, but maybe there are overflows
             // uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120);
@@ -830,7 +837,7 @@ contract BlackScholesNUM {
                                 }
                             } else {
                                 // there is no 0
-                                return 1_0366329284376979973;
+                                return 1_036632928437697997;
                                 // if (exponent >= 1) { // 1
                                 //     return 1_031743407499103;
                                 // } else {
@@ -840,6 +847,25 @@ contract BlackScholesNUM {
                         }
                     }
                 } 
+            }
+        }
+    }
+
+    function getSqrtZerosPrecompute(uint256 x) private pure returns (uint256) {
+        // we only need up to a 100 million, which is 1e26
+        unchecked {
+            if (x >= 10000e18) { // 4
+                if (x >= 1000000e18) { // 6
+                    return 1000;
+                } else {
+                    return 100;
+                }
+            } else {
+                if (x >= 100e8) { // 2
+                    return 10;
+                } else {
+                    return 1;
+                }
             }
         }
     }
