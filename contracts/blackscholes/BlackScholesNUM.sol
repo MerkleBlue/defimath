@@ -139,8 +139,18 @@ contract BlackScholesNUM {
         }
     }
 
-    // x: [1, 1e8]
     function sqrt(uint256 x) public pure returns (uint256) {
+        unchecked {
+            if (x >= 1e18) {
+                return sqrtUpper(x);
+            }
+
+            return 1e36 / sqrtUpper(1e36 / x);
+        }
+    }
+
+    // x: [1, 1e8]
+    function sqrtUpper(uint256 x) public pure returns (uint256) {
         unchecked {
             uint256 zeros = 1;
             uint256 sqrtPrecompute = 1e18;
@@ -1004,7 +1014,7 @@ contract BlackScholesNUM {
         uint256 endGas;
         startGas = gasleft();
 
-        result = sqrt(x);
+        result = sqrtUpper(x);
 
         endGas = gasleft();
         

@@ -192,13 +192,12 @@ export class BlackScholesNUMJS {
     return isLargerThan1 ? finalLN : -finalLN;
   };
 
-
   sqrt(x) {
     if (x >= 1) {
-      return this.sqrt(x);
+      return this.sqrtUpper(x);
     }
 
-    return 1 / this.sqrt(1 / x);
+    return 1 / this.sqrtUpper(1 / x);
   }
 
   // x: [1, 1e8]

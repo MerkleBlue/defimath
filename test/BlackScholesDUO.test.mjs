@@ -661,7 +661,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("ln", function () {
+    describe("ln", function () {
       // todo: test all limits like 1.090507732665257659
       it("ln upper [1, 1.0905]", async function () {
         let totalGas = 0, count = 0;
@@ -742,13 +742,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("sqrt", function () {
+    describe("sqrt", function () {
       // todo: test all limits like 1.04427
-      it("sqrt [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
+      it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1.074607828321317497; x += 0.0001) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesNUMJS.sqrt(x);
+          const actualJS = blackScholesNUMJS.sqrtUpper(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
@@ -770,11 +770,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [1.04427, 100)", async function () {
+      it("sqrt upper [1.04427, 100)", async function () {
         let totalGas = 0, count = 0;
         for (let x = 1.074607828321317497; x < 100; x += 0.1) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesNUMJS.sqrt(x);
+          const actualJS = blackScholesNUMJS.sqrtUpper(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
@@ -796,11 +796,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [100, 10000)", async function () {
+      it("sqrt upper [100, 10000)", async function () {
         let totalGas = 0, count = 0;
         for (let x = 100; x < 10000; x += 9.89) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesNUMJS.sqrt(x);
+          const actualJS = blackScholesNUMJS.sqrtUpper(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
@@ -822,11 +822,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [1e4, 1e6)", async function () {
+      it("sqrt upper [1e4, 1e6)", async function () {
         let totalGas = 0, count = 0;
         for (let x = 1e4; x < 1e6; x += 1e3) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesNUMJS.sqrt(x);
+          const actualJS = blackScholesNUMJS.sqrtUpper(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
@@ -848,11 +848,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [1e6, 1e8)", async function () {
+      it("sqrt upper [1e6, 1e8)", async function () {
         let totalGas = 0, count = 0;
         for (let x = 1e6; x < 1e8; x += 1e5) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesNUMJS.sqrt(x);
+          const actualJS = blackScholesNUMJS.sqrtUpper(x);
           const absError = Math.abs(actualJS - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
@@ -872,6 +872,86 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt lower [1e-6, 1)", async function () { // todo: test better
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1000000; x += 1234) {
+          const expected = Math.sqrt(1 / x);
+          const actualJS = blackScholesNUMJS.sqrt(1 / x);
+          const absError = Math.abs(actualJS - expected);
+          const relError = expected !== 0 ? absError / expected * 100 : 0;
+          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+          assert.isBelow(relError, 0.000000000072); // 1e-12 
+
+          if (duoTest) {
+            const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+            const actualSOL = (await blackScholesNUM.sqrt(tokens(1 / x))).toString() / 1e18;
+            const absError = Math.abs(actualSOL - expected);
+            const relError = expected !== 0 ? absError / expected * 100 : 0;
+            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+            assert.isBelow(relError, 0.00000000080); // 1e-12 
+
+            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+            count++;
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe.only("d1", function () {
+      // todo: test all limits like 1.04427
+      it("d1 multiple", async function () {
+
+        const strikes = [500, 800, 1000, 1200, 1500];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0, 0.05];
+
+        for (let strike of strikes) {
+          for (let time of times) {
+            for (let vol of vols) {
+              for (let rate of rates) {
+                const t = time / 365;
+                const expected = bs.getW(1000, strike, t / 365, vol, rate);
+                const actualJS = blackScholesNUMJS.getD1(1000, strike, t / 365, vol, rate);
+                const absError = Math.abs(actualJS - expected);
+                const relError = expected !== 0 ? absError / expected * 100 : 0;
+                // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+                assert.isBelow(absError, 0.00000040);
+                assert.isBelow(relError, 0.00000006);
+              }
+            }
+          }
+        }
+
+          // for (let i = 0; i < 200; i++) { 
+          //   const t = (10 + i) / 365;
+          //   const expected = bs.getW(1000, 1000 - i, t, 0.60, 0);
+          //   const actualJS = blackScholesNUMJS.getD1(1000, 1000 - i, t, 0.60, 0);
+    
+          //   const absError = Math.abs(actualJS - expected);
+          //   const relError = expected !== 0 ? absError / expected * 100 : 0;
+          //   console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
+          //   assert.isBelow(absError, 0.00000040);
+          //   assert.isBelow(relError, 0.00000006);
+          // }
+          // if (duoTest) {
+          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+          //   const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
+          //   const absError = Math.abs(actualSOL - expected);
+          //   const relError = expected !== 0 ? absError / expected * 100 : 0;
+          //   // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          //   assert.isBelow(relError, 0.000000000072); // 1e-12 
+
+          //   totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+          //   count++;
+          // }
+        
+        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
     });
 
@@ -913,20 +993,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       console.log("act: " + actualJS.toFixed(10));
       console.log("diff:", Math.abs(expected - actualJS));
       // d1 0.6100358074173348 d2 0.2115455057186043
-    });
-
-    it("test getD1", async function () {
-      for (let i = 0; i < 200; i++) { 
-        const t = (10 + i) / 365;
-        const expected = bs.getW(1000, 1000 - i, t, 0.60, 0);
-        const actualJS = blackScholesNUMJS.getD1(1000, 1000 - i, t, 0.60, 0);
-
-        const absError = Math.abs(actualJS - expected);
-        const relError = expected !== 0 ? absError / expected * 100 : 0;
-        console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
-        assert.isBelow(absError, 0.00000040);
-        assert.isBelow(relError, 0.00000006);
-      }
     });
 
     it("test getD2", async function () {
