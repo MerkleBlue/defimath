@@ -60,7 +60,9 @@ contract BlackScholesNUM {
     // }
 
     function expNegative(uint256 x) public pure returns (uint256) {
-        return 1e36 / expPositive(x);
+        unchecked {
+            return 1e36 / expPositive(x);
+        }
     }
 
     function expPositive(uint256 x) public pure returns (uint256) {
@@ -101,8 +103,18 @@ contract BlackScholesNUM {
         }
     }
 
-    // x is in range [1, 16] 
-    function ln(uint256 x) public pure returns (uint256) {
+    function ln(uint256 x) public pure returns (int256) {
+        unchecked {
+            if (x >= 1e18) {
+                return int256(lnUpper(x));
+            }
+
+            return -int256(lnUpper(1e36 / x));
+        }
+    }
+
+    // x: [1, 16] 
+    function lnUpper(uint256 x) public pure returns (uint256) {
         unchecked {
             uint256 multiplier;
 
@@ -979,7 +991,7 @@ contract BlackScholesNUM {
         uint256 endGas;
         startGas = gasleft();
 
-        result = ln(x);
+        result = lnUpper(x);
 
         endGas = gasleft();
         

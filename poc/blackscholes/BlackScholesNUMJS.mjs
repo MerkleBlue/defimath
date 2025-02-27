@@ -29,6 +29,13 @@ const log = false;
 // stdNormCDF = 600 x 2 = 1200
 // TOTAL: 2740 gas
 
+// ACTUAL
+// sqrt = 750
+// exp = 700
+// ln = 520
+// stdNormCDF = 1000 x 2 = 2000
+// TOTAL: 4000 gas
+
 // NOTE: sqrt(time) = e ^ (1/2 * ln(time)) => could be optimized below 800 gas
 
 export class BlackScholesNUMJS {
@@ -117,20 +124,20 @@ export class BlackScholesNUMJS {
     if (x > 32) {
       const exponent = Math.floor(x / 32);
       x -= exponent * 32;
-      exp1 = this.getExpPrecalculated(E_TO_32, exponent);
+      exp1 = E_TO_32 ** exponent;
     }
 
     if (x > 1) {
       const exponent = Math.floor(x);
       x -= exponent;
-      exp2 = this.getExpPrecalculated(E, exponent);
+      exp2 = E ** exponent;
     }
 
     // below 1
     if (x > 0.03125) {
       const exponent = Math.floor(x / 0.03125);
       x -= exponent * 0.03125;
-      exp3 = this.getExpPrecalculated(E_TO_0_03125, exponent);
+      exp3 = E_TO_0_03125 ** exponent;
     }
 
     // we use Pade approximation for exp(x)
@@ -141,13 +148,15 @@ export class BlackScholesNUMJS {
     return exp1 * exp2 * exp3 * exp4; // using e ^ (a + b) = e ^ a * e ^ b
   };
 
-  getExpPrecalculated(base, exponent) {
-    // NOTE: nothing is precalculated in JS
-    return base ** exponent;
+  ln(x) {
+    if (x >= 1) {
+      return this.lnUpper(x);
+    }
+
+    return -this.lnUpper(1 / x)
   }
 
-  // x must be positive
-  // x is in range [1, 16]
+  // x: [1, 16]
   lnUpper(x) {
     // handle special case where x = 1
     if (x === 1) {
@@ -184,8 +193,16 @@ export class BlackScholesNUMJS {
   };
 
 
-  // x: [1, 1e8]
   sqrt(x) {
+    if (x >= 1) {
+      return this.sqrt(x);
+    }
+
+    return 1 / this.sqrt(1 / x);
+  }
+
+  // x: [1, 1e8]
+  sqrtUpper(x) {
     const BASE_ROOT = 1.074607828321317497; // 64th root of 100
     let zeros = 1;
     let sqrtPrecompute = 1;
