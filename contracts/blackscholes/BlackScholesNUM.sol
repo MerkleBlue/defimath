@@ -133,7 +133,7 @@ contract BlackScholesNUM {
     function sqrt(uint256 x) public pure returns (uint256) {
         unchecked {
             uint256 zeros = 1;
-            uint256 exp123 = 1e18;
+            uint256 sqrtPrecompute = 1e18;
 
             // x: [100, 1e8) use scalability rule: sqrt(1200) = 10 * sqrt(12);
             if (x >= 1e20) {
@@ -143,8 +143,8 @@ contract BlackScholesNUM {
 
             // x: [1.076, 100) use precomputed values
             if (x >= 1_074607828321317497) {
-                exp123 = getSqrtPrecomputed(x);
-                x = x * 1e36 / (exp123 * exp123);
+                sqrtPrecompute = getSqrtPrecomputed(x);
+                x = x * 1e36 / (sqrtPrecompute * sqrtPrecompute);
             }
 
             // x: [1, 1.076] use Maclaurin series
@@ -152,9 +152,9 @@ contract BlackScholesNUM {
             uint256 x2 = x  * x / 1e18;
             uint256 x3 = x2 * x / 1e18;
             uint256 x4 = x3 * x / 1e18;
-            uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);
+            uint256 sqrtAprox = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);
 
-            return exp123 * result * zeros / 1e36;
+            return sqrtAprox * sqrtPrecompute * zeros / 1e36;
 
             // this is 10 gas faster, but maybe there are overflows
             // uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120);
