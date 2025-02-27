@@ -129,43 +129,32 @@ contract BlackScholesNUM {
         }
     }
 
+    // x: [1, 1e8]
     function sqrt(uint256 x) public pure returns (uint256) {
         unchecked {
-            uint256 zeroMultiplier = 1;
+            uint256 zeros = 1;
             uint256 exp123 = 1e18;
 
-
+            // x: [100, 1e8) use scalability rule: sqrt(1200) = 10 * sqrt(12);
             if (x >= 1e20) {
-                zeroMultiplier = getSqrtZerosPrecompute(x);
-                x /= (zeroMultiplier * zeroMultiplier);
+                zeros = getSqrtZerosPrecompute(x);
+                x /= zeros * zeros;
             }
 
+            // x: [1.076, 100) use precomputed values
             if (x >= 1_074607828321317497) {
-                exp123 = getSqrt3Precalculated(x);
+                exp123 = getSqrtPrecomputed(x);
                 x = x * 1e36 / (exp123 * exp123);
             }
 
-            // x: [1, 1.03125)
+            // x: [1, 1.076] use Maclaurin series
             x -= 1e18;
             uint256 x2 = x  * x / 1e18;
             uint256 x3 = x2 * x / 1e18;
             uint256 x4 = x3 * x / 1e18;
-            // uint256 x5 = x3 * x2 / 1e18;
-            // uint256 x6 = x3 * x3 / 1e18;
-            // uint256 x7 = x3 * x4 / 1e18;
-            // // int256 x8 = x4 * x4 / 1e18;
+            uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);
 
-            // console.log("x5 mul: ", (2734375e10 * x) / 1e18 * x4);
-            // console.log("x5 div: ", x4 * (105 * x / 3840) );
-
-            // console.log("x6 mul: ", (205078125e8 * x2) / 1e18 * x4);
-            // console.log("x6 div: ", x4 * (945 * x2 / 46080) );
-
-            // console.log("x7 mul: ", (1611328125e7 * x3) / 1e18 * x4);
-            // console.log("x7 div: ", x4 * (10395 * x3 / 645120) );
-
-            uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);            
-            return exp123 * result * zeroMultiplier / 1e36;
+            return exp123 * result * zeros / 1e36;
 
             // this is 10 gas faster, but maybe there are overflows
             // uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120);
@@ -588,7 +577,7 @@ contract BlackScholesNUM {
         }
     }
 
-    function getSqrt3Precalculated(uint256 exponent) private pure returns (uint256) {
+    function getSqrtPrecomputed(uint256 exponent) private pure returns (uint256) {
         // use >=, fastest
 
         // base is root(64, 100) = 1.074607828321317497
