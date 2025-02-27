@@ -89,12 +89,18 @@ export class BlackScholesNUMJS {
     return strike / this.exp(x);
   };
 
-  // x must be > 0, [0, 4]
+  // x: [-50, 50]
   exp(x) {
-    // add limits to simulate solidity
-    if (x < -50) {
-      return 1e-18;
+    if (x >= 0) {
+      return this.expUpper(x);
     }
+
+    return 1 / this.expUpper(x);
+  };
+
+  // x must be > 0, [0, 4]
+  expUpper(x) {
+    // add limits to simulate solidity
     if (x > 50) {
       return 1e18;
     }
@@ -103,9 +109,6 @@ export class BlackScholesNUMJS {
     if( x === 0) {
       return 1;
     }
-
-    const isPositive = x > 0;
-    x = Math.abs(x);
 
     let exp1 = 1;
     let exp2 = 1;
@@ -130,18 +133,12 @@ export class BlackScholesNUMJS {
       exp3 = this.getExpPrecalculated(E_TO_0_03125, exponent);
     }
 
-
-    log && console.log("exp1 JS:", exp1);
-
     // we use Pade approximation for exp(x)
     // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
     const exp4 = (numerator / denominator);
-    log && console.log("exp4 JS:", exp4);
-    const result = exp1 * exp2 * exp3 * exp4; // using e ^ (a + b) = e ^ a * e ^ b
-
-    return isPositive ? result : 1 / result;
+    return exp1 * exp2 * exp3 * exp4; // using e ^ (a + b) = e ^ a * e ^ b
   };
 
   getExpPrecalculated(base, exponent) {
@@ -151,7 +148,7 @@ export class BlackScholesNUMJS {
 
   // x must be positive
   // x is in range [1, 16]
-  ln(x) {
+  lnUpper(x) {
     // handle special case where x = 1
     if (x === 1) {
       return 0;
@@ -178,13 +175,7 @@ export class BlackScholesNUMJS {
     const numerator = x - 1;
     const denominator = x + 1;
     const fraction = numerator / denominator;
-    // console.log("JS fraction:", fraction);
-    // const fraction2 = fraction ** 2;
-    // const fraction4 = fraction ** 4;
-    // const fraction6 = fraction ** 6;
-    // console.log("JS fraction2:", fraction2);
-    // console.log("JS fraction4:", fraction4);
-    // console.log("JS fraction6:", fraction6);
+
     const naturalLog = fraction * (1 + 1/3 * fraction ** 2 + 1/5 * fraction ** 4 + 1/7 * fraction ** 6);
     
     const finalLN = naturalLog * 2 + LN_1_20 * multiplier; // using ln(a * b) = ln(a) + ln(b)
@@ -219,7 +210,7 @@ export class BlackScholesNUMJS {
   }
 
   getD1(spot, strike, timeToExpiryYear, vol, rate) {
-    const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.ln(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
+    const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
 
     return d1;
   }
