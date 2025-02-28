@@ -9,11 +9,20 @@ contract BlackScholesNUM {
 
     uint256 internal constant SEC_ANNUALIZED = 31709791984; // 31709791983764586504
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
-    // int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
-    // int256 internal constant E = 2_718281828459045235;                      // e
-    // int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
+
+    // limits
+    uint256 public constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
+    uint256 public constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
+    uint256 public constant MAX_STRIKE_SPOT_RATIO = 5;   
+    uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
+    uint256 public constant MIN_VOLATILITY = 1e16 - 1;         // 1% volatility
+    uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
+    uint256 public constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
 
     bool log = true;
+
+    // error
+    error OutOfBoundsError(uint256);
 
     function getCallOptionPrice(
         uint128 spot,
@@ -33,41 +42,23 @@ contract BlackScholesNUM {
             // if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(7);
             // if (MAX_RATE <= rate) revert OutOfBoundsError(8);
 
-
-
-            // // step 1: set the overall scale first
-            // uint256 spotScale = uint256(spot) / SPOT_FIXED;
-
-            // // step 2: calculate strike scaled
-            // uint256 strikeScaled = uint256(strike) * 1e18 / _getFuturePrice(spot, timeToExpirySec, rate) * SPOT_FIXED; // gas 379
-
-
-            // // step 3: set the expiration based on volatility
-            // uint256 volRatio = uint256(volatility) * VOL_FIXED_MULTIPLIER / 1e16; // gas 35
-            // // if (log) console.log("volRatio:", volRatio); 
-            // // if (log) console.log("uint256(timeToExpirySec) * (volRatio ** 2):", uint256(timeToExpirySec) * (volRatio ** 2));
-            // uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e18; // NOTE: 18 decimals format for precision. gas 98
-
-            // // step 4: interpolate price
-            // uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled); // 
-
-            // // finally, scale the price back to the original spot
-            // price = finalPrice * spotScale / 1e18;
-
-
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR; // todo: test later with uint256(timeToExpirySec) * SEC_ANNUALIZED;
             uint256 volAdj = volatility * sqrt(timeYear) / 1e18;
             uint256 rateAdj = uint256(rate) * timeYear / 1e4;
-            // console.log("timeYear: %d", uint256(timeYear));
-            // console.log("volAdj: %d", uint256(volAdj));
-            // console.log("rateAdj: %d", uint256(rateAdj));
+
 
             int256 d1 = getD1(spot, strike, volAdj, rateAdj);
             int256 d2 = d1 - int256(volAdj);
+
             uint256 discountedStrike = _getDiscountedStrikePrice(strike, uint128(rateAdj));
 
             price = (uint256(spot) * stdNormCDF(d1) - discountedStrike * stdNormCDF(d2)) / 1e18;
 
+
+
+            // console.log("timeYear: %d", uint256(timeYear));
+            // console.log("volAdj: %d", uint256(volAdj));
+            // console.log("rateAdj: %d", uint256(rateAdj));
             // if (log) { if (d1 > 0) { console.log("d1: %d", uint256(d1)); } else { console.log("d1: -%d", uint256(-d1)); }}
             // if (log) { if (d2 > 0) { console.log("d2: %d", uint256(d2)); } else { console.log("d2: -%d", uint256(-d2)); }}
             // console.log("discountedStrike: %d", uint256(discountedStrike));
@@ -104,8 +95,8 @@ contract BlackScholesNUM {
 
     function _getDiscountedStrikePrice(uint256 strike, uint128 rateAdj) private pure returns (uint256) {
         unchecked {
-            console.log("strike: %d", uint256(strike));
-            console.log("expPositive(rateAdj): %d", uint256(expPositive(rateAdj)));
+            // console.log("strike: %d", uint256(strike));
+            // console.log("expPositive(rateAdj): %d", uint256(expPositive(rateAdj)));
             return strike * 1e18 / expPositive(rateAdj);
         }
     }
