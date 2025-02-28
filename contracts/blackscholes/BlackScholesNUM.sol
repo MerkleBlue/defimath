@@ -188,18 +188,58 @@ contract BlackScholesNUM {
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
-        uint256 volatility, // was uint80
+        uint256 volAdj, // was uint80
         uint256 rate
     ) public pure returns (int256) {
         unchecked {
-            int256 timeYear = int256(uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR); 
-            int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + (int256(rate) + int256(volatility * volatility) / 2e18) * timeYear / 1e18;
-            int256 denominator = int256(volatility * sqrt(uint256(timeYear)) / 1e18);
+            int256 timeYear = int256(uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR); // todo: optimization multiply by SEC_ANNUALIZED
+            int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + (int256(rate) * timeYear + int256(volAdj * volAdj) / 2) / 1e18;
+            int256 denominator = int256(volAdj);
 
             return nominator * 1e18 / denominator;
         }
 
         // const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
+    }
+
+      // using erf function
+    function stdNormCDF(int256 x) public pure returns (int256) {
+        unchecked {
+            return (1e18 + erf(x * 707106781186547524 / 1e18)) / 2; // 1 / sqrt(2)
+        }
+    }
+
+     
+
+    // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
+    function erf(int256 z) private pure returns (int256) {
+        unchecked {
+            // if (log) { if (z > 0) { console.log("z: %d", uint256(z)); } else { console.log("z: -%d", uint256(-z)); }}
+
+            // Save the sign of x
+            int256 sign = 1;
+            if (z < 0) {
+                sign = -1;
+            }
+            z = z * sign;
+
+            int256 t = 1e45 / (1e27 + 327591100 * z);
+            // if (log) { if (t > 0) { console.log("t: %d", uint256(t)); } else { console.log("t: -%d", uint256(-t)); }}
+
+            int256 t2 = t * t / 1e18;
+            int256 t3 = t2 * t / 1e18;
+            int256 t4 = t3 * t / 1e18;
+            int256 t5 = t4 * t / 1e18;
+            int256 poly = (254829592 * t - 284496736 * t2 + 1421413741 * t3 - 1453152027 * t4 + 1061405429 * t5) / 1e9; 
+
+            // if (log) { if (poly > 0) { console.log("poly: %d", uint256(poly)); } else { console.log("poly: -%d", uint256(-poly)); }}
+
+            int256 approx = (1e36 - poly * int256(expNegative(uint256(z * z) / 1e18))) / 1e18;
+
+            // if (log) { if (approx > 0) { console.log("approx: %d", uint256(approx)); } else { console.log("approx: -%d", uint256(-approx)); }}
+
+            return approx * sign;
+        }
     }
 
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
@@ -1033,6 +1073,19 @@ contract BlackScholesNUM {
         startGas = gasleft();
 
         result = sqrtUpper(x);
+
+        endGas = gasleft();
+        
+        return startGas - endGas;
+    }
+
+    function stdNormCDFMeasureGas(int256 x) public view returns (uint256) {
+        int256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        result = stdNormCDF(x);
 
         endGas = gasleft();
         

@@ -724,15 +724,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         assert.isBelow(absError, 0.00000040);
         assert.isBelow(relError, 0.00000006);
 
-        // if (duoTest) {
-        //   const { blackScholesNUM } = await loadFixture(deploy);
+        if (duoTest) {
+          const { blackScholesNUM } = await loadFixture(deploy);
 
-        //   const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.6), tokens(0.05))).toString() / 1e18;
-        //   const absError = Math.abs(actualSOL - expected);
-        //   const relError = expected !== 0 ? absError / expected * 100 : 0;
-        //   // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-        //   assert.isBelow(relError, 0.00000006); 
-        // }
+          const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(volAdj), tokens(0.05))).toString() / 1e18;
+          const absError = Math.abs(actualSOL - expected);
+          const relError = expected !== 0 ? absError / expected * 100 : 0;
+          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          assert.isBelow(relError, 0.00000006); 
+        }
       });
 
       it.only("d1 multiple", async function () {
@@ -753,15 +753,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
                 assert.isBelow(relError, 0.000000000175); // 1e-12
 
-                // if (duoTest) {
-                //   const { blackScholesNUM } = await loadFixture(deploy);
+                if (duoTest) {
+                  const { blackScholesNUM } = await loadFixture(deploy);
         
-                //   const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                //   const absError = Math.abs(actualSOL - expected);
-                //   const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-                //   // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-                //   assert.isBelow(relError, 0.000000000160); // 1e-12
-                // }
+                  const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(volAdj), tokens(rate))).toString() / 1e18;
+                  const absError = Math.abs(actualSOL - expected);
+                  const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+                  // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+                  assert.isBelow(relError, 0.000000000160); // 1e-12
+                }
               }
             }
           }
@@ -773,16 +773,57 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe.only("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
+        let totalGas = 0, count = 0;
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
         const actualJS = blackScholesJS.stdNormCDF(d1);
         const absError = Math.abs(actualJS - expected);
         const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+        console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
         assert.isBelow(relError, 0.0000075);
 
-        console.log("exp: " + expected.toFixed(10));
-        console.log("act: " + actualJS.toFixed(10));
-        console.log("diff:", Math.abs(expected - actualJS));
+        if (duoTest) {
+          const { blackScholesNUM } = await loadFixture(deploy);
+
+          const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
+          const absError = Math.abs(actualSOL - expected);
+          const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+          console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          assert.isBelow(relError, 0.0000075);
+
+          totalGas += parseInt(await blackScholesNUM.stdNormCDFMeasureGas(tokens(d1)));
+          count++;
+        }
+      
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+
+      it("stdNormCDF multiple", async function () {
+        let totalGas = 0, count = 0;
+        for (let d1 = -2; d1 < 2; d1 += 0.01234) {
+          const expected = bs.stdNormCDF(d1);
+          const actualJS = blackScholesJS.stdNormCDF(d1);
+          const absError = Math.abs(actualJS - expected);
+          const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+          // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+          assert.isBelow(absError, 0.000000070000); // 1e-12
+          // assert.isBelow(relError, 0.0004);
+
+          if (duoTest) {
+            const { blackScholesNUM } = await loadFixture(deploy);
+
+            const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
+            const absError = Math.abs(actualSOL - expected);
+            const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+            // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+            assert.isBelow(absError, 0.000000070000); // 1e-12
+            // assert.isBelow(relError, 0.0000175);
+
+            totalGas += parseInt(await blackScholesNUM.stdNormCDFMeasureGas(tokens(d1)));
+            count++;
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
     });
 

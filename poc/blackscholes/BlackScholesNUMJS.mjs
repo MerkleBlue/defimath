@@ -33,8 +33,8 @@ const log = false;
 // sqrt = 750
 // exp = 700
 // ln = 520
-// stdNormCDF = 1000 x 2 = 2000
-// TOTAL: 4000 gas
+// stdNormCDF = 1100 x 2 = 2200
+// TOTAL: 4200 gas
 
 // NOTE: sqrt(time) = e ^ (1/2 * ln(time)) => could be optimized below 800 gas
 
@@ -240,12 +240,16 @@ export class BlackScholesNUMJS {
 
   // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
   erf(z) {
+    // console.log("JS z:", z);
     // Approximation of error function
     const t = 1 / (1 + 0.3275911 * Math.abs(z));
+    // console.log("JS t:", t);
     const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
     
     const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
+    // console.log("JS poly:", poly);
     const approx = 1 - poly * this.exp(-z * z);
+    // console.log("JS approx:", approx);
     
     return z >= 0 ? approx : -approx;
   }
