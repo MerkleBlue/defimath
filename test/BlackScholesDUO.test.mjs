@@ -713,13 +713,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("d1 and d2", function () {
+    describe.only("d1", function () {
       it.only("d1 single", async function () {
         const expected = bs.getW(1000, 980, 60 / 365, 0.6, 0.05);
         const actualJS = blackScholesJS.getD1(1000, 980, 60 / 365, 0.6, 0.05);
         const absError = Math.abs(actualJS - expected);
         const relError = expected !== 0 ? absError / expected * 100 : 0;
-        console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+        // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
         assert.isBelow(absError, 0.00000040);
         assert.isBelow(relError, 0.00000006);
 
@@ -729,7 +729,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.6), tokens(0.05))).toString() / 1e18;
           const absError = Math.abs(actualSOL - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
-          console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
           assert.isBelow(relError, 0.00000006); 
         }
       });
@@ -825,25 +825,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
     // that requires puts implementation other than getting put from call
-    it.only("gets multiple call prices at lower strikes: random", async function () {
+    it("gets multiple call prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it.only("gets multiple put prices at lower strikes: random", async function () {
+    it("gets multiple put prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000140, 10, !fastTest);
     });
 
-    it.only("gets multiple call prices at higher strikes: random", async function () {
+    it("gets multiple call prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000370, 10, !fastTest);
     });
 
-    it.only("gets multiple put prices at higher strikes: random", async function () {
+    it("gets multiple put prices at higher strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000370, 10, !fastTest);
