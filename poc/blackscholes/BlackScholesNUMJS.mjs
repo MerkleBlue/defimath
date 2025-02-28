@@ -53,9 +53,10 @@ export class BlackScholesNUMJS {
     if (rate > MAX_RATE) throw new Error(8);
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
+    const volAdj = vol * Math.sqrt(timeYear);
 
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
-    const d2 = this.getD2(d1, timeYear, vol);
+    const d2 = d1 - volAdj;
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
     const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
@@ -73,9 +74,10 @@ export class BlackScholesNUMJS {
     if (rate > MAX_RATE) throw new Error(8);
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
+    const volAdj = vol * Math.sqrt(timeYear);
 
     const d1 = this.getD1(spot, strike, timeYear, vol, rate);
-    const d2 = this.getD2(d1, timeYear, vol);
+    const d2 = d1 - volAdj;
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
     const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
 
@@ -229,12 +231,6 @@ export class BlackScholesNUMJS {
     const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
 
     return d1;
-  }
-
-  getD2(d1, timeToExpiryYear, vol) {
-    const d2 = d1 - vol * Math.sqrt(timeToExpiryYear);
-
-    return d2;
   }
   
   // using erf function
