@@ -7,12 +7,72 @@ import "./Math.sol";
 
 contract BlackScholesNUM {
 
+    uint256 internal constant SEC_ANNUALIZED = 31709791984; // 31709791983764586504
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
     // int256 internal constant E_TO_003125 = 1_031743407499102671;            // e ^ 0.03125
     // int256 internal constant E = 2_718281828459045235;                      // e
     // int256 internal constant E_TO_32 = 78962960182680_695160978022635000;   // e ^ 32
 
     bool log = true;
+
+    function getCallOptionPrice(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint80 volatility,
+        uint16 rate
+    ) public pure returns (uint256 price) {
+        unchecked {
+            // step 0) check inputs
+            // if (spot <= MIN_SPOT) revert OutOfBoundsError(1);
+            // if (MAX_SPOT <= spot) revert OutOfBoundsError(2);
+            // if (strike * MAX_STRIKE_SPOT_RATIO < spot) revert OutOfBoundsError(3);
+            // if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert OutOfBoundsError(4);
+            // if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(5);
+            // if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(6);
+            // if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(7);
+            // if (MAX_RATE <= rate) revert OutOfBoundsError(8);
+
+
+
+            // // step 1: set the overall scale first
+            // uint256 spotScale = uint256(spot) / SPOT_FIXED;
+
+            // // step 2: calculate strike scaled
+            // uint256 strikeScaled = uint256(strike) * 1e18 / _getFuturePrice(spot, timeToExpirySec, rate) * SPOT_FIXED; // gas 379
+
+
+            // // step 3: set the expiration based on volatility
+            // uint256 volRatio = uint256(volatility) * VOL_FIXED_MULTIPLIER / 1e16; // gas 35
+            // // if (log) console.log("volRatio:", volRatio); 
+            // // if (log) console.log("uint256(timeToExpirySec) * (volRatio ** 2):", uint256(timeToExpirySec) * (volRatio ** 2));
+            // uint256 timeToExpirySecScaled = uint256(timeToExpirySec) * (volRatio ** 2) / 1e18; // NOTE: 18 decimals format for precision. gas 98
+
+            // // step 4: interpolate price
+            // uint256 finalPrice = interpolatePrice(strikeScaled, timeToExpirySecScaled); // 
+
+            // // finally, scale the price back to the original spot
+            // price = finalPrice * spotScale / 1e18;
+
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR; // todo: test later with uint256(timeToExpirySec) * SEC_ANNUALIZED;
+            uint256 volAdj = volatility * sqrt(timeYear) / 1e18;
+            uint256 rateAdj = uint256(rate) * timeYear / 1e4;
+            // console.log("timeYear: %d", uint256(timeYear));
+            // console.log("volAdj: %d", uint256(volAdj));
+            // console.log("rateAdj: %d", uint256(rateAdj));
+
+            int256 d1 = getD1(spot, strike, volAdj, rateAdj);
+            int256 d2 = d1 - int256(volAdj);
+            uint256 discountedStrike = _getDiscountedStrikePrice(strike, uint128(rateAdj));
+
+            price = (uint256(spot) * stdNormCDF(d1) - discountedStrike * stdNormCDF(d2)) / 1e18;
+
+            // if (log) { if (d1 > 0) { console.log("d1: %d", uint256(d1)); } else { console.log("d1: -%d", uint256(-d1)); }}
+            // if (log) { if (d2 > 0) { console.log("d2: %d", uint256(d2)); } else { console.log("d2: -%d", uint256(-d2)); }}
+            // console.log("discountedStrike: %d", uint256(discountedStrike));
+        }
+    }
 
 
     // function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
@@ -42,22 +102,13 @@ contract BlackScholesNUM {
     //     }
     // }
 
-    // function _getDiscountedStrikePrice(uint128 strike, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
-    //     unchecked {
-    //         // we use Pade approximation for exp(x)
-    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-
-    //         // NOTE: this is faster than the above 
-    //         uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
-
-    //         // todo: check x is not more than 0.2
-
-    //         uint256 numerator = (x + 3e9) ** 2 + 3e18;
-    //         uint256 denominator = (3e9 - x) ** 2 + 3e18;
-
-    //         return denominator * strike / numerator;
-    //     }
-    // }
+    function _getDiscountedStrikePrice(uint256 strike, uint128 rateAdj) private pure returns (uint256) {
+        unchecked {
+            console.log("strike: %d", uint256(strike));
+            console.log("expPositive(rateAdj): %d", uint256(expPositive(rateAdj)));
+            return strike * 1e18 / expPositive(rateAdj);
+        }
+    }
 
     function expNegative(uint256 x) public pure returns (uint256) {
         unchecked {
@@ -187,13 +238,13 @@ contract BlackScholesNUM {
     function getD1(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
         uint256 volAdj, // was uint80
-        uint256 rate
+        uint256 rateAdj
     ) public pure returns (int256) {
         unchecked {
-            int256 timeYear = int256(uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR); // todo: optimization multiply by SEC_ANNUALIZED
-            int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + (int256(rate) * timeYear + int256(volAdj * volAdj) / 2) / 1e18;
+            // int256 timeYear = int256(uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR); // todo: optimization multiply by SEC_ANNUALIZED
+            // todo: maybe use 1000 + ln... -1000, to avoid conversion to int256
+            int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + int256(rateAdj + (volAdj * volAdj / 1e18) / 2) ;
             int256 denominator = int256(volAdj);
 
             return nominator * 1e18 / denominator;
@@ -203,13 +254,13 @@ contract BlackScholesNUM {
     }
 
       // using erf function
-    function stdNormCDF(int256 x) public pure returns (int256) {
+    function stdNormCDF(int256 x) public pure returns (uint256) {
         unchecked {
-            return (1e18 + erf(x * 707106781186547524 / 1e18)) / 2; // 1 / sqrt(2)
+            // todo: make sure erf(x) is < 1
+            return uint256(1e18 + erf(x * 707106781186547524 / 1e18)) / 2; // 1 / sqrt(2)
         }
     }
 
-     
 
     // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
     function erf(int256 z) private pure returns (int256) {
@@ -1080,12 +1131,31 @@ contract BlackScholesNUM {
     }
 
     function stdNormCDFMeasureGas(int256 x) public view returns (uint256) {
-        int256 result;
+        uint256 result;
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
         result = stdNormCDF(x);
+
+        endGas = gasleft();
+        
+        return startGas - endGas;
+    }
+
+    function getCallOptionPriceMeasureGas(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint80 volatility,
+        uint16 rate
+    ) public view returns (uint256) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        result = getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
 
         endGas = gasleft();
         
