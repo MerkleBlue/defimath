@@ -52,10 +52,18 @@ contract BlackScholesNUM {
 
             uint256 discountedStrike = _getDiscountedStrikePrice(strike, uint128(rateAdj));
 
-            price = (uint256(spot) * stdNormCDF(d1) - discountedStrike * stdNormCDF(d2)) / 1e18;
+            uint256 spotxCdfD1 = uint256(spot) * stdNormCDF(d1);
+            uint256 strikexCdfD2 = discountedStrike * stdNormCDF(d2);
+
+            if (spotxCdfD1 > strikexCdfD2) {
+                price = (spotxCdfD1 - strikexCdfD2) / 1e18;
+            }
 
 
+            // price = (uint256(spot) * stdNormCDF(d1) - discountedStrike * stdNormCDF(d2)) / 1e18;
 
+            // if (log) console.log("part1 SOL: %d", uint256(part1));
+            // if (log) console.log("part2 SOL: %d", uint256(part2));
             // console.log("timeYear: %d", uint256(timeYear));
             // console.log("volAdj: %d", uint256(volAdj));
             // console.log("rateAdj: %d", uint256(rateAdj));
@@ -248,6 +256,9 @@ contract BlackScholesNUM {
     function stdNormCDF(int256 x) public pure returns (uint256) {
         unchecked {
             // todo: make sure erf(x) is < 1
+            // int256 erfResult = erf(x * 707106781186547524 / 1e18);
+            // if (log) { if (erfResult > 0) { console.log("erfResult SOL: %d", uint256(erfResult)); } else { console.log("erfResult SOL: -%d", uint256(-erfResult)); }}
+
             return uint256(1e18 + erf(x * 707106781186547524 / 1e18)) / 2; // 1 / sqrt(2)
         }
     }
@@ -993,7 +1004,6 @@ contract BlackScholesNUM {
             return 10;
         }
     }
-
 
     // gas 592 when x > 0.05
     // function expPosNeg(int256 x) public pure returns (uint256) {

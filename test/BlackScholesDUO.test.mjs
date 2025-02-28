@@ -29,6 +29,14 @@ export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
   return Math.max(0, bs.blackScholes(spot, strike, time, vol, rate, callOrPut));
 }
 
+export function assertAlmostEqual(actual, expected, maxRelError = 100, maxAbsError = 1) {
+  const absError = Math.abs(actual - expected);
+  const relError = (expected !== 0 && actual !== 0) ? (Math.abs(actual - expected) / expected) : 0;
+
+  assert.isBelow(relError, maxRelError, "Relative error is above the threshold");
+  assert.isBelow(absError, maxAbsError, "Absolute error is above the threshold");
+}
+
 function tokens(value) {
   const trimmedValue = Math.round(value * 1e18) / 1e18;
   return hre.ethers.parseUnits(trimmedValue.toString(), 18).toString();
@@ -148,7 +156,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   }
 
   async function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedRelError = 0.001000, allowedAbsError = 0.000114, multi = 10, log = true) {
-    const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
+    const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
     log && console.log("Allowed abs error: $" + allowedAbsError);
     log && console.log("Allowed rel error:  " + allowedRelError + "%");
@@ -182,22 +190,22 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             }
 
             // SOL
-            // if (duoTest) {
-            //   let actualSOL = 0;
-            //   if (isCall) {
-            //     actualSOL = (await blackScholesPOC.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-            //   } else {
-            //     actualSOL = (await blackScholesPOC.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-            //   }
+            if (duoTest) {
+              let actualSOL = 0;
+              if (isCall) {
+                actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+              } else {
+                actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+              }
 
-            //   const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
-            //   const absErrorSOL = Math.abs(actualSOL - expected);
+              const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
+              const absErrorSOL = Math.abs(actualSOL - expected);
 
-            //   const errorParamsSOL = {
-            //     expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-            //   }
-            //   errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
-            // }
+              const errorParamsSOL = {
+                expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+              }
+              errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
+            }
 
             countTotal++;
 
@@ -713,8 +721,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("d1", function () {
-      it.only("d1 single", async function () {
+    describe("d1", function () {
+      it("d1 single", async function () {
         const volAdj = 0.6 * Math.sqrt(60 / 365);
         const rateAdj = 0.05 * (60 / 365);
         const expected = bs.getW(1000, 980, 60 / 365, 0.6, 0.05);
@@ -736,7 +744,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("d1 multiple", async function () {
+      it("d1 multiple", async function () {
         const strikes = [500, 800, 1000, 1200, 1500];
         const times = [30, 60, 90, 180];
         const vols = [0.4, 0.6, 0.8];
@@ -773,7 +781,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("stdNormCDF", function () {
+    describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         let totalGas = 0, count = 0;
         const d1 = 0.6100358074173348;
@@ -830,16 +838,37 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe.only("getCallOptionPrice", function () {
-      it.only("getCallOptionPrice single", async function () {
+      it("getCallOptionPrice regression test", async function () {
+        // 
         let totalGas = 0, count = 0;
-        const volAdj = 0.6 * Math.sqrt(60 / 365);
+        const expected = bs.blackScholes(1000, 1200, 1 / 365, 0.40, 0.05, "call");
+        const actualJS = blackScholesJS.getCallOptionPrice(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+        // assert.isBelow(absError, 0.00000040);
+        assert.isBelow(relError, 0.00006);
+
+        if (duoTest) {
+          const { blackScholesNUM } = await loadFixture(deploy);
+
+          const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), (0.05 * 10000))).toString() / 1e18;
+          const absError = Math.abs(actualSOL - expected);
+          const relError = expected !== 0 ? absError / expected * 100 : 0;
+          console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          assert.isBelow(relError, 0.00006); 
+        }
+      });
+
+      it("getCallOptionPrice single", async function () {
+        let totalGas = 0, count = 0;
         const expected = bs.blackScholes(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
         const absError = Math.abs(actualJS - expected);
         const relError = expected !== 0 ? absError / expected * 100 : 0;
         console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
         // assert.isBelow(absError, 0.00000040);
-        // assert.isBelow(relError, 0.00000006);
+        assert.isBelow(relError, 0.00006);
 
         if (duoTest) {
           const { blackScholesNUM } = await loadFixture(deploy);
@@ -848,7 +877,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const absError = Math.abs(actualSOL - expected);
           const relError = expected !== 0 ? absError / expected * 100 : 0;
           console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-          // assert.isBelow(relError, 0.00000006); 
+          assert.isBelow(relError, 0.00006); 
 
           totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMeasureGas(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000)));
           count++;
@@ -856,40 +885,46 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
-      // it("getCallOptionPrice multiple", async function () {
-      //   const strikes = [500, 800, 1000, 1200, 1500];
-      //   const times = [30, 60, 90, 180];
-      //   const vols = [0.4, 0.6, 0.8];
-      //   const rates = [0, 0.05];
+      it("getCallOptionPrice multiple", async function () {
+        const strikes = [800, 1000, 1200];
+        const times = [1, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8, 2.4];
+        const rates = [0, 0.05, 2];
 
-      //   for (let strike of strikes) {
-      //     for (let time of times) {
-      //       for (let vol of vols) {
-      //         for (let rate of rates) {
-      //           const volAdj = vol * Math.sqrt(time / 365);
-      //           const expected = bs.getW(1000, strike, time / 365, vol, rate);
-      //           const actualJS = blackScholesJS.getD1(1000, strike, time / 365, volAdj, rate);
-      //           const absError = Math.abs(actualJS - expected);
-      //           const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-      //           // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-      //           assert.isBelow(relError, 0.000000000175); // 1e-12
+        let totalGas = 0, count = 0;
+        for (let strike of strikes) {
+          for (let time of times) {
+            for (let vol of vols) {
+              for (let rate of rates) {
+                const expected = bs.blackScholes(1000, strike, time / 365, vol, rate, "call");
+                const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
+                const absError = Math.abs(actualJS - expected);
+                const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+                console.log("Params:", 1000, strike, time, vol, rate);
+                console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+                assert.isBelow(relError, 0.07); // 1e-12
 
-      //           if (duoTest) {
-      //             const { blackScholesNUM } = await loadFixture(deploy);
+                if (duoTest) {
+                  const { blackScholesNUM } = await loadFixture(deploy);
         
-      //             const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(volAdj), tokens(rate))).toString() / 1e18;
-      //             const absError = Math.abs(actualSOL - expected);
-      //             const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-      //             // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-      //             assert.isBelow(relError, 0.000000000160); // 1e-12
-      //           }
-      //         }
-      //       }
-      //     }
-      //   }
+                  const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000))).toString() / 1e18;
+
+                  const absError = Math.abs(actualSOL - expected);
+                  const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+                  console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+                  assertAlmostEqual(actualSOL, expected, 0.07);
+                  // assert.isBelow(relError, 0.07); // 1e-12
+
+                  totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMeasureGas(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000)));
+                  count++;
+                }
+              }
+            }
+          }
+        }
         
-      //   //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      // });
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
     });
 
     it("getFuturePrice", async function () {

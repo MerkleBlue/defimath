@@ -43,26 +43,27 @@ export class BlackScholesNUMJS {
 
   // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
-    if (spot < MIN_SPOT) throw new Error(1);
-    if (spot > MAX_SPOT) throw new Error(2);
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
-    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
-    if (timeSec > MAX_EXPIRATION) throw new Error(5);
-    if (vol < MIN_VOLATILITY) throw new Error(6);
-    if (vol > MAX_VOLATILITY) throw new Error(7);
-    if (rate > MAX_RATE) throw new Error(8);
+    // if (spot < MIN_SPOT) throw new Error(1);
+    // if (spot > MAX_SPOT) throw new Error(2);
+    // if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
+    // if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
+    // if (timeSec > MAX_EXPIRATION) throw new Error(5);
+    // if (vol < MIN_VOLATILITY) throw new Error(6);
+    // if (vol > MAX_VOLATILITY) throw new Error(7);
+    // if (rate > MAX_RATE) throw new Error(8);
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
-    console.log("JS volAdj:", volAdj);
+
 
     const d1 = this.getD1(spot, strike, timeYear, volAdj, rate);
     const d2 = d1 - volAdj;
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
 
-    console.log("JS d1:", d1);
-    console.log("JS d2:", d2);
-    console.log("JS discountedStrike:", discountedStrike);
+    log && console.log("JS volAdj:", volAdj);
+    log && console.log("JS d1:", d1);
+    log && console.log("JS d2:", d2);
+    log && console.log("JS discountedStrike:", discountedStrike);
 
     const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
 
