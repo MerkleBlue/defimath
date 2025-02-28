@@ -55,7 +55,7 @@ export class BlackScholesNUMJS {
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
 
-    const d1 = this.getD1(spot, strike, timeYear, vol, rate);
+    const d1 = this.getD1(spot, strike, timeYear, volAdj, rate);
     const d2 = d1 - volAdj;
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
     const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
@@ -76,7 +76,7 @@ export class BlackScholesNUMJS {
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
 
-    const d1 = this.getD1(spot, strike, timeYear, vol, rate);
+    const d1 = this.getD1(spot, strike, timeYear, volAdj, rate);
     const d2 = d1 - volAdj;
     const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
     const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
@@ -227,8 +227,8 @@ export class BlackScholesNUMJS {
     return sqrtAprox * sqrtPrecompute * zeros;
   }
 
-  getD1(spot, strike, timeToExpiryYear, vol, rate) {
-    const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
+  getD1(spot, strike, timeToExpiryYear, volAdj, rate) {
+    const d1 = (rate * timeToExpiryYear + (volAdj ** 2) / 2 - this.lnUpper(strike / spot)) / volAdj;
 
     return d1;
   }
