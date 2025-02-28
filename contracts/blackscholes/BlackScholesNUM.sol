@@ -184,6 +184,25 @@ contract BlackScholesNUM {
         }
     }
 
+    function getD1(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint256 volatility, // was uint80
+        uint256 rate
+    ) public pure returns (int256) {
+        unchecked {
+            int256 timeYear = int256(uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR); 
+            int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + (int256(rate) + int256(volatility * volatility) / 2e18) * timeYear / 1e18;
+            int256 denominator = int256(volatility * sqrt(uint256(timeYear)) / 1e18);
+
+            return nominator * 1e18 / denominator;
+        }
+
+        // const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
+
+    }
+
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
         unchecked {
             return 78962960182681 ** exponent;

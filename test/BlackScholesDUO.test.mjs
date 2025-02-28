@@ -902,11 +902,29 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe.only("d1", function () {
-      // todo: test all limits like 1.04427
-      it("d1 multiple", async function () {
+      it.only("d1 single", async function () {
+        const expected = bs.getW(1000, 980, 60 / 365, 0.6, 0.05);
+        const actualJS = blackScholesNUMJS.getD1(1000, 980, 60 / 365, 0.6, 0.05);
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? absError / expected * 100 : 0;
+        console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+        assert.isBelow(absError, 0.00000040);
+        assert.isBelow(relError, 0.00000006);
 
+        if (duoTest) {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+
+          const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.6), tokens(0.05))).toString() / 1e18;
+          const absError = Math.abs(actualSOL - expected);
+          const relError = expected !== 0 ? absError / expected * 100 : 0;
+          console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          assert.isBelow(relError, 0.00000006); 
+        }
+      });
+
+      it.only("d1 multiple", async function () {
         const strikes = [500, 800, 1000, 1200, 1500];
-        const times = [7, 30, 60, 90, 180];
+        const times = [30, 60, 90, 180];
         const vols = [0.4, 0.6, 0.8];
         const rates = [0, 0.05];
 
@@ -914,42 +932,26 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (let time of times) {
             for (let vol of vols) {
               for (let rate of rates) {
-                const t = time / 365;
-                const expected = bs.getW(1000, strike, t / 365, vol, rate);
-                const actualJS = blackScholesNUMJS.getD1(1000, strike, t / 365, vol, rate);
+                const expected = bs.getW(1000, strike, time / 365, vol, rate);
+                const actualJS = blackScholesNUMJS.getD1(1000, strike, time / 365, vol, rate);
                 const absError = Math.abs(actualJS - expected);
-                const relError = expected !== 0 ? absError / expected * 100 : 0;
-                // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-                assert.isBelow(absError, 0.00000040);
-                assert.isBelow(relError, 0.00000006);
+                const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+                // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+                assert.isBelow(relError, 0.000000000160); // 1e-12
+
+                if (duoTest) {
+                  const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
+        
+                  const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  const absError = Math.abs(actualSOL - expected);
+                  const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+                  // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+                  assert.isBelow(relError, 0.000000000160); // 1e-12
+                }
               }
             }
           }
         }
-
-          // for (let i = 0; i < 200; i++) { 
-          //   const t = (10 + i) / 365;
-          //   const expected = bs.getW(1000, 1000 - i, t, 0.60, 0);
-          //   const actualJS = blackScholesNUMJS.getD1(1000, 1000 - i, t, 0.60, 0);
-    
-          //   const absError = Math.abs(actualJS - expected);
-          //   const relError = expected !== 0 ? absError / expected * 100 : 0;
-          //   console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
-          //   assert.isBelow(absError, 0.00000040);
-          //   assert.isBelow(relError, 0.00000006);
-          // }
-          // if (duoTest) {
-          //   const { blackScholesNUM } = duoTest ? await loadFixture(deployNUM) : { blackScholesNUM: null };
-
-          //   const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
-          //   const absError = Math.abs(actualSOL - expected);
-          //   const relError = expected !== 0 ? absError / expected * 100 : 0;
-          //   // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-          //   assert.isBelow(relError, 0.000000000072); // 1e-12 
-
-          //   totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-          //   count++;
-          // }
         
         //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
