@@ -769,6 +769,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
+    describe.only("stdNormCDF", function () {
+      it("stdNormCDF single", async function () {
+        const d1 = 0.6100358074173348;
+        const expected = bs.stdNormCDF(d1);
+        const actualJS = blackScholesJS.stdNormCDF(d1);
+        const absError = Math.abs(actualJS - expected);
+        const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
+        assert.isBelow(relError, 0.0000075);
+
+        console.log("exp: " + expected.toFixed(10));
+        console.log("act: " + actualJS.toFixed(10));
+        console.log("diff:", Math.abs(expected - actualJS));
+      });
+    });
+
     it("getFuturePrice", async function () {
       for (let rate = 0; rate < 4; rate += 0.001) { 
         const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
@@ -793,21 +808,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    it("test stdCDF", async function () {
 
-      let expected = bs.stdNormCDF(0.6100358074173348);
-      let actualJS = blackScholesJS.stdNormCDF(0.6100358074173348);
-      console.log("exp: " + expected.toFixed(10));
-      console.log("act: " + actualJS.toFixed(10));
-      console.log("diff:", Math.abs(expected - actualJS));
-
-      expected = bs.stdNormCDF(0.6100358074173348);
-      actualJS = blackScholesJS.stdNormCDF2(0.6100358074173348);
-      console.log("exp: " + expected.toFixed(10));
-      console.log("act: " + actualJS.toFixed(10));
-      console.log("diff:", Math.abs(expected - actualJS));
-      // d1 0.6100358074173348 d2 0.2115455057186043
-    });
 
     it("test getCallPrice", async function () {
       for (let i = 0; i < 200; i++) {

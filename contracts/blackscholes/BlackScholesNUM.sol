@@ -200,7 +200,6 @@ contract BlackScholesNUM {
         }
 
         // const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
-
     }
 
     function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
