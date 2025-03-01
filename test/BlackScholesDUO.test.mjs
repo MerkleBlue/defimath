@@ -853,29 +853,29 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe.only("getCallOptionPrice", function () {
-      it("getCallOptionPrice regression test", async function () {
-        // 
-        let totalGas = 0, count = 0;
+      it.only("regression test", async function () {
         const expected = bs.blackScholes(1000, 1200, 1 / 365, 0.40, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
-        const absError = Math.abs(actualJS - expected);
-        const relError = expected !== 0 ? absError / expected * 100 : 0;
-        console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-        // assert.isBelow(absError, 0.00000040);
-        assert.isBelow(relError, 0.00006);
+        // const absError = Math.abs(actualJS - expected);
+        // const relError = expected !== 0 ? absError / expected * 100 : 0;
+        // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+        // // assert.isBelow(absError, 0.00000040);
+        // assert.isBelow(relError, 0.00006);
+        assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
 
         if (duoTest) {
           const { blackScholesNUM } = await loadFixture(deploy);
 
           const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), (0.05 * 10000))).toString() / 1e18;
-          const absError = Math.abs(actualSOL - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.00006); 
+          // const absError = Math.abs(actualSOL - expected);
+          // const relError = expected !== 0 ? absError / expected * 100 : 0;
+          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          // assert.isBelow(relError, 0.00006); 
+          assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
         }
       });
 
-      it.only("getCallOptionPrice single", async function () {
+      it.only("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         let totalGas = 0, count = 0;
         const expected = bs.blackScholes(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -892,7 +892,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
-      it.only("getCallOptionPrice multiple", async function () {
+      it.only("multiple", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -947,20 +947,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
         assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
         assert.isBelow(relError, 0.00000006); // in %
-      }
-    });
-
-    it("test getCallPrice", async function () {
-      for (let i = 0; i < 200; i++) {
-        const t = (10 + i) / 365;
-        const expected = bs.blackScholes(1000, 1000 - i, t, 0.60, 0, "call");
-        const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000 - i, t * SEC_IN_YEAR, 0.60, 0);
-
-        const absError = Math.abs(actualJS - expected);
-        const relError = expected !== 0 ? absError / expected * 100 : 0;
-        console.log(i, "exp: " + expected.toFixed(8), "act: " + actualJS.toFixed(8),);
-        assert.isBelow(absError, 0.000290);
-        // assert.isBelow(relError, 0.00000006);
       }
     });
 

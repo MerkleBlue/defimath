@@ -28,7 +28,7 @@ contract BlackScholesNUM {
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
-        uint80 volatility,
+        uint64 volatility,
         uint16 rate
     ) public pure returns (uint256 price) {
         unchecked {
@@ -1148,7 +1148,7 @@ contract BlackScholesNUM {
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
-        uint80 volatility,
+        uint64 volatility,
         uint16 rate
     ) public view returns (uint256) {
         uint256 result;
