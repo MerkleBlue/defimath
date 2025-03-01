@@ -46,7 +46,7 @@ contract BlackScholesNUM {
             int256 d1 = getD1(spot, strike, volAdj, rateAdj);
             int256 d2 = d1 - int256(volAdj);
 
-            uint256 discountedStrike = _getDiscountedStrikePrice(strike, uint128(rateAdj));
+            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(rateAdj);
 
             uint256 spotxCdfD1 = uint256(spot) * stdNormCDF(d1);
             uint256 strikexCdfD2 = discountedStrike * stdNormCDF(d2);
@@ -93,14 +93,6 @@ contract BlackScholesNUM {
     //         return numerator * spot / denominator;
     //     }
     // }
-
-    function _getDiscountedStrikePrice(uint256 strike, uint128 rateAdj) private pure returns (uint256) {
-        unchecked {
-            // console.log("strike: %d", uint256(strike));
-            // console.log("expPositive(rateAdj): %d", uint256(expPositive(rateAdj)));
-            return strike * 1e18 / expPositive(rateAdj);
-        }
-    }
 
     function expNegative(uint256 x) public pure returns (uint256) {
         unchecked {
