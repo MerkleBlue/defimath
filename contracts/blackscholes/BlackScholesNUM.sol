@@ -3,7 +3,6 @@ pragma solidity ^0.8.28;
 
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
-import "./Math.sol";
 
 contract BlackScholesNUM {
 
@@ -39,13 +38,10 @@ contract BlackScholesNUM {
             // if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert OutOfBoundsError(4);
             // if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(5);
             // if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(6);
-            // if (MAX_VOLATILITY <= volatility) revert OutOfBoundsError(7);
-            // if (MAX_RATE <= rate) revert OutOfBoundsError(8);
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR; // todo: test later with uint256(timeToExpirySec) * SEC_ANNUALIZED;
             uint256 volAdj = volatility * sqrt(timeYear) / 1e18;
             uint256 rateAdj = uint256(rate) * timeYear / 1e4;
-
 
             int256 d1 = getD1(spot, strike, volAdj, rateAdj);
             int256 d2 = d1 - int256(volAdj);
@@ -59,17 +55,14 @@ contract BlackScholesNUM {
                 price = (spotxCdfD1 - strikexCdfD2) / 1e18;
             }
 
-
-            // price = (uint256(spot) * stdNormCDF(d1) - discountedStrike * stdNormCDF(d2)) / 1e18;
-
             // if (log) console.log("part1 SOL: %d", uint256(part1));
             // if (log) console.log("part2 SOL: %d", uint256(part2));
-            // console.log("timeYear: %d", uint256(timeYear));
-            // console.log("volAdj: %d", uint256(volAdj));
-            // console.log("rateAdj: %d", uint256(rateAdj));
+            // if (log) console.log("timeYear: %d", uint256(timeYear));
+            // if (log) console.log("volAdj: %d", uint256(volAdj));
+            // if (log) console.log("rateAdj: %d", uint256(rateAdj));
             // if (log) { if (d1 > 0) { console.log("d1: %d", uint256(d1)); } else { console.log("d1: -%d", uint256(-d1)); }}
             // if (log) { if (d2 > 0) { console.log("d2: %d", uint256(d2)); } else { console.log("d2: -%d", uint256(-d2)); }}
-            // console.log("discountedStrike: %d", uint256(discountedStrike));
+            // if (log) console.log("discountedStrike: %d", uint256(discountedStrike));
         }
     }
 
@@ -248,8 +241,6 @@ contract BlackScholesNUM {
 
             return nominator * 1e18 / denominator;
         }
-
-        // const d1 = (rate * timeToExpiryYear + (vol ** 2) * timeToExpiryYear / 2 - this.lnUpper(strike / spot)) / (vol * Math.sqrt(timeToExpiryYear));
     }
 
       // using erf function
@@ -1063,33 +1054,6 @@ contract BlackScholesNUM {
     //         return isPositive ? result : 1 / result;
     //     }
     // }
-
-    function testIfMeasureGas(uint256 exponent) public view returns (uint256) {
-        uint256 startGas;
-        uint256 endGas;
-        uint result;
-        startGas = gasleft();
-
-        result = Math.testIf(exponent);
-        // uint256[4] memory exp1s;
-        // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
-        // result = exp1s[exponent];
-
-
-
-                // if (0 <= x) {
-                //     exp(x);
-                //     // uint256[4] memory exp1s;
-                //     // exp1s = [uint256(1_051271096376024000), 1_105170918075648000, 1_161834242728283000, 1_221402758160170000];
-                // }
-
-        endGas = gasleft();
-
-        console.log("result: %d", result);
-        return startGas - endGas;
-    }
-
-    
 
     // todo: delete
     function expMeasureGas(uint256 x) public view returns (uint256) {
