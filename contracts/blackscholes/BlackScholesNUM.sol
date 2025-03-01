@@ -212,39 +212,40 @@ contract BlackScholesNUM {
             // todo: make sure erf(x) is < 1
             // int256 erfResult = erf(x * 707106781186547524 / 1e18);
             // if (log) { if (erfResult > 0) { console.log("erfResult SOL: %d", uint256(erfResult)); } else { console.log("erfResult SOL: -%d", uint256(-erfResult)); }}
+            int256 argument = x * 707106781186547524 / 1e18;
+            if (argument >= 0) {
+                return 5e17 + erfPositive(uint256(argument));
+            }
 
-            return uint256(1e18 + erf(x * 707106781186547524 / 1e18)) / 2;
+            return 5e17 - erfPositive(uint256(-argument));
         }
     }
 
-
     // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
-    function erf(int256 z) private pure returns (int256) {
+    function erfPositive(uint256 z) private pure returns (uint256) {
         unchecked {
             // if (log) { if (z > 0) { console.log("z: %d", uint256(z)); } else { console.log("z: -%d", uint256(-z)); }}
 
             // Save the sign of x
-            int256 sign = 1;
-            if (z < 0) {
-                sign = -1;
-                z = -z;
-            }
+            // int256 sign = 1;
+            // if (z < 0) {
+            //     sign = -1;
+            //     z = -z;
+            // }
 
-            int256 t = 1e45 / (1e27 + 327591100 * z);
+            uint256 t = 1e45 / (1e27 + 327591100 * z);
             // if (log) { if (t > 0) { console.log("t: %d", uint256(t)); } else { console.log("t: -%d", uint256(-t)); }}
 
-            int256 t2 = t * t / 1e18;
-            int256 t3 = t2 * t / 1e18;
-            int256 t4 = t3 * t / 1e18;
-            int256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
+            uint256 t2 = t * t / 1e18;
+            uint256 t3 = t2 * t / 1e18;
+            uint256 t4 = t3 * t / 1e18;
+            uint256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
 
             // if (log) { if (poly > 0) { console.log("poly: %d", uint256(poly)); } else { console.log("poly: -%d", uint256(-poly)); }}
 
-            int256 approx = (1e36 - poly * int256(expNegative(uint256(z * z) / 1e18))) / 1e18;
+            return (1e36 - poly * expNegative(z * z / 1e18)) / 2e18;
 
             // if (log) { if (approx > 0) { console.log("approx: %d", uint256(approx)); } else { console.log("approx: -%d", uint256(-approx)); }}
-
-            return approx * sign;
         }
     }
 
