@@ -66,34 +66,6 @@ contract BlackScholesNUM {
         }
     }
 
-
-    // function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
-    //     unchecked {
-    //         return _getFuturePrice(spot, timeToExpirySec, rate);
-    //     }
-    // }
-
-    // function _getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) private pure returns (uint256) {
-    //     unchecked {
-    //         // we use Pade approximation for exp(x)
-    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-
-    //         // NOTE: this is slower than below
-    //         // uint256 timeToExpiryYears = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
-    //         // uint256 x = rate * timeToExpiryYears / 1e13;
-
-    //         // NOTE: this is faster than the above 
-    //         uint256 x = uint256(timeToExpirySec) * 1e5 * rate / SECONDS_IN_YEAR;
-
-    //         // todo: check x is not more than 0.2
-
-    //         uint256 numerator = (x + 3e9) ** 2 + 3e18;
-    //         uint256 denominator = (3e9 - x) ** 2 + 3e18;
-
-    //         return numerator * spot / denominator;
-    //     }
-    // }
-
     function expNegative(uint256 x) public pure returns (uint256) {
         unchecked {
             return 1e36 / expPositive(x);
@@ -241,7 +213,7 @@ contract BlackScholesNUM {
             // int256 erfResult = erf(x * 707106781186547524 / 1e18);
             // if (log) { if (erfResult > 0) { console.log("erfResult SOL: %d", uint256(erfResult)); } else { console.log("erfResult SOL: -%d", uint256(-erfResult)); }}
 
-            return uint256(1e18 + erf(x * 707106781186547524 / 1e18)) / 2; // 1 / sqrt(2)
+            return uint256(1e18 + erf(x * 707106781186547524 / 1e18)) / 2;
         }
     }
 
@@ -255,8 +227,10 @@ contract BlackScholesNUM {
             int256 sign = 1;
             if (z < 0) {
                 sign = -1;
+                // z -= 2 * z;
+                z = -z;
             }
-            z = z * sign;
+            //z = z * sign;
 
             int256 t = 1e45 / (1e27 + 327591100 * z);
             // if (log) { if (t > 0) { console.log("t: %d", uint256(t)); } else { console.log("t: -%d", uint256(-t)); }}
