@@ -236,7 +236,6 @@ contract BlackScholesNUM {
             int256 t2 = t * t / 1e18;
             int256 t3 = t2 * t / 1e18;
             int256 t4 = t3 * t / 1e18;
-            // int256 t5 = t4 * t / 1e18;
             int256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
 
             // if (log) { if (poly > 0) { console.log("poly: %d", uint256(poly)); } else { console.log("poly: -%d", uint256(-poly)); }}

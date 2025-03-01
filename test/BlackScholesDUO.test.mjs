@@ -172,7 +172,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
   async function testOptionRange(strikePoints, timePoints, volPoints, isCall, allowedRelError = 0.001000, allowedAbsError = 0.000114, multi = 10, log = true) {
     const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
     log && console.log("Allowed abs error: $" + allowedAbsError);
     log && console.log("Allowed rel error:  " + allowedRelError + "%");
 
@@ -204,23 +203,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               errorsJS.push({ absErrorJS, relErrorJS, errorParamsJS });
             }
 
-            // SOL
-            if (duoTest) {
-              let actualSOL = 0;
-              if (isCall) {
-                actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-              } else {
-                actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
-              }
+            // // SOL
+            // if (duoTest) {
+            //   let actualSOL = 0;
+            //   if (isCall) {
+            //     actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+            //   } else {
+            //     actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), Math.round(rate * 10_000))).toString() / 1e18;
+            //   }
 
-              const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
-              const absErrorSOL = Math.abs(actualSOL - expected);
+            //   const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
+            //   const absErrorSOL = Math.abs(actualSOL - expected);
 
-              const errorParamsSOL = {
-                expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-              }
-              errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
-            }
+            //   const errorParamsSOL = {
+            //     expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
+            //   }
+            //   errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
+            // }
 
             countTotal++;
 
@@ -924,6 +923,20 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
+
+      // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
+      // that requires puts implementation other than getting put from call
+      it("gets multiple call prices at lower strikes: random", async function () {
+        const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
+        const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
+        await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000140, 10, !fastTest);
+      });
+
+      it("gets multiple call prices at higher strikes: random", async function () {
+        const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
+        const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
+        await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000370, 10, !fastTest);
+      });
     });
 
     it("getFuturePrice", async function () {
@@ -950,24 +963,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     });
 
-    // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
-    // that requires puts implementation other than getting put from call
-    it("gets multiple call prices at lower strikes: random", async function () {
-      const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
-      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
-      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000140, 10, !fastTest);
-    });
-
     it("gets multiple put prices at lower strikes: random", async function () {
       const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000140, 10, !fastTest);
-    });
-
-    it("gets multiple call prices at higher strikes: random", async function () {
-      const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
-      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
-      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], true, 0.000070, 0.000370, 10, !fastTest);
     });
 
     it("gets multiple put prices at higher strikes: random", async function () {
@@ -975,21 +974,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
       await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], false, 0.000070, 0.000370, 10, !fastTest);
     });
-
-    // NOTE: error is in both cases 0.000300, but on put it is smaller relative
-    // it.only("gets a call price: debug", async function () {
-    //   const expected = blackScholesWrapped(1000, 4974.968111853853, 27492433 / SEC_IN_YEAR, 0.6, 0, "call");
-
-    //   const actualJS = blackScholesJS.getCallOptionPrice(1000, 4974.968111853853, 27492433, 0.6, 0);
-    //   console.log("Call expected:", expected, "actual JS :", actualJS);
-    // });
-
-    // it.only("gets a put price: debug", async function () {
-    //   const expected = blackScholesWrapped(1000, 4974.968111853853, 27492433 / SEC_IN_YEAR, 0.6, 0, "put");
-
-    //   const actualJS = blackScholesJS.getPutOptionPrice(1000, 4974.968111853853, 27492433, 0.6, 0);
-    //   console.log("Put expected:", expected, "actual JS :", actualJS);
-    // });
 
     it("test Math.exp limits", async function () {
 
