@@ -226,7 +226,6 @@ contract BlackScholesNUM {
         uint256 rateAdj
     ) public pure returns (int256) {
         unchecked {
-            // int256 timeYear = int256(uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR); // todo: optimization multiply by SEC_ANNUALIZED
             // todo: maybe use 1000 + ln... -1000, to avoid conversion to int256
             int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + int256(rateAdj + (volAdj * volAdj / 1e18) / 2) ;
             int256 denominator = int256(volAdj);
