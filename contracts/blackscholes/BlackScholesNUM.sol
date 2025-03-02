@@ -191,18 +191,10 @@ contract BlackScholesNUM {
         }
     }
 
-    function getD1(
-        uint128 spot,
-        uint128 strike,
-        uint256 volAdj, // was uint80
-        uint256 rateAdj
-    ) public pure returns (int256) {
+    function getD1(uint128 spot, uint128 strike, uint256 volAdj, uint256 rateAdj) public pure returns (int256) {
         unchecked {
             // todo: maybe use 1000 + ln... -1000, to avoid conversion to int256
-            int256 nominator = ln(uint256(spot) * 1e18 / uint256(strike)) + int256(rateAdj + (volAdj * volAdj / 1e18) / 2) ;
-            int256 denominator = int256(volAdj);
-
-            return nominator * 1e18 / denominator;
+            return (ln(uint256(spot) * 1e18 / uint256(strike)) + int256(rateAdj + (volAdj * volAdj / 2e18))) * 1e18 / int256(volAdj);
         }
     }
 
@@ -215,8 +207,8 @@ contract BlackScholesNUM {
             int256 argument = x * 707106781186547524 / 1e18;
             if (argument >= 0) {
                 return 5e17 + erfPositive(uint256(argument));
-            }
-
+            } 
+                
             return 5e17 - erfPositive(uint256(-argument));
         }
     }
@@ -225,13 +217,6 @@ contract BlackScholesNUM {
     function erfPositive(uint256 z) private pure returns (uint256) {
         unchecked {
             // if (log) { if (z > 0) { console.log("z: %d", uint256(z)); } else { console.log("z: -%d", uint256(-z)); }}
-
-            // Save the sign of x
-            // int256 sign = 1;
-            // if (z < 0) {
-            //     sign = -1;
-            //     z = -z;
-            // }
 
             uint256 t = 1e45 / (1e27 + 327591100 * z);
             // if (log) { if (t > 0) { console.log("t: %d", uint256(t)); } else { console.log("t: -%d", uint256(-t)); }}
