@@ -6,7 +6,6 @@ import "hardhat/console.sol";
 
 contract BlackScholesNUM {
 
-    uint256 internal constant SEC_ANNUALIZED = 31709791984; // 31709791983764586504
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
     // limits
@@ -23,6 +22,11 @@ contract BlackScholesNUM {
     // error
     error OutOfBoundsError(uint256);
 
+    error SpotLowerBoundError();
+    error SpotUpperBoundError();
+    error StrikeLowerBoundError();
+    error StrikeUpperBoundError();
+
     function getCallOptionPrice(
         uint128 spot,
         uint128 strike,
@@ -32,14 +36,14 @@ contract BlackScholesNUM {
     ) public pure returns (uint256 price) {
         unchecked {
             // step 0) check inputs
-            // if (spot <= MIN_SPOT) revert OutOfBoundsError(1);
-            // if (MAX_SPOT <= spot) revert OutOfBoundsError(2);
-            // if (strike * MAX_STRIKE_SPOT_RATIO < spot) revert OutOfBoundsError(3);
-            // if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert OutOfBoundsError(4);
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             // if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(5);
             // if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(6);
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR; // todo: test later with uint256(timeToExpirySec) * SEC_ANNUALIZED;
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
             uint256 volAdj = volatility * sqrt(timeYear) / 1e18;
             uint256 rateAdj = uint256(rate) * timeYear / 1e4;
 
