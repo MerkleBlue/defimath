@@ -904,16 +904,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
       // that requires puts implementation other than getting put from call
-      it("gets multiple call prices at lower strikes: random", async function () {
+      it.only("lower strikes: random", async function () {
         const strikeSubArray = generateRandomTestPoints(20, 100, fastTest ? 30 : 300, false);
         const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-        await testOptionRange(strikeSubArray, timeSubArray, [0, 0.01, 0.2, 0.6, 0.8, 6.5535], true, 0.000070, 0.000140, 10, !fastTest);
+        await testOptionRange(strikeSubArray, timeSubArray, [0.0001, 0.01, 0.2, 0.6, 0.8, 6.5535], true, 0.000070, 0.000140, 10, !fastTest);
       });
 
-      it.only("gets multiple call prices at higher strikes: random", async function () {
+      it.only("higher strikes: random", async function () {
         const strikeSubArray = generateRandomTestPoints(100, 500, fastTest ? 30 : 300, false);
         const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-        await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 6.5535], true, 0.000070, 0.000370, 10, !fastTest);
+        await testOptionRange(strikeSubArray, timeSubArray, [0.0001, 0.01, 0.2, 0.6, 0.8, 16.5537], true, 0.000070, 0.000370, 10, !fastTest);
       });
 
       it.only("regression test", async function () {

@@ -12,20 +12,22 @@ contract BlackScholesNUM {
     uint256 public constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
     uint256 public constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
     uint256 public constant MAX_STRIKE_SPOT_RATIO = 5;   
+    uint256 public constant MIN_EXPIRATION = 1 + 1;            // 1 sec
     uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
-    uint256 public constant MIN_VOLATILITY = 1e16 - 1;         // 1% volatility
-    uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
-    uint256 public constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
+    uint256 public constant MIN_VOLATILITY = 1e14 - 1;         // 0.01% volatility
+    // uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
+    // uint256 public constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
 
-    bool log = true;
-
-    // error
-    error OutOfBoundsError(uint256);
-
+    // errors
     error SpotLowerBoundError();
     error SpotUpperBoundError();
     error StrikeLowerBoundError();
     error StrikeUpperBoundError();
+    error TimeToExpiryLowerBoundError();
+    error TimeToExpiryUpperBoundError();
+    error VolatilityLowerBoundError();
+
+    bool log = true;
 
     function getCallOptionPrice(
         uint128 spot,
@@ -35,28 +37,29 @@ contract BlackScholesNUM {
         uint16 rate
     ) public pure returns (uint256 price) {
         unchecked {
-            // step 0) check inputs
+            // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
-            // if (MAX_EXPIRATION <= timeToExpirySec) revert OutOfBoundsError(5);
-            // if (volatility <= MIN_VOLATILITY) revert OutOfBoundsError(6);
+            if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;
-            uint256 volAdj = volatility * sqrt(timeYear) / 1e18;
-            uint256 rateAdj = uint256(rate) * timeYear / 1e4;
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
+            uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
+            uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
 
-            int256 d1 = getD1(spot, strike, volAdj, rateAdj);
-            int256 d2 = d1 - int256(volAdj);
+            int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
+            int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(rateAdj);
+            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate);
 
-            uint256 spotxCdfD1 = uint256(spot) * stdNormCDF(d1);
-            uint256 strikexCdfD2 = discountedStrike * stdNormCDF(d2);
+            uint256 spotNd1 = uint256(spot) * stdNormCDF(d1);                       // spot * N(d1)
+            uint256 strikeNd2 = discountedStrike * stdNormCDF(d2);                  // strike * N(d2)
 
-            if (spotxCdfD1 > strikexCdfD2) {
-                price = (spotxCdfD1 - strikexCdfD2) / 1e18;
+            if (spotNd1 > strikeNd2) {
+                price = (spotNd1 - strikeNd2) / 1e18;
             }
 
             // if (log) console.log("part1 SOL: %d", uint256(part1));
@@ -195,10 +198,10 @@ contract BlackScholesNUM {
         }
     }
 
-    function getD1(uint128 spot, uint128 strike, uint256 volAdj, uint256 rateAdj) public pure returns (int256) {
+    function getD1(uint128 spot, uint128 strike, uint256 scaledVol, uint256 scaledRate) public pure returns (int256) {
         unchecked {
             // todo: maybe use 1000 + ln... -1000, to avoid conversion to int256
-            return (ln(uint256(spot) * 1e18 / uint256(strike)) + int256(rateAdj + (volAdj * volAdj / 2e18))) * 1e18 / int256(volAdj);
+            return (ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
         }
     }
 
