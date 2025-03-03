@@ -6,10 +6,9 @@ export const SECONDS_IN_YEAR = 31536000;
 export const MIN_SPOT = 0.000001;             // 1 milionth of a $
 export const MAX_SPOT = 1e15;                 // 1 quadrillion $
 export const MAX_STRIKE_SPOT_RATIO = 5;  
+export const MIN_EXPIRATION = 1;              // 1 sec
 export const MAX_EXPIRATION = 63072000;       // 2 years
 export const MIN_VOLATILITY = 0.0001;         // 0.01% volatility
-// export const MAX_VOLATILITY = 1.92;        // 192% volatility
-// export const MAX_RATE = 0.2;               // 20% risk-free rate
 
 export const E_TO_0_03125 = 1.031743407499103;          // e ^ 0.03125
 export const E = 2.7182818284590452354;                 // e
@@ -17,34 +16,17 @@ export const E_TO_32 = 78962960182680.695160978022635;  // e ^ 32
 
 const log = false;
 
-// solidity: 
-// sqrt = 800
-// exp = 340
-// ln = 400
-// stdNormCDF = 600 x 2 = 1200
-// TOTAL: 2740 gas
-
-// ACTUAL
-// sqrt = 750
-// exp = 700
-// ln = 520
-// stdNormCDF = 1100 x 2 = 2200
-// TOTAL: 4200 gas
-
-// NOTE: sqrt(time) = e ^ (1/2 * ln(time)) => could be optimized below 800 gas
-
 export class BlackScholesNUMJS {
   
 
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
-    // if (spot < MIN_SPOT) throw new Error(1);
-    // if (spot > MAX_SPOT) throw new Error(2);
-    // if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
-    // if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
-    // if (timeSec > MAX_EXPIRATION) throw new Error(5);
-    // if (vol < MIN_VOLATILITY) throw new Error(6);
-    // if (vol > MAX_VOLATILITY) throw new Error(7);
-    // if (rate > MAX_RATE) throw new Error(8);
+    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
+    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
+    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
+    if (timeSec < MIN_EXPIRATION) throw new Error("TimeToExpiryLowerBoundError");
+    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+    if (vol < MIN_VOLATILITY) throw new Error("VolatilityLowerBoundError");
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
@@ -64,14 +46,14 @@ export class BlackScholesNUMJS {
   };
 
   getPutOptionPrice(spot, strike, timeSec, vol, rate) {
-    if (spot < MIN_SPOT) throw new Error(1);
+    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error(2);
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
     if (timeSec > MAX_EXPIRATION) throw new Error(5);
     if (vol < MIN_VOLATILITY) throw new Error(6);
-    if (vol > MAX_VOLATILITY) throw new Error(7);
-    if (rate > MAX_RATE) throw new Error(8);
+    // if (vol > MAX_VOLATILITY) throw new Error(7);
+    // if (rate > MAX_RATE) throw new Error(8);
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
