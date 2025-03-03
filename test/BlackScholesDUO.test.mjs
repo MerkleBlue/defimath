@@ -139,6 +139,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       }
     }
 
+    // add last time point
+    testTimePoints.push(2 * SEC_IN_YEAR);
+
     console.log("timePoints.length", timePoints.length, "testTimePoints.length", testTimePoints.length);
     console.log("Last time point:", testTimePoints[testTimePoints.length - 1], convertSeconds(testTimePoints[testTimePoints.length - 1]));
     return testTimePoints;
@@ -932,12 +935,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       // todo: neverending random test
 
       describe("limits", function () {
-        it("gets multiple call prices: $200 - $5000, limit time and vol %", async function () {
-          const strikes1 = (testStrikePoints.filter(value => value >= 20 && value <= 500)).slice(0, 10);
-          const strikes2 = (testStrikePoints.filter(value => value >= 20 && value <= 500)).slice(-10);
-          const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
-          const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
-          await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.0001, 0.0002, 0.0003, 18], [0, 6.5535], true, 0.000070, 0.000370, 10, false);
+        it("limits and near limit values", async function () {
+          const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
+          const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
+          const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
+          const rates = [0, 0.0001, 0.0002, 6.5533, 6.5534, 6.5535];
+          await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, false);
         });
       });
 
