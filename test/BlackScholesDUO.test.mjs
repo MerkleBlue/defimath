@@ -384,7 +384,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     blackScholesJS = new BlackScholesNUMJS();
   });
 
-  describe.only("functionality", function () {
+  describe("functionality", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
         let totalGas = 0, count = 0;
@@ -945,15 +945,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("random", function () {
         it("lower strikes", async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 100, fastTest ? 30 : 300, false);
-          const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.1], [0, 0.1, 0.2], true, 0.000070, 0.000140, 10, !fastTest);
+          const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 300, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
+          const rates = [0, 0.1, 0.2];
+          await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000140, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
-          const strikeSubArray = generateRandomTestPoints(100, 500, fastTest ? 30 : 300, false);
-          const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.1], [0, 0.1, 0.2], true, 0.000070, 0.000370, 10, !fastTest);
+          const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 300, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
+          const rates = [0, 0.1, 0.2];
+          await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, !fastTest);
         });
       });
 
@@ -1064,7 +1068,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("put", function () {
+    describe("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         let totalGas = 0, count = 0;
@@ -1129,15 +1133,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("random", function () {
         it("lower strikes", async function () {
-          const strikeSubArray = generateRandomTestPoints(20, 100, fastTest ? 30 : 300, false);
-          const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.1], [0, 0.1, 0.2], false, 0.000070, 0.000140, 10, !fastTest);
+          const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 300, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
+          const rates = [0, 0.1, 0.2];
+          await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000140, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
-          const strikeSubArray = generateRandomTestPoints(100, 500, fastTest ? 30 : 300, false);
-          const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-          await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.1], [0, 0.1, 0.2], false, 0.000070, 0.000370, 10, !fastTest);
+          const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 300, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
+          const rates = [0, 0.1, 0.2];
+          await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000370, 10, !fastTest);
         });
       });
 
@@ -1258,18 +1266,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
         assert.isBelow(relError, 0.00000006); // in %
       }
-    });
-
-    it("gets multiple put prices at lower strikes: random", async function () {
-      const strikeSubArray = generateRandomTestPoints(20, 100, 300, false);
-      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
-      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], [0], false, 0.000070, 0.000140, 10, !fastTest);
-    });
-
-    it("gets multiple put prices at higher strikes: random", async function () {
-      const strikeSubArray = generateRandomTestPoints(100, 500, 300, false);
-      const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, 300, true);
-      await testOptionRange(strikeSubArray, timeSubArray, [0.01, 0.2, 0.6, 0.8, 1.92], [0], false, 0.000070, 0.000370, 10, !fastTest);
     });
 
     it("test Math.exp limits", async function () {
