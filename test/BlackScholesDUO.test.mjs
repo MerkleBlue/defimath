@@ -851,8 +851,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("getCallOptionPrice", function () {
-      it.only("single", async function () {
+    describe.only("call", function () {
+      it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         let totalGas = 0, count = 0;
         const expected = bs.blackScholes(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -869,7 +869,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
-      it.only("multiple in typical range", async function () {
+      it("multiple in typical range", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -902,40 +902,102 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
-      // that requires puts implementation other than getting put from call
-      it.only("lower strikes: random", async function () {
-        const strikeSubArray = generateRandomTestPoints(20, 100, fastTest ? 30 : 300, false);
-        const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-        await testOptionRange(strikeSubArray, timeSubArray, [0.0001, 0.01, 0.2, 0.6, 0.8, 6.5535], true, 0.000070, 0.000140, 10, !fastTest);
+      // // //         describe("limit tests", function () {
+// // //           it("gets multiple call prices: $200 - $900, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 20 && value <= 90)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 20 && value <= 90)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+
+// // //           it("gets multiple call prices: $900 - $990, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 90 && value <= 99)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 90 && value <= 99)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+
+// // //           it("gets multiple call prices: $990 - $1010, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 99 && value <= 101)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 99 && value <= 101)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+
+// // //           it("gets multiple call prices: $1010 - $1100, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 101 && value <= 110)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 101 && value <= 110)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+
+// // //           it("gets multiple call prices: $1100 - $1300, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 110 && value <= 130)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 110 && value <= 130)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+
+// // //           it("gets multiple call prices: $1300 - $2000, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 130 && value <= 200)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 130 && value <= 200)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+
+// // //           it("gets multiple call prices: $2000 - $5000, limit time and vol %", async function () {
+// // //             const strikes1 = (testStrikePoints.filter(value => value >= 200 && value <= 500)).slice(0, 10);
+// // //             const strikes2 = (testStrikePoints.filter(value => value >= 200 && value <= 500)).slice(-10);
+// // //             const times1 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(0, 10);
+// // //             const times2 = testTimePoints.filter(value => value <= 2 * SEC_IN_YEAR).slice(-10);
+// // //             await testOptionRange([...strikes1, ...strikes2], [...times1, ...times2], [0.01, 1.92], true, maxRelError, maxAbsError, 10, false);
+// // //           });
+// // //         });
+
+      describe("random", function () {
+        // todo: if calls more precise on lower strikes, then use this rule: high_call = high_put + future + diff(strike, spot)
+        // that requires puts implementation other than getting put from call
+        it("lower strikes", async function () {
+          const strikeSubArray = generateRandomTestPoints(20, 100, fastTest ? 30 : 300, false);
+          const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.0001, 0.01, 0.2, 0.6, 0.8, 6.5535], true, 0.000070, 0.000140, 10, !fastTest);
+        });
+
+        it("higher strikes", async function () {
+          const strikeSubArray = generateRandomTestPoints(100, 500, fastTest ? 30 : 300, false);
+          const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
+          await testOptionRange(strikeSubArray, timeSubArray, [0.0001, 0.01, 0.2, 0.6, 0.8, 16.5537], true, 0.000070, 0.000370, 10, !fastTest);
+        });
       });
 
-      it.only("higher strikes: random", async function () {
-        const strikeSubArray = generateRandomTestPoints(100, 500, fastTest ? 30 : 300, false);
-        const timeSubArray = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 30 : 300, true);
-        await testOptionRange(strikeSubArray, timeSubArray, [0.0001, 0.01, 0.2, 0.6, 0.8, 16.5537], true, 0.000070, 0.000370, 10, !fastTest);
-      });
-
-      it.only("regression test", async function () {
-        const expected = bs.blackScholes(1000, 1200, 1 / 365, 0.40, 0.05, "call");
-        const actualJS = blackScholesJS.getCallOptionPrice(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
-        // const absError = Math.abs(actualJS - expected);
-        // const relError = expected !== 0 ? absError / expected * 100 : 0;
-        // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-        // // assert.isBelow(absError, 0.00000040);
-        // assert.isBelow(relError, 0.00006);
-        assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
-
-        if (duoTest) {
-          const { blackScholesNUM } = await loadFixture(deploy);
-
-          const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), (0.05 * 10000))).toString() / 1e18;
-          // const absError = Math.abs(actualSOL - expected);
+      describe("regression", function () {
+        it("regression test", async function () {
+          const expected = bs.blackScholes(1000, 1200, 1 / 365, 0.40, 0.05, "call");
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
+          // const absError = Math.abs(actualJS - expected);
           // const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-          // assert.isBelow(relError, 0.00006); 
-          assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
-        }
+          // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+          // // assert.isBelow(absError, 0.00000040);
+          // assert.isBelow(relError, 0.00006);
+          assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+
+          if (duoTest) {
+            const { blackScholesNUM } = await loadFixture(deploy);
+
+            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), (0.05 * 10000))).toString() / 1e18;
+            // const absError = Math.abs(actualSOL - expected);
+            // const relError = expected !== 0 ? absError / expected * 100 : 0;
+            // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+            // assert.isBelow(relError, 0.00006); 
+            assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
+          }
+        });
       });
     });
 
