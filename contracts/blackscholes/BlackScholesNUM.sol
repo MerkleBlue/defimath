@@ -12,7 +12,7 @@ contract BlackScholesNUM {
     uint256 public constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
     uint256 public constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
     uint256 public constant MAX_STRIKE_SPOT_RATIO = 5;   
-    uint256 public constant MIN_EXPIRATION = 1 + 1;            // 1 sec
+    uint256 public constant MIN_EXPIRATION = 1 - 1;            // 1 sec
     uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
     uint256 public constant MIN_VOLATILITY = 1e14 - 1;         // 0.01% volatility
     // uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
