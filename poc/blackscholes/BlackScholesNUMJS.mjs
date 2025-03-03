@@ -47,13 +47,12 @@ export class BlackScholesNUMJS {
 
   getPutOptionPrice(spot, strike, timeSec, vol, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
-    if (spot > MAX_SPOT) throw new Error(2);
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error(3);
-    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error(4);
-    if (timeSec > MAX_EXPIRATION) throw new Error(5);
-    if (vol < MIN_VOLATILITY) throw new Error(6);
-    // if (vol > MAX_VOLATILITY) throw new Error(7);
-    // if (rate > MAX_RATE) throw new Error(8);
+    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
+    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
+    if (timeSec < MIN_EXPIRATION) throw new Error("TimeToExpiryLowerBoundError");
+    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+    if (vol < MIN_VOLATILITY) throw new Error("VolatilityLowerBoundError");
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);

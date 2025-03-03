@@ -73,6 +73,50 @@ contract BlackScholesNUM {
         }
     }
 
+    function getPutOptionPrice(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint16 rate
+    ) public pure returns (uint256 price) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
+            if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
+            uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
+            uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
+
+            int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
+            int256 d2 = d1 - int256(scaledVol);
+
+            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate);
+
+            uint256 spotNd1 = uint256(spot) * stdNormCDF(-d1);                      // spot * N(-d1)
+            uint256 strikeNd2 = discountedStrike * stdNormCDF(-d2);                 // strike * N(-d2)
+
+            if (strikeNd2 > spotNd1) {
+                price = (strikeNd2 - spotNd1) / 1e18;
+            }
+
+            // if (log) console.log("part1 SOL: %d", uint256(part1));
+            // if (log) console.log("part2 SOL: %d", uint256(part2));
+            // if (log) console.log("timeYear: %d", uint256(timeYear));
+            // if (log) console.log("volAdj: %d", uint256(volAdj));
+            // if (log) console.log("rateAdj: %d", uint256(rateAdj));
+            // if (log) { if (d1 > 0) { console.log("d1: %d", uint256(d1)); } else { console.log("d1: -%d", uint256(-d1)); }}
+            // if (log) { if (d2 > 0) { console.log("d2: %d", uint256(d2)); } else { console.log("d2: -%d", uint256(-d2)); }}
+            // if (log) console.log("discountedStrike: %d", uint256(discountedStrike));
+        }
+    }
+
     function expNegative(uint256 x) public pure returns (uint256) {
         unchecked {
             return 1e36 / expPositive(x);
@@ -1082,9 +1126,22 @@ contract BlackScholesNUM {
         return startGas - endGas;
     }
 
-    // function _abs(int x) internal pure returns (uint result) {
-    //     unchecked {
-    //         result = uint(x < 0 ? -x : x);
-    //     }
-    // }
+    function getPutOptionPriceMeasureGas(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint16 rate
+    ) public view returns (uint256) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        result = getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+
+        endGas = gasleft();
+        
+        return startGas - endGas;
+    }
 }
