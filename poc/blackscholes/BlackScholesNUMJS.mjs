@@ -1,20 +1,15 @@
 import { blackScholesWrapped } from "../../test/BlackScholesDUO.test.mjs";
 
-export const SECONDS_IN_DAY = 24 * 60 * 60;
-export const SECONDS_IN_YEAR = 365 * SECONDS_IN_DAY;
-
-// strike price +-5x from spot price
-export const STRIKE_MIN = 20;                 // 20;
-export const STRIKE_MAX = 500;                // 500;
+export const SECONDS_IN_YEAR = 31536000;
 
 // limits
 export const MIN_SPOT = 0.000001;             // 1 milionth of a $
 export const MAX_SPOT = 1e15;                 // 1 quadrillion $
 export const MAX_STRIKE_SPOT_RATIO = 5;  
 export const MAX_EXPIRATION = 63072000;       // 2 years
-export const MIN_VOLATILITY = 0.01;           // 1% volatility
-export const MAX_VOLATILITY = 1.92;           // 192% volatility
-export const MAX_RATE = 0.2;                  // 20% risk-free rate
+export const MIN_VOLATILITY = 0.0001;         // 0.01% volatility
+// export const MAX_VOLATILITY = 1.92;        // 192% volatility
+// export const MAX_RATE = 0.2;               // 20% risk-free rate
 
 export const E_TO_0_03125 = 1.031743407499103;          // e ^ 0.03125
 export const E = 2.7182818284590452354;                 // e
@@ -41,7 +36,6 @@ const log = false;
 export class BlackScholesNUMJS {
   
 
-  // vol and rate is in decimal format, e.g. 0.1 for 10%
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
     // if (spot < MIN_SPOT) throw new Error(1);
     // if (spot > MAX_SPOT) throw new Error(2);
@@ -54,7 +48,6 @@ export class BlackScholesNUMJS {
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
-
 
     const d1 = this.getD1(spot, strike, timeYear, volAdj, rate);
     const d2 = d1 - volAdj;
