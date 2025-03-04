@@ -50,6 +50,14 @@ export function assertEitherBelow(actual, expected, maxRelError = 100, maxAbsErr
   assert.isTrue(relError < maxRelError || absError < maxAbsError, "Relative or absolute error is above the threshold");
 }
 
+export function assertBothBelow(actual, expected, maxRelError = 100, maxAbsError = 1) {
+  const absError = Math.abs(actual - expected);
+  const relError = (expected !== 0 && actual !== 0) ? Math.abs(absError / expected) : 0;
+
+  assert.isBelow(relError, maxRelError, "Relative error is above the threshold");
+  assert.isBelow(absError, maxAbsError, "Absolute error is above the threshold");
+}
+
 function tokens(value) {
   const trimmedValue = Math.round(value * 1e18) / 1e18;
   return hre.ethers.parseUnits(trimmedValue.toString(), 18).toString();
@@ -645,113 +653,76 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   describe("functionality", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 0; x < 0.03125; x += 0.0003) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = absError / expected * 100;
-          // console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
-          assert.isBelow(absError, 0.000000000050); // 1e-12 
-          assert.isBelow(relError, 0.000000004200); // 1e-12 
+          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000050);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = absError / expected * 100;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(absError, 0.000000000050); // 1e-12 
-            assert.isBelow(relError, 0.000000004200); // 1e-12 
+            assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
           }
         }
       });
 
       it("exp positive [0.03125, 1)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 0.03125; x < 1; x += 0.0010125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = absError / expected * 100;
-          // console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
-          assert.isBelow(absError, 0.000000000110); // 1e-12 
-          assert.isBelow(relError, 0.000000004200); // 1e-12 
+          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000110);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = absError / expected * 100;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(absError, 0.000000000110); // 1e-12 
-            assert.isBelow(relError, 0.000000004200); // 1e-12 
+            assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000110);
           }
         }
       });
 
       it("exp positive [1, 32)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1; x < 32; x += 0.03200125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = absError / expected * 100;
-          /// console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
-          assert.isBelow(relError, 0.000000004200); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000004200);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = absError / expected * 100;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(relError, 0.000000004200); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000004200);
           }
         }
       });
 
       it("exp positive [32, 50)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 32; x < 50; x += 0.25600125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = absError / expected * 100;
-          //console.log("x: ", x.toFixed(4), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
-          assert.isBelow(relError, 0.000000004200); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000004200);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = absError / expected * 100;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            // assert.isBelow(absError, 0.00000001);
-            assert.isBelow(relError, 0.000000004200); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000004200);
           }
         }
       });
 
       it("exp negative [-50, -0.05]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 0.05; x <= 50; x += 0.05 ) { 
           const expected = Math.exp(-x);
           const actualJS = blackScholesJS.exp(-x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = absError / expected * 100;
-          // console.log("x: ", x.toFixed(2), "rel error JS :", relError.toFixed(8) + "%,", "act: " + actualJS.toFixed(10), "exp: " + expected.toFixed(10));
-          assert.isBelow(absError, 0.000000000042); // 1e-12 
-          assert.isBelow(relError, 0.000000004200); // 1e-12 
+          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000042);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.expNegative(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = absError / expected * 100;
-            // console.log("x: ", x.toFixed(2), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(18), "exp: " + expected.toFixed(18));
-            assert.isBelow(absError, 0.000000000042); // 1e-12 
-            // assert.isBelow(relError, 1.510042000000); // 1e-12 
+            assertAbsoluteBelow(actualSOL, expected, 0.000000000042);
           }
         }
       });
@@ -760,64 +731,46 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("ln", function () {
       // todo: test all limits like 1.090507732665257659
       it("ln upper [1, 1.0905]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
           const expected = Math.log(x);
           const actualJS = blackScholesJS.ln(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-          assert.isBelow(relError, 0.000000000150); // 1e-12 
+          assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.ln(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(relError, 0.000000000150); // 1e-12 
+            assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
           }
         }
       });
 
       it("ln upper [1.0905, 16]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
           const expected = Math.log(x);
           const actualJS = blackScholesJS.ln(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-          assert.isBelow(relError, 0.000000000150); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.ln(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(relError, 0.000000000150); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
           }
         }
       });
 
       it("ln lower [0.0625, 1)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 0.0625; x < 1; x += 0.001) { 
           const expected = Math.log(x);
           const actualJS = blackScholesJS.ln(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-          assert.isBelow(relError, 0.000000000150); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.ln(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
-            assert.isBelow(relError, 0.000000000150); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
           }
         }
       });
@@ -826,127 +779,90 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("sqrt", function () {
       // todo: test all limits like 1.04427
       it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1; x < 1.074607828321317497; x += 0.0001) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.000000000072); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(relError, 0.000000000072); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [1.04427, 100)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1.074607828321317497; x < 100; x += 0.1) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.000000000072); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(relError, 0.000000000072); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [100, 10000)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 100; x < 10000; x += 9.89) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.000000000072); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(relError, 0.000000000072); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [1e4, 1e6)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1e4; x < 1e6; x += 1e3) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.000000000072); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(relError, 0.000000000072); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [1e6, 1e8)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 1e6; x < 1e8; x += 1e5) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.000000000072); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(relError, 0.000000000072); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt lower [1e-6, 1)", async function () { // todo: test better
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         for (let x = 1; x < 1000000; x += 1234) {
           const expected = Math.sqrt(1 / x);
           const actualJS = blackScholesJS.sqrt(1 / x);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error for x: ", x.toFixed(4), "JS:", relError.toFixed(12) + "%, ", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.000000000072); // 1e-12 
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.sqrt(tokens(1 / x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? absError / expected * 100 : 0;
-            // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(relError, 0.00000000080); // 1e-12 
+            assertRelativeBelow(actualSOL, expected, 0.000000000800); // todo: why lower than JS?
           }
         }
       });
@@ -954,28 +870,23 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("d1", function () {
       it("d1 single", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         const volAdj = 0.6 * Math.sqrt(60 / 365);
         const rateAdj = 0.05 * (60 / 365);
         const expected = bs.getW(1000, 980, 60 / 365, 0.6, 0.05);
         const actualJS = blackScholesJS.getD1(1000, 980, 60 / 365, volAdj, 0.05);
-        const absError = Math.abs(actualJS - expected);
-        const relError = expected !== 0 ? absError / expected * 100 : 0;
-        // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-        assert.isBelow(absError, 0.00000040);
-        assert.isBelow(relError, 0.00000006);
+        assertBothBelow(actualJS, expected, 0.00000006, 0.00000040);
 
         if (duoTest) {
-          const { blackScholesNUM } = await loadFixture(deploy);
-
           const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(980), tokens(volAdj), tokens(rateAdj))).toString() / 1e18;
-          const absError = Math.abs(actualSOL - expected);
-          const relError = expected !== 0 ? absError / expected * 100 : 0;
-          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.00000006); 
+          assertBothBelow(actualSOL, expected, 0.00000006, 0.00000040);
         }
       });
 
       it("d1 multiple", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         const strikes = [500, 800, 1000, 1200, 1500];
         const times = [30, 60, 90, 180];
         const vols = [0.4, 0.6, 0.8];
@@ -989,19 +900,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 const rateAdj = rate * (time / 365);
                 const expected = bs.getW(1000, strike, time / 365, vol, rate);
                 const actualJS = blackScholesJS.getD1(1000, strike, time / 365, volAdj, rate);
-                const absError = Math.abs(actualJS - expected);
-                const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-                // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-                assert.isBelow(relError, 0.000000000175); // 1e-12
+                assertBothBelow(actualJS, expected, 0.000000000175, 0.00000040);
 
                 if (duoTest) {
-                  const { blackScholesNUM } = await loadFixture(deploy);
-        
                   const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(strike), tokens(volAdj), tokens(rateAdj))).toString() / 1e18;
-                  const absError = Math.abs(actualSOL - expected);
-                  const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-                  // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-                  assert.isBelow(relError, 0.000000000160); // 1e-12
+                  assertBothBelow(actualSOL, expected, 0.000000000175, 0.00000040);
                 }
               }
             }
@@ -1012,44 +915,30 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
         const actualJS = blackScholesJS.stdNormCDF(d1);
-        const absError = Math.abs(actualJS - expected);
-        const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-        // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
-        assert.isBelow(relError, 0.0000075);
+        assertAbsoluteBelow(actualJS, expected, 0.000000070000);
 
         if (duoTest) {
-          const { blackScholesNUM } = await loadFixture(deploy);
-
           const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-          const absError = Math.abs(actualSOL - expected);
-          const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-          assert.isBelow(relError, 0.0000075);
+          assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
         }
       });
 
       it("stdNormCDF multiple", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let d1 = -2; d1 < 2; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
-          const absError = Math.abs(actualJS - expected);
-          const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-          // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-          assert.isBelow(absError, 0.000000070000); // 1e-12
-          // assert.isBelow(relError, 0.0004);
+          assertAbsoluteBelow(actualJS, expected, 0.000000070000);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
-
             const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-            // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
-            assert.isBelow(absError, 0.000000070000); // 1e-12
-            // assert.isBelow(relError, 0.0000175);
+            assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
           }
         }
       });
@@ -1063,19 +952,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (let rate = 0; rate < 2; rate += 0.1) { 
             const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
             const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, rate);
-            const absError = Math.abs(actualJS - expected);
-            const relError = absError / expected * 100;
-            // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-            assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
-            assert.isBelow(relError, 0.00000006); // in %
+            assertBothBelow(actualJS, expected, 0.00000006, 0.00000300);
 
             if (duoTest) {
               const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), SEC_IN_YEAR, Math.round(rate * 10000))).toString() / 1e18;
-              const absError = Math.abs(actualSOL - expected);
-              const relError = absError / expected * 100;
-              // console.log("Rel error for x: ", rate, "SOL:", relError.toFixed(8) + "%, ", "act: " + actualSOL.toFixed(8), "exp: " + expected.toFixed(8));
-              assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
-              assert.isBelow(relError, 0.00000006); // in %
+              assertBothBelow(actualSOL, expected, 0.00000006, 0.00000300);
             }
           }
         }
@@ -1422,14 +1303,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
       });
-    });
-
-    it("test Math.exp limits", async function () {
-
-      // console.log(Math.exp(-600));
-      // console.log(Math.exp(-1e-15))
-
-      // min and max (-z * z) -> -6837683.739105278 and -1.7117711582997589e-13
     });
   });
 });
