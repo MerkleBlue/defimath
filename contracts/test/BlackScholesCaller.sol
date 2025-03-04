@@ -61,7 +61,6 @@ contract BlackScholesCaller {
         return BlackScholesNUM.getD1(spot, strike, scaledVol, scaledRate);
     }
 
-      // using erf function
     function stdNormCDF(int256 x) external pure returns (uint256) {
         return BlackScholesNUM.stdNormCDF(x);
     }
@@ -79,6 +78,8 @@ contract BlackScholesCaller {
 
         return startGas - endGas;
     }
+
+    // measure gas
 
     function lnMG(uint256 x) external view returns (uint256) {
         uint256 resultUint256;
@@ -123,6 +124,23 @@ contract BlackScholesCaller {
         startGas = gasleft();
 
         result = BlackScholesNUM.stdNormCDF(x);
+
+        endGas = gasleft();
+        
+        return startGas - endGas;
+    }
+
+    function getFuturePriceMG(
+        uint128 spot,
+        uint32 timeToExpirySec,
+        uint16 rate
+    ) external view returns (uint256) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        result = BlackScholesNUM.getFuturePrice(spot, timeToExpirySec, rate);
 
         endGas = gasleft();
         

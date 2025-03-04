@@ -557,6 +557,24 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
+    describe("future", function () {
+      it("multiple in typical range", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const times = [7, 30, 60, 90, 180];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const time of times) {
+          for (const rate of rates) {
+            totalGas += parseInt(await blackScholesNUM.getFuturePriceMG(tokens(1000), time * SEC_IN_DAY, (rate * 10000)));
+            count++;
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
     describe("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
