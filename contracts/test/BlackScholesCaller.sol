@@ -99,7 +99,7 @@ contract BlackScholesCaller {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BlackScholesNUM.sqrtUpper(x);
+        result = BlackScholesNUM.sqrt(x);
 
         endGas = gasleft();
         
