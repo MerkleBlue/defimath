@@ -4,19 +4,19 @@ pragma solidity ^0.8.28;
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
 
-contract BlackScholesNUM {
+library BlackScholesNUM {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
     // limits
-    uint256 public constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
-    uint256 public constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
-    uint256 public constant MAX_STRIKE_SPOT_RATIO = 5;   
-    uint256 public constant MIN_EXPIRATION = 1 - 1;            // 1 sec
-    uint256 public constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
-    uint256 public constant MIN_VOLATILITY = 1e14 - 1;         // 0.01% volatility
-    // uint256 public constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
-    // uint256 public constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
+    uint256 internal constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
+    uint256 internal constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
+    uint256 internal constant MAX_STRIKE_SPOT_RATIO = 5;   
+    uint256 internal constant MIN_EXPIRATION = 1 - 1;            // 1 sec
+    uint256 internal constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
+    uint256 internal constant MIN_VOLATILITY = 1e14 - 1;         // 0.01% volatility
+    // uint256 internal constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
+    // uint256 internal constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
 
     // errors
     error SpotLowerBoundError();
@@ -27,7 +27,7 @@ contract BlackScholesNUM {
     error TimeToExpiryUpperBoundError();
     error VolatilityLowerBoundError();
 
-    bool log = true;
+    // bool log = true;
 
     function getCallOptionPrice(
         uint128 spot,
@@ -35,7 +35,7 @@ contract BlackScholesNUM {
         uint32 timeToExpirySec,
         uint64 volatility,
         uint16 rate // todo: def need more precise rate
-    ) public pure returns (uint256 price) {
+    ) internal pure returns (uint256 price) {
         unchecked {
             // todo: maybe have something like scale, and calculate always for $100, and then scale it to the actual spot
             // check inputs
@@ -47,7 +47,7 @@ contract BlackScholesNUM {
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
             uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
 
@@ -80,7 +80,7 @@ contract BlackScholesNUM {
         uint32 timeToExpirySec,
         uint64 volatility,
         uint16 rate
-    ) public pure returns (uint256 price) {
+    ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
@@ -91,7 +91,7 @@ contract BlackScholesNUM {
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
             uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
 
@@ -118,7 +118,7 @@ contract BlackScholesNUM {
         }
     }
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) internal pure returns (uint256) {
         unchecked {
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
@@ -126,19 +126,19 @@ contract BlackScholesNUM {
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
 
             // todo: check inputs
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
             return uint256(spot) * expPositive(scaledRate) / 1e18;
         }
     }
 
-    function expNegative(uint256 x) public pure returns (uint256) {
+    function expNegative(uint256 x) internal pure returns (uint256) {
         unchecked {
             return 1e36 / expPositive(x);
         }
     }
 
-    function expPositive(uint256 x) public pure returns (uint256) {
+    function expPositive(uint256 x) internal pure returns (uint256) {
         unchecked {
             uint256 exp123 = 1;
 
@@ -176,7 +176,7 @@ contract BlackScholesNUM {
         }
     }
 
-    function ln(uint256 x) public pure returns (int256) {
+    function ln(uint256 x) internal pure returns (int256) {
         unchecked {
             if (x >= 1e18) {
                 return int256(lnUpper(x));
@@ -187,7 +187,7 @@ contract BlackScholesNUM {
     }
 
     // x: [1, 16] 
-    function lnUpper(uint256 x) public pure returns (uint256) {
+    function lnUpper(uint256 x) internal pure returns (uint256) {
         unchecked {
             uint256 multiplier;
 
@@ -212,7 +212,7 @@ contract BlackScholesNUM {
         }
     }
 
-    function sqrt(uint256 x) public pure returns (uint256) {
+    function sqrt(uint256 x) internal pure returns (uint256) {
         unchecked {
             if (x >= 1e18) {
                 return sqrtUpper(x);
@@ -223,7 +223,7 @@ contract BlackScholesNUM {
     }
 
     // x: [1, 1e8]
-    function sqrtUpper(uint256 x) public pure returns (uint256) {
+    function sqrtUpper(uint256 x) internal pure returns (uint256) {
         unchecked {
             uint256 zeros = 1;
             uint256 sqrtPrecompute = 1e18;
@@ -257,7 +257,7 @@ contract BlackScholesNUM {
         }
     }
 
-    function getD1(uint128 spot, uint128 strike, uint256 scaledVol, uint256 scaledRate) public pure returns (int256) {
+    function getD1(uint128 spot, uint128 strike, uint256 scaledVol, uint256 scaledRate) internal pure returns (int256) {
         unchecked {
             // todo: maybe use 1000 + ln... -1000, to avoid conversion to int256
             return (ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -265,7 +265,7 @@ contract BlackScholesNUM {
     }
 
       // using erf function
-    function stdNormCDF(int256 x) public pure returns (uint256) {
+    function stdNormCDF(int256 x) internal pure returns (uint256) {
         unchecked {
             // todo: make sure erf(x) is < 1
             // int256 erfResult = erf(x * 707106781186547524 / 1e18);
@@ -1008,155 +1008,5 @@ contract BlackScholesNUM {
             // x is always >= 100 
             return 10;
         }
-    }
-
-    // gas 592 when x > 0.05
-    // function expPosNeg(int256 x) public pure returns (uint256) {
-    //     unchecked {
-    //         // handle special case where x = 0
-    //         // if (x == 0) {
-    //         //     return 1e18;
-    //         // }
-
-    //         bool isPositive = x >= 0;
-    //         if (!isPositive) {
-    //             x = -x;
-    //         }
-
-    //         // int256 exp1 = 1e18;
-    //         // int256 exp2 = 1e18;
-    //         // int256 exp3 = 1e18;
-
-    //         // x: [1, 32)
-    //         // if (x >= 1e18) {
-    //         //     int256 exponent = x / 1e18;
-    //         //     x %= 1e18;
-    //         //     exp2 = getExp2Precalculated(exponent);
-    //         // }
-    //         // {
-    //             int256 exponent2 = x / 1e18;
-    //             x %= 1e18;
-    //             int256 exp2 = exponent2 == 0 ? int256(1e18) : getExp2Precalculated(exponent2);
-    //         // }
-
-    //         // if (log) { if (x >= 0) { console.log("x SOL: %d", uint256(x)); } else { console.log("x SOL: -%d", uint256(-x)); }}
-
-
-    //         // x: [0.03125, 1)
-    //         // {
-    //             int256 exponent3 = x / 3125e13;
-    //             x %= 3125e13;
-    //             int256 exp3 = exponent3 == 0 ? int256(1e18) : getExp3Precalculated(exponent3);
-    //         // }
-
-    //         // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
-            
-
-    //         // we use Pade approximation for exp(x)
-    //         // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    //         int256 numerator = ((x + 3e18) ** 2) + 3e36;
-    //         int256 denominator = ((3e18 - x) ** 2) + 3e36;
-    //         // int256 exp2 = (numerator * 1e18) / denominator;
-
-    //         // if (log) { if (exp2 >= 0) { console.log("exp2 SOL: %d", uint256(exp2)); } else { console.log("exp2 SOL: -%d", uint256(-exp2)); }}
-    //         // if (log) { if (exp3 >= 0) { console.log("exp3 SOL: %d", uint256(exp3)); } else { console.log("exp3 SOL: -%d", uint256(-exp3)); }}
-    //         // if (log) { if (numerator >= 0) { console.log("numerator SOL: %d", uint256(numerator)); } else { console.log("numerator SOL: -%d", uint256(-numerator)); }}
-    //         // if (log) { if (denominator >= 0) { console.log("denominator SOL: %d", uint256(denominator)); } else { console.log("denominator SOL: -%d", uint256(-denominator)); }}
-
-    //         uint256 result = uint(exp2 * exp3 / 1e18 * numerator / (denominator)); // using e ^ (a + b) = e ^ a * e ^ b
-
-    //         return isPositive ? result : 1 / result;
-    //     }
-    // }
-
-    // todo: delete
-    function expMeasureGas(uint256 x) public view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = expPositive(x);
-
-        endGas = gasleft();
-
-        return startGas - endGas;
-    }
-
-    function lnMeasureGas(uint256 x) public view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = lnUpper(x);
-
-        endGas = gasleft();
-        
-        return startGas - endGas;
-    }
-
-    function sqrtMeasureGas(uint256 x) public view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = sqrtUpper(x);
-
-        endGas = gasleft();
-        
-        return startGas - endGas;
-    }
-
-    function stdNormCDFMeasureGas(int256 x) public view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = stdNormCDF(x);
-
-        endGas = gasleft();
-        
-        return startGas - endGas;
-    }
-
-    function getCallOptionPriceMeasureGas(
-        uint128 spot,
-        uint128 strike,
-        uint32 timeToExpirySec,
-        uint64 volatility,
-        uint16 rate
-    ) public view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
-
-        endGas = gasleft();
-        
-        return startGas - endGas;
-    }
-
-    function getPutOptionPriceMeasureGas(
-        uint128 spot,
-        uint128 strike,
-        uint32 timeToExpirySec,
-        uint64 volatility,
-        uint16 rate
-    ) public view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
-
-        endGas = gasleft();
-        
-        return startGas - endGas;
     }
 }
