@@ -34,9 +34,10 @@ contract BlackScholesNUM {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate
+        uint16 rate // todo: def need more precise rate
     ) public pure returns (uint256 price) {
         unchecked {
+            // todo: maybe have something like scale, and calculate always for $100, and then scale it to the actual spot
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
@@ -114,6 +115,15 @@ contract BlackScholesNUM {
             // if (log) { if (d1 > 0) { console.log("d1: %d", uint256(d1)); } else { console.log("d1: -%d", uint256(-d1)); }}
             // if (log) { if (d2 > 0) { console.log("d2: %d", uint256(d2)); } else { console.log("d2: -%d", uint256(-d2)); }}
             // if (log) console.log("discountedStrike: %d", uint256(discountedStrike));
+        }
+    }
+
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
+        unchecked {
+            // todo: check inputs
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
+            uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
+            return uint256(spot) * expPositive(scaledRate) / 1e18;
         }
     }
 

@@ -1,9 +1,9 @@
 
 import { assert, expect } from "chai";
-import bs from "black-scholes";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import hre from "hardhat";
 import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
+import bs from "black-scholes";
 
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
@@ -141,8 +141,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     // add last time point
     testTimePoints.push(2 * SEC_IN_YEAR);
 
-    console.log("timePoints.length", timePoints.length, "testTimePoints.length", testTimePoints.length);
-    console.log("Last time point:", testTimePoints[testTimePoints.length - 1], convertSeconds(testTimePoints[testTimePoints.length - 1]));
+    // console.log("timePoints.length", timePoints.length, "testTimePoints.length", testTimePoints.length);
+    // console.log("Last time point:", testTimePoints[testTimePoints.length - 1], convertSeconds(testTimePoints[testTimePoints.length - 1]));
     return testTimePoints;
   }
 
@@ -152,8 +152,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const upperPoints = [];
 
     const multiplier = Math.pow(ratio, 1 / (count / 2 - 1));
-    console.log(multiplier);
-
 
     for (let i = 0; i < (count / 2) - 1; i++) {
       upperPoints.push(100 * Math.pow(multiplier, i));
@@ -378,16 +376,264 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   before(async () => {
     testTimePoints = generateTestTimePoints();
     testStrikePoints = generateTestStrikePoints(5, 500);
-    // console.log("testTimePoints", testTimePoints);
-    // console.log("final", testStrikePoints);
 
     blackScholesJS = new BlackScholesNUMJS();
+  });
+
+  duoTest && describe("performance", function () {
+    describe("exp", function () {
+      it("exp positive < 0.03125", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        let totalGas = 0, count = 0;
+        for (let x = 0; x < 0.03125; x += 0.0003) { 
+          totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("exp positive [0.03125, 1)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        let totalGas = 0, count = 0;
+        for (let x = 0.03125; x < 1; x += 0.0020125) { 
+          totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it("exp positive [1, 32)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 32; x += 0.06200125) { 
+          totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it("exp positive [32, 50)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 32; x < 50; x += 0.25600125) { 
+          totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it("exp negative [-50, -0.05]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 0.05; x <= 50; x += 0.1 ) { 
+          totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("ln", function () {
+      it("ln upper [1, 1.0905]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("ln upper [1.0905, 16]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("ln lower [0.0625, 1)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 0.0625; x < 1; x += 0.002) { 
+          totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x))); // todo: measure ln, not lnUpper
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("sqrt", function () {
+      it("sqrt upper [1, 1.0746]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.074607828321317497; x += 0.0002) {
+          totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [1.04427, 100)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1.074607828321317497; x < 100; x += 0.2) {
+          totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [100, 10000)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 100; x < 10000; x += 21.457) {
+          totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [1e4, 1e6)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e4; x < 1e6; x += 2012.3) {
+          totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [1e6, 1e8)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e6; x < 1e8; x += 202463) {
+          totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      // todo: tests for 1 / (1-100, 100-10000, 10000-1000000)
+      it("sqrt lower [1e-6, 1)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1000000; x += 2234) {
+          totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(1 / x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("stdNormCDF", function () {
+      it("stdNormCDF single", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        const d1 = 0.6100358074173348;
+
+        totalGas += parseInt(await blackScholesNUM.stdNormCDFMeasureGas(tokens(d1)));
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+
+      it("stdNormCDF multiple", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let d1 = -2; d1 < 2; d1 += 0.01234) {
+          totalGas += parseInt(await blackScholesNUM.stdNormCDFMeasureGas(tokens(d1)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+    });
+
+    describe("call", function () {
+      it("single", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMeasureGas(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000)));
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+
+      it("multiple in typical range", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMeasureGas(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000)));
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("put", function () {
+      it("single", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        totalGas += parseInt(await blackScholesNUM.getPutOptionPriceMeasureGas(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000)));
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+
+      it("multiple in typical range", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt(await blackScholesNUM.getPutOptionPriceMeasureGas(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000)));
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
   });
 
   describe("functionality", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 0; x < 0.03125; x += 0.0003) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
@@ -406,16 +652,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             assert.isBelow(absError, 0.000000000050); // 1e-12 
             assert.isBelow(relError, 0.000000004200); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
       it("exp positive [0.03125, 1)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 0.03125; x < 1; x += 0.0010125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
@@ -434,16 +675,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             // console.log("x: ", x.toFixed(3), "rel error SOL:", errorSOL.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             assert.isBelow(absError, 0.000000000110); // 1e-12 
             assert.isBelow(relError, 0.000000004200); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp positive [1, 32)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 1; x < 32; x += 0.03200125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
@@ -460,16 +696,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = absError / expected * 100;
             // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             assert.isBelow(relError, 0.000000004200); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp positive [32, 50)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 32; x < 50; x += 0.25600125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
@@ -487,16 +718,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             // assert.isBelow(absError, 0.00000001);
             assert.isBelow(relError, 0.000000004200); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp negative [-50, -0.05]", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 0.05; x <= 50; x += 0.05 ) { 
           const expected = Math.exp(-x);
           const actualJS = blackScholesJS.exp(-x);
@@ -515,19 +741,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             // console.log("x: ", x.toFixed(2), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(18), "exp: " + expected.toFixed(18));
             assert.isBelow(absError, 0.000000000042); // 1e-12 
             // assert.isBelow(relError, 1.510042000000); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.expMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
 
     describe("ln", function () {
       // todo: test all limits like 1.090507732665257659
       it("ln upper [1, 1.0905]", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
           const expected = Math.log(x);
           const actualJS = blackScholesJS.ln(x);
@@ -544,16 +765,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             assert.isBelow(relError, 0.000000000150); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("ln upper [1.0905, 16]", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
           const expected = Math.log(x);
           const actualJS = blackScholesJS.ln(x);
@@ -570,16 +786,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             assert.isBelow(relError, 0.000000000150); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("ln lower [0.0625, 1)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 0.0625; x < 1; x += 0.001) { 
           const expected = Math.log(x);
           const actualJS = blackScholesJS.ln(x);
@@ -596,19 +807,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("x: ", x.toFixed(3), "rel error SOL:", relError.toFixed(8) + "%,", "act: " + actualSOL.toFixed(10), "exp: " + expected.toFixed(10));
             assert.isBelow(relError, 0.000000000150); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.lnMeasureGas(tokens(x))); // todo: measure ln, not lnUpper
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
     });
 
     describe("sqrt", function () {
       // todo: test all limits like 1.04427
       it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
-        let totalGas = 0, count = 0;
         for (let x = 1; x < 1.074607828321317497; x += 0.0001) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
@@ -625,16 +831,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(relError, 0.000000000072); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [1.04427, 100)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 1.074607828321317497; x < 100; x += 0.1) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
@@ -651,16 +852,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(relError, 0.000000000072); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [100, 10000)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 100; x < 10000; x += 9.89) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
@@ -677,16 +873,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(relError, 0.000000000072); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [1e4, 1e6)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 1e4; x < 1e6; x += 1e3) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
@@ -703,16 +894,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(relError, 0.000000000072); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [1e6, 1e8)", async function () {
-        let totalGas = 0, count = 0;
         for (let x = 1e6; x < 1e8; x += 1e5) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
@@ -729,16 +915,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(relError, 0.000000000072); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt lower [1e-6, 1)", async function () { // todo: test better
-        let totalGas = 0, count = 0;
         for (let x = 1; x < 1000000; x += 1234) {
           const expected = Math.sqrt(1 / x);
           const actualJS = blackScholesJS.sqrt(1 / x);
@@ -755,12 +936,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             const relError = expected !== 0 ? absError / expected * 100 : 0;
             // console.log("Rel error for x: ", x.toFixed(4), "SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(relError, 0.00000000080); // 1e-12 
-
-            totalGas += parseInt(await blackScholesNUM.sqrtMeasureGas(tokens(x)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
     });
 
@@ -819,20 +996,17 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             }
           }
         }
-        
-        //console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
     });
 
     describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
-        let totalGas = 0, count = 0;
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
         const actualJS = blackScholesJS.stdNormCDF(d1);
         const absError = Math.abs(actualJS - expected);
         const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-        console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
+        // console.log("Rel error JS: ", relError.toFixed(12) + "%,", "act: " + actualJS.toFixed(12), "exp: " + expected.toFixed(12));
         assert.isBelow(relError, 0.0000075);
 
         if (duoTest) {
@@ -841,18 +1015,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
           const absError = Math.abs(actualSOL - expected);
           const relError = expected !== 0 ? Math.abs(absError / expected) * 100 : 0;
-          console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
+          // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
           assert.isBelow(relError, 0.0000075);
-
-          totalGas += parseInt(await blackScholesNUM.stdNormCDFMeasureGas(tokens(d1)));
-          count++;
         }
-      
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
       it("stdNormCDF multiple", async function () {
-        let totalGas = 0, count = 0;
         for (let d1 = -2; d1 < 2; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
@@ -871,19 +1039,14 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             // console.log("Rel error SOL:", relError.toFixed(12) + "%,", "act: " + actualSOL.toFixed(12), "exp: " + expected.toFixed(12));
             assert.isBelow(absError, 0.000000070000); // 1e-12
             // assert.isBelow(relError, 0.0000175);
-
-            totalGas += parseInt(await blackScholesNUM.stdNormCDFMeasureGas(tokens(d1)));
-            count++;
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
     });
 
     describe("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-        let totalGas = 0, count = 0;
         const expected = bs.blackScholes(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
@@ -891,11 +1054,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
           assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
-
-          totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMeasureGas(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000)));
-          count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
       it("multiple in typical range", async function () {
@@ -906,7 +1065,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const vols = [0.4, 0.6, 0.8];
         const rates = [0.05, 0.1, 0.2];
 
-        let totalGas = 0, count = 0;
         for (const strike of strikes) {
           for (const time of times) {
             for (const vol of vols) {
@@ -919,16 +1077,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000))).toString() / 1e18;
                   assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
-
-                  totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMeasureGas(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000)));
-                  count++;
                 }
               }
             }
           }
         }
-        
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       // todo: neverending random test
@@ -1071,7 +1224,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-        let totalGas = 0, count = 0;
         const expected = bs.blackScholes(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertEitherBelow(actualJS, expected, 0.000070, 0.000370);
@@ -1079,11 +1231,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
           assertEitherBelow(actualSOL, expected, 0.000070, 0.000370);
-
-          totalGas += parseInt(await blackScholesNUM.getPutOptionPriceMeasureGas(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), (0.05 * 10000)));
-          count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
       it("multiple in typical range", async function () {
@@ -1094,7 +1242,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const vols = [0.4, 0.6, 0.8];
         const rates = [0.05, 0.1, 0.2];
 
-        let totalGas = 0, count = 0;
         for (const strike of strikes) {
           for (const time of times) {
             for (const vol of vols) {
@@ -1107,16 +1254,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000))).toString() / 1e18;
                   assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
-
-                  totalGas += parseInt(await blackScholesNUM.getPutOptionPriceMeasureGas(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), (rate * 10000)));
-                  count++;
                 }
               }
             }
           }
         }
-        
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       // todo: neverending random test
@@ -1244,34 +1386,37 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    it("getFuturePrice", async function () {
-      for (let rate = 0; rate < 4; rate += 0.001) { 
-        const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
-        const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, rate);
-        const absError = Math.abs(actualJS - expected);
-        const relError = absError / expected * 100;
-        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
-        assert.isBelow(relError, 0.00000006); // in %
-      }
-    });
+    describe.only("getFuturePrice", function () {
+      it("multiple future prices", async function () {
+        for (let timeSec = 0; timeSec < SEC_IN_YEAR; timeSec += SEC_IN_YEAR / 100) { 
+          for (let rate = 0; rate < 4; rate += 0.1) { 
+            const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
+            const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, rate);
+            const absError = Math.abs(actualJS - expected);
+            const relError = absError / expected * 100;
+            // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
+            assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
+            assert.isBelow(relError, 0.00000006); // in %
 
-    it("getDiscountedStrike", async function () {
-      for (let rate = 0; rate < 4; rate += 0.001) { 
-        const expected = getDiscountedStrike(100, SEC_IN_YEAR, rate);
-        const actualJS = blackScholesJS.getDiscountedStrike(100, SEC_IN_YEAR, rate);
-        const absError = Math.abs(actualJS - expected);
-        const relError = absError / expected * 100;
-        // console.log("Rel error for x: ", rate, "JS:", relError.toFixed(8) + "%, ", "act: " + actualJS.toFixed(8), "exp: " + expected.toFixed(8));
-        assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
-        assert.isBelow(relError, 0.00000006); // in %
-      }
-    });
+            // if (duoTest) {
+            //   const { blackScholesNUM } = await loadFixture(deploy);
+
+            //   const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), SEC_IN_YEAR, tokens(rate))).toString() / 1e18;
+            //   const absError = Math.abs(actualSOL - expected);
+            //   const relError = absError / expected * 100;
+            //   // console.log("Rel error for x: ", rate, "SOL:", relError.toFixed(8) + "%, ", "act: " + actualSOL.toFixed(8), "exp: " + expected.toFixed(8));
+            //   assert.isBelow(absError, 0.00000300); // in $ on a $100 spot
+            //   assert.isBelow(relError, 0.00000006); // in %
+            // }
+          }
+        }
+      });
+    }); 
 
     it("test Math.exp limits", async function () {
 
-      console.log(Math.exp(-600));
-      console.log(Math.exp(-1e-15))
+      // console.log(Math.exp(-600));
+      // console.log(Math.exp(-1e-15))
 
       // min and max (-z * z) -> -6837683.739105278 and -1.7117711582997589e-13
     });
