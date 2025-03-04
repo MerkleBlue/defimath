@@ -120,6 +120,11 @@ contract BlackScholesNUM {
 
     function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) public pure returns (uint256) {
         unchecked {
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+
             // todo: check inputs
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiraition
             uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
