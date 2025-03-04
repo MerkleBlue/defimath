@@ -81,14 +81,19 @@ contract BlackScholesCaller {
     }
 
     function lnMG(uint256 x) external view returns (uint256) {
-        uint256 result;
+        uint256 resultUint256;
+        int256 resultInt256;
         uint256 startGas;
         uint256 endGas;
-        startGas = gasleft();
-
-        result = BlackScholesNUM.lnUpper(x);
-
-        endGas = gasleft();
+        if (x >= 1e18) {
+            startGas = gasleft();
+            resultUint256 = BlackScholesNUM.lnUpper(x);
+            endGas = gasleft();
+        } else {
+            startGas = gasleft();
+            resultInt256 = BlackScholesNUM.ln(x);
+            endGas = gasleft();
+        }
         
         return startGas - endGas;
     }
@@ -97,11 +102,16 @@ contract BlackScholesCaller {
         uint256 result;
         uint256 startGas;
         uint256 endGas;
-        startGas = gasleft();
+        if (x >= 1e18) {
+            startGas = gasleft();
+            result = BlackScholesNUM.sqrtUpper(x);
+            endGas = gasleft();
+        } else {
+            startGas = gasleft();
+            result = BlackScholesNUM.sqrt(x);
+            endGas = gasleft();
+        }
 
-        result = BlackScholesNUM.sqrt(x);
-
-        endGas = gasleft();
         
         return startGas - endGas;
     }
