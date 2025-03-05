@@ -24,9 +24,16 @@ export class BlackScholesNUMJS {
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
-    if (timeSec < MIN_EXPIRATION) throw new Error("TimeToExpiryLowerBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (vol < MIN_VOLATILITY) throw new Error("VolatilityLowerBoundError");
+
+    // handle expired call option 
+    if (timeSec < MIN_EXPIRATION) {
+      if (spot > strike) {
+          return spot - strike;
+      }
+      return 0;
+    }
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
@@ -50,9 +57,16 @@ export class BlackScholesNUMJS {
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
     if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
-    if (timeSec < MIN_EXPIRATION) throw new Error("TimeToExpiryLowerBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (vol < MIN_VOLATILITY) throw new Error("VolatilityLowerBoundError");
+
+    // handle expired put option 
+    if (timeSec < MIN_EXPIRATION) {
+      if (strike > spot) {
+          return strike - spot;
+      }
+      return 0;
+    }
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
     const volAdj = vol * Math.sqrt(timeYear);
@@ -68,8 +82,12 @@ export class BlackScholesNUMJS {
   getFuturePrice(spot, timeSec, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
-    if (timeSec < MIN_EXPIRATION) throw new Error("TimeToExpiryLowerBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+
+    // handle expired future 
+    if (timeSec < MIN_EXPIRATION) {
+      return spot;
+    }
 
     const timeYears = timeSec / SECONDS_IN_YEAR;
     const x = rate * timeYears;

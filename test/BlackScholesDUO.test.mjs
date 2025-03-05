@@ -911,6 +911,32 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
+      describe("limits", function () {
+        it("single when expired", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = getFuturePrice(100, 0, 0.05);
+          const actualJS = blackScholesJS.getFuturePrice(100, 0, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), 0, (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
+
+        it("single when rate 0%", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = getFuturePrice(100, SEC_IN_YEAR, 0);
+          const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, 0);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), SEC_IN_YEAR, 0)).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
+      });
+
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
@@ -938,17 +964,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
-        it("rejects when time < min time", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-          expect(() => blackScholesJS.getFuturePrice(1000, 0, 0.05)).to.throw("TimeToExpiryLowerBoundError");
-
-          if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 0, Math.round(0.05 * 10_000)), "TimeToExpiryLowerBoundError");
-            await blackScholesNUM.getFuturePrice(tokens(1000), 1, Math.round(0.05 * 10_000)); // todo: check value when 2 years in another test
-          }
-        });
-
         it("rejects when time > max time", async function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -967,7 +982,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-        const expected = bs.blackScholes(1000, 980, 60 / 365, 0.60, 0.05, "call");
+        const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
 
@@ -989,7 +1004,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                const expected = bs.blackScholes(1000, strike, time / 365, vol, rate, "call");
+                const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
                 // console.log(1000, strike, time / 365, vol, rate);
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
                 assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
@@ -1014,6 +1029,42 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const rates = [0, 0.0001, 0.0002, 6.5533, 6.5534, 6.5535];
           await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, false);
         });
+
+        it("expired ITM", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 0, 0.60, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
+
+        it("expired ATM", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000, 0, 0.60, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
+
+        it("expired OTM", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 0, 0.60, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
       });
 
       describe("random", function () {
@@ -1036,7 +1087,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("regression", function () {
         it("handles when N(d1) == N(d2) for OTM option", async function () {
-          const expected = bs.blackScholes(1000, 1200, 1 / 365, 0.40, 0.05, "call");
+          const expected = blackScholesWrapped(1000, 1200, 1 / 365, 0.40, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
           assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
 
@@ -1102,17 +1153,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         });
 
-        it("rejects when time < min time", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-          expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 0, 0.60, 0.05)).to.throw("TimeToExpiryLowerBoundError");
-
-          if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 0, tokens(0.60), Math.round(0.05 * 10_000)), "TimeToExpiryLowerBoundError");
-            await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 1, tokens(0.60), Math.round(0.05 * 10_000)); // todo: check value when 2 years in another test
-          }
-        });
-
         it("rejects when time > max time", async function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -1144,7 +1184,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     describe("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-        const expected = bs.blackScholes(1000, 1020, 60 / 365, 0.60, 0.05, "put");
+        const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertEitherBelow(actualJS, expected, 0.000070, 0.000370);
 
@@ -1166,7 +1206,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                const expected = bs.blackScholes(1000, strike, time / 365, vol, rate, "put");
+                const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
                 // console.log(1000, strike, time / 365, vol, rate);
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
                 assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
@@ -1190,6 +1230,42 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
           const rates = [0, 0.0001, 0.0002, 6.5533, 6.5534, 6.5535];
           await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000370, 10, false);
+        });
+
+        it("expired ITM", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "put");
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 0, 0.60, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
+
+        it("expired ATM", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "put");
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 1000, 0, 0.60, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
+        });
+
+        it("expired OTM", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "put");
+          const actualJS = blackScholesJS.getPutOptionPrice(1000, 980, 0, 0.60, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), (0.05 * 10000))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+          }
         });
       });
 
@@ -1264,17 +1340,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), Math.round(0.05 * 10_000)), "StrikeUpperBoundError");
             await blackScholesNUM.getPutOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), Math.round(0.05 * 10_000));
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), Math.round(0.05 * 10_000)), "StrikeUpperBoundError");
-          }
-        });
-
-        it("rejects when time < min time", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 0, 0.60, 0.05)).to.throw("TimeToExpiryLowerBoundError");
-
-          if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 0, tokens(0.60), Math.round(0.05 * 10_000)), "TimeToExpiryLowerBoundError");
-            await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 1, tokens(0.60), Math.round(0.05 * 10_000)); // todo: check value when 2 years in another test
           }
         });
 

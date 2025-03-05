@@ -23,7 +23,6 @@ library BlackScholesNUM {
     error SpotUpperBoundError();
     error StrikeLowerBoundError();
     error StrikeUpperBoundError();
-    error TimeToExpiryLowerBoundError();
     error TimeToExpiryUpperBoundError();
     error VolatilityLowerBoundError();
 
@@ -43,9 +42,16 @@ library BlackScholesNUM {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
-            if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+
+            // handle expired option 
+            if (timeToExpirySec <= MIN_EXPIRATION) {
+                if (spot > strike) {
+                    return spot - strike;
+                }
+                return 0;
+            }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
@@ -87,9 +93,16 @@ library BlackScholesNUM {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
-            if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+
+            // handle expired option 
+            if (timeToExpirySec <= MIN_EXPIRATION) {
+                if (strike > spot) {
+                    return strike - spot;
+                }
+                return 0;
+            }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
@@ -122,8 +135,12 @@ library BlackScholesNUM {
         unchecked {
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+
+            // handle expired future 
+            if (timeToExpirySec <= MIN_EXPIRATION) {
+                return spot;
+            }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
