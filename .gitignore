@@ -5,9 +5,13 @@
 
 
 # misc
-/testfiles
+/coverage
 /artifacts
 /cache
+.nyc_output/
+/report
+/testfiles
 .DS_Store
+coverage.json
 package-lock.json
 *.csv
