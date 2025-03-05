@@ -5,12 +5,6 @@
 
 
 # misc
-generated.csv
-generated.json
-generated-backup.json
-generated copy.json
-generated-c.json
-generated-old.json
 /testfiles
 /artifacts
 /cache
