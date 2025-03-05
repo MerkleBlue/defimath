@@ -322,57 +322,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     }
   }
 
-  async function testFuturePriceRange(ratePoints, timePoints, allowedRelError = 0.00125, log = true) { // %0.00125
-    const { blackScholesPOC } = duoTest ? await loadFixture(deploy) : { blackScholesPOC: null };
-
-    let maxErrorJS = 0, maxErrorSOL = 0, totalErrorJS = 0, totalErrorSOL = 0, count = 0, maxErrorParamsJS = null, maxErrorParamsSOL = null;
-    for (const rate of ratePoints) {
-      for (const secs of timePoints) {
-        const expected = getFuturePrice(100, secs, rate);
-
-        const actualJS = blackScholesJS.getFuturePrice(100, secs, rate);
-        const errorJS = (Math.abs(actualJS - expected) / expected * 100);
-        totalErrorJS += errorJS;
-
-        if (maxErrorJS < errorJS) {
-          maxErrorJS = errorJS;
-          maxErrorParamsJS = {
-            rate, secs, actual: actualJS, expected
-          }
-        }
-
-        if (duoTest) {
-          const actualSOL = (await blackScholesPOC.getFuturePrice(tokens(100), secs, Math.round(rate * 10_000))).toString() / 1e18;
-          const errorSOL = (Math.abs(actualSOL - expected) / expected * 100);
-          totalErrorSOL += errorSOL;
-          
-          if (maxErrorSOL < errorSOL) {
-            maxErrorSOL = errorSOL;
-            maxErrorParamsSOL = {
-              rate, secs, actual: actualSOL, expected
-            }
-          }
-        }
-
-        count++;
-      }
-    }
-
-    if (log) {
-      if (maxErrorParamsJS) {
-        const { rate, secs, actual, expected } = maxErrorParamsJS;
-        console.log("Max error JS:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
-      }
-      if (duoTest && maxErrorParamsSOL) {
-        const { rate, secs, actual, expected } = maxErrorParamsSOL;
-        console.log("Max error SOL:", maxErrorJS.toFixed(6) + "%, rate, ", rate.toFixed(2), "exp:", secs.toFixed(0) + "s", "actual: " + actual.toFixed(6), "expected: " + expected.toFixed(6));
-      }
-    }
-
-    assert.isBelow(maxErrorJS, allowedRelError);
-    assert.isBelow(maxErrorSOL, allowedRelError);
-  }
-
   // before all tests, called once
   before(async () => {
     testTimePoints = generateTestTimePoints();
