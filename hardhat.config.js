@@ -11,6 +11,9 @@ module.exports = {
       },
     },
   },
+  paths: {
+    sources: "./contracts/blackscholes",
+  },
   mocha: {
     timeout: 90000000000
   },
