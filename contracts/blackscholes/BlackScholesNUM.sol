@@ -125,7 +125,6 @@ library BlackScholesNUM {
             if (timeToExpirySec <= MIN_EXPIRATION) revert TimeToExpiryLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
 
-            // todo: check inputs
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
             return uint256(spot) * expPositive(scaledRate) / 1e18;

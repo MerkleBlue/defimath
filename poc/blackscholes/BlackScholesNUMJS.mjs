@@ -66,6 +66,11 @@ export class BlackScholesNUMJS {
   };
 
   getFuturePrice(spot, timeSec, rate) {
+    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
+    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
+    if (timeSec < MIN_EXPIRATION) throw new Error("TimeToExpiryLowerBoundError");
+    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+
     const timeYears = timeSec / SECONDS_IN_YEAR;
     const x = rate * timeYears;
 

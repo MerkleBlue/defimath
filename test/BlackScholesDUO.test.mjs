@@ -910,6 +910,58 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           }
         }
       });
+
+      describe("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getFuturePrice(0.00000099, 50000, 0.05)).to.throw("SpotLowerBoundError");
+          expect(() => blackScholesJS.getFuturePrice(0, 50000, 0.05)).to.throw("SpotLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice("999999999999", 50000, Math.round(0.05 * 10_000)), "SpotLowerBoundError");
+            await blackScholesNUM.getFuturePrice("1000000000000", 50000, Math.round(0.05 * 10_000));
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(0), 50000, Math.round(0.05 * 10_000)), "SpotLowerBoundError");
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getFuturePrice(1e15 + 1, 50000, 0.05)).to.throw("SpotUpperBoundError");
+          expect(() => blackScholesJS.getFuturePrice(1e18, 50000, 0.05)).to.throw("SpotUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice("1000000000000000000000000000000001", 50000, Math.round(0.05 * 10_000)), "SpotUpperBoundError");
+            await blackScholesNUM.getFuturePrice("1000000000000000000000000000000000", 50000, Math.round(0.05 * 10_000));
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice("100000000000000000000000000000000000", 50000, Math.round(0.05 * 10_000)), "SpotUpperBoundError");
+          }
+        });
+
+        it("rejects when time < min time", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getFuturePrice(1000, 0, 0.05)).to.throw("TimeToExpiryLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 0, Math.round(0.05 * 10_000)), "TimeToExpiryLowerBoundError");
+            await blackScholesNUM.getFuturePrice(tokens(1000), 1, Math.round(0.05 * 10_000)); // todo: check value when 2 years in another test
+          }
+        });
+
+        it("rejects when time > max time", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getFuturePrice(1000, 4294967295, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+          expect(() => blackScholesJS.getFuturePrice(1000, 63072001, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 63072001, Math.round(0.05 * 10_000)), "TimeToExpiryUpperBoundError");
+            await blackScholesNUM.getFuturePrice(tokens(1000), 63072000, Math.round(0.05 * 10_000)); // todo: check value when 2 years in another test
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 4294967295, Math.round(0.05 * 10_000)), "TimeToExpiryUpperBoundError");
+          }
+        });
+      });
     }); 
 
     describe("call", function () {
