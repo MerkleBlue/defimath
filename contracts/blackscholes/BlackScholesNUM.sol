@@ -15,8 +15,8 @@ library BlackScholesNUM {
     uint256 internal constant MIN_EXPIRATION = 1 - 1;            // 1 sec
     uint256 internal constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
     uint256 internal constant MIN_VOLATILITY = 1e14 - 1;         // 0.01% volatility
-    // uint256 internal constant MAX_VOLATILITY = 192e16 + 1;       // 192% volatility
-    // uint256 internal constant MAX_RATE = 2000 + 1;               // 20% risk-free rate
+    // uint256 internal constant MAX_VOLATILITY = 192e16 + 1;    // 192% volatility
+    uint256 internal constant MAX_RATE = 4e18 + 1;               // 400% risk-free rate
 
     // errors
     error SpotLowerBoundError();
@@ -25,6 +25,7 @@ library BlackScholesNUM {
     error StrikeUpperBoundError();
     error TimeToExpiryUpperBoundError();
     error VolatilityLowerBoundError();
+    error RateUpperBoundError();
 
     // bool log = true;
 
@@ -44,6 +45,7 @@ library BlackScholesNUM {
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option 
             if (timeToExpirySec <= MIN_EXPIRATION) {
@@ -95,6 +97,7 @@ library BlackScholesNUM {
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option 
             if (timeToExpirySec <= MIN_EXPIRATION) {
@@ -136,6 +139,7 @@ library BlackScholesNUM {
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired future 
             if (timeToExpirySec <= MIN_EXPIRATION) {

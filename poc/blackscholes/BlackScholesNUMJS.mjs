@@ -9,6 +9,7 @@ export const MAX_STRIKE_SPOT_RATIO = 5;
 export const MIN_EXPIRATION = 1;              // 1 sec
 export const MAX_EXPIRATION = 63072000;       // 2 years
 export const MIN_VOLATILITY = 0.0001;         // 0.01% volatility
+export const MAX_RATE = 4;                    // 400% risk-free rate
 
 export const E_TO_0_03125 = 1.031743407499103;          // e ^ 0.03125
 export const E = 2.7182818284590452354;                 // e
@@ -26,6 +27,7 @@ export class BlackScholesNUMJS {
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (vol < MIN_VOLATILITY) throw new Error("VolatilityLowerBoundError");
+    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
     // handle expired call option 
     if (timeSec < MIN_EXPIRATION) {
@@ -59,6 +61,7 @@ export class BlackScholesNUMJS {
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (vol < MIN_VOLATILITY) throw new Error("VolatilityLowerBoundError");
+    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
     // handle expired put option 
     if (timeSec < MIN_EXPIRATION) {
@@ -83,6 +86,7 @@ export class BlackScholesNUMJS {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
     // handle expired future 
     if (timeSec < MIN_EXPIRATION) {

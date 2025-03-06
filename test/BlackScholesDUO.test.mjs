@@ -898,7 +898,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let timeSec = 0; timeSec < SEC_IN_YEAR; timeSec += SEC_IN_YEAR / 50) { 
-          for (let rate = 0; rate < 2; rate += 0.1) { 
+          for (let rate = 0; rate < 4; rate += 0.1) { 
             const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
             const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, rate);
             assertBothBelow(actualJS, expected, 0.00000006, 0.00000300);
@@ -976,6 +976,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 4294967295, tokens(0.05)), "TimeToExpiryUpperBoundError");
           }
         });
+
+        it("rejects when rate > max rate", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getFuturePrice(1000, 60 * SEC_IN_DAY, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getFuturePrice(1000, 60 * SEC_IN_DAY, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(4 + 1e-15)), "RateUpperBoundError");
+            await blackScholesNUM.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(4));
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(18)), "RateUpperBoundError");
+          }
+        });
       });
     }); 
 
@@ -1026,7 +1039,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
-          const rates = [0, 0.0001, 0.0002, 6.5533, 6.5534, 6.5535];
+          const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
           await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, false);
         });
 
@@ -1178,6 +1191,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0), tokens(0.05)), "VolatilityLowerBoundError");
           }
         });
+
+        it("rejects when rate > max rate", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          }
+        });
       });
     });
 
@@ -1228,7 +1254,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
-          const rates = [0, 0.0001, 0.0002, 6.5533, 6.5534, 6.5535];
+          const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
           await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000370, 10, false);
         });
 
@@ -1366,6 +1392,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, "99999999999999", tokens(0.05)), "VolatilityLowerBoundError");
             await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, "100000000000000", tokens(0.05));
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0), tokens(0.05)), "VolatilityLowerBoundError");
+          }
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
       });
