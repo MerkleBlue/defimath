@@ -25,6 +25,8 @@ export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
     }
   }
 
+  vol += 1e-16;
+
   return Math.max(0, bs.blackScholes(spot, strike, time, vol, rate, callOrPut));
 }
 
@@ -1078,6 +1080,29 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
           }
         });
+
+        it("no volatility multiple strikes and expirations", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          const strikes = [200, 800, 1000, 1200, 5000];
+          const times = [1, 2, 10, 30, 60, SEC_IN_YEAR, 2 * SEC_IN_YEAR];
+          const rates = [0, 0.05, 4];
+
+          for (let strike of strikes) {
+            for (let time of times) {
+              for (let rate of rates) {
+                const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
+                const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time, 0, rate);
+                assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+        
+                if (duoTest) {
+                  const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+                  assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
+                }
+              }
+            }
+          }
+        });
       });
 
       describe("random", function () {
@@ -1109,6 +1134,18 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
             const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
             assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
+          }
+        });
+
+        it("handles when vol is 0, and time lowest", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
+          const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 1, 0, 0.05);
+          assertBothBelow(actualJS, expected, 0.000000000200, 0.000000020000);
+  
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000200, 0.000000020000);
           }
         });
       });
@@ -1176,19 +1213,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
             await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
             await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          }
-        });
-
-        it("rejects when vol < min volatility", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-          expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0.00009999999999, 0.05)).to.throw("VolatilityLowerBoundError");
-          expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0, 0.05)).to.throw("VolatilityLowerBoundError");
-
-          if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, "99999999999999", tokens(0.05)), "VolatilityLowerBoundError");
-            await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, "100000000000000", tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0), tokens(0.05)), "VolatilityLowerBoundError");
           }
         });
 
@@ -1293,6 +1317,29 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
           }
         });
+
+        it("no volatility multiple strikes and expirations", async function () {
+          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+          const strikes = [200, 800, 1000, 1200, 5000];
+          const times = [1, 2, 10, 30, 60, SEC_IN_YEAR, 2 * SEC_IN_YEAR];
+          const rates = [0, 0.05, 4];
+
+          for (let strike of strikes) {
+            for (let time of times) {
+              for (let rate of rates) {
+                const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
+                const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time, 0, rate);
+                assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+        
+                if (duoTest) {
+                  const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+                  assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
+                }
+              }
+            }
+          }
+        });
       });
 
       describe("random", function () {
@@ -1379,19 +1426,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
             await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          }
-        });
-
-        it("rejects when vol < min volatility", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.00009999999999, 0.05)).to.throw("VolatilityLowerBoundError");
-          expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0, 0.05)).to.throw("VolatilityLowerBoundError");
-
-          if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, "99999999999999", tokens(0.05)), "VolatilityLowerBoundError");
-            await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, "100000000000000", tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0), tokens(0.05)), "VolatilityLowerBoundError");
           }
         });
 

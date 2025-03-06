@@ -26,7 +26,7 @@ library BlackScholesNUM {
     error VolatilityLowerBoundError();
     error RateUpperBoundError();
 
-    // bool log = true;
+    bool constant log = true;
 
     function getCallOptionPrice(
         uint128 spot,
@@ -43,7 +43,7 @@ library BlackScholesNUM {
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
-            if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+            // if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option 
@@ -55,7 +55,7 @@ library BlackScholesNUM {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
+            uint256 scaledVol = volatility * sqrt(timeYear) / 1e18 + 1;             // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
@@ -70,11 +70,9 @@ library BlackScholesNUM {
                 price = (spotNd1 - strikeNd2) / 1e18;
             }
 
-            // if (log) console.log("part1 SOL: %d", uint256(part1));
-            // if (log) console.log("part2 SOL: %d", uint256(part2));
             // if (log) console.log("timeYear: %d", uint256(timeYear));
-            // if (log) console.log("volAdj: %d", uint256(volAdj));
-            // if (log) console.log("rateAdj: %d", uint256(rateAdj));
+            // if (log) console.log("scaledVol: %d", uint256(scaledVol));
+            // if (log) console.log("scaledRate: %d", uint256(scaledRate));
             // if (log) { if (d1 > 0) { console.log("d1: %d", uint256(d1)); } else { console.log("d1: -%d", uint256(-d1)); }}
             // if (log) { if (d2 > 0) { console.log("d2: %d", uint256(d2)); } else { console.log("d2: -%d", uint256(-d2)); }}
             // if (log) console.log("discountedStrike: %d", uint256(discountedStrike));
@@ -95,7 +93,7 @@ library BlackScholesNUM {
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
-            if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
+            // if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option 
@@ -107,7 +105,7 @@ library BlackScholesNUM {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
+            uint256 scaledVol = volatility * sqrt(timeYear) / 1e18 + 1;             // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
@@ -122,8 +120,6 @@ library BlackScholesNUM {
                 price = (strikeNd2 - spotNd1) / 1e18;
             }
 
-            // if (log) console.log("part1 SOL: %d", uint256(part1));
-            // if (log) console.log("part2 SOL: %d", uint256(part2));
             // if (log) console.log("timeYear: %d", uint256(timeYear));
             // if (log) console.log("volAdj: %d", uint256(volAdj));
             // if (log) console.log("rateAdj: %d", uint256(rateAdj));
