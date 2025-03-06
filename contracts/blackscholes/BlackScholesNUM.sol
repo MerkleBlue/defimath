@@ -33,7 +33,7 @@ library BlackScholesNUM {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate // todo: def need more precise rate
+        uint64 rate
     ) internal pure returns (uint256 price) {
         unchecked {
             // todo: maybe have something like scale, and calculate always for $100, and then scale it to the actual spot
@@ -55,7 +55,7 @@ library BlackScholesNUM {
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
-            uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
             int256 d2 = d1 - int256(scaledVol);
@@ -85,7 +85,7 @@ library BlackScholesNUM {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate
+        uint64 rate
     ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
@@ -106,7 +106,7 @@ library BlackScholesNUM {
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18;                 // time-adjusted volatility
-            uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
             int256 d2 = d1 - int256(scaledVol);
@@ -131,7 +131,7 @@ library BlackScholesNUM {
         }
     }
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) internal pure returns (uint256) {
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) internal pure returns (uint256) {
         unchecked {
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
@@ -143,7 +143,7 @@ library BlackScholesNUM {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledRate = uint256(rate) * timeYear / 1e4;                    // time-adjusted rate
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
             return uint256(spot) * expPositive(scaledRate) / 1e18;
         }
     }

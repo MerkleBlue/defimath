@@ -12,7 +12,7 @@ contract BlackScholesCaller {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate // todo: def need more precise rate
+        uint64 rate
     ) external pure returns (uint256 price) {
         return BlackScholesNUM.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
@@ -22,12 +22,12 @@ contract BlackScholesCaller {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate // todo: def need more precise rate
+        uint64 rate
     ) external pure returns (uint256 price) {
         return BlackScholesNUM.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint16 rate) external pure returns (uint256) {
+    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) external pure returns (uint256) {
         return BlackScholesNUM.getFuturePrice(spot, timeToExpirySec, rate);
     }
 
@@ -133,7 +133,7 @@ contract BlackScholesCaller {
     function getFuturePriceMG(
         uint128 spot,
         uint32 timeToExpirySec,
-        uint16 rate
+        uint64 rate
     ) external view returns (uint256) {
         uint256 result;
         uint256 startGas;
@@ -152,7 +152,7 @@ contract BlackScholesCaller {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate
+        uint64 rate
     ) external view returns (uint256) {
         uint256 result;
         uint256 startGas;
@@ -171,7 +171,7 @@ contract BlackScholesCaller {
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint16 rate
+        uint64 rate
     ) external view returns (uint256) {
         uint256 result;
         uint256 startGas;
