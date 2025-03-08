@@ -48,9 +48,14 @@ export class BlackScholesNUMJS {
     log && console.log("JS d2:", d2);
     log && console.log("JS discountedStrike:", discountedStrike);
 
-    const callPrice = spot * this.stdNormCDF(d1) - discountedStrike * this.stdNormCDF(d2);
+    const spotNd1 = spot * this.stdNormCDF(d1);                                // spot * N(d1)
+    const strikeNd2 = discountedStrike * this.stdNormCDF(d2);                  // strike * N(d2)
 
-    return callPrice;
+    if (spotNd1 > strikeNd2) {
+        return spotNd1 - strikeNd2;
+    }
+
+    return 0;
   };
 
   getPutOptionPrice(spot, strike, timeSec, vol, rate) {
@@ -76,9 +81,15 @@ export class BlackScholesNUMJS {
     const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
     const d2 = d1 - scaledVol;
     const discountedStrike = strike / this.exp(scaledRate);
-    const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
 
-    return putPrice;
+    const spotNd1 = spot * this.stdNormCDF(-d1);                               // spot * N(-d1)
+    const strikeNd2 = discountedStrike * this.stdNormCDF(-d2);                 // strike * N(-d2)
+
+    if (strikeNd2 > spotNd1) {
+        return strikeNd2 - spotNd1;
+    }
+
+    return 0;
   };
 
   getFuturePrice(spot, timeSec, rate) {
