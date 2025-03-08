@@ -1040,10 +1040,13 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         it("limits and near limit values", async function () {
           const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
-          const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
+          const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
           await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, false);
         });
+
+        // todo: test with vol max only SOL
+
 
         it("expired ITM", async function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };

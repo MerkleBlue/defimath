@@ -13,8 +13,7 @@ library BlackScholesNUM {
     uint256 internal constant MAX_SPOT = 1e33 + 1;               // 1 quadrillion $
     uint256 internal constant MAX_STRIKE_SPOT_RATIO = 5;   
     uint256 internal constant MAX_EXPIRATION = 63072000 + 1;     // 2 years
-    uint256 internal constant MIN_VOLATILITY = 1e14 - 1;         // 0.01% volatility
-    // uint256 internal constant MAX_VOLATILITY = 192e16 + 1;    // 192% volatility
+    uint256 internal constant MAX_VOLATILITY = 4e18 + 1;         // 400% volatility
     uint256 internal constant MAX_RATE = 4e18 + 1;               // 400% risk-free rate
 
     // errors
@@ -23,7 +22,6 @@ library BlackScholesNUM {
     error StrikeLowerBoundError();
     error StrikeUpperBoundError();
     error TimeToExpiryUpperBoundError();
-    error VolatilityLowerBoundError();
     error RateUpperBoundError();
 
     bool constant log = true;
@@ -43,7 +41,6 @@ library BlackScholesNUM {
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
-            // if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option 
@@ -93,7 +90,6 @@ library BlackScholesNUM {
             if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
-            // if (volatility <= MIN_VOLATILITY) revert VolatilityLowerBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option 
