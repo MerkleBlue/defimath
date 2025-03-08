@@ -37,14 +37,14 @@ export class BlackScholesNUMJS {
     }
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
-    const volAdj = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
 
-    const d1 = this.getD1(spot, strike, timeYear, volAdj, rate);
-    const d2 = d1 - volAdj;
-    const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+    const discountedStrike = strike / this.exp(scaledRate);
 
-    log && console.log("JS volAdj:", volAdj);
-    log && console.log("JS volAdj:", volAdj);
+    log && console.log("JS volAdj:", scaledVol);
     log && console.log("JS d1:", d1);
     log && console.log("JS d2:", d2);
     log && console.log("JS discountedStrike:", discountedStrike);
@@ -72,11 +72,12 @@ export class BlackScholesNUMJS {
     }
 
     const timeYear = timeSec / SECONDS_IN_YEAR;
-    const volAdj = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
 
-    const d1 = this.getD1(spot, strike, timeYear, volAdj, rate);
-    const d2 = d1 - volAdj;
-    const discountedStrike = this.getDiscountedStrike(strike, timeSec, rate);
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+    const discountedStrike = strike / this.exp(scaledRate);
     const putPrice = discountedStrike * this.stdNormCDF(-d2) - spot * this.stdNormCDF(-d1);
 
     return putPrice;
@@ -93,17 +94,10 @@ export class BlackScholesNUMJS {
       return spot;
     }
 
-    const timeYears = timeSec / SECONDS_IN_YEAR;
-    const x = rate * timeYears;
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledRate = rate * timeYear;
 
-    return spot * this.exp(x);
-  };
-
-  getDiscountedStrike(strike, timeSec, rate) {
-    const timeYears = timeSec / SECONDS_IN_YEAR;
-    const x = rate * timeYears;
-
-    return strike / this.exp(x);
+    return spot * this.exp(scaledRate);
   };
 
   // x: [-50, 50]
