@@ -22,8 +22,8 @@ export class BlackScholesNUMJS {
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
@@ -61,12 +61,12 @@ export class BlackScholesNUMJS {
   getPutOptionPrice(spot, strike, timeSec, vol, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
     if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
-    // handle expired put option 
+    // handle expired option 
     if (timeSec == 0) {
       if (strike > spot) {
           return strike - spot;

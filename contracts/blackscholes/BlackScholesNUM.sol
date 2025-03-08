@@ -36,10 +36,11 @@ library BlackScholesNUM {
         unchecked {
             // todo: maybe have something like scale, and calculate always for $100, and then scale it to the actual spot
             // check inputs
+            // NOTE: check strike upper bound first, to avoid overflow
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
+            if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -85,10 +86,11 @@ library BlackScholesNUM {
     ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
+            // NOTE: check strike upper bound first, to avoid overflow
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (spot * MAX_STRIKE_SPOT_RATIO < strike) revert StrikeUpperBoundError();
+            if (uint256(strike) * MAX_STRIKE_SPOT_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
