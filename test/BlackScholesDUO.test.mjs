@@ -4,6 +4,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import hre from "hardhat";
 import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import bs from "black-scholes";
+import erf from 'math-erf';
 
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
@@ -864,6 +865,83 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
+    describe("erf", function () {
+      // it.only("erf [0, 0.5)", async function () {
+      //   const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+      //   for (let x = 0; x <= 0.401; x += 0.005) {
+      //     const expected = erf(x); //bs.stdNormCDF(d1);
+      //     const actualJS = blackScholesJS.erf(x);
+      //     console.log(x.toFixed(3), expected.toFixed(10));
+      //     console.log(x.toFixed(3), actualJS.toFixed(10));
+      //     assertAbsoluteBelow(actualJS, expected, 5e-8);
+      //   }
+      // });
+
+      it.only("erf [0, 1)", async function () {
+        // const xs = [0.000, 0.045, 0.120, 0.220, 0.355, 0.510, 0.690, 0.895, 1.135, 1.400, 1.720, 2.130, 3.085];
+        // const ys = [0.000,  1394,     0, -1378,     0,  1385,     0, -1375,     0,  1385,     0, -1386,     0];
+
+
+
+        // just for [0, 0.45]
+        const xs = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.045];
+        const ys = [0.000,   341,   617,   844,  1026,  1167,  1271,  1341,  1381,  1394];
+        const {a, b, c} = blackScholesJS.interpolate(xs, ys);
+        console.log(a, b, c);
+
+        for (let x = 0; x <= 0.045; x += 0.005) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erf(x) -(a * x ** 3 + b * x ** 2 + c * x) / 1e10;//  - blackScholesJS.errorCorectionLinear(x); // + 0.0000001254;
+          console.log(x.toFixed(3), expected.toFixed(10));
+          console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+          console.log("Error correction interpolated:", -(a * x ** 3 + b * x ** 2 + c * x) / 1e10);
+          // console.log("Error correction linear:", blackScholesJS.errorCorectionLinear(x));
+          // assertAbsoluteBelow(actualJS, expected, 1e-8);
+        }
+      });
+
+      // it.only("erf [1, 2)", async function () {
+      //   for (let x = 1; x <= 2; x += 0.005) {
+      //     const expected = erf(x);
+      //     const actualJS = blackScholesJS.erf(x);// + 0.0000000550;// + 0.0000001254;
+      //     console.log(x.toFixed(3), expected.toFixed(10));
+      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+      //     // assertAbsoluteBelow(actualJS, expected, 1e-8);
+      //   }
+      // });
+
+      // it.only("erf [2, 3)", async function () {
+      //   for (let x = 2; x <= 3; x += 0.005) {
+      //     const expected = erf(x);
+      //     const actualJS = blackScholesJS.erf(x);// + 0.0000000550;// + 0.0000001254;
+      //     console.log(x.toFixed(3), expected.toFixed(10));
+      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+      //     // assertAbsoluteBelow(actualJS, expected, 1e-8);
+      //   }
+      // });
+
+      // it.only("erf [3, 10)", async function () {
+      //   for (let x = 3; x <= 10; x += 0.005) {
+      //     const expected = erf(x);
+      //     const actualJS = blackScholesJS.erf(x) + 1e-8;
+      //     console.log(x.toFixed(3), expected.toFixed(10));
+      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+      //     assertAbsoluteBelow(actualJS, expected, 1e-8);
+      //   }
+      // });
+
+      // it.only("erf [4, 10)", async function () {
+      //   for (let x = 4; x <= 10.01; x += 0.05) {
+      //     const expected = erf(x);
+      //     const actualJS = blackScholesJS.erf(x);
+      //     // console.log(x.toFixed(3), expected.toFixed(10));
+      //     // console.log(x.toFixed(3), actualJS.toFixed(10));
+      //     assertAbsoluteBelow(actualJS, expected, 1e-10);
+      //   }
+      // });
+    });
+
     describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
@@ -892,6 +970,21 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
           }
         }
+      });
+
+      it("stdNormCDF Cody", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const d1 = 0.6100358074173348;
+        const expected = bs.stdNormCDF(d1);
+        const actualJS = blackScholesJS.stdNormCDFCody(d1);
+        console.log(expected, actualJS);
+        assertAbsoluteBelow(actualJS, expected, 0.000000070000);
+
+        // if (duoTest) {
+        //   const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
+        //   assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
+        // }
       });
     });
 

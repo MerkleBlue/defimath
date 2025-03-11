@@ -1,4 +1,4 @@
-import { blackScholesWrapped } from "../../test/BlackScholesDUO.test.mjs";
+import { levenbergMarquardt } from 'ml-levenberg-marquardt';
 
 export const SECONDS_IN_YEAR = 31536000;
 
@@ -15,6 +15,14 @@ export const E = 2.7182818284590452354;                 // e
 export const E_TO_32 = 78962960182680.695160978022635;  // e ^ 32
 
 const log = false;
+
+function quadraticFit([a, b]) {
+  return (x) => a * x * x + b * x;
+}
+
+function cubeFit([a, b, c]) {
+  return (x) => a * x ** 3 + b * x ** 2 + c * x;
+}
 
 export class BlackScholesNUMJS {
   
@@ -282,4 +290,70 @@ export class BlackScholesNUMJS {
     // x is always >= 100 
     return 10;
   }
+
+  erfCody(z) {
+
+    z = Decimal(z);
+    const sign = z.lt(0) ? Decimal('-1') : Decimal('1');
+    z = z.abs();
+    if (z.lte(Decimal('0.5'))) {
+        const z2 = z.mul(z);
+        return sign.mul(Decimal('1.12837916709551257389615890312')).mul(z).mul(Decimal('1').sub(z2.div(Decimal('3'))).add(z2.mul(z2).div(Decimal('10'))).sub(z2.mul(z2).mul(z2).div(Decimal('42'))));
+    } else if (z.lte(Decimal('4.0'))) {
+        const z2 = z.mul(z);
+        const expNegZ2 = Decimal.exp(z2.neg());
+        const t = Decimal('1').div(Decimal('1').add(Decimal('0.3275911').mul(z)));
+        const p = Decimal('0.2548295925').mul(t)
+            .plus(Decimal('-0.284496736').mul(t.mul(t)))
+            .plus(Decimal('1.421413741').mul(t.mul(t).mul(t)))
+            .plus(Decimal('-1.453152027').mul(t.mul(t).mul(t).mul(t)))
+            .plus(Decimal('1.061405429').mul(t.mul(t).mul(t).mul(t).mul(t)));
+        return sign.mul(Decimal('1').sub(expNegZ2.mul(p)));
+    } else {
+        const z2 = z.mul(z);
+        const expNegZ2 = Decimal.exp(z2.neg());
+        const zInv = Decimal('1').div(z);
+        const p = Decimal('1').plus(zInv.mul(Decimal('0.278393').plus(zInv.mul(Decimal('0.230389').plus(zInv.mul(Decimal('0.000972').plus(zInv.mul('0.078108'))))))));
+        const q = Decimal('1').plus(zInv.mul(Decimal('0.568861').plus(zInv.mul(Decimal('0.114419').plus(zInv.mul(Decimal('0.008763').plus(zInv.mul('0.000326'))))))));
+        return sign.mul(Decimal('1').sub(expNegZ2.div(Decimal.sqrt(Decimal.acos(-1))).mul(z).mul(p).div(q)));
+    }
+  }
+
+  // Optional: Standard Normal CDF using erf
+  stdNormCDFCody(z) {
+    console.log("Precision:", Decimal.precision);
+    console.log("erf(0.0) =", this.erfCody(Decimal('0.0')));
+    console.log("erf(0.1) =", this.erfCody(0.1));
+    console.log("erf(0.2) =", this.erfCody(0.2));
+    console.log("erf(0.3) =", this.erfCody(0.3));
+    console.log("erf(0.4) =", this.erfCody(0.4));
+    console.log("erf(0.5) =", this.erfCody(0.5));
+    console.log("erf(1.0) =", this.erfCody(Decimal('1.0')));
+    console.log("erf(2.0) =", this.erfCody(2.0));
+    console.log("erf(4.0) =", this.erfCody(4.0));
+    console.log("erf(5.0) =", this.erfCody(5.0));
+
+    console.log("erf(Decimal('1.0')) =", this.erfCody(Decimal('1.0')).toString());
+      return 0.5 * (1 + this.erfCody(z / Math.sqrt(2)));
+  }
+
+  errorCorectionLinear(x) {
+    if (x > 0 && x <= 0.045) {
+      return x / 0.045 * 1394 * 1e-10;
+    }
+
+    return 0;
+  }
+
+  interpolate(x1, y1) {
+    const initialValuesCube = [0, 0, 0];
+    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
+    const a = resultCube.parameterValues[0];
+    const b = resultCube.parameterValues[1];
+    const c = resultCube.parameterValues[2];
+
+    return { a, b, c };
+  }
+
+
 }
