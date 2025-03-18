@@ -24,6 +24,18 @@ function cubeFit([a, b, c]) {
   return (x) => a * (1 - x ** 3) + b * (1 - x ** 2) + c * (1 - x);
 }
 
+function fourthOrderFit([a, b, c, d]) {
+  return (x) => a * (1 - x ** 4) + b * (1 - x ** 3) + c * (1 - x ** 2) + d * (1 - x);
+}
+
+function erfCorrectionFit([b1, b2, b3, b4, b5]) {
+  // Approximation of error function
+  // const t = 1/(1+0.3275911*x);
+  
+  // const poly = b1 * t + b2 * t ** 2 + b3 * t ** 3 + b4 * t ** 4 + b5 * t ** 5;
+  return (x) => 1 - (b1 * (1/(1+0.3275911*x)) + b2 * (1/(1+0.3275911*x)) ** 2 + b3 * (1/(1+0.3275911*x)) ** 3 + b4 * (1/(1+0.3275911*x)) ** 4 + b5 * (1/(1+0.3275911*x)) ** 5) * Math.exp(-x * x);
+}
+
 export class BlackScholesNUMJS {
   
 
@@ -353,6 +365,31 @@ export class BlackScholesNUMJS {
     const c = resultCube.parameterValues[2];
 
     return { a, b, c };
+  }
+
+  interpolate4(x1, y1) {
+    const initialValuesCube = [0, 0, 0, 0];
+    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, fourthOrderFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
+    const a = resultCube.parameterValues[0];
+    const b = resultCube.parameterValues[1];
+    const c = resultCube.parameterValues[2];
+    const d = resultCube.parameterValues[3];
+
+    return { a, b, c, d };
+  }
+
+  interpolate5(x1, y1) {
+    const initialValuesCube = [0, 0, 0, 0, 0];
+    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, erfCorrectionFit, { initialValues: initialValuesCube, maxIterations: 2000, errorTolerance: 1e-10 });
+    const b1 = resultCube.parameterValues[0];
+    const b2 = resultCube.parameterValues[1];
+    const b3 = resultCube.parameterValues[2];
+    const b4 = resultCube.parameterValues[3];
+    const b5 = resultCube.parameterValues[4];
+
+    console.log(resultCube);
+
+    return { b1, b2, b3, b4, b5 };
   }
 
 
