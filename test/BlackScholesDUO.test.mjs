@@ -931,7 +931,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [0, 0.35)", async function () {
+      it("erf [0, 0.35)", async function () {
         for (let x = 0; x <= 0.35; x += 0.01) {
           const expected = erf(x);
 
@@ -946,7 +946,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [0.35, 1.13)", async function () {
+      it("erf [0.35, 1.13)", async function () {
         for (let x = 0.35; x <= 1.13; x += 0.01) {
           const expected = erf(x);
 
@@ -960,7 +960,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [1.13, 2.8)", async function () {
+      it("erf [1.13, 2.8)", async function () {
         for (let x = 1.13; x <= 2.8; x += 0.01) {
           const expected = erf(x);
 
@@ -974,7 +974,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [2.8, 3.5)", async function () {
+      it("erf [2.8, 3.5)", async function () {
         for (let x = 2.8; x <= 3.5; x += 0.01) {
           const expected = erf(x);
 
@@ -989,49 +989,34 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("stdNormCDF", function () {
+    describe.only("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
         const actualJS = blackScholesJS.stdNormCDF(d1);
-        assertAbsoluteBelow(actualJS, expected, 0.000000070000);
+        assertAbsoluteBelow(actualJS, expected, 6.4e-9);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
+          assertAbsoluteBelow(actualSOL, expected, 7e-8);
         }
       });
 
       it("stdNormCDF multiple", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
-        for (let d1 = -2; d1 < 2; d1 += 0.01234) {
+        for (let d1 = -4; d1 < 4; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
-          assertAbsoluteBelow(actualJS, expected, 0.000000070000);
+          assertAbsoluteBelow(actualJS, expected, 6.5e-9);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-            assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
+            assertAbsoluteBelow(actualSOL, expected, 7e-8);
           }
         }
-      });
-
-      it("stdNormCDF Cody", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-        const d1 = 0.6100358074173348;
-        const expected = bs.stdNormCDF(d1);
-        const actualJS = blackScholesJS.stdNormCDFCody(d1);
-        console.log(expected, actualJS);
-        assertAbsoluteBelow(actualJS, expected, 0.000000070000);
-
-        // if (duoTest) {
-        //   const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-        //   assertAbsoluteBelow(actualSOL, expected, 0.000000070000);
-        // }
       });
     });
 
