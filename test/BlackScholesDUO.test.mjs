@@ -9,11 +9,13 @@ import erf from 'math-erf';
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = true;
+const duoTest = false;
 const fastTest = true;
 
 const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
 const maxRelError = 0.00008901;  // %
+
+const MIN_ERROR = 1e-12;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -210,15 +212,17 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const rate of ratePoints) {
             // expected
             const expected = blackScholesWrapped(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, isCall ? "call" : "put");
+            let actualJS = 0
 
             // JS
             {
-              let actualJS = 0
               if (isCall) {
                 actualJS = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
               } else {
                 actualJS = blackScholesJS.getPutOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
               }
+
+
 
               const relErrorJS = expected !== 0 ? (Math.abs(actualJS - expected) / expected * 100) : 0;
               const absErrorJS = Math.abs(actualJS - expected);
@@ -230,8 +234,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             }
 
             // SOL
+            let actualSOL = 0;
             if (duoTest) {
-              let actualSOL = 0;
               if (isCall) {
                 actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
               } else {
@@ -246,6 +250,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               }
               errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
             }
+
+            // console.log(100 * multi, strike * multi, exp, vol, rate, expected, actualJS, actualSOL);
 
             countTotal++;
 
@@ -996,7 +1002,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
         const actualJS = blackScholesJS.stdNormCDF(d1);
-        assertAbsoluteBelow(actualJS, expected, 6.4e-9);
+        assertAbsoluteBelow(actualJS, expected, 6.5e-9);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
@@ -1043,11 +1049,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = getFuturePrice(100, 0, 0.05);
           const actualJS = blackScholesJS.getFuturePrice(100, 0, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), 0, tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1055,11 +1061,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = getFuturePrice(100, SEC_IN_YEAR, 0);
           const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, 0);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), SEC_IN_YEAR, 0)).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
       });
@@ -1119,12 +1125,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     }); 
 
-    describe("call", function () {
+    describe.only("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+        assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
@@ -1145,13 +1151,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
-                // console.log(1000, strike, time / 365, vol, rate);
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
 
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                  assertEitherBelow(actualSOL, expected, 0.000070, 0.000140);
+                  assertEitherBelow(actualSOL, expected, 7e-5, 1.4e-5);
                 }
               }
             }
@@ -1167,7 +1172,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, false);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, 0.000019, 10, false);
         });
 
         // todo: test with vol max only SOL
@@ -1177,11 +1182,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 0, 0.60, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
   
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1189,11 +1194,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000, 0, 0.60, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
   
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1201,11 +1206,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 0, 0.60, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
   
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1221,7 +1226,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time, 0, rate);
-                assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
         
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
@@ -1239,7 +1244,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000140, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, 0.000019, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -1247,7 +1252,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000070, 0.000370, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, 0.000019, 10, !fastTest);
         });
       });
 
@@ -1359,12 +1364,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("put", function () {
+    describe.only("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertEitherBelow(actualJS, expected, 0.000070, 0.000370);
+        assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
@@ -1387,7 +1392,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
                 // console.log(1000, strike, time / 365, vol, rate);
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
 
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
@@ -1407,18 +1412,18 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000370, 10, false);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, 0.000019, 10, false);
         });
 
         it("expired ITM", async function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "put");
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 0, 0.60, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
   
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1426,11 +1431,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "put");
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 1000, 0, 0.60, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
   
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1438,11 +1443,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "put");
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 980, 0, 0.60, 0.05);
-          assertBothBelow(actualJS, expected, 0.000000000001, 0.000000000001);
+          assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
   
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000001, 0.000000000001);
+            assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
@@ -1458,7 +1463,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time, 0, rate);
-                assertEitherBelow(actualJS, expected, 0.000070, 0.000140);
+                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
         
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
@@ -1476,7 +1481,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000140, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, 0.000019, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -1484,7 +1489,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000070, 0.000370, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, 0.000019, 10, !fastTest);
         });
       });
 

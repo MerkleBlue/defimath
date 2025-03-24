@@ -285,9 +285,9 @@ export class BlackScholesNUMJS {
 
     // error correction
     const correction = this.errorCorrection(Math.abs(z));
-    // console.log("JS approx:", approx);
+    // console.log("JS approx:", approx, "correction:", correction, "x", z);
     
-    return z >= 0 ? approx + correction : -approx - correction;
+    return z >= 0 ? (approx + correction) : -(approx + correction);
   }
 
   errorCorrection(x) {
@@ -303,7 +303,11 @@ export class BlackScholesNUMJS {
       return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 39e-10;
     }
 
-    return (478.2423084647321 * x - 140.5689758782193 * x ** 2 + 26) / 1e10;
+    if (x < 3.5) {
+      return (478.2423084647321 * x - 140.5689758782193 * x ** 2 + 26) / 1e10;
+    }
+
+    return 0;
   }
 
   // helper function used only for ln(x) calculation, used only integers
@@ -372,6 +376,4 @@ export class BlackScholesNUMJS {
 
     return { b1, b2, /*b3, b4/*, b5*/ };
   }
-
-
 }
