@@ -866,27 +866,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe("erf", function () {
-      // OLD CODE
-      // it.only("erf [0, 1)", async function () {
-      //   // const xs = [0.000, 0.045, 0.120, 0.220, 0.355, 0.510, 0.690, 0.895, 1.135, 1.400, 1.720, 2.130, 3.085];
-      //   // const ys = [0.000,  1394,     0, -1378,     0,  1385,     0, -1375,     0,  1385,     0, -1386,     0];
-      //   // just for [0, 0.45]
-      //   const xs = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.045];
-      //   const ys = [0.000,   341,   617,   844,  1026,  1167,  1271,  1341,  1381,  1394];
-      //   const {a, b, c} = blackScholesJS.interpolate(xs, ys);
-      //   console.log(a, b, c);
-
-      //   for (let x = 0; x <= 0.045; x += 0.005) {
-      //     const expected = erf(x);
-      //     const actualJS = blackScholesJS.erf(x) -(a * x ** 3 + b * x ** 2 + c * x) / 1e10;//  - blackScholesJS.errorCorectionLinear(x); // + 0.0000001254;
-      //     console.log(x.toFixed(3), expected.toFixed(10));
-      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-      //     console.log("Error correction interpolated:", -(a * x ** 3 + b * x ** 2 + c * x) / 1e10);
-      //     // console.log("Error correction linear:", blackScholesJS.errorCorectionLinear(x));
-      //     // assertAbsoluteBelow(actualJS, expected, 1e-8);
-      //   }
-      // });
-
       it("erf function [0, 3] errors DONT DELETE", async function () {
         // const xs = [0.000, 0.045, 0.120, 0.220, 0.355, 0.510, 0.690, 0.895, 1.135, 1.400, 1.720, 2.130, 3.085];
         // const ys = [0.000,  1394,     0, -1378,     0,  1385,     0, -1375,     0,  1385,     0, -1386,     0];
@@ -911,10 +890,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         // print 
         console.log("x, y actual, y fit")
         for (let x = 0; x <= 3; x += 0.01) {
-          // prepare xs with t (then we have t to the power ready in solidity)
-          // const t = 1 / (1 + 0.3275911 * Math.abs(x));
-
-
           const expected = erf(x);
           const actualJS = blackScholesJS.erf(x);
           const y = (actualJS - expected) * 1e10;
@@ -946,10 +921,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         // print 
         console.log("x, y actual, y fit")
         for (let x = 2.8; x <= 3.5; x += 0.01) {
-          // prepare xs with t (then we have t to the power ready in solidity)
-          // const t = 1 / (1 + 0.3275911 * Math.abs(x));
-
-
           const expected = erf(x);
           const actualJS = blackScholesJS.erf(x);
           const y = (actualJS - expected) * 1e10;
@@ -960,26 +931,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-
-      it("erf [0, 0.35)", async function () {
+      it.only("erf [0, 0.35)", async function () {
         for (let x = 0; x <= 0.35; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = -1402 * (Math.sin(1 / (x * 3/7 + 0.3) ** 2 + 4.52)) / 1e10;
-
-          const actualJS = blackScholesJS.erf(x) + errorCorrection;
-          console.log(x.toFixed(3), expected.toFixed(10));
-          console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-          console.log("Error correction interpolated:", errorCorrection);
-          assertAbsoluteBelow(actualJS, expected, 1.41e-8);
-        }
-      });
-
-      it.only("erf [0, 0.35) #2", async function () {
-        for (let x = 0; x <= 0.35; x += 0.01) {
-          const expected = erf(x);
-
-          const errorCorrection = -1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
+          // const errorCorrection = -1402 * (Math.sin(1 / (x * 3/7 + 0.3) ** 2 + 4.52)) / 1e10; this one is 1.41e-8
+          const errorCorrection = 0; //-1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
 
           const actualJS = blackScholesJS.erf(x) + errorCorrection;
           console.log(x.toFixed(3), expected.toFixed(10));
@@ -993,7 +950,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let x = 0.35; x <= 1.13; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
+          const errorCorrection = 0; //1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
 
           const actualJS = blackScholesJS.erf(x) + errorCorrection;
           console.log(x.toFixed(3), expected.toFixed(10));
@@ -1007,7 +964,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let x = 1.13; x <= 2.8; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 39e-10; // todo: - 40e-9
+          const errorCorrection = 0; //1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 39e-10; // todo: - 40e-9
 
           const actualJS = blackScholesJS.erf(x) + errorCorrection;
           console.log(x.toFixed(3), expected.toFixed(10));
@@ -1021,7 +978,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let x = 2.8; x <= 3.5; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = (478.2423084647321 * x - 140.5689758782193 * x ** 2 + 26) / 1e10; // todo: - 40e-9
+          const errorCorrection = 0; //(478.2423084647321 * x - 140.5689758782193 * x ** 2 + 26) / 1e10; // todo: - 40e-9
 
           const actualJS = blackScholesJS.erf(x) + errorCorrection;
           console.log(x.toFixed(3), expected.toFixed(10));
@@ -1030,46 +987,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, 6.7e-9);
         }
       });
-
-      // it.only("erf [1, 2)", async function () {
-      //   for (let x = 1; x <= 2; x += 0.005) {
-      //     const expected = erf(x);
-      //     const actualJS = blackScholesJS.erf(x);// + 0.0000000550;// + 0.0000001254;
-      //     console.log(x.toFixed(3), expected.toFixed(10));
-      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-      //     // assertAbsoluteBelow(actualJS, expected, 1e-8);
-      //   }
-      // });
-
-      // it.only("erf [2, 3)", async function () {
-      //   for (let x = 2; x <= 3; x += 0.005) {
-      //     const expected = erf(x);
-      //     const actualJS = blackScholesJS.erf(x);// + 0.0000000550;// + 0.0000001254;
-      //     console.log(x.toFixed(3), expected.toFixed(10));
-      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-      //     // assertAbsoluteBelow(actualJS, expected, 1e-8);
-      //   }
-      // });
-
-      // it.only("erf [3, 10)", async function () {
-      //   for (let x = 3; x <= 10; x += 0.005) {
-      //     const expected = erf(x);
-      //     const actualJS = blackScholesJS.erf(x) + 1e-8;
-      //     console.log(x.toFixed(3), expected.toFixed(10));
-      //     console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-      //     assertAbsoluteBelow(actualJS, expected, 1e-8);
-      //   }
-      // });
-
-      // it.only("erf [4, 10)", async function () {
-      //   for (let x = 4; x <= 10.01; x += 0.05) {
-      //     const expected = erf(x);
-      //     const actualJS = blackScholesJS.erf(x);
-      //     // console.log(x.toFixed(3), expected.toFixed(10));
-      //     // console.log(x.toFixed(3), actualJS.toFixed(10));
-      //     assertAbsoluteBelow(actualJS, expected, 1e-10);
-      //   }
-      // });
     });
 
     describe("stdNormCDF", function () {

@@ -279,15 +279,31 @@ export class BlackScholesNUMJS {
     // console.log("JS z:", z);
     // Approximation of error function
     const t = 1 / (1 + 0.3275911 * Math.abs(z));
-    // console.log("JS t:", t);
     const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
-    
     const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
-    // console.log("JS poly:", poly);
     const approx = 1 - poly * this.exp(-z * z);
+
+    // error correction
+    const correction = this.errorCorrection(Math.abs(z));
     // console.log("JS approx:", approx);
     
-    return z >= 0 ? approx : -approx;
+    return z >= 0 ? approx + correction : -approx - correction;
+  }
+
+  errorCorrection(x) {
+    if (x < 0.35) {
+      return -1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
+    }
+
+    if (x < 1.13) {
+      return 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
+    }
+
+    if (x < 2.8) {
+      return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 39e-10;
+    }
+
+    return (478.2423084647321 * x - 140.5689758782193 * x ** 2 + 26) / 1e10;
   }
 
   // helper function used only for ln(x) calculation, used only integers
@@ -306,60 +322,6 @@ export class BlackScholesNUMJS {
   
     // x is always >= 100 
     return 10;
-  }
-
-  erfCody(z) {
-
-    z = Decimal(z);
-    const sign = z.lt(0) ? Decimal('-1') : Decimal('1');
-    z = z.abs();
-    if (z.lte(Decimal('0.5'))) {
-        const z2 = z.mul(z);
-        return sign.mul(Decimal('1.12837916709551257389615890312')).mul(z).mul(Decimal('1').sub(z2.div(Decimal('3'))).add(z2.mul(z2).div(Decimal('10'))).sub(z2.mul(z2).mul(z2).div(Decimal('42'))));
-    } else if (z.lte(Decimal('4.0'))) {
-        const z2 = z.mul(z);
-        const expNegZ2 = Decimal.exp(z2.neg());
-        const t = Decimal('1').div(Decimal('1').add(Decimal('0.3275911').mul(z)));
-        const p = Decimal('0.2548295925').mul(t)
-            .plus(Decimal('-0.284496736').mul(t.mul(t)))
-            .plus(Decimal('1.421413741').mul(t.mul(t).mul(t)))
-            .plus(Decimal('-1.453152027').mul(t.mul(t).mul(t).mul(t)))
-            .plus(Decimal('1.061405429').mul(t.mul(t).mul(t).mul(t).mul(t)));
-        return sign.mul(Decimal('1').sub(expNegZ2.mul(p)));
-    } else {
-        const z2 = z.mul(z);
-        const expNegZ2 = Decimal.exp(z2.neg());
-        const zInv = Decimal('1').div(z);
-        const p = Decimal('1').plus(zInv.mul(Decimal('0.278393').plus(zInv.mul(Decimal('0.230389').plus(zInv.mul(Decimal('0.000972').plus(zInv.mul('0.078108'))))))));
-        const q = Decimal('1').plus(zInv.mul(Decimal('0.568861').plus(zInv.mul(Decimal('0.114419').plus(zInv.mul(Decimal('0.008763').plus(zInv.mul('0.000326'))))))));
-        return sign.mul(Decimal('1').sub(expNegZ2.div(Decimal.sqrt(Decimal.acos(-1))).mul(z).mul(p).div(q)));
-    }
-  }
-
-  // Optional: Standard Normal CDF using erf
-  stdNormCDFCody(z) {
-    console.log("Precision:", Decimal.precision);
-    console.log("erf(0.0) =", this.erfCody(Decimal('0.0')));
-    console.log("erf(0.1) =", this.erfCody(0.1));
-    console.log("erf(0.2) =", this.erfCody(0.2));
-    console.log("erf(0.3) =", this.erfCody(0.3));
-    console.log("erf(0.4) =", this.erfCody(0.4));
-    console.log("erf(0.5) =", this.erfCody(0.5));
-    console.log("erf(1.0) =", this.erfCody(Decimal('1.0')));
-    console.log("erf(2.0) =", this.erfCody(2.0));
-    console.log("erf(4.0) =", this.erfCody(4.0));
-    console.log("erf(5.0) =", this.erfCody(5.0));
-
-    console.log("erf(Decimal('1.0')) =", this.erfCody(Decimal('1.0')).toString());
-      return 0.5 * (1 + this.erfCody(z / Math.sqrt(2)));
-  }
-
-  errorCorectionLinear(x) {
-    if (x > 0 && x <= 0.045) {
-      return x / 0.045 * 1394 * 1e-10;
-    }
-
-    return 0;
   }
 
   interpolate(x1, y1) {
