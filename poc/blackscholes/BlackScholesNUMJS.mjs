@@ -289,7 +289,7 @@ export class BlackScholesNUMJS {
     const approx = 1 - poly * this.exp(-z * z);
 
     // error correction
-    const correction = 0; // this.errorCorrection(Math.abs(z));
+    const correction = this.errorCorrection(Math.abs(z));
     // console.log("JS approx:", approx, "correction:", correction, "x", z);
     
     return z >= 0 ? (approx + correction) : -(approx + correction);
@@ -297,7 +297,8 @@ export class BlackScholesNUMJS {
 
   errorCorrection(x) {
     if (x < 0.35) {
-      return -1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
+      // return -1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
+      return -(70191.75526562665 * x - 1103772.051336337 * x ** 2 + 5648311.047693772 * x ** 3 - 12219187.046697173 * x ** 4 + 9868497.924729755 * x ** 5) / 1e10;
     }
 
     if (x < 1.13) {

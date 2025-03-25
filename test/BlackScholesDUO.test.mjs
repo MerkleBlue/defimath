@@ -909,7 +909,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       it.only("erf function [0, 0.35] errors DONT DELETE", async function () {
 
         const xs = [], ys = [];
-        for (let x = 0; x <= 0.35; x += 0.01) {
+        for (let x = 0; x <= 0.351; x += 0.01) {
           // prepare xs with t (then we have t to the power ready in solidity)
           // const t = 1 / (1 + 0.3275911 * Math.abs(x));
           xs.push(x);
@@ -926,7 +926,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
         // print 
         console.log("x, y actual, y fit")
-        for (let x = 0; x <= 0.35; x += 0.01) {
+        for (let x = 0; x <= 0.351; x += 0.01) {
           const expected = erf(x);
           const actualJS = blackScholesJS.erf(x);
           const y = (actualJS - expected) * 1e10;
@@ -968,7 +968,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it("erf [0, 0.35)", async function () {
+      it.only("erf [0, 0.35)", async function () {
         for (let x = 0; x <= 0.35; x += 0.01) {
           const expected = erf(x);
 
@@ -979,7 +979,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           console.log(x.toFixed(3), expected.toFixed(10));
           console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
           console.log("Error correction interpolated:", errorCorrection);
-          assertAbsoluteBelow(actualJS, expected, 1.29e-8);
+          assertAbsoluteBelow(actualJS, expected, 2.2e-9);
         }
       });
 
