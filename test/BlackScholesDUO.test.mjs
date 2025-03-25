@@ -12,7 +12,7 @@ const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 const duoTest = false;
 const fastTest = true;
 
-const maxAbsError = 0.00008902;  // $, for an option on a $1000 spot price
+const MAX_OPTION_ABS_ERROR = 0.000013;  // in $, for a call/put option on underlying valued at $1000
 const maxRelError = 0.00008901;  // %
 
 const MIN_ERROR = 1e-12;
@@ -872,46 +872,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
 
     describe("erf", function () {
-      it("erf function [0, 3] errors DONT DELETE", async function () {
-        // const xs = [0.000, 0.045, 0.120, 0.220, 0.355, 0.510, 0.690, 0.895, 1.135, 1.400, 1.720, 2.130, 3.085];
-        // const ys = [0.000,  1394,     0, -1378,     0,  1385,     0, -1375,     0,  1385,     0, -1386,     0];
-        // just for [0, 0.45]
-
-        const xs = [], ys = [];
-        for (let x = 0; x <= 3; x += 0.01) {
-          // prepare xs with t (then we have t to the power ready in solidity)
-          // const t = 1 / (1 + 0.3275911 * Math.abs(x));
-          xs.push(x);
-
-          // prepare ys
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erf(x);
-          const y = (actualJS - expected) * 1e10;
-          ys.push(y);
-        }
-
-        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolate5(xs, ys);
-        console.log(b1, b2, b3, b4, b5);
-
-        // print 
-        console.log("x, y actual, y fit")
-        for (let x = 0; x <= 3; x += 0.01) {
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erf(x);
-          const y = (actualJS - expected) * 1e10;
-
-          const yFit = 1 - (b1 * (1/(1+0.3275911*x)) + b2 * (1/(1+0.3275911*x)) ** 2 + b3 * (1/(1+0.3275911*x)) ** 3 + b4 * (1/(1+0.3275911*x)) ** 4 + b5 * (1/(1+0.3275911*x)) ** 5) * Math.exp(-x * x)
-
-          console.log(x + ",",  y + ",", yFit);
-        }
-      });
-
-      it.only("erf function [0, 0.35] errors DONT DELETE", async function () {
-
+      it("erf function [0, 0.35] polynomial", async function () {
         const xs = [], ys = [];
         for (let x = 0; x <= 0.351; x += 0.01) {
-          // prepare xs with t (then we have t to the power ready in solidity)
-          // const t = 1 / (1 + 0.3275911 * Math.abs(x));
           xs.push(x);
 
           // prepare ys
@@ -922,10 +885,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
 
         const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
-        console.log(b1, b2, b3, b4, b5);
+        // console.log(b1, b2, b3, b4, b5);
 
         // print 
-        console.log("x, y actual, y fit")
+        // console.log("x, y actual, y fit")
         for (let x = 0; x <= 0.351; x += 0.01) {
           const expected = erf(x);
           const actualJS = blackScholesJS.erf(x);
@@ -933,52 +896,103 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
           const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
 
-          console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
         }
       });
 
-      it("erf function [2.8, 3.5] errors DONT DELETE", async function () {
-
+      it("erf function [0.35, 1.13] polynomial", async function () {
         const xs = [], ys = [];
-        for (let x = 2.8; x <= 3.5; x += 0.01) {
-          // prepare xs with t (then we have t to the power ready in solidity)
-          // const t = 1 / (1 + 0.3275911 * Math.abs(x));
+        for (let x = 0.35; x <= 1.141; x += 0.01) {
           xs.push(x);
 
           // prepare ys
           const expected = erf(x);
-          const actualJS = blackScholesJS.erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
+        // console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        // console.log("x, y actual, y fit")
+        for (let x = 0.35; x <= 1.131; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf function [1.13, 2.8] polynomial", async function () {
+        const xs = [], ys = [];
+        for (let x = 1.13; x <= 2.81; x += 0.01) {
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
+        // console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        // console.log("x, y actual, y fit")
+        for (let x = 1.13; x <= 2.81; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf function [2.8, 3.5] polynomial", async function () {
+
+        const xs = [], ys = [];
+        for (let x = 2.8; x <= 3.5; x += 0.01) {
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
           const y = (actualJS - expected) * 1e10;
           ys.push(y);
         }
 
         const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg4(xs, ys);
-        console.log(b1, b2, b3, b4, b5);
+        // console.log(b1, b2, b3, b4, b5);
 
         // print 
-        console.log("x, y actual, y fit")
+        // console.log("x, y actual, y fit")
         for (let x = 2.8; x <= 3.5; x += 0.01) {
           const expected = erf(x);
-          const actualJS = blackScholesJS.erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
           const y = (actualJS - expected) * 1e10;
 
-          const yFit = b1 * x + b2 * x ** 2/* + b3 * x ** 3 + b4 * x ** 4/* + b5 * x ** 5*/;
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3/* + b4 * x ** 4/* + b5 * x ** 5*/;
 
-          console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
         }
       });
 
-      it.only("erf [0, 0.35)", async function () {
+      it("erf [0, 0.35)", async function () {
         for (let x = 0; x <= 0.35; x += 0.01) {
           const expected = erf(x);
 
-          // const errorCorrection = -1402 * (Math.sin(1 / (x * 3/7 + 0.3) ** 2 + 4.52)) / 1e10; this one is 1.41e-8
-          const errorCorrection = 0; //-1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
-
-          const actualJS = blackScholesJS.erf(x) + errorCorrection;
-          console.log(x.toFixed(3), expected.toFixed(10));
-          console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-          console.log("Error correction interpolated:", errorCorrection);
+          const actualJS = blackScholesJS.erf(x);
+          // console.log(x.toFixed(3), expected.toFixed(10));
+          // console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+          // console.log("Error correction interpolated:", errorCorrection);
           assertAbsoluteBelow(actualJS, expected, 2.2e-9);
         }
       });
@@ -987,12 +1001,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let x = 0.35; x <= 1.13; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = 0; //1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
-
-          const actualJS = blackScholesJS.erf(x) + errorCorrection;
-          console.log(x.toFixed(3), expected.toFixed(10));
-          console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-          console.log("Error correction interpolated:", errorCorrection);
+          const actualJS = blackScholesJS.erf(x);
+          // console.log(x.toFixed(3), expected.toFixed(10));
+          // console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+          // console.log("Error correction interpolated:", errorCorrection);
           assertAbsoluteBelow(actualJS, expected, 1.9e-9);
         }
       });
@@ -1001,13 +1013,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let x = 1.13; x <= 2.8; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = 0; //1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 39e-10; // todo: - 40e-9
-
-          const actualJS = blackScholesJS.erf(x) + errorCorrection;
-          console.log(x.toFixed(3), expected.toFixed(10));
-          console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-          console.log("Error correction interpolated:", errorCorrection);
-          assertAbsoluteBelow(actualJS, expected, 4.9e-9);
+          const actualJS = blackScholesJS.erf(x);
+          // console.log(x.toFixed(3), expected.toFixed(10));
+          // console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+          // console.log("Error correction interpolated:", errorCorrection);
+          assertAbsoluteBelow(actualJS, expected, 4.5e-9);
         }
       });
 
@@ -1015,13 +1025,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let x = 2.8; x <= 3.5; x += 0.01) {
           const expected = erf(x);
 
-          const errorCorrection = 0; //(478.2423084647321 * x - 140.5689758782193 * x ** 2 + 26) / 1e10; // todo: - 40e-9
-
-          const actualJS = blackScholesJS.erf(x) + errorCorrection;
-          console.log(x.toFixed(3), expected.toFixed(10));
-          console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
-          console.log("Error correction interpolated:", errorCorrection);
-          assertAbsoluteBelow(actualJS, expected, 6.7e-9);
+          const actualJS = blackScholesJS.erf(x);
+          // console.log(x.toFixed(3), expected.toFixed(10));
+          // console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
+          // console.log("Error correction interpolated:", errorCorrection);
+          assertAbsoluteBelow(actualJS, expected, 2.1e-9);
         }
       });
     });
@@ -1033,7 +1041,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
         const actualJS = blackScholesJS.stdNormCDF(d1);
-        assertAbsoluteBelow(actualJS, expected, 6.5e-9);
+        assertAbsoluteBelow(actualJS, expected, 2.3e-9);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
@@ -1047,7 +1055,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let d1 = -4; d1 < 4; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
-          assertAbsoluteBelow(actualJS, expected, 6.5e-9);
+          assertAbsoluteBelow(actualJS, expected, 2.3e-9);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
@@ -1161,7 +1169,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
+        assertEitherBelow(actualJS, expected, 0.000001, MAX_OPTION_ABS_ERROR);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
@@ -1183,7 +1191,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
+                assertEitherBelow(actualJS, expected, 0.000001, MAX_OPTION_ABS_ERROR);
 
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
@@ -1203,7 +1211,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, 0.000019, 10, false);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
         });
 
         // todo: test with vol max only SOL
@@ -1257,7 +1265,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time, 0, rate);
-                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
+                assertEitherBelow(actualJS, expected, 0.000001, MAX_OPTION_ABS_ERROR);
         
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
@@ -1271,19 +1279,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("random", function () {
         it("lower strikes", async function () {
-          const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 300, false);
-          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
-          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
+          const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, 0.000019, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
-          const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 300, false);
-          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
-          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
+          const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, 0.000019, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
       });
 
@@ -1400,7 +1408,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
+        assertEitherBelow(actualJS, expected, 0.000001, MAX_OPTION_ABS_ERROR);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
@@ -1423,7 +1431,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
                 // console.log(1000, strike, time / 365, vol, rate);
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
+                assertEitherBelow(actualJS, expected, 0.000001, MAX_OPTION_ABS_ERROR);
 
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
@@ -1443,7 +1451,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, 0.000019, 10, false);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
         });
 
         it("expired ITM", async function () {
@@ -1494,7 +1502,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time, 0, rate);
-                assertEitherBelow(actualJS, expected, 0.000001, 0.000019);
+                assertEitherBelow(actualJS, expected, 0.000001, MAX_OPTION_ABS_ERROR);
         
                 if (duoTest) {
                   const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
@@ -1512,7 +1520,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, 0.000019, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -1520,7 +1528,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 300, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 300, false);
           const rates = [0, 0.1, 0.2];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, 0.000019, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
       });
 
