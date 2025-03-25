@@ -41,6 +41,11 @@ function erfCorrectionFitSeg4([b1, b2]) {
   return (x) => b1 * x + b2 * x ** 2/* + b3 * x ** 3 + b4 * x ** 4/* + b5 * x ** 5*/;
 }
 
+function erfCorrectionFitSeg1([b1, b2, b3, b4, b5]) {
+  // Approximation of error function
+  return (x) => b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+}
+
 export class BlackScholesNUMJS {
   
 
@@ -284,7 +289,7 @@ export class BlackScholesNUMJS {
     const approx = 1 - poly * this.exp(-z * z);
 
     // error correction
-    const correction = this.errorCorrection(Math.abs(z));
+    const correction = 0; // this.errorCorrection(Math.abs(z));
     // console.log("JS approx:", approx, "correction:", correction, "x", z);
     
     return z >= 0 ? (approx + correction) : -(approx + correction);
@@ -352,6 +357,20 @@ export class BlackScholesNUMJS {
   interpolate5(x1, y1) {
     const initialValuesCube = [0, 0, 0, 0, 0];
     let resultCube = levenbergMarquardt({ x: x1, y: y1 }, erfCorrectionFit, { initialValues: initialValuesCube, maxIterations: 2000, errorTolerance: 1e-10 });
+    const b1 = resultCube.parameterValues[0];
+    const b2 = resultCube.parameterValues[1];
+    const b3 = resultCube.parameterValues[2];
+    const b4 = resultCube.parameterValues[3];
+    const b5 = resultCube.parameterValues[4];
+
+    console.log(resultCube);
+
+    return { b1, b2, b3, b4, b5 };
+  }
+
+  interpolateSeg1(x1, y1) {
+    const initialValuesCube = [0, 0, 0, 0, 0];
+    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, erfCorrectionFitSeg1, { initialValues: initialValuesCube, maxIterations: 2000, errorTolerance: 1e-10 });
     const b1 = resultCube.parameterValues[0];
     const b2 = resultCube.parameterValues[1];
     const b3 = resultCube.parameterValues[2];

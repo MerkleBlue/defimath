@@ -906,7 +906,38 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it("erf function [2.8, 5] errors DONT DELETE", async function () {
+      it.only("erf function [0, 0.35] errors DONT DELETE", async function () {
+
+        const xs = [], ys = [];
+        for (let x = 0; x <= 0.35; x += 0.01) {
+          // prepare xs with t (then we have t to the power ready in solidity)
+          // const t = 1 / (1 + 0.3275911 * Math.abs(x));
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erf(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
+        console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        console.log("x, y actual, y fit")
+        for (let x = 0; x <= 0.35; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erf(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+
+          console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf function [2.8, 3.5] errors DONT DELETE", async function () {
 
         const xs = [], ys = [];
         for (let x = 2.8; x <= 3.5; x += 0.01) {
@@ -995,7 +1026,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("stdNormCDF", function () {
+    describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -1125,7 +1156,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     }); 
 
-    describe.only("call", function () {
+    describe("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -1364,7 +1395,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("put", function () {
+    describe("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
