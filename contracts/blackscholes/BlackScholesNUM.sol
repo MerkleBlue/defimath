@@ -307,9 +307,26 @@ library BlackScholesNUM {
 
             // if (log) { if (poly > 0) { console.log("poly: %d", uint256(poly)); } else { console.log("poly: -%d", uint256(-poly)); }}
 
-            return (1e36 - poly * expNegative(z * z / 1e18)) / 2e18;
+            // error correction
+            // t2 = z * z / 1e18;
+            // t3 = t2 * z / 1e18;
+            // t4 = t3 * z / 1e18;
+            // uint256 poly2 = ;
+
+            uint256 z2 = z * z / 1e18;
+            return (1e36 - poly * expNegative(z2) + errorCorrection(z, z2)) / 2e18;
 
             // if (log) { if (approx > 0) { console.log("approx: %d", uint256(approx)); } else { console.log("approx: -%d", uint256(-approx)); }}
+        }
+    }
+
+    function errorCorrection(uint256 x, uint256 x2) private pure returns (uint256) {
+        unchecked {
+            // error correction
+            // uint256 x2 = x * x / 1e18;
+            uint256 x3 = x2 * x / 1e18;
+            uint256 x4 = x3 * x / 1e18;
+            return x * (254829592 * 1e18 - 284496736 * x + 1421413741 * x2 - 1453152027 * x3 + 1061405429 * x4) / 1e27; 
         }
     }
 
