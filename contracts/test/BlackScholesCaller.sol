@@ -65,6 +65,10 @@ contract BlackScholesCaller {
         return BlackScholesNUM.stdNormCDF(x);
     }
 
+    function erfPositiveHalf(uint256 x) external pure returns (uint256) {
+        return BlackScholesNUM.erfPositiveHalf(x);
+    }
+
     function expPositiveMG(uint256 x) public view returns (uint256) {
         uint256 result;
         uint256 startGas;

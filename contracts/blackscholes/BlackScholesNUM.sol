@@ -285,15 +285,15 @@ library BlackScholesNUM {
             // if (log) { if (erfResult > 0) { console.log("erfResult SOL: %d", uint256(erfResult)); } else { console.log("erfResult SOL: -%d", uint256(-erfResult)); }}
             int256 argument = x * 707106781186547524 / 1e18;
             if (argument >= 0) {
-                return 5e17 + erfPositive(uint256(argument));
+                return 5e17 + erfPositiveHalf(uint256(argument));
             } 
                 
-            return 5e17 - erfPositive(uint256(-argument));
+            return 5e17 - erfPositiveHalf(uint256(-argument));
         }
     }
 
     // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
-    function erfPositive(uint256 z) private pure returns (uint256) {
+    function erfPositiveHalf(uint256 z) internal pure returns (uint256) {
         unchecked {
             // if (log) { if (z > 0) { console.log("z: %d", uint256(z)); } else { console.log("z: -%d", uint256(-z)); }}
 
@@ -314,7 +314,7 @@ library BlackScholesNUM {
             // uint256 poly2 = ;
 
             uint256 z2 = z * z / 1e18;
-            return (1e36 - poly * expNegative(z2) + errorCorrection(z, z2)) / 2e18;
+            return (1e36 - poly * expNegative(z2) + errorCorrection(z, z2) - 1e36) / 2e18;
 
             // if (log) { if (approx > 0) { console.log("approx: %d", uint256(approx)); } else { console.log("approx: -%d", uint256(-approx)); }}
         }
@@ -323,10 +323,34 @@ library BlackScholesNUM {
     function errorCorrection(uint256 x, uint256 x2) private pure returns (uint256) {
         unchecked {
             // error correction
-            // uint256 x2 = x * x / 1e18;
-            uint256 x3 = x2 * x / 1e18;
-            uint256 x4 = x3 * x / 1e18;
-            return x * (254829592 * 1e18 - 284496736 * x + 1421413741 * x2 - 1453152027 * x3 + 1061405429 * x4) / 1e27; 
+            if (x < 0.35e18) {
+                uint256 x3 = x2 * x / 1e18;
+                uint256 x4 = x3 * x / 1e18;
+                // console.log("SOL part1:", 701918 * 1e18 - 11037721 * x);
+                // console.log("SOL 1e36          :", 1e36);
+                // console.log("SOL 701918 * 1e18 :", 701918 * 1e18);
+                // console.log("SOL 11037721 * x  :", 11037721 * x);
+                // console.log("SOL 56483110 * x2 :", 56483110 * x2);
+                // console.log("SOL 122191870 * x3:", 122191870 * x3);
+                // console.log("SOL 98684979 * x4 :", 98684979 * x4);
+
+
+                // console.log("SOL 1e36 - rest :", (1e36 - 701918 * 1e18 + 11037721 * x - 56483110 * x2 + 122191870 * x3 - 98684979 * x4));
+
+                // console.log("SOL x * (1e36 - rest)) :", (x * (1e36 - 701918 * 1e18 + 11037721 * x - 56483110 * x2 + 122191870 * x3 - 98684979 * x4)));
+
+                // console.log("SOL final :", ((x * (1e36 - 701918 * 1e18 + 11037721 * x - 56483110 * x2 + 122191870 * x3 - 98684979 * x4)) - x * 1e36) / 1e29);
+
+
+                // console.log("SOL x * (1 + rest):", ((x * (1e36 - 701918 * 1e18 + 11037721 * x - 56483110 * x2 + 122191870 * x - 398684979 * x4)) - x * 1e36) / 1e27);
+                // uint256 result = x * (1e27 + 701918 * 1e18 - 11037721 * x + 56483110 * x2 - 122191870 * x3 + 98684979 * x4) / 1e27; 
+                // console.log("SOL:", result);
+                return 1e36 + ((x * (1e36 - 701918 * 1e18 + 11037721 * x - 56483110 * x2 + 122191870 * x3 - 98684979 * x4)) - x * 1e36) / 1e11;
+                // -(70191.75526562665 * x - 1103772.051336337 * x ** 2 + 5648311.047693772 * x ** 3 - 12219187.046697173 * x ** 4 + 9868497.924729755 * x ** 5) / 1e10;
+
+            }
+
+            return 0;
         }
     }
 

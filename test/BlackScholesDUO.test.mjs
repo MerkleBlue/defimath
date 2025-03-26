@@ -9,7 +9,7 @@ import erf from 'math-erf';
 const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
-const duoTest = false;
+const duoTest = true;
 const fastTest = true;
 
 const MAX_OPTION_ABS_ERROR = 0.000013;  // in $, for a call/put option on underlying valued at $1000
@@ -985,7 +985,41 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
+      it.only("erf single value", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const x = 0.123;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, 2.2e-9);
+
+        if (duoTest) {
+          const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          console.log(expected, actualJS, actualSOL)
+          assertAbsoluteBelow(actualSOL, expected, 2.2e-9);
+        }
+      });
+
+      it.only("erf regression", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const x = 0.01;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, 2.2e-9);
+
+        if (duoTest) {
+          const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          console.log(expected, actualJS, actualSOL)
+          assertAbsoluteBelow(actualSOL, expected, 2.2e-9);
+        }
+      });
+
       it("erf [0, 0.35)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 0; x <= 0.35; x += 0.01) {
           const expected = erf(x);
 
@@ -994,6 +1028,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           // console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
           // console.log("Error correction interpolated:", errorCorrection);
           assertAbsoluteBelow(actualJS, expected, 2.2e-9);
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            console.log("x:", x, expected, actualJS, actualSOL)
+            assertAbsoluteBelow(actualSOL, expected, 7e-8);
+          }
         }
       });
 
