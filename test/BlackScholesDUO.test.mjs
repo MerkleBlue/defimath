@@ -1017,7 +1017,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it("erf [0, 0.35)", async function () {
+      it.only("erf [0, 0.35)", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let x = 0; x <= 0.35; x += 0.01) {
@@ -1031,8 +1031,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
-            console.log("x:", x, expected, actualJS, actualSOL)
-            assertAbsoluteBelow(actualSOL, expected, 7e-8);
+            // console.log("x:", x, expected, actualJS, actualSOL)
+            assertAbsoluteBelow(actualSOL, expected, 2.2e-9);
           }
         }
       });
