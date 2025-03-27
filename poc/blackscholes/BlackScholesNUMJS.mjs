@@ -370,8 +370,18 @@ export class BlackScholesNUMJS {
     return 10;
   }
 
+  // works with positive numbers
   sin(x) {
-    return 4 * x * (Math.PI - x) / (1.25 * Math.PI ** 2 - x * (Math.PI - x));
+    // modulo arithmetic
+    const x1 = x % (2 * Math.PI);
+
+    // using Bhaskara I's sine approximation formula
+    if (x1 <= Math.PI) {
+      return 4 * x1 * (Math.PI - x1) / (1.25 * Math.PI ** 2 - x1 * (Math.PI - x1));
+    }
+
+    const x2 = x1 - Math.PI;
+    return -4 * x2 * (Math.PI - x2) / (1.25 * Math.PI ** 2 - x2 * (Math.PI - x2));
   }
 
   interpolate(x1, y1) {
