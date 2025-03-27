@@ -347,6 +347,8 @@ export class BlackScholesNUMJS {
 
     if (x < 2.8) {
       // sine is much better than polynomial
+      // console.log("JS: 3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22     :", 3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22);
+
       return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 35e-10;
     }
 
