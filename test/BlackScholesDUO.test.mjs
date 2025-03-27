@@ -1105,6 +1105,22 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
+      it("erf single value in [2.8, 3.5]", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const x = 3.1;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, 2.1e-9);
+
+        if (duoTest) {
+          const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          console.log(expected, actualJS, actualSOL)
+          assertAbsoluteBelow(actualSOL, expected, 2.1e-9);
+        }
+      });
+
       it("erf regression", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -1161,7 +1177,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [1.13, 2.8)", async function () {
+      it("erf [1.13, 2.8)", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let x = 1.13; x <= 2.8; x += 0.01) {
@@ -1181,7 +1197,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it("erf [2.8, 3.5)", async function () {
+      it.only("erf [2.8, 3.5)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
         for (let x = 2.8; x <= 3.5; x += 0.01) {
           const expected = erf(x);
 
@@ -1190,6 +1208,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           // console.log(x.toFixed(3), actualJS.toFixed(10), "(diff: ", (actualJS - expected).toFixed(10), ")");
           // console.log("Error correction interpolated:", errorCorrection);
           assertAbsoluteBelow(actualJS, expected, 2.1e-9);
+
+          if (duoTest) {
+            const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            console.log("x:", x, expected, actualJS, actualSOL)
+            assertAbsoluteBelow(actualSOL, expected, 2.1e-9); // todo: why more than JS, replace Math.sin in JS
+          }
         }
       });
     });
