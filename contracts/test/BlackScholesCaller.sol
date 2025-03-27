@@ -57,6 +57,10 @@ contract BlackScholesCaller {
         return BlackScholesNUM.sqrtUpper(x);
     }
 
+    function sin(uint256 x) external pure returns (int256) {
+        return BlackScholesNUM.sin(x);
+    }
+
     function getD1(uint128 spot, uint128 strike, uint256 scaledVol, uint256 scaledRate) external pure returns (int256) {
         return BlackScholesNUM.getD1(spot, strike, scaledVol, scaledRate);
     }

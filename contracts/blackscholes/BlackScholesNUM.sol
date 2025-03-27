@@ -7,6 +7,7 @@ import "hardhat/console.sol";
 library BlackScholesNUM {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
+    int256 internal constant PI = 3141592653589793239;
 
     // limits
     uint256 internal constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
@@ -267,6 +268,21 @@ library BlackScholesNUM {
             // return exp123 * result / 1e54;
 
             // const result = 1 + x/2 - 1/8 * x^2 + 3/48 * x^3 - 15/384 * x^4 + 105/3840 * x^5 - 945/46080 * x^6 + 10395/645120 * x^7 - 135135/10321920 * x^8;
+        }
+    }
+
+    function sin(uint256 x) internal pure returns (int256) {
+        unchecked {
+            // modulo arithmetic
+            int256 xMod = int256(x) % (2 * PI); // 2 * PI
+
+            if (xMod <= PI) {
+                return 4e18 * xMod * (PI - xMod) / (12337005501361698274e18 - xMod * (PI - xMod));
+            }
+
+            xMod -= PI;
+
+            return -4e18 * xMod * (PI - xMod) / (12337005501361698274e18 - xMod * (PI - xMod));
         }
     }
 
