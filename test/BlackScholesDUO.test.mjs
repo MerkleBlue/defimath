@@ -826,6 +826,85 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
+    describe.only("sin", function () {
+      it("sin single value", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const x = 0.5;
+        const expected = Math.sin(x);
+        const actualJS = blackScholesJS.sin(x);
+        // console.log(x, expected, actualJS);
+        assertAbsoluteBelow(actualJS, expected, 0.00016);
+
+        // if (duoTest) {
+        //   const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
+        //   assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
+        // }
+      });
+
+      it("sin positive [0, Math.PI)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        for (let x = 0; x < Math.PI; x += 0.00123) { 
+          const expected = Math.sin(x);
+          const actualJS = blackScholesJS.sin(x);
+          // console.log(x, expected, actualJS);
+          assertAbsoluteBelow(actualJS, expected, 0.002);
+          assertRelativeBelow(actualJS, expected, 0.02); // 2% relative error
+
+          // if (duoTest) {
+          //   const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
+          //   assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000110);
+          // }
+        }
+      });
+
+      // it("exp positive [1, 32)", async function () {
+      //   const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+      //   for (let x = 1; x < 32; x += 0.03200125) { 
+      //     const expected = Math.exp(x);
+      //     const actualJS = blackScholesJS.exp(x);
+      //     assertRelativeBelow(actualJS, expected, 0.000000004200);
+
+      //     if (duoTest) {
+      //       const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
+      //       assertRelativeBelow(actualSOL, expected, 0.000000004200);
+      //     }
+      //   }
+      // });
+
+      // it("exp positive [32, 50)", async function () {
+      //   const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+      //   for (let x = 32; x < 50; x += 0.25600125) { 
+      //     const expected = Math.exp(x);
+      //     const actualJS = blackScholesJS.exp(x);
+      //     assertRelativeBelow(actualJS, expected, 0.000000004200);
+
+      //     if (duoTest) {
+      //       const actualSOL = (await blackScholesNUM.expPositive(tokens(x))).toString() / 1e18;
+      //       assertRelativeBelow(actualSOL, expected, 0.000000004200);
+      //     }
+      //   }
+      // });
+
+      // it("exp negative [-50, -0.05]", async function () {
+      //   const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+      //   for (let x = 0.05; x <= 50; x += 0.05 ) { 
+      //     const expected = Math.exp(-x);
+      //     const actualJS = blackScholesJS.exp(-x);
+      //     assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000042);
+
+      //     if (duoTest) {
+      //       const actualSOL = (await blackScholesNUM.expNegative(tokens(x))).toString() / 1e18;
+      //       assertAbsoluteBelow(actualSOL, expected, 0.000000000042);
+      //     }
+      //   }
+      // });
+    });
+
     describe("d1", function () {
       it("d1 single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };

@@ -370,6 +370,10 @@ export class BlackScholesNUMJS {
     return 10;
   }
 
+  sin(x) {
+    return 4 * x * (Math.PI - x) / (1.25 * Math.PI ** 2 - x * (Math.PI - x));
+  }
+
   interpolate(x1, y1) {
     const initialValuesCube = [0, 0, 0];
     let resultCube = levenbergMarquardt({ x: x1, y: y1 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
