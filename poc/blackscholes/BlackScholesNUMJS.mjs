@@ -335,7 +335,12 @@ export class BlackScholesNUMJS {
     }
 
     if (x < 1.13) {
-      // sine is better 3x at least
+      // sine is better at least 3x than 5th degree polynomial
+      // console.log("JS: ((x - 0.36) / 18 + 0.22)                :", ((x - 0.36) / 18 + 0.22));
+      // console.log("JS: 1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9 :", 1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9);
+      // console.log("JS: sin(rest) :", Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9));
+      // console.log("JS: final :", 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10);
+
       return 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
       // return -(-73069.13680056382 * x + 439609.60836822016 * x ** 2 - 897868.5727256425 * x ** 3 + 756729.5953433764 * x ** 4 - 226432.89952299988 * x ** 5) / 1e10;
     }

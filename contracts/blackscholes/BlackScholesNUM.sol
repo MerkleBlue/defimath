@@ -355,10 +355,21 @@ library BlackScholesNUM {
                 
                 return 1e36 + (x * (1e36 - 701918 * 1e18 + 11037721 * x - 56483110 * x2 + 122191870 * x3 - 98684979 * x4)) / 1e11 - x * 1e25;
                 // -(70191.75526562665 * x - 1103772.051336337 * x ** 2 + 5648311.047693772 * x ** 3 - 12219187.046697173 * x ** 4 + 9868497.924729755 * x ** 5) / 1e10;
-
             }
 
-            return 0;
+            if (x < 1.13e18) {
+                // console.log("SOL ((x - 0.36) / 18 + 0.22)                :", ((x - 0.36e18) / 18 + 0.22e18));
+                // console.log("SOL 1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9 :", 1e54 / ((x - 0.36e18) / 18 + 0.22e18) ** 2 - 1.9e18);
+                // int256 result = sin(1e54 / ((x - 0.36e18) / 18 + 0.22e18) ** 2 - 1.9e18);
+                // if (result > 0) { console.log("SOL sin(rest): %d", uint256(result)); } else { console.log("SOL sin(rest): -%d", uint256(-result)); }
+                // int256 result2 = 1392 * sin(1e54 / ((x - 0.36e18) / 18 + 0.22e18) ** 2 - 1.9e18) / 1e10;
+                // if (result2 > 0) { console.log("SOL final: %d", uint256(result2)); } else { console.log("SOL final: -%d", uint256(-result2)); }
+                
+                return uint256(1e36 + 1392e8 * sin(1e54 / (0.2e18 + x / 18) ** 2 - 1.9e18));
+                // return 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
+            }
+
+            return 1e36;
         }
     }
 
