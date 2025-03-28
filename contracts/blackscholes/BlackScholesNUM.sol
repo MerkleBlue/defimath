@@ -61,7 +61,7 @@ library BlackScholesNUM {
             int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate); // todo: warm call using expNegative, later called in stdNormCDF
+            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate);
 
             uint256 spotNd1 = uint256(spot) * stdNormCDF(d1);                       // spot * N(d1)
             uint256 strikeNd2 = discountedStrike * stdNormCDF(d2);                  // strike * N(d2)
@@ -321,7 +321,7 @@ library BlackScholesNUM {
             uint256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
 
             uint256 z2 = z * z / 1e18;
-            return (1e36 - poly * expNegative(z2)) / 2e18;
+            return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
 
             // with error correction, 30x more precise, costs 600 gas more
             // return (errorCorrection(z, z2) - poly * expNegative(z2)) / 2e18;
