@@ -372,7 +372,7 @@ library BlackScholesNUM {
             if (x < 2.8e18) {
                 // console.log("SOL 2 * uint(PI) * (3e18 - x) ** 2 / 3.6e36 + 0.22e18              :", (2 * uint(PI) * (3e18 - x) ** 2 / 3.6e36 + 0.22e18));
                 
-                return uint256(1e36 + 1385e8 * sin(2 * uint(PI) * (3e18 - x) ** 2 / 3.6e36 + 0.22e18) - 35e8);
+                return uint256(1e36 + 1385e8 * sin(2 * uint(PI) * (3e18 - x) ** 2 / 3.6e36 + 0.22e18) - 35e26);
                 // return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 35e-10;
             }
 
