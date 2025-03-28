@@ -61,7 +61,7 @@ library BlackScholesNUM {
             int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate);
+            uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate); // todo: warm call using expNegative, later called in stdNormCDF
 
             uint256 spotNd1 = uint256(spot) * stdNormCDF(d1);                       // spot * N(d1)
             uint256 strikeNd2 = discountedStrike * stdNormCDF(d2);                  // strike * N(d2)
@@ -281,11 +281,10 @@ library BlackScholesNUM {
             if (xMod <= PI) {
                 xMod = xMod * (PI - xMod);
                 return 4e18 * xMod / (12337005501361698274e18 - xMod);
+            } else {
+                xMod = (xMod - PI) * (2 * PI - xMod);
+                return -4e18 * xMod / (12337005501361698274e18 - xMod);
             }
-
-            xMod = (xMod - PI) * (2 * PI - xMod);
-
-            return -4e18 * xMod / (12337005501361698274e18 - xMod);
         }
     }
 
@@ -314,32 +313,22 @@ library BlackScholesNUM {
     // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
     function erfPositiveHalf(uint256 z) internal pure returns (uint256) {
         unchecked {
-            // if (log) { if (z > 0) { console.log("z: %d", uint256(z)); } else { console.log("z: -%d", uint256(-z)); }}
-
             uint256 t = 1e45 / (1e27 + 327591100 * z);
-            // if (log) { if (t > 0) { console.log("t: %d", uint256(t)); } else { console.log("t: -%d", uint256(-t)); }}
 
             uint256 t2 = t * t / 1e18;
             uint256 t3 = t2 * t / 1e18;
             uint256 t4 = t3 * t / 1e18;
             uint256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
 
-            // if (log) { if (poly > 0) { console.log("poly: %d", uint256(poly)); } else { console.log("poly: -%d", uint256(-poly)); }}
-
-            // error correction
-            // t2 = z * z / 1e18;
-            // t3 = t2 * z / 1e18;
-            // t4 = t3 * z / 1e18;
-            // uint256 poly2 = ;
-
             uint256 z2 = z * z / 1e18;
-            return (errorCorrection(z, z2) - poly * expNegative(z2)) / 2e18;
+            return (1e36 - poly * expNegative(z2)) / 2e18;
 
-            // if (log) { if (approx > 0) { console.log("approx: %d", uint256(approx)); } else { console.log("approx: -%d", uint256(-approx)); }}
+            // with error correction, 30x more precise, costs 600 gas more
+            // return (errorCorrection(z, z2) - poly * expNegative(z2)) / 2e18;
         }
     }
 
-    function errorCorrection(uint256 x, uint256 x2) private pure returns (uint256) {
+    function errorCorrection(uint256 x, uint256 x2) internal pure returns (uint256) {
         unchecked {
             // error correction
             if (x < 0.35e18) {
