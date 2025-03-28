@@ -58,7 +58,7 @@ library BlackScholesNUM {
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18 + 1;             // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
+            int256 d1 = (ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
             uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate);
@@ -108,7 +108,7 @@ library BlackScholesNUM {
             uint256 scaledVol = volatility * sqrt(timeYear) / 1e18 + 1;             // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = getD1(spot, strike, scaledVol, scaledRate);
+            int256 d1 = (ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
             uint256 discountedStrike = uint256(strike) * 1e18 / expPositive(scaledRate);
