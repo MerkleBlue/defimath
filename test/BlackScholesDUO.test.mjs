@@ -499,6 +499,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
+    describe.only("sin", function () {
+      it("sin positive [0, 2π)", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 0; x < 2 * Math.PI; x += 0.0123) { 
+          totalGas += parseInt(await blackScholesNUM.sinMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
     describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
@@ -551,7 +564,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
-      it("multiple in typical range", async function () {
+      it.only("multiple in typical range", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -826,7 +839,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("sin", function () {
+    describe.only("sin", function () {
       it("sin single value", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -1137,7 +1150,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [0, 0.35)", async function () {
+      it("erf [0, 0.35)", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let x = 0; x <= 0.35; x += 0.01) {
@@ -1157,7 +1170,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [0.35, 1.13)", async function () {
+      it("erf [0.35, 1.13)", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let x = 0.35; x <= 1.13; x += 0.01) {
@@ -1177,7 +1190,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [1.13, 2.8)", async function () {
+      it("erf [1.13, 2.8)", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let x = 1.13; x <= 2.8; x += 0.01) {
@@ -1197,7 +1210,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         }
       });
 
-      it.only("erf [2.8, 3.5)", async function () {
+      it("erf [2.8, 3.5)", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         for (let x = 2.8; x <= 3.5; x += 0.01) {

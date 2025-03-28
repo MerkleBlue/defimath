@@ -273,16 +273,18 @@ library BlackScholesNUM {
 
     function sin(uint256 x) internal pure returns (int256) {
         unchecked {
-            // modulo arithmetic
+            // using Bhaskara I's sine approximation formula
+            // sin(x) = 4x * (π - x) / (1.25 * π ^ 2 - x * (π - x))
             int256 xMod = int256(x) % (2 * PI); // 2 * PI
 
             if (xMod <= PI) {
-                return 4e18 * xMod * (PI - xMod) / (12337005501361698274e18 - xMod * (PI - xMod));
+                xMod = xMod * (PI - xMod);
+                return 4e18 * xMod / (12337005501361698274e18 - xMod);
             }
 
-            xMod -= PI;
+            xMod = (xMod - PI) * (2 * PI - xMod);
 
-            return -4e18 * xMod * (PI - xMod) / (12337005501361698274e18 - xMod * (PI - xMod));
+            return -4e18 * xMod / (12337005501361698274e18 - xMod);
         }
     }
 

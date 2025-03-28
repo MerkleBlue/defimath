@@ -125,6 +125,18 @@ contract BlackScholesCaller {
         return startGas - endGas;
     }
 
+    function sinMG(uint256 x) external view returns (uint256) {
+        int256 result;
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        result = BlackScholesNUM.sin(x);
+        endGas = gasleft();
+
+        return startGas - endGas;
+    }
+
     function stdNormCDFMG(int256 x) external view returns (uint256) {
         uint256 result;
         uint256 startGas;
