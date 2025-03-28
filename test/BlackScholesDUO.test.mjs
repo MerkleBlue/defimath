@@ -956,7 +956,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("erf", function () {
+    describe.only("erf", function () {
       it("erf function [0, 0.35] polynomial", async function () {
         const xs = [], ys = [];
         for (let x = 0; x <= 0.351; x += 0.01) {

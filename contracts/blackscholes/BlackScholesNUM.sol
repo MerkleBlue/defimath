@@ -350,12 +350,14 @@ library BlackScholesNUM {
             }
 
             if (x < 1.13e18) {
-                return uint256(1e36 + 1392e8 * sin(1e54 / (0.2e18 + x / 18) ** 2 - 1.9e18));
+                uint256 denom = (0.2e18 + x / 18);
+                return uint256(1e36 + 1392e8 * sin(1e54 / (denom * denom) - 1.9e18));
                 // return 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
             }
 
-            if (x < 2.8e18) {                
-                return uint256(1e36 + 1385e8 * sin(2 * uint(PI) * (3e18 - x) ** 2 / 3.6e36 + 0.22e18) - 35e26);
+            if (x < 2.8e18) {
+                uint256 denom = 3e18 - x;       
+                return uint256(1e36 + 1385e8 * sin(2 * uint(PI) * (denom * denom) / 3.6e36 + 0.22e18) - 35e26);
                 // return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 35e-10;
             }
 
