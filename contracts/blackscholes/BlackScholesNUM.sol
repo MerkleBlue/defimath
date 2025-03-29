@@ -159,13 +159,13 @@ library BlackScholesNUM {
 
             // x: [32, 50)
             if (x >= 32e18) {
-                exp123 = getExp1Precalculated(x / 32e18);
+                exp123 = getExp1Precompute(x / 32e18);
                 x %= 32e18;
             }
 
             // x: [1, 32)
             if (x >= 1e18) {
-                exp123 *= getExp2Precalculated(x / 1e18);
+                exp123 *= getExp2Precompute(x / 1e18);
                 x %= 1e18;
             } else {
                 exp123 *= 1e15;
@@ -173,7 +173,7 @@ library BlackScholesNUM {
 
             // x: [0.03125, 1)
             if (x >= 3125e13) {
-                exp123 *= getExp3Precalculated(x / 3125e13);
+                exp123 *= getExp3Precompute(x / 3125e13);
                 x %= 3125e13;
             } else {
                 exp123 *= 1e15;
@@ -209,7 +209,7 @@ library BlackScholesNUM {
             // x: [1.0905, 16)
             if (x >= 1_090507732665257659) {
                 uint256 divider;
-                (divider, multiplier) = getLnPrecalculated(x); // todo: should we return multiplier, why not value?
+                (divider, multiplier) = getLnPrecompute(x); // todo: should we return multiplier, why not value?
                 x = x * 1e18 / divider;
             }
 
@@ -251,7 +251,7 @@ library BlackScholesNUM {
 
             // x: [1.076, 100) use precomputed values
             if (x >= 1_074607828321317497) {
-                sqrtPrecompute = getSqrtPrecomputed(x);
+                sqrtPrecompute = getSqrtPrecompute(x);
                 x = x * 1e36 / (sqrtPrecompute * sqrtPrecompute);
             }
 
@@ -361,13 +361,13 @@ library BlackScholesNUM {
         }
     }
 
-    function getExp1Precalculated(uint256 exponent) private pure returns (uint256) {
+    function getExp1Precompute(uint256 exponent) private pure returns (uint256) {
         unchecked {
             return 78962960182681 ** exponent;
         }
     }
 
-    function getExp2Precalculated(uint256 exponent) private pure returns (uint256) {
+    function getExp2Precompute(uint256 exponent) private pure returns (uint256) {
         // use >=, fastest
 
         // base is e
@@ -502,7 +502,7 @@ library BlackScholesNUM {
         }
     }
 
-    function getExp3Precalculated(uint256 exponent) private pure returns (uint256) {
+    function getExp3Precompute(uint256 exponent) private pure returns (uint256) {
         // use >=, fastest
 
         // base is 1.031743407499102671
@@ -641,7 +641,7 @@ library BlackScholesNUM {
         }
     }
 
-    function getLnPrecalculated(uint256 exponent) private pure returns (uint256, uint256) {
+    function getLnPrecompute(uint256 exponent) private pure returns (uint256, uint256) {
         // use >=, fastest
         unchecked {
             if (exponent >= 4e18) { // 16
@@ -774,7 +774,7 @@ library BlackScholesNUM {
         }
     }
 
-    function getSqrtPrecomputed(uint256 exponent) private pure returns (uint256) {
+    function getSqrtPrecompute(uint256 exponent) private pure returns (uint256) {
         // use >=, fastest
 
         // base is root(64, 100) = 1.074607828321317497
