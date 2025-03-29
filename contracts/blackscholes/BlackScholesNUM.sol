@@ -184,9 +184,9 @@ library BlackScholesNUM {
 
             // we use Pade approximation for exp(x)
             // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 denominator = ((3e18 - x) ** 2) + 3e36;
+            uint256 denominator = ((3e18 - x) * (3e18 - x)) + 3e36;
             x /= 1e6;
-            uint256 numerator = ((x + 3e12) ** 2) + 3e24;
+            uint256 numerator = ((x + 3e12) * (x + 3e12)) + 3e24;
 
             return exp123 * numerator / denominator; // using e ^ (a + b) = e ^ a * e ^ b
         }
