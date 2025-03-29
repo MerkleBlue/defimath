@@ -159,7 +159,8 @@ library BlackScholesNUM {
 
             // x: [32, 50)
             if (x >= 32e18) {
-                exp123 = getExp1Precompute(x / 32e18);
+                // console.log(x / 32e18);
+                exp123 = 78962960182681; // todo: getExp1Precompute(x / 32e18); // this is always 1 if x < 50
                 x %= 32e18;
             }
 
@@ -322,10 +323,10 @@ library BlackScholesNUM {
 
             uint256 z2 = z * z / 1e18;
             // without error correction, cheaper in gas
-            // return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
+            return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
 
             // with error correction, 30x more precise, costs 600 gas more
-            return (errorCorrection(z, z2) - poly * 1e36 / expPositive(z2)) / 2e18;
+            // return (errorCorrection(z, z2) - poly * 1e36 / expPositive(z2)) / 2e18;
         }
     }
 
