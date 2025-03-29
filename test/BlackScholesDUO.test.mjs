@@ -454,7 +454,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     blackScholesJS = new BlackScholesNUMJS();
   });
 
-  duoTest && describe.only("performance", function () {
+  duoTest && describe("performance", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
@@ -669,7 +669,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("call", function () {
+    describe("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -702,7 +702,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("put", function () {
+    describe("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -736,7 +736,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  describe.only("functionality", function () {
+  describe("functionality", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
@@ -1476,7 +1476,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     }); 
 
-    describe.only("call", function () {
+    describe("call", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -1723,7 +1723,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("put", function () {
+    describe("put", function () {
       it("single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");

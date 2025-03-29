@@ -321,10 +321,11 @@ library BlackScholesNUM {
             uint256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
 
             uint256 z2 = z * z / 1e18;
-            return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
+            // without error correction, cheaper in gas
+            // return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
 
             // with error correction, 30x more precise, costs 600 gas more
-            // return (errorCorrection(z, z2) - poly * expNegative(z2)) / 2e18;
+            return (errorCorrection(z, z2) - poly * 1e36 / expPositive(z2)) / 2e18;
         }
     }
 
