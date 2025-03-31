@@ -62,3 +62,12 @@ npx hardhat coverage
 npx hardhat test poc/blackscholes/BlackScholesJS.test.mjs 
 node poc/blackscholes/generateLookupTable.mjs
 ```
+
+Competitors
+
+https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol
+https://github.com/jankjr/solidity-black-scholes
+https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol
+https://optimistic.etherscan.io/address/0x0052a341bea99c4b452816235fc2216143c5f21c?utm_source=chatgpt.com#code
+https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol
+https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol
