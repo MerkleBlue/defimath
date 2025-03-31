@@ -81,6 +81,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     return { owner, blackScholesNUM };
   }
 
+  async function deployCompare() {
+    const [owner] = await ethers.getSigners();
+
+    // deploy contract that uses BlackScholesNUM library, use it for all tests
+    const BlackScholesCaller = await ethers.getContractFactory("BlackScholesCaller");
+    const blackScholesNUM = await BlackScholesCaller.deploy();
+
+    const AdapterDerivexyz = await ethers.getContractFactory("AdapterDerivexyz");
+    const adapterDerivexyz = await AdapterDerivexyz.deploy();
+
+    return { owner, blackScholesNUM, adapterDerivexyz };
+  }
+
   function getFuturePrice(spot, timeToExpirySec, rate) {
     // future = spot * e^(rT)
     const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
@@ -1932,6 +1945,110 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
+      });
+    });
+  });
+
+  duoTest && describe.only("compare", function () {
+
+    describe("call", function () {
+      it.only("single", async function () {
+        const { blackScholesNUM, adapterDerivexyz } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+        const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
+
+        const result1 = await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const price1 = result1.price.toString() / 1e18;
+        const gasUsed1 = parseInt(result1.gasUsed);
+
+        const result2 = await adapterDerivexyz.callPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const price2 = result2.price.toString() / 1e18;
+        const gasUsed2 = parseInt(result2.gasUsed);
+
+        console.log(expected, price1, price2);
+        console.log("gas", gasUsed1, gasUsed2);
+        // assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+      });
+
+      it.only("multiple in typical range", async function () {
+        const { blackScholesNUM, adapterDerivexyz } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 2200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let maxError1 = 0, maxError2 = 0, avgError1 = 0, avgError2 = 0;
+        let avgGas1 = 0, avgGas2 = 0;
+        let count = 0;
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
+
+                const result1 = await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const price1 = result1.price.toString() / 1e18;
+                avgGas1 += parseInt(result1.gasUsed);
+        
+                const result2 = await adapterDerivexyz.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const price2 = result2.price.toString() / 1e18;
+                avgGas2 += parseInt(result2.gasUsed);
+
+                count++;
+                const error1 = Math.abs(price1 - expected);
+                const error2 = Math.abs(price2 - expected);
+                avgError1 += error1;
+                avgError2 += error2;
+                maxError1 = Math.max(maxError1, error1);
+                maxError2 = Math.max(maxError2, error2);
+              }
+            }
+          }
+        }
+        console.log("Avg error", avgError1 / count, avgError2 / count);
+        console.log("Max error", maxError1, maxError2);
+        console.log("Avg gas", Math.round(avgGas1 / count), Math.round(avgGas2 / count));
+      });
+    });
+
+    describe("put", function () {
+      it("single", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
+        const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
+        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+
+        if (duoTest) {
+          const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+        }
+      });
+
+      it("multiple in typical range", async function () {
+        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
+                const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
+                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+
+                if (duoTest) {
+                  const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+                }
+              }
+            }
+          }
+        }
       });
     });
   });
