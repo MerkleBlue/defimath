@@ -335,23 +335,14 @@ library BlackScholesNUM {
     function erfPositiveHalf(uint256 x) internal pure returns (uint256) {
         unchecked {
             uint256 t = x * 1414213562373095049 / 1e18;
-
             uint256 t2 = t * t / 1e18;
             uint256 t3 = t2 * t / 1e18;
             uint256 t4 = t3 * t / 1e18;
-            // uint256 t5 = t4 * t / 1e18;
-            // uint256 t6 = t5 * t / 1e18;
-            // uint256 t7 = t6 * t / 1e18;
+
             uint256 num = (0.035262496599891100e18 * t4 + 0.700383064443688000e18 * t3 + 6.373962203531650000e18 * t2) * t2 / 1e18 + 33.912866078383000000e18 * t3 + 112.079291497871000000e18 * t2 + 221.213596169931000000e18 * t + 220.206867912376000000e36; 
-            // console.log("num SOL:", num);
-
             uint256 denom = (0.088388347648318400e18 * t4 + 1.755667163182640000e18 * t3 + 16.064177579207000000e18 * t2 + 86.780732202946100000e18 * t) * t3 / 1e18 + 296.564248779674000000e18 * t3 + 637.333633378831000000e18 * t2 + 793.826512519948000000e18 * t + 440.413735824752000000e36;
-            // console.log("denom SOL:", denom);
 
-            uint256 e = 1e36 / expPositive(t2 / 2);
-            uint256 c = e * num / denom;
-
-            return 0.5e18 - c;
+            return 0.5e18 - 1e36 / expPositive(t2 / 2) * num / denom;
         }
 
         // let xAbs = Math.abs(x) * Math.SQRT2;
