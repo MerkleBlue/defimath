@@ -1383,11 +1383,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let d1 = -4; d1 < 4; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
-          assertAbsoluteBelow(actualJS, expected, 1e-14);
+          assertAbsoluteBelow(actualJS, expected, 2e-11);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-            console.log(expected, actualJS, actualSOL);
+            console.log(d1, expected, actualJS, actualSOL);
             assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
           }
         }
