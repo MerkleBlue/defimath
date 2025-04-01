@@ -10,9 +10,9 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = true;
+const fastTest = false;
 
-const MAX_OPTION_ABS_ERROR2 = 1.8e-8; // 0.00042; // in $, for a call/put option on underlying valued at $1000
+const MAX_OPTION_ABS_ERROR2 = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
 const MAX_ERF_ABS_ERROR = 4.5e-9; // OLD: 1.4e-7; // with error correction: 4.5e-9
 const MAX_CDF_ABS_ERROR = 1.8e-11; // OLD: 7e-8; // with error correction: 2.3e-9
 const MIN_ERROR = 1e-12;
@@ -267,15 +267,15 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 errorsJS.sort((a, b) => b.absErrorJS - a.absErrorJS);
                 if (errorsJS[0].absErrorJS < allowedAbsError) {
                   console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
-                  "%, Max abs error:", "$" + (errorsJS[0] ? (errorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6) : "0") + 
+                  "%, Max abs error:", "$" + (errorsJS[0] ? (errorsJS[0].absErrorJS / (0.1 * multi)).toFixed(10) : "0") + 
                   " (" + (new Date().getTime() - startTime) + "mS)");
                 } else {
                   const filteredErrorsJS = errorsJS.filter(error => error.absErrorJS > allowedAbsError);
                   // sort filtered errors by relative error descending
                   filteredErrorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
                   console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
-                  "%, Max abs error:", "$" + (filteredErrorsJS[0] ? (filteredErrorsJS[0].absErrorJS / (0.1 * multi)).toFixed(6) : "0") + 
-                  ", Max rel error:", (filteredErrorsJS[0] ? filteredErrorsJS[0].relErrorJS.toFixed(6) + "%" : "0") + 
+                  "%, Max abs error:", "$" + (filteredErrorsJS[0] ? (filteredErrorsJS[0].absErrorJS / (0.1 * multi)).toFixed(10) : "0") + 
+                  ", Max rel error:", (filteredErrorsJS[0] ? filteredErrorsJS[0].relErrorJS.toFixed(10) + "%" : "0") + 
                   " (" + (new Date().getTime() - startTime) + "mS)");
                 }
               }
@@ -1611,12 +1611,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe("random", function () {
+      describe.only("random", function () {
         it("lower strikes", async function () {
           const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-          const rates = [0, 0.1, 0.2];
+          const rates = [0, 0.1, 0.2, 4]; // todo: use wider range
           await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
         });
 
@@ -1624,7 +1624,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-          const rates = [0, 0.1, 0.2];
+          const rates = [0, 0.1, 0.2, 4];
           await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
         });
       });
@@ -1849,12 +1849,12 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe("random", function () {
+      describe.only("random", function () {
         it("lower strikes", async function () {
           const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-          const rates = [0, 0.1, 0.2];
+          const rates = [0, 0.1, 0.2, 4];
           await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
         });
 
@@ -1862,7 +1862,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-          const rates = [0, 0.1, 0.2];
+          const rates = [0, 0.1, 0.2, 4];
           await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
         });
       });

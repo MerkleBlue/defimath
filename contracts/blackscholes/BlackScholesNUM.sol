@@ -311,25 +311,6 @@ library BlackScholesNUM {
         }
     }
 
-    // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
-    function erfPositiveHalfOLD(uint256 z) internal pure returns (uint256) {
-        unchecked {
-            uint256 t = 1e45 / (1e27 + 327591100 * z);
-
-            uint256 t2 = t * t / 1e18;
-            uint256 t3 = t2 * t / 1e18;
-            uint256 t4 = t3 * t / 1e18;
-            uint256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
-
-            uint256 z2 = z * z / 1e18;
-            // without error correction, cheaper in gas
-            return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
-
-            // with error correction, 30x more precise, costs 600 gas more
-            // return (errorCorrection(z, z2) - poly * 1e36 / expPositive(z2)) / 2e18;
-        }
-    }
-
     // erf from West's paper - https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf 
     // abs error 1e-15, now exp function is bottleneck
     function erfPositiveHalf(uint256 x) internal pure returns (uint256) {
@@ -339,10 +320,10 @@ library BlackScholesNUM {
             uint256 t3 = t2 * t / 1e18;
             uint256 t4 = t3 * t / 1e18;
 
-            uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) * t2 / 1e18 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18; 
-            uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) * t3 / 1e18 + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
+            uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18; 
+            uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
 
-            return 0.5e18 - 1e36 / expPositive(t2 / 2) * num / denom;
+            return 5e17 - 1e36 / expPositive(t2 / 2) * num / denom;
         }
 
         // let xAbs = Math.abs(x) * Math.SQRT2;
@@ -365,6 +346,25 @@ library BlackScholesNUM {
         // }
         
         // return x > 0 ? 1 - 2 * c : 2 * c - 1;
+    }
+
+        // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
+    function erfPositiveHalfOLD(uint256 z) internal pure returns (uint256) {
+        unchecked {
+            uint256 t = 1e45 / (1e27 + 327591100 * z);
+
+            uint256 t2 = t * t / 1e18;
+            uint256 t3 = t2 * t / 1e18;
+            uint256 t4 = t3 * t / 1e18;
+            uint256 poly = t * (254829592 * 1e18 - 284496736 * t + 1421413741 * t2 - 1453152027 * t3 + 1061405429 * t4) / 1e27; 
+
+            uint256 z2 = z * z / 1e18;
+            // without error correction, cheaper in gas
+            return (1e36 - poly * 1e36 / expPositive(z2)) / 2e18;
+
+            // with error correction, 30x more precise, costs 600 gas more
+            // return (errorCorrection(z, z2) - poly * 1e36 / expPositive(z2)) / 2e18;
+        }
     }
 
     function errorCorrection(uint256 x, uint256 x2) internal pure returns (uint256) {
