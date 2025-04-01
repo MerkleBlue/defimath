@@ -1362,7 +1362,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("stdNormCDF", function () {
+    describe.only("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -1383,10 +1383,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let d1 = -4; d1 < 4; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
-          assertAbsoluteBelow(actualJS, expected, MAX_CDF_ABS_ERROR);
+          assertAbsoluteBelow(actualJS, expected, 1e-14);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
+            console.log(expected, actualJS, actualSOL);
             assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
           }
         }
@@ -1952,10 +1953,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     });
   });
 
-  duoTest && describe.only("compare", function () {
+  duoTest && describe("compare", function () {
 
     describe("call", function () {
-      it.only("single", async function () {
+      it("single", async function () {
         const { blackScholesNUM, adapterDerivexyz, adapterPremia } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
@@ -1978,7 +1979,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         // assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
       });
 
-      it.only("multiple in typical range", async function () {
+      it("multiple in typical range", async function () {
         const { blackScholesNUM, adapterDerivexyz, adapterPremia } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];

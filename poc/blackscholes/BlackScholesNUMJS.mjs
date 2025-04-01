@@ -276,7 +276,7 @@ export class BlackScholesNUMJS {
   
   // using erf function
   stdNormCDF(x) {
-    return 0.5 * (1 + this.erf(x * 0.707106781186548)); // 1 / sqrt(2)
+    return 0.5 * (1 + this.erfWest(x * 0.707106781186548)); // 1 / sqrt(2)
   }
 
   // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
@@ -293,6 +293,29 @@ export class BlackScholesNUMJS {
     // console.log("JS approx:", approx, "correction:", correction, "x", z);
     
     return z >= 0 ? (approx + correction) : -(approx + correction);
+  }
+
+  erfWest(x) {
+    let xAbs = Math.abs(x) * Math.SQRT2;
+    let c = 0;
+    
+    if (xAbs <= 37) {
+        let e = Math.exp(-xAbs * xAbs / 2);
+        if (xAbs < 7.07106781186547) {
+          let num = (((((0.0352624965998911 * xAbs + 0.700383064443688) * xAbs + 6.37396220353165) * xAbs + 33.912866078383) * xAbs + 112.079291497871) * xAbs + 221.213596169931) * xAbs + 220.206867912376;
+          let den = ((((((0.0883883476483184 * xAbs + 1.75566716318264) * xAbs + 16.064177579207) * xAbs + 86.7807322029461) * xAbs + 296.564248779674) * xAbs + 637.333633378831) * xAbs + 793.826512519948) * xAbs + 440.413735824752;
+          c = e * num / den;
+        } else {
+            let b = xAbs + 0.65;
+            b = xAbs + 4 / b;
+            b = xAbs + 3 / b;
+            b = xAbs + 2 / b;
+            b = xAbs + 1 / b;
+            c = e / b / 2.506628274631;
+        }
+    }
+    
+    return x > 0 ? 1 - 2 * c : 2 * c - 1;
   }
 
   erfTrain(z) {
