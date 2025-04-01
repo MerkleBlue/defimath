@@ -12,9 +12,9 @@ const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 const duoTest = true;
 const fastTest = true;
 
-const MAX_OPTION_ABS_ERROR2 = 0.00042; // in $, for a call/put option on underlying valued at $1000
-const MAX_ERF_ABS_ERROR = 1.4e-7; // with error correction: 4.5e-9
-const MAX_CDF_ABS_ERROR = 7e-8; // with error correction: 2.3e-9
+const MAX_OPTION_ABS_ERROR2 = 1.8e-8; // 0.00042; // in $, for a call/put option on underlying valued at $1000
+const MAX_ERF_ABS_ERROR = 4.5e-9; // OLD: 1.4e-7; // with error correction: 4.5e-9
+const MAX_CDF_ABS_ERROR = 1.8e-11; // OLD: 7e-8; // with error correction: 2.3e-9
 const MIN_ERROR = 1e-12;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
@@ -690,7 +690,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05)));
+        totalGas += parseInt((await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
@@ -708,7 +708,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt(await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate)));
+                totalGas += parseInt((await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -723,7 +723,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt(await blackScholesNUM.getPutOptionPriceMG(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05)));
+        totalGas += parseInt((await blackScholesNUM.getPutOptionPriceMG(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
@@ -741,7 +741,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt(await blackScholesNUM.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate)));
+                totalGas += parseInt((await blackScholesNUM.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -1207,12 +1207,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const x = 0.123;
         const expected = erf(x);
 
-        const actualJS = blackScholesJS.erf(x);
+        const actualJS = blackScholesJS.erfWest(x);
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
           const actualSOL = (await blackScholesNUM.erfPositiveHalf(tokens(x))).toString() / 5e17;
-          // console.log(expected, actualJS, actualSOL)
           assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
         }
       });
@@ -1362,7 +1361,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe.only("stdNormCDF", function () {
+    describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
         const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
 
@@ -1383,11 +1382,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         for (let d1 = -4; d1 < 4; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
           const actualJS = blackScholesJS.stdNormCDF(d1);
-          assertAbsoluteBelow(actualJS, expected, 2e-11);
+          assertAbsoluteBelow(actualJS, expected, MAX_CDF_ABS_ERROR);
 
           if (duoTest) {
             const actualSOL = (await blackScholesNUM.stdNormCDF(tokens(d1))).toString() / 1e18;
-            console.log(d1, expected, actualJS, actualSOL);
+            // console.log(d1, expected, actualJS, actualSOL);
             assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
           }
         }
@@ -1976,7 +1975,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
         console.log(expected, price1, price2, price3);
         console.log("gas", gasUsed1, gasUsed2, gasUsed3);
-        // assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
       });
 
       it("multiple in typical range", async function () {

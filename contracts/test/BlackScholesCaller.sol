@@ -190,7 +190,7 @@ contract BlackScholesCaller {
         uint32 timeToExpirySec,
         uint64 volatility,
         uint64 rate
-    ) external view returns (uint256) {
+    ) external view returns (uint256 price, uint256 gasUsed) {
         uint256 result;
         uint256 startGas;
         uint256 endGas;
@@ -200,6 +200,6 @@ contract BlackScholesCaller {
 
         endGas = gasleft();
         
-        return startGas - endGas;
+        return (result, startGas - endGas);
     }
 }
