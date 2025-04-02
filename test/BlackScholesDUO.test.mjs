@@ -10,7 +10,7 @@ const SEC_IN_DAY = 24 * 60 * 60;
 const SEC_IN_YEAR = 365 * 24 * 60 * 60;
 
 const duoTest = true;
-const fastTest = false;
+const fastTest = true;
 
 const MAX_OPTION_ABS_ERROR2 = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
 const MAX_ERF_ABS_ERROR = 4.5e-9; // OLD: 1.4e-7; // with error correction: 4.5e-9
@@ -1611,7 +1611,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe.only("random", function () {
+      describe("random", function () {
         it("lower strikes", async function () {
           const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
@@ -1849,7 +1849,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
       });
 
-      describe.only("random", function () {
+      describe("random", function () {
         it("lower strikes", async function () {
           const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
