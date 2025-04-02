@@ -67,11 +67,12 @@ Options
 1. 
 2. https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol
 3. https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol
+4. https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol
+5. https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol
+
+
+
 https://github.com/jankjr/solidity-black-scholes
-https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol
-
-https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol
-
 Binary Options
 https://github.com/HapticFinance/binaries-pricing-model
 

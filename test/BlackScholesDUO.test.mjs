@@ -97,7 +97,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const AdapterParty = await ethers.getContractFactory("AdapterParty");
     const adapterParty = await AdapterParty.deploy();
 
-    return { owner, blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty };
+    const AdapterDopex = await ethers.getContractFactory("AdapterDopex");
+    const adapterDopex = await AdapterDopex.deploy();
+
+    return { owner, blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
   }
 
   function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -1959,7 +1962,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("call", function () {
       it.only("single", async function () {
-        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
         const result1 = await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
@@ -1981,12 +1984,17 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const price4 = result4.price.toString() / 1e18;
         const gasUsed4 = parseInt(result4.gasUsed);
 
-        console.log(expected, price1, price2, price3, price4);
-        console.log("gas", gasUsed1, gasUsed2, gasUsed3, gasUsed4);
+        // Dopex
+        const result5 = await adapterDopex.callPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const price5 = result5.price.toString() / 1e18;
+        const gasUsed5 = parseInt(result5.gasUsed);
+
+        console.log(expected, price1, price2, price3, price4, price5);
+        console.log("gas", gasUsed1, gasUsed2, gasUsed3, gasUsed4, gasUsed5);
       });
 
       it.only("multiple in typical range", async function () {
-        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -1994,7 +2002,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const rates = [0.05, 0.1, 0.2];
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0;
+        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
         let count = 0;
 
         for (const strike of strikes) {
@@ -2022,6 +2030,11 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 const price4 = result4.price.toString() / 1e18;
                 avgGas4 += parseInt(result4.gasUsed);
 
+                // Dopex
+                const result5 = await adapterDopex.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const price5 = result5.price.toString() / 1e18;
+                avgGas5 += parseInt(result5.gasUsed);
+
                 count++;
                 const error1 = Math.abs(price1 - expected);
                 const error2 = Math.abs(price2 - expected);
@@ -2039,10 +2052,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             }
           }
         }
-        console.log("Metric     Primitive  Derivexyz     Premia Partylikeits1983");
+        console.log("Metric     Primitive  Derivexyz     Premia   Party1983,    Dopex");
         console.log("Avg error", (avgError1 / count).toFixed(8), (avgError2 / count).toFixed(8), (avgError3 / count).toFixed(8), (avgError4 / count).toFixed(8));
         console.log("Max error", (maxError1).toFixed(8), (maxError2).toFixed(8), (maxError3).toFixed(8), (maxError4).toFixed(8));
-        console.log("Avg gas        ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0));
+        console.log("Avg gas        ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "     " + (avgGas5 / count).toFixed(0));
       });
     });
 
