@@ -77,3 +77,4 @@ https://github.com/HapticFinance/binaries-pricing-model
 
 Math
 https://github.com/ribbon-finance/rvol/blob/master/contracts/libraries/Math.sol
+see: for ln https://en.wikipedia.org/wiki/Pad%C3%A9_approximant

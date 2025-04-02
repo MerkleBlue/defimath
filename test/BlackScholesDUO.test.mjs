@@ -94,7 +94,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const AdapterPremia = await ethers.getContractFactory("AdapterPremia");
     const adapterPremia = await AdapterPremia.deploy();
 
-    return { owner, blackScholesNUM, adapterDerivexyz, adapterPremia };
+    const AdapterParty = await ethers.getContractFactory("AdapterParty");
+    const adapterParty = await AdapterParty.deploy();
+
+    return { owner, blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty };
   }
 
   function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -1955,8 +1958,8 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   duoTest && describe("compare", function () {
 
     describe("call", function () {
-      it("single", async function () {
-        const { blackScholesNUM, adapterDerivexyz, adapterPremia } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+      it.only("single", async function () {
+        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
         const result1 = await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
@@ -1973,20 +1976,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const price3 = result3.price.toString() / 1e18;
         const gasUsed3 = parseInt(result3.gasUsed);
 
-        console.log(expected, price1, price2, price3);
-        console.log("gas", gasUsed1, gasUsed2, gasUsed3);
+        // Partylikeits1983
+        const result4 = await adapterParty.callPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const price4 = result4.price.toString() / 1e18;
+        const gasUsed4 = parseInt(result4.gasUsed);
+
+        console.log(expected, price1, price2, price3, price4);
+        console.log("gas", gasUsed1, gasUsed2, gasUsed3, gasUsed4);
       });
 
-      it("multiple in typical range", async function () {
-        const { blackScholesNUM, adapterDerivexyz, adapterPremia } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+      it.only("multiple in typical range", async function () {
+        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
         const vols = [0.4, 0.6, 0.8];
         const rates = [0.05, 0.1, 0.2];
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0;
+        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0;
         let count = 0;
 
         for (const strike of strikes) {
@@ -2009,24 +2017,32 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 const price3 = result3.price.toString() / 1e18;
                 avgGas3 += parseInt(result3.gasUsed);
 
+                // Partylikeits1983
+                const result4 = await adapterParty.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const price4 = result4.price.toString() / 1e18;
+                avgGas4 += parseInt(result4.gasUsed);
+
                 count++;
                 const error1 = Math.abs(price1 - expected);
                 const error2 = Math.abs(price2 - expected);
                 const error3 = Math.abs(price3 - expected);
+                const error4 = Math.abs(price4 - expected);
                 avgError1 += error1;
                 avgError2 += error2;
                 avgError3 += error3;
+                avgError4 += error4;
                 maxError1 = Math.max(maxError1, error1);
                 maxError2 = Math.max(maxError2, error2);
                 maxError3 = Math.max(maxError3, error3);
+                maxError4 = Math.max(maxError4, error4);
               }
             }
           }
         }
-        console.log("Metric     Primitive  Derivexyz     Premia");
-        console.log("Avg error", (avgError1 / count).toFixed(8), (avgError2 / count).toFixed(8), (avgError3 / count).toFixed(8));
-        console.log("Max error", (maxError1).toFixed(8), (maxError2).toFixed(8), (maxError3).toFixed(8));
-        console.log("Avg gas        ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0));
+        console.log("Metric     Primitive  Derivexyz     Premia Partylikeits1983");
+        console.log("Avg error", (avgError1 / count).toFixed(8), (avgError2 / count).toFixed(8), (avgError3 / count).toFixed(8), (avgError4 / count).toFixed(8));
+        console.log("Max error", (maxError1).toFixed(8), (maxError2).toFixed(8), (maxError3).toFixed(8), (maxError4).toFixed(8));
+        console.log("Avg gas        ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0));
       });
     });
 

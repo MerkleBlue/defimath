@@ -21,7 +21,7 @@ contract AdapterPremia {
         int128 spot64x64 = int128(uint128(uint256(spot) * 2 ** 64 / 1e18));
         int128 strike64x64 = int128(uint128(uint256(strike) * 2 ** 64 / 1e18));
         int128 timeToExpiry64x64 = int128(uint128((uint256(timeToExpirySec) * 1e18 / (365 * 24 * 60 * 60)) * 2 ** 64 / 1e18));
-        int128 volatility64x64 = int128(uint128(uint256(volatility) * 2 ** 64 / 1e18));  // ABDKMath64x64.fromUInt(volatility / 1e9);
+        int128 volatility64x64 = int128(uint128(uint256(volatility) * 2 ** 64 / 1e18));
 
         startGas = gasleft();
 
