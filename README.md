@@ -8,7 +8,7 @@ Open Solidity is open-source, high-performance Solidity library for Ethereum sma
 
 The implementation is based on the original Black-Scholes formula, which is a mathematical model used to calculate the theoretical price of options. The formula is widely used in the financial industry for pricing European-style options.
 The Black-Scholes formula is given by:  
-$$ C = S N(d_1) - K e^{-rT} N(d_2) $$  
+$`C = S N(d_1) - K e^{-rT} N(d_2)`$  
 where:
 - \(C\) is the call option price
 - \(S\) is the current stock price
