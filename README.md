@@ -1,6 +1,6 @@
 # Open Solidity
 
-Open Solidity is open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency, while also preserving very high precision. 
+Open Solidity is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
 
 # Derivatives
 
