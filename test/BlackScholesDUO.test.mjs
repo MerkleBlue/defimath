@@ -1975,7 +1975,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         const gasUsed2 = parseInt(result2.gasUsed);
 
         // Premia (using discounted strike instead of rate, it's the same, also using vol squared because it uses variance
-        const result3 = await adapterPremia.callPrice(tokens(1000), tokens(980 / Math.exp(0.05 * 60 / 365)), 60 * SEC_IN_DAY, tokens(0.60 ** 2), tokens(0));
+        const result3 = await adapterPremia.callPrice(tokens(1000), tokens(980 / Math.exp(0.05 * 60 / 365)), 60 * SEC_IN_DAY, tokens(0.60 ** 2));
         const price3 = result3.price.toString() / 1e18;
         const gasUsed3 = parseInt(result3.gasUsed);
 
@@ -2021,7 +2021,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 avgGas2 += parseInt(result2.gasUsed);
 
                 // Premia (using discounted strike instead of rate, it's the same, also using vol squared because it uses variance
-                const result3 = await adapterPremia.callPrice(tokens(1000), tokens(strike / Math.exp(rate * time / 365)), time * SEC_IN_DAY, tokens(vol ** 2), tokens(0));
+                const result3 = await adapterPremia.callPrice(tokens(1000), tokens(strike / Math.exp(rate * time / 365)), time * SEC_IN_DAY, tokens(vol ** 2));
                 const price3 = result3.price.toString() / 1e18;
                 avgGas3 += parseInt(result3.gasUsed);
 

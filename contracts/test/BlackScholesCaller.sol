@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../blackscholes/BlackScholesNUM.sol";
+import "../derivatives/BlackScholesNUM.sol";
 
 contract BlackScholesCaller {
 
