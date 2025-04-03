@@ -75,21 +75,27 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const [owner] = await ethers.getSigners();
 
     // deploy contract that uses BlackScholesNUM library, use it for all tests
-    const BlackScholesCaller = await ethers.getContractFactory("BlackScholesCaller");
-    const blackScholesNUM = await BlackScholesCaller.deploy();
+    const OpenOptionsWrapper = await ethers.getContractFactory("OpenOptionsWrapper");
+    const openOptions = await OpenOptionsWrapper.deploy();
+
+    const OpenFuturesWrapper = await ethers.getContractFactory("OpenFuturesWrapper");
+    const openFutures = await OpenFuturesWrapper.deploy();
 
     const OpenMathWrapper = await ethers.getContractFactory("OpenMathWrapper");
     const openMath = await OpenMathWrapper.deploy();
 
-    return { owner, blackScholesNUM, openMath };
+    return { owner, openOptions, openFutures, openMath };
   }
 
   async function deployCompare() {
     const [owner] = await ethers.getSigners();
 
     // deploy contract that uses BlackScholesNUM library, use it for all tests
-    const BlackScholesCaller = await ethers.getContractFactory("BlackScholesCaller");
-    const blackScholesNUM = await BlackScholesCaller.deploy();
+    const OpenOptionsWrapper = await ethers.getContractFactory("OpenOptionsWrapper");
+    const openOptions = await OpenOptionsWrapper.deploy();
+
+    const OpenFuturesWrapper = await ethers.getContractFactory("OpenFuturesWrapper");
+    const openFutures = await OpenFuturesWrapper.deploy();
 
     const OpenMathWrapper = await ethers.getContractFactory("OpenMathWrapper");
     const openMath = await OpenMathWrapper.deploy();
@@ -106,7 +112,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
     const AdapterDopex = await ethers.getContractFactory("AdapterDopex");
     const adapterDopex = await AdapterDopex.deploy();
 
-    return { owner, blackScholesNUM, openMath, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
+    return { owner, openOptions, openFutures, openMath, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
   }
 
   function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -218,7 +224,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
   }
 
   async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, allowedRelError = 0.001000, allowedAbsError = 0.000114, multi = 10, log = true) {
-    const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+    const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
     log && console.log("Allowed abs error: $" + allowedAbsError);
     log && console.log("Allowed rel error:  " + allowedRelError + "%");
 
@@ -254,9 +260,9 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             let actualSOL = 0;
             if (duoTest) {
               if (isCall) {
-                actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
+                actualSOL = (await openOptions.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
               } else {
-                actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
+                actualSOL = (await openOptions.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
               }
 
               const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
@@ -542,7 +548,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("future", function () {
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
 
         const times = [7, 30, 60, 90, 180];
         const rates = [0.05, 0.1, 0.2];
@@ -550,7 +556,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         let totalGas = 0, count = 0;
         for (const time of times) {
           for (const rate of rates) {
-            totalGas += parseInt(await blackScholesNUM.getFuturePriceMG(tokens(1000), time * SEC_IN_DAY, tokens(rate)));
+            totalGas += parseInt(await openFutures.getFuturePriceMG(tokens(1000), time * SEC_IN_DAY, tokens(rate)));
             count++;
           }
         }
@@ -560,16 +566,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("call", function () {
       it("single", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt((await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
+        totalGas += parseInt((await openOptions.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -581,7 +587,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await openOptions.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -593,16 +599,16 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("put", function () {
       it("single", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt((await blackScholesNUM.getPutOptionPriceMG(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
+        totalGas += parseInt((await openOptions.getPutOptionPriceMG(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -614,7 +620,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await blackScholesNUM.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await openOptions.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -1131,7 +1137,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("future", function () {
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
 
         for (let timeSec = 0; timeSec < SEC_IN_YEAR; timeSec += SEC_IN_YEAR / 50) { 
           for (let rate = 0; rate < 4; rate += 0.1) { 
@@ -1140,7 +1146,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             assertBothBelow(actualJS, expected, 0.00000006, 0.00000300);
 
             if (duoTest) {
-              const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), SEC_IN_YEAR, tokens(rate))).toString() / 1e18;
+              const actualSOL = (await openFutures.getFuturePrice(tokens(100), SEC_IN_YEAR, tokens(rate))).toString() / 1e18;
               assertBothBelow(actualSOL, expected, 0.00000006, 0.00000300);
             }
           }
@@ -1149,25 +1155,25 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("limits", function () {
         it("single when expired", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
           const expected = getFuturePrice(100, 0, 0.05);
           const actualJS = blackScholesJS.getFuturePrice(100, 0, 0.05);
           assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), 0, tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openFutures.getFuturePrice(tokens(100), 0, tokens(0.05))).toString() / 1e18;
             assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
 
         it("single when rate 0%", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
           const expected = getFuturePrice(100, SEC_IN_YEAR, 0);
           const actualJS = blackScholesJS.getFuturePrice(100, SEC_IN_YEAR, 0);
           assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getFuturePrice(tokens(100), SEC_IN_YEAR, 0)).toString() / 1e18;
+            const actualSOL = (await openFutures.getFuturePrice(tokens(100), SEC_IN_YEAR, 0)).toString() / 1e18;
             assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
           }
         });
@@ -1175,54 +1181,54 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
 
           expect(() => blackScholesJS.getFuturePrice(0.00000099, 50000, 0.05)).to.throw("SpotLowerBoundError");
           expect(() => blackScholesJS.getFuturePrice(0, 50000, 0.05)).to.throw("SpotLowerBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice("999999999999", 50000, tokens(0.05)), "SpotLowerBoundError");
-            await blackScholesNUM.getFuturePrice("1000000000000", 50000, tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(0), 50000, tokens(0.05)), "SpotLowerBoundError");
+            await assertRevertError(openFutures, openFutures.getFuturePrice("999999999999", 50000, tokens(0.05)), "SpotLowerBoundError");
+            await openFutures.getFuturePrice("1000000000000", 50000, tokens(0.05));
+            await assertRevertError(openFutures, openFutures.getFuturePrice(tokens(0), 50000, tokens(0.05)), "SpotLowerBoundError");
           }
         });
 
         it("rejects when spot > max spot", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
 
           expect(() => blackScholesJS.getFuturePrice(1e15 + 1, 50000, 0.05)).to.throw("SpotUpperBoundError");
           expect(() => blackScholesJS.getFuturePrice(1e18, 50000, 0.05)).to.throw("SpotUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice("1000000000000000000000000000000001", 50000, tokens(0.05)), "SpotUpperBoundError");
-            await blackScholesNUM.getFuturePrice("1000000000000000000000000000000000", 50000, tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice("100000000000000000000000000000000000", 50000, tokens(0.05)), "SpotUpperBoundError");
+            await assertRevertError(openFutures, openFutures.getFuturePrice("1000000000000000000000000000000001", 50000, tokens(0.05)), "SpotUpperBoundError");
+            await openFutures.getFuturePrice("1000000000000000000000000000000000", 50000, tokens(0.05));
+            await assertRevertError(openFutures, openFutures.getFuturePrice("100000000000000000000000000000000000", 50000, tokens(0.05)), "SpotUpperBoundError");
           }
         });
 
         it("rejects when time > max time", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
 
           expect(() => blackScholesJS.getFuturePrice(1000, 4294967295, 0.05)).to.throw("TimeToExpiryUpperBoundError");
           expect(() => blackScholesJS.getFuturePrice(1000, 63072001, 0.05)).to.throw("TimeToExpiryUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 63072001, tokens(0.05)), "TimeToExpiryUpperBoundError");
-            await blackScholesNUM.getFuturePrice(tokens(1000), 63072000, tokens(0.05)); // todo: check value when 2 years in another test
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 4294967295, tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await assertRevertError(openFutures, openFutures.getFuturePrice(tokens(1000), 63072001, tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await openFutures.getFuturePrice(tokens(1000), 63072000, tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(openFutures, openFutures.getFuturePrice(tokens(1000), 4294967295, tokens(0.05)), "TimeToExpiryUpperBoundError");
           }
         });
 
         it("rejects when rate > max rate", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openFutures } = duoTest ? await loadFixture(deploy) : { openFutures: null };
 
           expect(() => blackScholesJS.getFuturePrice(1000, 60 * SEC_IN_DAY, 18)).to.throw("RateUpperBoundError");
           expect(() => blackScholesJS.getFuturePrice(1000, 60 * SEC_IN_DAY, 4 + 1e-15)).to.throw("RateUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(4 + 1e-15)), "RateUpperBoundError");
-            await blackScholesNUM.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(4));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(18)), "RateUpperBoundError");
+            await assertRevertError(openFutures, openFutures.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(4 + 1e-15)), "RateUpperBoundError");
+            await openFutures.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(4));
+            await assertRevertError(openFutures, openFutures.getFuturePrice(tokens(1000), 60 * SEC_IN_DAY, tokens(18)), "RateUpperBoundError");
           }
         });
       });
@@ -1230,19 +1236,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("call", function () {
       it("single", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
         if (duoTest) {
-          const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
         }
       });
 
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -1258,7 +1264,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
                 if (duoTest) {
-                  const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                   assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
                 }
               }
@@ -1282,49 +1288,49 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
 
         it("expired ITM", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 0, 0.60, 0.05);
           // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
           assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
             // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
             assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
           }
         });
 
         it("expired ATM", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000, 0, 0.60, 0.05);
           // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
           assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
             // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
             assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
           }
         });
 
         it("expired OTM", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 0, 0.60, 0.05);
           // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
           assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
             // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
             assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
           }
         });
 
         it("no volatility multiple strikes and expirations", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           const strikes = [200, 800, 1000, 1200, 5000];
           const times = [1, 2, 10, 30, 60, SEC_IN_YEAR, 2 * SEC_IN_YEAR];
@@ -1338,7 +1344,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
         
                 if (duoTest) {
-                  const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+                  const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
                   assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
                 }
               }
@@ -1372,22 +1378,22 @@ describe("BlackScholesDUO (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
           if (duoTest) {
-            const { blackScholesNUM } = await loadFixture(deploy);
+            const { openOptions } = await loadFixture(deploy);
 
-            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
           }
         });
 
         it("handles when vol is 0, and time lowest", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 1, 0, 0.05);
           // assertBothBelow(actualJS, expected, 0.000000000200, 0.000000020000);
           assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
             // assertBothBelow(actualSOL, expected, 0.000000000200, 0.000000020000);
             assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
           }
@@ -1396,80 +1402,80 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getCallOptionPrice(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
           expect(() => blackScholesJS.getCallOptionPrice(0, 0, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-            await blackScholesNUM.getCallOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await openOptions.getCallOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
           }
         });
 
         it("rejects when spot > max spot", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getCallOptionPrice(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("SpotUpperBoundError");
           expect(() => blackScholesJS.getCallOptionPrice(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("SpotUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-            await blackScholesNUM.getCallOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await openOptions.getCallOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
           }
         });
 
         it("rejects when strike < spot / 5", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getCallOptionPrice(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
           expect(() => blackScholesJS.getCallOptionPrice(1000, 0, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-            await blackScholesNUM.getCallOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await openOptions.getCallOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
           }
         });
 
         it("rejects when strike > spot * 5", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getCallOptionPrice(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("StrikeUpperBoundError");
           expect(() => blackScholesJS.getCallOptionPrice(1000, 100000, 50000, 10_000, 0.05)).to.throw("StrikeUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-            await blackScholesNUM.getCallOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await openOptions.getCallOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
           }
         });
 
         it("rejects when time > max time", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 4294967295, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
           expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 63072001, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-            await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await openOptions.getCallOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
           }
         });
 
         it("rejects when rate > max rate", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
           expect(() => blackScholesJS.getCallOptionPrice(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-            await blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await openOptions.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(openOptions, openOptions.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
       });
@@ -1477,19 +1483,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("put", function () {
       it("single", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
         if (duoTest) {
-          const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
         }
       });
 
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -1505,7 +1511,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
                 if (duoTest) {
-                  const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                   assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
                 }
               }
@@ -1526,43 +1532,43 @@ describe("BlackScholesDUO (SOL and JS)", function () {
         });
 
         it("expired ITM", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "put");
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 0, 0.60, 0.05);
           assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
           }
         });
 
         it("expired ATM", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "put");
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 1000, 0, 0.60, 0.05);
           assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
           }
         });
 
         it("expired OTM", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "put");
           const actualJS = blackScholesJS.getPutOptionPrice(1000, 980, 0, 0.60, 0.05);
           assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
   
           if (duoTest) {
-            const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+            const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
           }
         });
 
         it("no volatility multiple strikes and expirations", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           const strikes = [200, 800, 1000, 1200, 5000];
           const times = [1, 2, 10, 30, 60, SEC_IN_YEAR, 2 * SEC_IN_YEAR];
@@ -1576,7 +1582,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
         
                 if (duoTest) {
-                  const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+                  const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
                   assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
                 }
               }
@@ -1608,80 +1614,80 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getPutOptionPrice(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
           expect(() => blackScholesJS.getPutOptionPrice(0, 0, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-            await blackScholesNUM.getPutOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await openOptions.getPutOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
           }
         });
 
         it("rejects when spot > max spot", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getPutOptionPrice(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("SpotUpperBoundError");
           expect(() => blackScholesJS.getPutOptionPrice(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("SpotUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-            await blackScholesNUM.getPutOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await openOptions.getPutOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
           }
         });
 
         it("rejects when strike < spot / 5", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getPutOptionPrice(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
           expect(() => blackScholesJS.getPutOptionPrice(1000, 0, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-            await blackScholesNUM.getPutOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await openOptions.getPutOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
           }
         });
 
         it("rejects when strike > spot * 5", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getPutOptionPrice(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("StrikeUpperBoundError");
           expect(() => blackScholesJS.getPutOptionPrice(1000, 100000, 50000, 10_000, 0.05)).to.throw("StrikeUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-            await blackScholesNUM.getPutOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await openOptions.getPutOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
           }
         });
 
         it("rejects when time > max time", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 4294967295, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
           expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 63072001, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-            await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await openOptions.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
           }
         });
 
         it("rejects when rate > max rate", async function () {
-          const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+          const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
           expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
           expect(() => blackScholesJS.getPutOptionPrice(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
 
           if (duoTest) {
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-            await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-            await assertRevertError(blackScholesNUM, blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await openOptions.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(openOptions, openOptions.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
       });
@@ -1692,10 +1698,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("call", function () {
       it("single", async function () {
-        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+        const { openOptions, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
-        const result1 = await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const result1 = await openOptions.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
         const price1 = result1.price.toString() / 1e18;
         const gasUsed1 = parseInt(result1.gasUsed);
 
@@ -1724,7 +1730,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
 
       it("multiple in typical range", async function () {
-        const { blackScholesNUM, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { blackScholesNUM: null };
+        const { openOptions, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { openOptions: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -1741,7 +1747,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
 
-                const result1 = await blackScholesNUM.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const result1 = await openOptions.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
                 const price1 = result1.price.toString() / 1e18;
                 avgGas1 += parseInt(result1.gasUsed);
         
@@ -1791,19 +1797,19 @@ describe("BlackScholesDUO (SOL and JS)", function () {
 
     describe("put", function () {
       it("single", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
         assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
         if (duoTest) {
-          const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
         }
       });
 
       it("multiple in typical range", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
+        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
         const times = [7, 30, 60, 90, 180];
@@ -1819,7 +1825,7 @@ describe("BlackScholesDUO (SOL and JS)", function () {
                 assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
 
                 if (duoTest) {
-                  const actualSOL = (await blackScholesNUM.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                   assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
                 }
               }

@@ -3,10 +3,7 @@ pragma solidity ^0.8.28;
 
 import "../math/OpenMath.sol";
 
-// Uncomment this line to use console.log
-import "hardhat/console.sol";
-
-library BlackScholesNUM {
+library OpenOptions {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
@@ -107,25 +104,6 @@ library BlackScholesNUM {
             if (strikeNd2 > spotNd1) {
                 price = (strikeNd2 - spotNd1) / 1e18;
             }
-        }
-    }
-
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) internal pure returns (uint256) {
-        unchecked {
-            // check inputs
-            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
-            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
-            if (MAX_RATE <= rate) revert RateUpperBoundError();
-
-            // handle expired future 
-            if (timeToExpirySec == 0) {
-                return spot;
-            }
-
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
-            return uint256(spot) * OpenMath.expPositive(scaledRate) / 1e18;
         }
     }
 }

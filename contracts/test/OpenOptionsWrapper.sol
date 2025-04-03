@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../derivatives/BlackScholesNUM.sol";
+import "../derivatives/OpenOptions.sol";
 
-contract BlackScholesCaller {
+contract OpenOptionsWrapper {
 
     function getCallOptionPrice(
         uint128 spot,
@@ -12,7 +12,7 @@ contract BlackScholesCaller {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BlackScholesNUM.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        return OpenOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 
     function getPutOptionPrice(
@@ -22,28 +22,7 @@ contract BlackScholesCaller {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BlackScholesNUM.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
-    }
-
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) external pure returns (uint256) {
-        return BlackScholesNUM.getFuturePrice(spot, timeToExpirySec, rate);
-    }
-
-    function getFuturePriceMG(
-        uint128 spot,
-        uint32 timeToExpirySec,
-        uint64 rate
-    ) external view returns (uint256) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-        startGas = gasleft();
-
-        result = BlackScholesNUM.getFuturePrice(spot, timeToExpirySec, rate);
-
-        endGas = gasleft();
-        
-        return startGas - endGas;
+        return OpenOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 
     function getCallOptionPriceMG(
@@ -58,7 +37,7 @@ contract BlackScholesCaller {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BlackScholesNUM.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        result = OpenOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
 
         endGas = gasleft();
         
@@ -77,7 +56,7 @@ contract BlackScholesCaller {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BlackScholesNUM.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        result = OpenOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
 
         endGas = gasleft();
         
