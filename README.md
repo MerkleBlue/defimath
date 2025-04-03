@@ -1,9 +1,9 @@
-# Open Solidity [![License: MIT][license-badge]][license]
+# OpenSolidity [![License: MIT][license-badge]][license]
 
 [license]: https://opensource.org/licenses/MIT
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
 
-Open Solidity is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
+OpenSolidity is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
 
 # Usage
 The library is designed to be used in Ethereum smart contracts. It provides a set of mathematical functions and utilities that can be easily integrated into your Solidity projects.
