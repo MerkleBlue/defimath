@@ -8,7 +8,7 @@ import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, gener
 const duoTest = true;
 const fastTest = true;
 
-const MAX_OPTION_ABS_ERROR2 = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
+const MAX_OPTION_ABS_ERROR = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -288,11 +288,11 @@ describe("OpenOptions (SOL and JS)", function () {
         const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
         if (duoTest) {
           const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
         }
       });
 
@@ -310,11 +310,11 @@ describe("OpenOptions (SOL and JS)", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
                 if (duoTest) {
                   const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
                 }
               }
             }
@@ -330,7 +330,7 @@ describe("OpenOptions (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR2, 10, false);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
         });
 
         // todo: test with vol max only SOL
@@ -390,11 +390,11 @@ describe("OpenOptions (SOL and JS)", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
                 const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time, 0, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
         
                 if (duoTest) {
                   const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
                 }
               }
             }
@@ -408,7 +408,7 @@ describe("OpenOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4]; // todo: use wider range
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -416,7 +416,7 @@ describe("OpenOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
       });
 
@@ -424,13 +424,13 @@ describe("OpenOptions (SOL and JS)", function () {
         it("handles when N(d1) == N(d2) for OTM option", async function () {
           const expected = blackScholesWrapped(1000, 1200, 1 / 365, 0.40, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
-          assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+          assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
           if (duoTest) {
             const { openOptions } = await loadFixture(deploy);
 
             const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
-            assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+            assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
           }
         });
 
@@ -439,12 +439,12 @@ describe("OpenOptions (SOL and JS)", function () {
           const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
           const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 1, 0, 0.05);
           // assertBothBelow(actualJS, expected, 0.000000000200, 0.000000020000);
-          assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+          assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
   
           if (duoTest) {
             const actualSOL = (await openOptions.getCallOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
             // assertBothBelow(actualSOL, expected, 0.000000000200, 0.000000020000);
-            assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+            assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
           }
         });
       });
@@ -535,11 +535,11 @@ describe("OpenOptions (SOL and JS)", function () {
         const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
         if (duoTest) {
           const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
         }
       });
 
@@ -557,11 +557,11 @@ describe("OpenOptions (SOL and JS)", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
                 if (duoTest) {
                   const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
                 }
               }
             }
@@ -577,7 +577,7 @@ describe("OpenOptions (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR2, 10, false);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
         });
 
         it("expired ITM", async function () {
@@ -628,11 +628,11 @@ describe("OpenOptions (SOL and JS)", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time, 0, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
         
                 if (duoTest) {
                   const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
                 }
               }
             }
@@ -646,7 +646,7 @@ describe("OpenOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -654,7 +654,7 @@ describe("OpenOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR2, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
       });
 
@@ -849,11 +849,11 @@ describe("OpenOptions (SOL and JS)", function () {
         const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
         const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
         if (duoTest) {
           const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
         }
       });
 
@@ -871,11 +871,11 @@ describe("OpenOptions (SOL and JS)", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
                 const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR2);
+                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
                 if (duoTest) {
                   const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR2);
+                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
                 }
               }
             }
