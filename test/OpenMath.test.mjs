@@ -1,0 +1,719 @@
+
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
+import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
+import bs from "black-scholes";
+import erf from 'math-erf';
+import { assertAbsoluteBelow, assertBothBelow, assertRelativeBelow, tokens } from "./Common.test.mjs";
+
+const duoTest = true;
+
+const MAX_ERF_ABS_ERROR = 4.5e-9; // OLD: 1.4e-7; // with error correction: 4.5e-9
+const MAX_CDF_ABS_ERROR = 1.8e-11; // OLD: 7e-8; // with error correction: 2.3e-9
+
+describe("OpenMath (SOL and JS)", function () {
+  let blackScholesJS;
+
+  async function deploy() {
+    const [owner] = await ethers.getSigners();
+
+    const OpenMathWrapper = await ethers.getContractFactory("OpenMathWrapper");
+    const openMath = await OpenMathWrapper.deploy();
+
+    return { owner, openMath };
+  }
+
+  // before all tests, called once
+  before(async () => {
+    blackScholesJS = new BlackScholesNUMJS();
+  });
+
+  duoTest && describe("performance", function () {
+    describe("exp", function () {
+      it("exp positive < 0.03125", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        let totalGas = 0, count = 0;
+        for (let x = 0; x < 0.03125; x += 0.0003) { 
+          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("exp positive [0.03125, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        let totalGas = 0, count = 0;
+        for (let x = 0.03125; x < 1; x += 0.0020125) { 
+          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it("exp positive [1, 32)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 32; x += 0.06200125) { 
+          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it("exp positive [32, 50)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 32; x < 50; x += 0.25600125) { 
+          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
+      });
+
+      it("exp negative [-50, -0.05]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 0.05; x <= 50; x += 0.1 ) { 
+          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("ln", function () {
+      it("ln upper [1, 1.0905]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          totalGas += parseInt(await openMath.lnMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("ln upper [1.0905, 16]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          totalGas += parseInt(await openMath.lnMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("ln lower [0.0625, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 0.0625; x < 1; x += 0.002) { 
+          totalGas += parseInt(await openMath.lnMG(tokens(x))); // todo: measure ln, not lnUpper
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("sqrt", function () {
+      it("sqrt upper [1, 1.0746]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.074607828321317497; x += 0.0002) {
+          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [1.04427, 100)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1.074607828321317497; x < 100; x += 0.2) {
+          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [100, 10000)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 100; x < 10000; x += 21.457) {
+          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [1e4, 1e6)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e4; x < 1e6; x += 2012.3) {
+          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("sqrt upper [1e6, 1e8)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e6; x < 1e8; x += 202463) {
+          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      // todo: tests for 1 / (1-100, 100-10000, 10000-1000000)
+      it("sqrt lower [1e-6, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1000000; x += 2234) {
+          totalGas += parseInt(await openMath.sqrtMG(tokens(1 / x)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("stdNormCDF", function () {
+      it("stdNormCDF single", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        const d1 = 0.6100358074173348;
+
+        totalGas += parseInt(await openMath.stdNormCDFMG(tokens(d1)));
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+
+      it("stdNormCDF multiple", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let d1 = -2; d1 < 2; d1 += 0.01234) {
+          totalGas += parseInt(await openMath.stdNormCDFMG(tokens(d1)));
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+      });
+    });
+  });
+
+  describe("functionality", function () {
+    describe("exp", function () {
+      it("exp positive < 0.03125", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0; x < 0.03125; x += 0.0003) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesJS.exp(x);
+          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000050);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
+          }
+        }
+      });
+
+      it("exp positive [0.03125, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0.03125; x < 1; x += 0.0010125) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesJS.exp(x);
+          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000110);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000110);
+          }
+        }
+      });
+
+      it("exp positive [1, 32)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1; x < 32; x += 0.03200125) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesJS.exp(x);
+          assertRelativeBelow(actualJS, expected, 0.000000004200);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000004200);
+          }
+        }
+      });
+
+      it("exp positive [32, 50)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 32; x < 50; x += 0.25600125) { 
+          const expected = Math.exp(x);
+          const actualJS = blackScholesJS.exp(x);
+          assertRelativeBelow(actualJS, expected, 0.000000004200);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000004200);
+          }
+        }
+      });
+
+      it("exp negative [-50, -0.05]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0.05; x <= 50; x += 0.05 ) { 
+          const expected = Math.exp(-x);
+          const actualJS = blackScholesJS.exp(-x);
+          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000042);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.expNegative(tokens(x))).toString() / 1e18;
+            assertAbsoluteBelow(actualSOL, expected, 0.000000000042);
+          }
+        }
+      });
+    });
+
+    describe("ln", function () {
+      // todo: test all limits like 1.090507732665257659
+      it("ln upper [1, 1.0905]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          const expected = Math.log(x);
+          const actualJS = blackScholesJS.ln(x);
+          assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.ln(tokens(x))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
+          }
+        }
+      });
+
+      it("ln upper [1.0905, 16]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          const expected = Math.log(x);
+          const actualJS = blackScholesJS.ln(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.ln(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+          }
+        }
+      });
+
+      it("ln lower [0.0625, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0.0625; x < 1; x += 0.001) { 
+          const expected = Math.log(x);
+          const actualJS = blackScholesJS.ln(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.ln(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+          }
+        }
+      });
+    });
+
+    describe("sqrt", function () {
+      // todo: test all limits like 1.04427
+      it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1; x < 1.074607828321317497; x += 0.0001) {
+          const expected = Math.sqrt(x);
+          const actualJS = blackScholesJS.sqrtUpper(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
+          }
+        }
+      });
+
+      it("sqrt upper [1.04427, 100)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1.074607828321317497; x < 100; x += 0.1) {
+          const expected = Math.sqrt(x);
+          const actualJS = blackScholesJS.sqrtUpper(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
+          }
+        }
+      });
+
+      it("sqrt upper [100, 10000)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 100; x < 10000; x += 9.89) {
+          const expected = Math.sqrt(x);
+          const actualJS = blackScholesJS.sqrtUpper(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
+          }
+        }
+      });
+
+      it("sqrt upper [1e4, 1e6)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1e4; x < 1e6; x += 1e3) {
+          const expected = Math.sqrt(x);
+          const actualJS = blackScholesJS.sqrtUpper(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
+          }
+        }
+      });
+
+      it("sqrt upper [1e6, 1e8)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1e6; x < 1e8; x += 1e5) {
+          const expected = Math.sqrt(x);
+          const actualJS = blackScholesJS.sqrtUpper(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000072);
+          }
+        }
+      });
+
+      it("sqrt lower [1e-6, 1)", async function () { // todo: test better
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        for (let x = 1; x < 1000000; x += 1234) {
+          const expected = Math.sqrt(1 / x);
+          const actualJS = blackScholesJS.sqrt(1 / x);
+          assertRelativeBelow(actualJS, expected, 0.000000000072);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.sqrt(tokens(1 / x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000800); // todo: why lower than JS?
+          }
+        }
+      });
+    });
+
+    describe("erf", function () {
+      it("erf function [0, 0.35] polynomial", async function () {
+        const xs = [], ys = [];
+        for (let x = 0; x <= 0.351; x += 0.01) {
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erf(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
+        // console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        // console.log("x, y actual, y fit")
+        for (let x = 0; x <= 0.351; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erf(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf function [0.35, 1.13] polynomial", async function () {
+        const xs = [], ys = [];
+        for (let x = 0.35; x <= 1.141; x += 0.01) {
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
+        // console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        // console.log("x, y actual, y fit")
+        for (let x = 0.35; x <= 1.131; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf function [1.13, 2.8] polynomial", async function () {
+        const xs = [], ys = [];
+        for (let x = 1.13; x <= 2.81; x += 0.01) {
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
+        // console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        // console.log("x, y actual, y fit")
+        for (let x = 1.13; x <= 2.81; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
+
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf function [2.8, 3.5] polynomial", async function () {
+
+        const xs = [], ys = [];
+        for (let x = 2.8; x <= 3.5; x += 0.01) {
+          xs.push(x);
+
+          // prepare ys
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+          ys.push(y);
+        }
+
+        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg4(xs, ys);
+        // console.log(b1, b2, b3, b4, b5);
+
+        // print 
+        // console.log("x, y actual, y fit")
+        for (let x = 2.8; x <= 3.5; x += 0.01) {
+          const expected = erf(x);
+          const actualJS = blackScholesJS.erfTrain(x);
+          const y = (actualJS - expected) * 1e10;
+
+          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3/* + b4 * x ** 4/* + b5 * x ** 5*/;
+
+          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
+        }
+      });
+
+      it("erf single value in [0, 0.35]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        const x = 0.123;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erfWest(x);
+        assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+        }
+      });
+
+      it("erf single value in [0.35, 1.13]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        const x = 0.6;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          // console.log(expected, actualJS, actualSOL)
+          assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+        }
+      });
+
+      it("erf single value in [1.13, 2.8]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        const x = 1.3;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+        }
+      });
+
+      it("erf single value in [2.8, 3.5]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        const x = 3.1;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+        }
+      });
+
+      it("erf regression", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        const x = 0.01;
+        const expected = erf(x);
+
+        const actualJS = blackScholesJS.erf(x);
+        assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+        }
+      });
+
+      it("erf [0, 0.35)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0; x <= 0.35; x += 0.01) {
+          const expected = erf(x);
+
+          const actualJS = blackScholesJS.erf(x);
+          assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+          }
+        }
+      });
+
+      it("erf [0.35, 1.13)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0.35; x <= 1.13; x += 0.01) {
+          const expected = erf(x);
+
+          const actualJS = blackScholesJS.erf(x);
+          assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
+          }
+        }
+      });
+
+      it("erf [1.13, 2.8)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1.13; x <= 2.8; x += 0.01) {
+          const expected = erf(x);
+
+          const actualJS = blackScholesJS.erf(x);
+          assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR); // todo: why more than JS, replace Math.sin in JS
+          }
+        }
+      });
+
+      it("erf [2.8, 3.5)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 2.8; x <= 3.5; x += 0.01) {
+          const expected = erf(x);
+
+          const actualJS = blackScholesJS.erf(x);
+          assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR); // todo: why more than JS, replace Math.sin in JS
+          }
+        }
+      });
+    });
+
+    describe("stdNormCDF", function () {
+      it("stdNormCDF single", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        const d1 = 0.6100358074173348;
+        const expected = bs.stdNormCDF(d1);
+        const actualJS = blackScholesJS.stdNormCDF(d1);
+        assertAbsoluteBelow(actualJS, expected, MAX_CDF_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await openMath.stdNormCDF(tokens(d1))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
+        }
+      });
+
+      it("stdNormCDF multiple", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let d1 = -4; d1 < 4; d1 += 0.01234) {
+          const expected = bs.stdNormCDF(d1);
+          const actualJS = blackScholesJS.stdNormCDF(d1);
+          assertAbsoluteBelow(actualJS, expected, MAX_CDF_ABS_ERROR);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.stdNormCDF(tokens(d1))).toString() / 1e18;
+            assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
+          }
+        }
+      });
+    });
+  });
+});
