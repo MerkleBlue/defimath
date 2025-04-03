@@ -1,4 +1,7 @@
-# Open Solidity
+# Open Solidity [![License: MIT][license-badge]][license]
+
+[license]: https://opensource.org/licenses/MIT
+[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
 
 Open Solidity is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
 
@@ -11,12 +14,14 @@ The Black-Scholes formula is given by:
 ```math
 C = S N(d_1) - K e^{-rT} N(d_2)
 ```
-where:
-- \(C\) is the call option price
-- \(S\) is the current stock price
-- \(K\) is the strike price
-- \(T\) is the time to expiration (in years)
-- \(r\) is the risk-free interest rate (annualized)
+where \(C\) is the call option price, \(S\) is the current asset price, \(K\) is the strike price, \(T\) is the time to expiration (in years), \(r\) is the annualized risk-free interest rate, \(N(d)\) is the cumulative distribution function of the standard normal distribution, and \(d_1\) and \(d_2\) are given by:
+```math
+d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}}
+```
+```math
+d_2 = d_1 - \sigma \sqrt{T}
+```
+where \(\sigma\) is the volatility of the underlying asset.
 
 Learn more about [Black Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
 
