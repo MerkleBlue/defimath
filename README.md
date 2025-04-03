@@ -1,81 +1,47 @@
-# primitive-core
-Primitives for Solidity DeFi contracts
+# Open Solidity
 
-## Black Scholes Option Pricing
+Open Solidity is open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency, while also preserving very high precision. 
 
-The Black Scholes option pricing model is a mathematical model used to calculate the price of a European call or put option. European options can be exercised only at the expiration date of the option. 
+# Derivatives
 
-Black Scholes formula uses 5 inputs, and calculates option price. The inputs are:
-- Current price of the underlying asset
-- Strike price of the option
-- Time to expiration
-- Risk-free interest rate
-- Volatility of the underlying asset
+## Option Pricing using Black-Scholes
 
-Calculating option price using math calculations that includes logarithms and standard normal distribution can be expensive when implemented in Solidity, so we can use pre-calculated values for the option price.
+The implementation is based on the original Black-Scholes formula, which is a mathematical model used to calculate the theoretical price of options. The formula is widely used in the financial industry for pricing European-style options.
+The Black-Scholes formula is given by:
+$$
+C = S N(d_1) - K e^{-rT} N(d_2)
+$$
+where:
+- \(C\) is the call option price
+- \(S\) is the current stock price
+- \(K\) is the strike price
+- \(T\) is the time to expiration (in years)
+- \(r\) is the risk-free interest rate (annualized)
 
-## Option Price Calculation
+Learn more about [Black Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
 
-We can use the following rules to simplify lookup in the tables:
+### Limits
 
-1. Risk-free rate can be applied to strike price before lookup, by doing new_strike = strike / e ^ rate * time
-see https://optioncreator.com/st7im8w and https://optioncreator.com/steaphh
-2. Strike and Spot price can be expressed as a ratio, by doing ratio = spot / strike. This is one dimension of the table. We know that if we for example multiply both spot and strike by 2, we get the same option price multiplied with 2. 
-3. Time to expiration and volatility are connected. If we multiply time to expiration by 4, and divide volatility by 2, we get the same option price. This means that if we populate a dimension with time only for a fixed volatility, then we can always find the time in the table by finding the ration between input volatility and fixed volatility, square that ratio, and then find the time by multiplying input time with squared ratio. This is the second dimension of the table.
-see: https://optioncreator.com/sty6x02
+The following limitations apply to the BlackScholes implementation:
+ - strike prices - up to 5x spot price on both sides, i.e. strike from $200 to $5000 for a $1000 spot
+ - time to expiration - up to 2 years
+ - volatility - up to 1800%
+ - risk-free rate - up to 400%
 
-Additionally, call-put parity allows us that we only use one table with call options to calculate put price using: call + strike = future + put
+### Performance
+Maximum absolute error when call or put option is calculated is < $0.0000002 for a $1000 spot price.  
 
-# Limitations
+Calculating call or put option price costs around 4k gas on average (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.  
 
-The following limitations apply to the lookup table:
+The following table compares performance of Open Solidity with other implementations of Black Scholes formula when a call option is called over typical range of parameters. 
 
- - strike prices are limited to 5x spot price on both sides, i.e. from $200 to $5000 for spot price of $1000
- - time to expiration is in range from 1 second to 2 years
- - volatility is limited from 1% to 192%
- - risk-free rate is limited to 20%
-
-# Precision
-
-Maximum error is either less than $0.000089 or less than 0.000089% of the option price for a $1000 spot price.  
-Maximum error is $0.000061 when called within limitations for a $1000 spot price. For example, for ETH options when ETH is trading around $4000, max error is $0.000244 (less than 1/40 of a cent).
-
-# Performance
-
-BlackScholes contract costs on average around 7500 gas to calculate option price (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.
-
-# Sample Hardhat Project
-
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
-npx hardhat clean
-npx hardhat compile
-npx hardhat coverage
-npx hardhat test poc/blackscholes/BlackScholesJS.test.mjs 
-node poc/blackscholes/generateLookupTable.mjs
-```
-
-Options
-1. 
-2. https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol
-3. https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol
-4. https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol
-5. https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol
+| Metric    |  [Open Solidity](https://github.com/MerkleBlue/open-solidity) |  [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol) |     [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol) |   [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol) |   [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol) |
+| :-------- | ------------: | ---------: | ---------: | ----------: | ------: | 
+| Avg error |  0.00000000   | 0.00000000 | 0.03957955 |  5.69158932 |         |
+| Max error |  0.00000002   | 0.00000000 | 0.17114025 | 37.66781134 |         |
+| Avg gas   |        4129   |      30226 |      20635 |       40010 |   95458 |
 
 
+# License
 
-https://github.com/jankjr/solidity-black-scholes
-Binary Options
-https://github.com/HapticFinance/binaries-pricing-model
-
-Math
-https://github.com/ribbon-finance/rvol/blob/master/contracts/libraries/Math.sol
-see: for ln https://en.wikipedia.org/wiki/Pad%C3%A9_approximant
+Open Solidity is released under the MIT License.
