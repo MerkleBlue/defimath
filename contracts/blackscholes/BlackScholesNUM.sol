@@ -8,7 +8,6 @@ library BlackScholesNUM {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
     int256 internal constant PI = 3141592653589793239;
-    uint256 internal constant TWO_PI = 6283185307179586477;
 
     // limits
     uint256 internal constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
@@ -386,7 +385,7 @@ library BlackScholesNUM {
 
             if (x < 2.8e18) {
                 uint256 denom = 3e18 - x;       
-                return uint256(1e36 + 1385e8 * sin(TWO_PI * (denom * denom) / 3.6e36 + 0.22e18) - 35e26);
+                return uint256(1e36 + 1385e8 * sin(6283185307179586477 * (denom * denom) / 3.6e36 + 0.22e18) - 35e26);
                 // return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 35e-10;
             }
 
