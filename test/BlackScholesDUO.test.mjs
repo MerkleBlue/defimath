@@ -2052,10 +2052,10 @@ describe("BlackScholesDUO (SOL and JS)", function () {
             }
           }
         }
-        console.log("Metric     Primitive  Derivexyz     Premia   Party1983,    Dopex");
-        console.log("Avg error", (avgError1 / count).toFixed(8), (avgError2 / count).toFixed(8), (avgError3 / count).toFixed(8), (avgError4 / count).toFixed(8));
-        console.log("Max error", (maxError1).toFixed(8), (maxError2).toFixed(8), (maxError3).toFixed(8), (maxError4).toFixed(8));
-        console.log("Avg gas        ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "     " + (avgGas5 / count).toFixed(0));
+        console.log("Metric     OpenSolidity  Derivexyz     Premia  Party1983     Dopex");
+        console.log("Avg error   ", (avgError1 / count).toFixed(8), (avgError2 / count).toFixed(8), (avgError3 / count).toFixed(8), (avgError4 / count).toFixed(8));
+        console.log("Max error   ", (maxError1).toFixed(8), (maxError2).toFixed(8), (maxError3).toFixed(8), (maxError4).toFixed(8));
+        console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "     " + (avgGas5 / count).toFixed(0));
       });
     });
 
