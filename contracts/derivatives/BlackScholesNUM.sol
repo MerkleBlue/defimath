@@ -128,12 +128,4 @@ library BlackScholesNUM {
             return uint256(spot) * OpenMath.expPositive(scaledRate) / 1e18;
         }
     }
-
-    // todo: not used
-    function getD1(uint128 spot, uint128 strike, uint256 scaledVol, uint256 scaledRate) internal pure returns (int256) {
-        unchecked {
-            // todo: maybe use 1000 + ln... -1000, to avoid conversion to int256
-            return (OpenMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
-        }
-    }
 }

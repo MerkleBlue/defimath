@@ -843,51 +843,6 @@ describe("BlackScholesDUO (SOL and JS)", function () {
       });
     });
 
-    describe("d1", function () {
-      it("d1 single", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-        const volAdj = 0.6 * Math.sqrt(60 / 365);
-        const rateAdj = 0.05 * (60 / 365);
-        const expected = bs.getW(1000, 980, 60 / 365, 0.6, 0.05);
-        const actualJS = blackScholesJS.getD1(1000, 980, 60 / 365, volAdj, 0.05);
-        assertBothBelow(actualJS, expected, 0.00000006, 0.00000040);
-
-        if (duoTest) {
-          const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(980), tokens(volAdj), tokens(rateAdj))).toString() / 1e18;
-          assertBothBelow(actualSOL, expected, 0.00000006, 0.00000040);
-        }
-      });
-
-      it("d1 multiple", async function () {
-        const { blackScholesNUM } = duoTest ? await loadFixture(deploy) : { blackScholesNUM: null };
-
-        const strikes = [500, 800, 1000, 1200, 1500];
-        const times = [30, 60, 90, 180];
-        const vols = [0.4, 0.6, 0.8];
-        const rates = [0, 0.05];
-
-        for (let strike of strikes) {
-          for (let time of times) {
-            for (let vol of vols) {
-              for (let rate of rates) {
-                const volAdj = vol * Math.sqrt(time / 365);
-                const rateAdj = rate * (time / 365);
-                const expected = bs.getW(1000, strike, time / 365, vol, rate);
-                const actualJS = blackScholesJS.getD1(1000, strike, time / 365, volAdj, rate);
-                assertBothBelow(actualJS, expected, 0.000000000175, 0.00000040);
-
-                if (duoTest) {
-                  const actualSOL = (await blackScholesNUM.getD1(tokens(1000), tokens(strike), tokens(volAdj), tokens(rateAdj))).toString() / 1e18;
-                  assertBothBelow(actualSOL, expected, 0.000000000175, 0.00000040);
-                }
-              }
-            }
-          }
-        }
-      });
-    });
-
     describe("erf", function () {
       it("erf function [0, 0.35] polynomial", async function () {
         const xs = [], ys = [];

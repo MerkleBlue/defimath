@@ -29,10 +29,6 @@ contract BlackScholesCaller {
         return BlackScholesNUM.getFuturePrice(spot, timeToExpirySec, rate);
     }
 
-    function getD1(uint128 spot, uint128 strike, uint256 scaledVol, uint256 scaledRate) external pure returns (int256) {
-        return BlackScholesNUM.getD1(spot, strike, scaledVol, scaledRate);
-    }
-
     function getFuturePriceMG(
         uint128 spot,
         uint32 timeToExpirySec,
