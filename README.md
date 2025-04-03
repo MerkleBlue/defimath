@@ -13,7 +13,7 @@ To use OpenSolidity in your project, you can import the library into your Solidi
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "open-solidity/blackscholes/BlackScholesNUM.sol";
+import "open-solidity/derivatives/OpenOptions.sol";
 ```
 To use the library, you can call the functions provided by the library directly in your Solidity contract. For example, to calculate the call option price using the Black-Scholes formula, you can use the following code:
 
