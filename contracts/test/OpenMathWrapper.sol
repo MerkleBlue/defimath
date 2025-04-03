@@ -5,17 +5,24 @@ import "../math/OpenMath.sol";
 
 contract OpenMathWrapper {
 
-
-     function expNegative(uint256 x) external pure returns (uint256) {
-        return OpenMath.expNegative(x);
-    }
-
-    function expPositive(uint256 x) external pure returns (uint256) {
-        return OpenMath.expPositive(x);
+    function exp(int256 x) external pure returns (uint256) {
+        return OpenMath.exp(x);
     }
 
     function ln(uint256 x) external pure returns (int256) {
         return OpenMath.ln(x);
+    }
+    
+    function sqrt(uint256 x) external pure returns (uint256) {
+        return OpenMath.sqrt(x);
+    }
+
+    function stdNormCDF(int256 x) external pure returns (uint256) {
+        return OpenMath.stdNormCDF(x);
+    }
+
+    function expPositive(uint256 x) external pure returns (uint256) {
+        return OpenMath.expPositive(x);
     }
 
     // x: [1, 16] 
@@ -23,24 +30,32 @@ contract OpenMathWrapper {
        return OpenMath.lnUpper(x);
     }
 
-    function sqrt(uint256 x) external pure returns (uint256) {
-        return OpenMath.sqrt(x);
-    }
-
     // x: [1, 1e8]
     function sqrtUpper(uint256 x) external pure returns (uint256) {
         return OpenMath.sqrtUpper(x);
-    }
-
-    function stdNormCDF(int256 x) external pure returns (uint256) {
-        return OpenMath.stdNormCDF(x);
     }
 
     function erfPositiveHalf(uint256 x) external pure returns (uint256) {
         return OpenMath.erfPositiveHalf(x);
     }
 
-    function expPositiveMG(uint256 x) public view returns (uint256) {
+    // measure gas
+
+    function expMG(int256 x) external view returns (uint256) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+
+        result = OpenMath.exp(x);
+
+        endGas = gasleft();
+
+        return startGas - endGas;
+    }
+
+    function expPositiveMG(uint256 x) external view returns (uint256) {
         uint256 result;
         uint256 startGas;
         uint256 endGas;
@@ -53,8 +68,6 @@ contract OpenMathWrapper {
 
         return startGas - endGas;
     }
-
-    // measure gas
 
     function lnMG(uint256 x) external view returns (uint256) {
         uint256 resultUint256;

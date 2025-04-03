@@ -5,17 +5,41 @@ pragma solidity ^0.8.28;
 import "hardhat/console.sol";
 
 /**
- * @title Math library for common math functions like exponential, logarithm, and square root.
+ * @title Math library for common math functions like exponential, logarithm, 
+ * square root, error function, standard normal distribution, etc..
  * @author OpenSolidity
  * @notice This library provides a set of mathematical functions for use in Solidity smart contracts.
  * @dev The functions are designed to be gas-efficient and to avoid overflows and underflows.
  */
 library OpenMath {
 
-
-    function expNegative(uint256 x) internal pure returns (uint256) {
+    function exp(int256 x) internal pure returns (uint256) {
         unchecked {
-            return 1e36 / expPositive(x);
+            if (x >= 0) {
+                return expPositive(uint256(x));
+            }
+
+            return 1e36 / expPositive(uint256(-x));
+        }
+    }
+
+    function ln(uint256 x) internal pure returns (int256) {
+        unchecked {
+            if (x >= 1e18) {
+                return int256(lnUpper(x));
+            }
+
+            return -int256(lnUpper(1e36 / x));
+        }
+    }
+
+    function sqrt(uint256 x) internal pure returns (uint256) {
+        unchecked {
+            if (x >= 1e18) {
+                return sqrtUpper(x);
+            }
+
+            return 1e36 / sqrtUpper(1e36 / x);
         }
     }
 
@@ -58,16 +82,6 @@ library OpenMath {
         }
     }
 
-    function ln(uint256 x) internal pure returns (int256) {
-        unchecked {
-            if (x >= 1e18) {
-                return int256(lnUpper(x));
-            }
-
-            return -int256(lnUpper(1e36 / x));
-        }
-    }
-
     // x: [1, 16] 
     function lnUpper(uint256 x) internal pure returns (uint256) {
         unchecked {
@@ -91,16 +105,6 @@ library OpenMath {
             uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7);
             
             return naturalLog / 5e35 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
-        }
-    }
-
-    function sqrt(uint256 x) internal pure returns (uint256) {
-        unchecked {
-            if (x >= 1e18) {
-                return sqrtUpper(x);
-            }
-
-            return 1e36 / sqrtUpper(1e36 / x);
         }
     }
 

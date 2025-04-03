@@ -76,7 +76,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 0.05; x <= 50; x += 0.1 ) { 
-          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          totalGas += parseInt(await openMath.expMG(tokens(-x)));
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -283,7 +283,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000042);
 
           if (duoTest) {
-            const actualSOL = (await openMath.expNegative(tokens(x))).toString() / 1e18;
+            const actualSOL = (await openMath.exp(tokens(-x))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, 0.000000000042);
           }
         }
