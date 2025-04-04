@@ -69,7 +69,7 @@ contract OpenMathWrapper {
         return startGas - endGas;
     }
 
-    function lnMG(uint256 x) external view returns (uint256) {
+    function lnMG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 resultUint256;
         int256 resultInt256;
         uint256 startGas;
@@ -78,31 +78,27 @@ contract OpenMathWrapper {
             startGas = gasleft();
             resultUint256 = OpenMath.lnUpper(x);
             endGas = gasleft();
+            y = int256(resultUint256);
         } else {
             startGas = gasleft();
             resultInt256 = OpenMath.ln(x);
             endGas = gasleft();
+            y = resultInt256;
         }
         
-        return startGas - endGas;
+        return (y, startGas - endGas);
     }
 
-    function sqrtMG(uint256 x) external view returns (uint256) {
+    function sqrtMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 result;
         uint256 startGas;
         uint256 endGas;
-        if (x >= 1e18) {
-            startGas = gasleft();
-            result = OpenMath.sqrtUpper(x);
-            endGas = gasleft();
-        } else {
-            startGas = gasleft();
-            result = OpenMath.sqrt(x);
-            endGas = gasleft();
-        }
+        startGas = gasleft();
+        result = OpenMath.sqrt(x);
+        endGas = gasleft();
 
         
-        return startGas - endGas;
+        return (result, startGas - endGas);
     }
 
     function stdNormCDFMG(int256 x) external view returns (uint256) {

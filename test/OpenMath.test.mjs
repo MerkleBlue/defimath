@@ -730,7 +730,7 @@ describe("OpenMath (SOL and JS)", function () {
   });
 
     duoTest && describe.only("compare", function () {
-      it.only("exp", async function () {
+      it("exp", async function () {
         const { openMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -762,6 +762,74 @@ describe("OpenMath (SOL and JS)", function () {
         console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
         console.log("Max rel error (%)      ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
+      });
+
+      it("ln", async function () {
+        const { openMath, prbMath } = await loadFixture(deployCompare);
+
+        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+        let count = 0;
+
+        for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+          const expected = Math.log(x);
+
+          // OpenSolidity
+          const result1 = await openMath.lnMG(tokens(x));
+          const y1 = result1.y.toString() / 1e18;
+          avgGas1 += parseInt(result1.gasUsed);
+  
+          // PRBMath
+          const result2 = await prbMath.lnMG(tokens(x));
+          const y2 = result2.y.toString() / 1e18;
+          avgGas2 += parseInt(result2.gasUsed);
+
+          count++;
+          const error1 = Math.abs((y1 - expected) / expected) * 100;
+          const error2 = Math.abs((y2 - expected) / expected) * 100;
+          avgError1 += error1;
+          avgError2 += error2;
+          maxError1 = Math.max(maxError1, error1);
+          maxError2 = Math.max(maxError2, error2);
+        }
+        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
+        console.log("Max rel error (%)     ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
+        console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
+      });
+
+      it.only("sqrt", async function () {
+        const { openMath, prbMath } = await loadFixture(deployCompare);
+
+        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+        let count = 0;
+
+        for (let x = 1e-6; x <= 1e8; x += x / 4) {
+          const expected = Math.sqrt(x);
+
+          // OpenSolidity
+          const result1 = await openMath.sqrtMG(tokens(x));
+          const y1 = result1.y.toString() / 1e18;
+          avgGas1 += parseInt(result1.gasUsed);
+  
+          // PRBMath
+          const result2 = await prbMath.sqrtMG(tokens(x));
+          const y2 = result2.y.toString() / 1e18;
+          avgGas2 += parseInt(result2.gasUsed);
+
+          count++;
+          const error1 = Math.abs((y1 - expected) / expected) * 100;
+          const error2 = Math.abs((y2 - expected) / expected) * 100;
+          avgError1 += error1;
+          avgError2 += error2;
+          maxError1 = Math.max(maxError1, error1);
+          maxError2 = Math.max(maxError2, error2);
+        }
+        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
+        console.log("Max rel error (%)     ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
+        console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0));
       });
     });
 });
