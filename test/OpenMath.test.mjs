@@ -45,7 +45,7 @@ describe("OpenMath (SOL and JS)", function () {
         const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
         let totalGas = 0, count = 0;
         for (let x = 0; x < 0.03125; x += 0.0003) { 
-          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -55,7 +55,7 @@ describe("OpenMath (SOL and JS)", function () {
         const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
         let totalGas = 0, count = 0;
         for (let x = 0.03125; x < 1; x += 0.0020125) { 
-          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
@@ -66,7 +66,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 32; x += 0.06200125) { 
-          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
@@ -77,7 +77,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 32; x < 50; x += 0.25600125) { 
-          totalGas += parseInt(await openMath.expPositiveMG(tokens(x)));
+          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
@@ -88,7 +88,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 0.05; x <= 50; x += 0.1 ) { 
-          totalGas += parseInt(await openMath.expMG(tokens(-x)));
+          totalGas += parseInt((await openMath.expMG(tokens(-x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -101,7 +101,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
-          totalGas += parseInt(await openMath.lnMG(tokens(x)));
+          totalGas += parseInt((await openMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -112,7 +112,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          totalGas += parseInt(await openMath.lnMG(tokens(x)));
+          totalGas += parseInt((await openMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -123,7 +123,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 0.0625; x < 1; x += 0.002) { 
-          totalGas += parseInt(await openMath.lnMG(tokens(x))); // todo: measure ln, not lnUpper
+          totalGas += parseInt((await openMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -136,7 +136,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1.074607828321317497; x += 0.0002) {
-          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -147,7 +147,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1.074607828321317497; x < 100; x += 0.2) {
-          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -158,7 +158,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 100; x < 10000; x += 21.457) {
-          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -169,7 +169,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1e4; x < 1e6; x += 2012.3) {
-          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -180,7 +180,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1e6; x < 1e8; x += 202463) {
-          totalGas += parseInt(await openMath.sqrtMG(tokens(x)));
+          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -192,7 +192,7 @@ describe("OpenMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1000000; x += 2234) {
-          totalGas += parseInt(await openMath.sqrtMG(tokens(1 / x)));
+          totalGas += parseInt((await openMath.sqrtMG(tokens(1 / x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -443,126 +443,13 @@ describe("OpenMath (SOL and JS)", function () {
     });
 
     describe("erf", function () {
-      it("erf function [0, 0.35] polynomial", async function () {
-        const xs = [], ys = [];
-        for (let x = 0; x <= 0.351; x += 0.01) {
-          xs.push(x);
-
-          // prepare ys
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erf(x);
-          const y = (actualJS - expected) * 1e10;
-          ys.push(y);
-        }
-
-        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
-        // console.log(b1, b2, b3, b4, b5);
-
-        // print 
-        // console.log("x, y actual, y fit")
-        for (let x = 0; x <= 0.351; x += 0.01) {
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erf(x);
-          const y = (actualJS - expected) * 1e10;
-
-          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
-
-          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
-        }
-      });
-
-      it("erf function [0.35, 1.13] polynomial", async function () {
-        const xs = [], ys = [];
-        for (let x = 0.35; x <= 1.141; x += 0.01) {
-          xs.push(x);
-
-          // prepare ys
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erfTrain(x);
-          const y = (actualJS - expected) * 1e10;
-          ys.push(y);
-        }
-
-        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
-        // console.log(b1, b2, b3, b4, b5);
-
-        // print 
-        // console.log("x, y actual, y fit")
-        for (let x = 0.35; x <= 1.131; x += 0.01) {
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erfTrain(x);
-          const y = (actualJS - expected) * 1e10;
-
-          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
-
-          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
-        }
-      });
-
-      it("erf function [1.13, 2.8] polynomial", async function () {
-        const xs = [], ys = [];
-        for (let x = 1.13; x <= 2.81; x += 0.01) {
-          xs.push(x);
-
-          // prepare ys
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erfTrain(x);
-          const y = (actualJS - expected) * 1e10;
-          ys.push(y);
-        }
-
-        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg1(xs, ys);
-        // console.log(b1, b2, b3, b4, b5);
-
-        // print 
-        // console.log("x, y actual, y fit")
-        for (let x = 1.13; x <= 2.81; x += 0.01) {
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erfTrain(x);
-          const y = (actualJS - expected) * 1e10;
-
-          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
-
-          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
-        }
-      });
-
-      it("erf function [2.8, 3.5] polynomial", async function () {
-
-        const xs = [], ys = [];
-        for (let x = 2.8; x <= 3.5; x += 0.01) {
-          xs.push(x);
-
-          // prepare ys
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erfTrain(x);
-          const y = (actualJS - expected) * 1e10;
-          ys.push(y);
-        }
-
-        const {b1, b2, b3, b4, b5} = blackScholesJS.interpolateSeg4(xs, ys);
-        // console.log(b1, b2, b3, b4, b5);
-
-        // print 
-        // console.log("x, y actual, y fit")
-        for (let x = 2.8; x <= 3.5; x += 0.01) {
-          const expected = erf(x);
-          const actualJS = blackScholesJS.erfTrain(x);
-          const y = (actualJS - expected) * 1e10;
-
-          const yFit = b1 * x + b2 * x ** 2 + b3 * x ** 3/* + b4 * x ** 4/* + b5 * x ** 5*/;
-
-          // console.log(x + ",",  y.toFixed(10) + ",", yFit.toFixed(10) + ", diff: " + (y - yFit).toFixed(10));
-        }
-      });
-
       it("erf single value in [0, 0.35]", async function () {
         const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
 
         const x = 0.123;
         const expected = erf(x);
 
-        const actualJS = blackScholesJS.erfWest(x);
+        const actualJS = blackScholesJS.erf(x);
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
@@ -729,7 +616,7 @@ describe("OpenMath (SOL and JS)", function () {
     });
   });
 
-    duoTest && describe.only("compare", function () {
+    duoTest && describe("compare", function () {
       it("exp", async function () {
         const { openMath, prbMath } = await loadFixture(deployCompare);
 
@@ -798,7 +685,7 @@ describe("OpenMath (SOL and JS)", function () {
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
-      it.only("sqrt", async function () {
+      it("sqrt", async function () {
         const { openMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;

@@ -1,5 +1,3 @@
-import { levenbergMarquardt } from 'ml-levenberg-marquardt';
-
 export const SECONDS_IN_YEAR = 31536000;
 
 // limits
@@ -7,44 +5,11 @@ export const MIN_SPOT = 0.000001;             // 1 milionth of a $
 export const MAX_SPOT = 1e15;                 // 1 quadrillion $
 export const MAX_STRIKE_SPOT_RATIO = 5;  
 export const MAX_EXPIRATION = 63072000;       // 2 years
-export const MAX_VOLATILITY = 4;              // 400% volatility
 export const MAX_RATE = 4;                    // 400% risk-free rate
 
 export const E_TO_0_03125 = 1.031743407499103;          // e ^ 0.03125
 export const E = 2.7182818284590452354;                 // e
 export const E_TO_32 = 78962960182680.695160978022635;  // e ^ 32
-
-const log = false;
-
-function quadraticFit([a, b]) {
-  return (x) => a * x * x + b * x;
-}
-
-function cubeFit([a, b, c]) {
-  return (x) => a * (1 - x ** 3) + b * (1 - x ** 2) + c * (1 - x);
-}
-
-function fourthOrderFit([a, b, c, d]) {
-  return (x) => a * (1 - x ** 4) + b * (1 - x ** 3) + c * (1 - x ** 2) + d * (1 - x);
-}
-
-function erfCorrectionFit([b1, b2, b3, b4, b5]) {
-  // Approximation of error function
-  // const t = 1/(1+0.3275911*x);
-  
-  // const poly = b1 * t + b2 * t ** 2 + b3 * t ** 3 + b4 * t ** 4 + b5 * t ** 5;
-  return (x) => 1 - (b1 * (1/(1+0.3275911*x)) + b2 * (1/(1+0.3275911*x)) ** 2 + b3 * (1/(1+0.3275911*x)) ** 3 + b4 * (1/(1+0.3275911*x)) ** 4 + b5 * (1/(1+0.3275911*x)) ** 5) * Math.exp(-x * x);
-}
-
-function erfCorrectionFitSeg4([b1, b2, b3]) {
-  // Approximation of error function
-  return (x) => b1 * x + b2 * x ** 2 + b3 * x ** 3/* + b4 * x ** 4/* + b5 * x ** 5*/;
-}
-
-function erfCorrectionFitSeg1([b1, b2, b3, b4, b5]) {
-  // Approximation of error function
-  return (x) => b1 * x + b2 * x ** 2 + b3 * x ** 3 + b4 * x ** 4 + b5 * x ** 5;
-}
 
 export class BlackScholesNUMJS {
   
@@ -72,11 +37,6 @@ export class BlackScholesNUMJS {
     const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
     const d2 = d1 - scaledVol;
     const discountedStrike = strike / this.exp(scaledRate);
-
-    log && console.log("JS volAdj:", scaledVol);
-    log && console.log("JS d1:", d1);
-    log && console.log("JS d2:", d2);
-    log && console.log("JS discountedStrike:", discountedStrike);
 
     const spotNd1 = spot * this.stdNormCDF(d1);                                // spot * N(d1)
     const strikeNd2 = discountedStrike * this.stdNormCDF(d2);                  // strike * N(d2)
@@ -276,26 +236,10 @@ export class BlackScholesNUMJS {
   
   // using erf function
   stdNormCDF(x) {
-    return 0.5 * (1 + this.erfWest(x * 0.707106781186548)); // 1 / sqrt(2)
+    return 0.5 * (1 + this.erf(x * 0.707106781186548)); // 1 / sqrt(2)
   }
 
-  // erf maximum error: 1.5×10−7 - https://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions
-  erf(z) {
-    // console.log("JS z:", z);
-    // Approximation of error function
-    const t = 1 / (1 + 0.3275911 * Math.abs(z));
-    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
-    const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
-    const approx = 1 - poly * this.exp(-z * z);
-
-    // error correction
-    const correction = this.errorCorrection(Math.abs(z));
-    // console.log("JS approx:", approx, "correction:", correction, "x", z);
-    
-    return z >= 0 ? (approx + correction) : -(approx + correction);
-  }
-
-  erfWest(x) {
+  erf(x) {
     let xAbs = Math.abs(x) * Math.SQRT2;
     let c = 0;
     
@@ -320,72 +264,6 @@ export class BlackScholesNUMJS {
     return x > 0 ? 1 - 2 * c : 2 * c - 1;
   }
 
-  erfTrain(z) {
-    // console.log("JS z:", z);
-    // Approximation of error function
-    const t = 1 / (1 + 0.3275911 * Math.abs(z));
-    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
-    const poly = a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5;
-    const approx = 1 - poly * this.exp(-z * z);
-
-    // error correction
-    const correction = 0; //this.errorCorrection(Math.abs(z));
-    // console.log("JS approx:", approx, "correction:", correction, "x", z);
-    
-    return z >= 0 ? (approx + correction) : -(approx + correction);
-  }
-
-  errorCorrection(x) {
-    if (x < 0.35) {
-      // polynomial approximation is better than sine approximation
-      // return -1380 * (Math.sin(1 / ((x / 0.35 + 1.95) / 6.48) ** 2 + 4.6)) / 1e10 - 25e-10;
-      // -1402 * (Math.sin(1 / (x * 3/7 + 0.3) ** 2 + 4.52)) / 1e10; this one is 1.41e-8
-      // console.log("JS: ", -(70191.75526562665 * x - 1103772.051336337 * x ** 2 + 5648311.047693772 * x ** 3 - 12219187.046697173 * x ** 4 + 9868497.924729755 * x ** 5) / 1e10);
-
-      // console.log("JS: 70191.75526562665         :", 70191.75526562665);
-      // console.log("JS: 1103772.051336337 * x     :", 1103772.051336337 * x);
-      // console.log("JS: 5648311.047693772 * x ** 2:", 5648311.047693772 * x ** 2);
-      // console.log("JS: 12219187.04669717 * x ** 3:", 12219187.046697173 * x ** 3);
-      // console.log("JS: 9868497.924729755 * x ** 4:", 9868497.924729755 * x ** 4);
-
-      // console.log("JS: x * (1e9 - rest):", x * (1e9 - 70191.75526562665 + 1103772.051336337 * x - 5648311.047693772 * x ** 2 + 12219187.046697173 * x ** 3 - 9868497.924729755 * x ** 4));
-
-
-
-      // console.log("JS: x * rest:", x * (70191.75526562665 - 1103772.051336337 * x + 5648311.047693772 * x ** 2 - 12219187.046697173 * x ** 3 + 9868497.924729755 * x ** 4));
-      // console.log("JS: x * (1e10 - rest):", x * (1e10 - 70191.75526562665 + 1103772.051336337 * x - 5648311.047693772 * x ** 2 + 12219187.046697173 * x ** 3 - 9868497.924729755 * x ** 4));
-
-
-      return -x * (70191.75526562665 - 1103772.051336337 * x + 5648311.047693772 * x ** 2 - 12219187.046697173 * x ** 3 + 9868497.924729755 * x ** 4) / 1e10;
-    }
-
-    if (x < 1.13) {
-      // sine is better at least 3x than 5th degree polynomial
-      // console.log("JS: ((x - 0.36) / 18 + 0.22)                :", ((x - 0.36) / 18 + 0.22));
-      // console.log("JS: 1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9 :", 1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9);
-      // console.log("JS: sin(rest) :", Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9));
-      // console.log("JS: final :", 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10);
-
-      return 1392 * Math.sin(1 / ((x - 0.36) / 18 + 0.22) ** 2 - 1.9) / 1e10;
-      // return -(-73069.13680056382 * x + 439609.60836822016 * x ** 2 - 897868.5727256425 * x ** 3 + 756729.5953433764 * x ** 4 - 226432.89952299988 * x ** 5) / 1e10;
-    }
-
-    if (x < 2.8) {
-      // sine is much better than polynomial
-      // console.log("JS: 3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22     :", 3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22);
-
-      return 1385 * (Math.sin(3.14 * 2 * ((3 - x) ** 2 / 3.6) + 0.22)) / 1e10 - 35e-10;
-    }
-
-    if (x < 3.5) {
-      // console.log("JS: 3394.1519970916343 * x - 1993.3958751551356 * x ** 2 + 293.1025482521442 * x ** 3) / 1e10                :", (3394.1519970916343 * x - 1993.3958751551356 * x ** 2 + 293.1025482521442 * x ** 3) / 1e10);
-
-      return (3394.1519970916343 * x - 1993.3958751551356 * x ** 2 + 293.1025482521442 * x ** 3) / 1e10;
-    }
-
-    return 0;
-  }
-
   // helper function used only for ln(x) calculation, used only integers
   getBaseLog(x, y) {
     return Math.log(y) / Math.log(x);
@@ -402,82 +280,5 @@ export class BlackScholesNUMJS {
   
     // x is always >= 100 
     return 10;
-  }
-
-  // works with positive numbers
-  sin(x) {
-    // modulo arithmetic
-    const x1 = x % (2 * Math.PI);
-
-    // using Bhaskara I's sine approximation formula
-    if (x1 <= Math.PI) {
-      return 4 * x1 * (Math.PI - x1) / (1.25 * Math.PI ** 2 - x1 * (Math.PI - x1));
-    }
-
-    const x2 = x1 - Math.PI;
-    return -4 * x2 * (Math.PI - x2) / (1.25 * Math.PI ** 2 - x2 * (Math.PI - x2));
-  }
-
-  interpolate(x1, y1) {
-    const initialValuesCube = [0, 0, 0];
-    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, cubeFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
-    const a = resultCube.parameterValues[0];
-    const b = resultCube.parameterValues[1];
-    const c = resultCube.parameterValues[2];
-
-    return { a, b, c };
-  }
-
-  interpolate4(x1, y1) {
-    const initialValuesCube = [0, 0, 0, 0];
-    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, fourthOrderFit, { initialValues: initialValuesCube, maxIterations: 200, errorTolerance: 1e-10 });
-    const a = resultCube.parameterValues[0];
-    const b = resultCube.parameterValues[1];
-    const c = resultCube.parameterValues[2];
-    const d = resultCube.parameterValues[3];
-
-    return { a, b, c, d };
-  }
-
-  interpolate5(x1, y1) {
-    const initialValuesCube = [0, 0, 0, 0, 0];
-    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, erfCorrectionFit, { initialValues: initialValuesCube, maxIterations: 2000, errorTolerance: 1e-10 });
-    const b1 = resultCube.parameterValues[0];
-    const b2 = resultCube.parameterValues[1];
-    const b3 = resultCube.parameterValues[2];
-    const b4 = resultCube.parameterValues[3];
-    const b5 = resultCube.parameterValues[4];
-
-    console.log(resultCube);
-
-    return { b1, b2, b3, b4, b5 };
-  }
-
-  interpolateSeg1(x1, y1) {
-    const initialValuesCube = [0, 0, 0, 0, 0];
-    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, erfCorrectionFitSeg1, { initialValues: initialValuesCube, maxIterations: 2000, errorTolerance: 1e-10 });
-    const b1 = resultCube.parameterValues[0];
-    const b2 = resultCube.parameterValues[1];
-    const b3 = resultCube.parameterValues[2];
-    const b4 = resultCube.parameterValues[3];
-    const b5 = resultCube.parameterValues[4];
-
-    // console.log(resultCube);
-
-    return { b1, b2, b3, b4, b5 };
-  }
-
-  interpolateSeg4(x1, y1) {
-    const initialValuesCube = [0, 0, 0];
-    let resultCube = levenbergMarquardt({ x: x1, y: y1 }, erfCorrectionFitSeg4, { initialValues: initialValuesCube, maxIterations: 2000, errorTolerance: 1e-10 });
-    const b1 = resultCube.parameterValues[0];
-    const b2 = resultCube.parameterValues[1];
-    const b3 = resultCube.parameterValues[2];
-    // const b4 = resultCube.parameterValues[3];
-    // const b5 = resultCube.parameterValues[4];
-
-    // console.log(resultCube);
-
-    return { b1, b2, b3/*, b4/*, b5*/ };
   }
 }

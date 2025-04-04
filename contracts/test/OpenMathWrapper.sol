@@ -55,7 +55,7 @@ contract OpenMathWrapper {
         return (result, startGas - endGas);
     }
 
-    function expPositiveMG(uint256 x) external view returns (uint256) {
+    function expPositiveMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 result;
         uint256 startGas;
         uint256 endGas;
@@ -66,7 +66,7 @@ contract OpenMathWrapper {
 
         endGas = gasleft();
 
-        return startGas - endGas;
+        return (result, startGas - endGas);
     }
 
     function lnMG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
