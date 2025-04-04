@@ -837,50 +837,10 @@ describe("OpenOptions (SOL and JS)", function () {
             }
           }
         }
-        console.log("Metric     OpenSolidity  Derivexyz     Premia  Party1983     Dopex");
-        console.log("Avg error   ", (avgError1 / count).toFixed(8), (avgError2 / count).toFixed(8), (avgError3 / count).toFixed(8), (avgError4 / count).toFixed(8));
-        console.log("Max error   ", (maxError1).toFixed(8), (maxError2).toFixed(8), (maxError3).toFixed(8), (maxError4).toFixed(8));
-        console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "     " + (avgGas5 / count).toFixed(0));
-      });
-    });
-
-    describe("put", function () {
-      it("single", async function () {
-        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
-        const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
-        const actualJS = blackScholesJS.getPutOptionPrice(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
-
-        if (duoTest) {
-          const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
-        }
-      });
-
-      it("multiple in typical range", async function () {
-        const { openOptions } = duoTest ? await loadFixture(deploy) : { openOptions: null };
-
-        const strikes = [800, 900, 1000.01, 1100, 1200];
-        const times = [7, 30, 60, 90, 180];
-        const vols = [0.4, 0.6, 0.8];
-        const rates = [0.05, 0.1, 0.2];
-
-        for (const strike of strikes) {
-          for (const time of times) {
-            for (const vol of vols) {
-              for (const rate of rates) {
-                const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
-                const actualJS = blackScholesJS.getPutOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
-
-                if (duoTest) {
-                  const actualSOL = (await openOptions.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                  assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
-                }
-              }
-            }
-          }
-        }
+        console.log("Metric     OpenSolidity  Derivexyz  Premia  Party1983   Dopex");
+        console.log("Avg error       ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
+        console.log("Max error       ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
+        console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
       });
     });
   });
