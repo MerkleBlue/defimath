@@ -43,6 +43,16 @@ library OpenMath {
         }
     }
 
+    function log10(uint256 x) internal pure returns (int256) {
+        unchecked {
+            if (x >= 1e18) {
+                return int256(lnUpper(x)) * 1e18 / 2302585092994045684;
+            }
+
+            return -int256(lnUpper(1e36 / x)) * 1e18 / 2302585092994045684;
+        }
+    }
+
     function sqrt(uint256 x) internal pure returns (uint256) {
         unchecked {
             if (x >= 1e18) {

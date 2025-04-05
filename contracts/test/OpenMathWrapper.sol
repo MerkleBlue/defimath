@@ -16,6 +16,10 @@ contract OpenMathWrapper {
     function log2(uint256 x) external pure returns (int256) {
         return OpenMath.log2(x);
     }
+
+    function log10(uint256 x) external pure returns (int256) {
+        return OpenMath.log10(x);
+    }
     
     function sqrt(uint256 x) external pure returns (uint256) {
         return OpenMath.sqrt(x);
