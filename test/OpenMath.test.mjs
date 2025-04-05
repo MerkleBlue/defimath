@@ -350,6 +350,102 @@ describe("OpenMath (SOL and JS)", function () {
       });
     });
 
+    describe.only("log2", function () {
+      // todo: test all limits like 1.090507732665257659
+      it("log2 upper [1, 1.0905]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          const expected = Math.log2(x);
+          const actualJS = blackScholesJS.log2(x);
+          assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
+          }
+        }
+      });
+
+      it("log2 upper [1.0905, 16]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          const expected = Math.log2(x);
+          const actualJS = blackScholesJS.log2(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+          }
+        }
+      });
+
+      it("log2 lower [0.0625, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0.0625; x < 1; x += 0.001) { 
+          const expected = Math.log2(x);
+          const actualJS = blackScholesJS.log2(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+          }
+        }
+      });
+    });
+
+    describe.only("log10", function () {
+      // todo: test all limits like 1.090507732665257659
+      it.only("log10 upper [1, 1.0905]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          const expected = Math.log10(x);
+          const actualJS = blackScholesJS.log2(x);
+          assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
+
+          // if (duoTest) {
+          //   const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+          //   assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
+          // }
+        }
+      });
+
+      it("log2 upper [1.0905, 16]", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          const expected = Math.log2(x);
+          const actualJS = blackScholesJS.log2(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+          }
+        }
+      });
+
+      it("log2 lower [0.0625, 1)", async function () {
+        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+
+        for (let x = 0.0625; x < 1; x += 0.001) { 
+          const expected = Math.log2(x);
+          const actualJS = blackScholesJS.log2(x);
+          assertRelativeBelow(actualJS, expected, 0.000000000150);
+
+          if (duoTest) {
+            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+          }
+        }
+      });
+    });
+
     describe("sqrt", function () {
       // todo: test all limits like 1.04427
       it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497

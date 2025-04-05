@@ -159,6 +159,22 @@ export class BlackScholesNUMJS {
     return -this.lnUpper(1 / x)
   }
 
+  log2(x) {
+    if (x >= 1) {
+      return this.lnUpper(x) / 0.69314718055994530942;
+    }
+
+    return -this.lnUpper(1 / x) / 0.69314718055994530942
+  }
+
+  log10(x) {
+    if (x >= 1) {
+      return this.lnUpper(x) / 2.302585092994046;
+    }
+
+    return -this.lnUpper(1 / x) / 2.302585092994046
+  }
+
   // x: [1, 16]
   lnUpper(x) {
     // handle special case where x = 1
