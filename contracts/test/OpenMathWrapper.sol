@@ -78,21 +78,34 @@ contract OpenMathWrapper {
     }
 
     function lnMG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
-        uint256 resultUint256;
-        int256 resultInt256;
         uint256 startGas;
         uint256 endGas;
-        if (x >= 1e18) {
-            startGas = gasleft();
-            resultUint256 = OpenMath.lnUpper(x);
-            endGas = gasleft();
-            y = int256(resultUint256);
-        } else {
-            startGas = gasleft();
-            resultInt256 = OpenMath.ln(x);
-            endGas = gasleft();
-            y = resultInt256;
-        }
+
+        startGas = gasleft();
+        y = OpenMath.ln(x);
+        endGas = gasleft();
+        
+        return (y, startGas - endGas);
+    }
+
+    function log2MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = OpenMath.log2(x);
+        endGas = gasleft();
+        
+        return (y, startGas - endGas);
+    }
+
+    function log10MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = OpenMath.log10(x);
+        endGas = gasleft();
         
         return (y, startGas - endGas);
     }

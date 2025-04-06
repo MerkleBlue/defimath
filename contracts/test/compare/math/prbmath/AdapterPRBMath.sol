@@ -16,8 +16,7 @@ contract AdapterPRBMath {
 
         endGas = gasleft();
         
-        gasUsed = startGas - endGas;
-        return (uint256(result.unwrap()), gasUsed);
+        return (uint256(result.unwrap()), startGas - endGas);
     }
 
     function lnMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
@@ -31,8 +30,7 @@ contract AdapterPRBMath {
 
         endGas = gasleft();
         
-        gasUsed = startGas - endGas;
-        return (result.unwrap(), gasUsed);
+        return (result.unwrap(), startGas - endGas);
     }
 
     function log2MG(int256 x) external view returns (int256 y, uint256 gasUsed) {
@@ -46,8 +44,7 @@ contract AdapterPRBMath {
 
         endGas = gasleft();
         
-        gasUsed = startGas - endGas;
-        return (result.unwrap(), gasUsed);
+        return (result.unwrap(), startGas - endGas);
     }
 
     function log10MG(int256 x) external view returns (int256 y, uint256 gasUsed) {
@@ -61,8 +58,7 @@ contract AdapterPRBMath {
 
         endGas = gasleft();
         
-        gasUsed = startGas - endGas;
-        return (result.unwrap(), gasUsed);
+        return (result.unwrap(), startGas - endGas);
     }
 
     function sqrtMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
