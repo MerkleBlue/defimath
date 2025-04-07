@@ -13,7 +13,7 @@ To use DeFiMath in your project, you can import the library into your Solidity c
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "defimath/derivatives/OpenOptions.sol";
+import "defimath/derivatives/Options.sol";
 ```
 To use the library, you can call the functions provided by the library directly in your Solidity contract. For example, to calculate the call option price using the Black-Scholes formula, you can use the following code:
 
@@ -31,6 +31,20 @@ contract OptionsExchange {
 }
 ```
 # Features
+
+# Math
+The following table compares performance of DeFiMath with other implementations of math functions. It plots maximum relative error compared to known JS implementation.  
+
+| Function      |  [DeFiMath](https://github.com/MerkleBlue/defimath) |  [PRBMath](https://github.com/PaulRBerg/prb-math) |     [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity) |  
+| :------------ | -------: | -------: | -------: |
+| exp           | 4.0e-9   | 1.9e-12  |   0.2    |
+| ln            | 7.3e-11  | 1.3e-12  |   0.2    |
+| log2          | 7.3e-11  | 1.3e-12  |   0.2    |
+| log10         | 7.3e-11  | 1.3e-12  |   0.2    |
+| sqrt          | 7.1e-11  | 2.6e-12  |   0.2    |
+| stdNormCDF    |          |     n/a  |   n/a    |
+| erf           |          |     n/a  |   n/a    |
+
 
 # Derivatives
 
