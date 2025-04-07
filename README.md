@@ -35,7 +35,7 @@ contract OptionsExchange {
 # Math
 The following table compares performance of DeFiMath with other implementations of math functions. It plots maximum relative error compared to known JS implementation.  
 
-| Function      |  [DeFiMath](https://github.com/MerkleBlue/defimath) |  [PRBMath](https://github.com/PaulRBerg/prb-math) |     [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity) |  
+| Function      |  DeFiMath | PRBMath | ABDK     |  
 | :------------ | -------: | -------: | -------: |
 | exp           | 4.0e-9   | 1.9e-12  |   0.2    |
 | ln            | 7.3e-11  | 1.3e-12  |   0.2    |
@@ -81,13 +81,21 @@ Calculating call or put option price costs around 4k gas on average (not account
 
 The following table compares performance of DeFiMath with other implementations of Black-Scholes formula when a call option is called over a typical range of parameters. 
 
-| Metric    |  [DeFiMath](https://github.com/MerkleBlue/defimath) |  [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol) |     [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol) |   [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol) |   [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol) |
+| Metric        |  DeFiMath     |  Derivexyz | Premia     | Party1983   | Dopex   |
 | :------------ | ------------: | ---------: | ---------: | ----------: | ------: | 
 | Avg abs error |  0.00000000   | 0.00000000 | 0.03957955 |  5.69158932 |         |
 | Max abs error |  0.00000002   | 0.00000000 | 0.17114025 | 37.66781134 |         |
 | Avg gas   |        4118   |      30226 |      20635 |       40010 |   95458 |
 
+# Credits
 
+The following libraries were used for comparison:
+ - [PRBMath](https://github.com/PaulRBerg/prb-math)
+ - [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity)
+ - [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol)
+ - [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol)
+ - [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol)
+ - [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol)
 # License
 
 DeFiMath project is released under the MIT License.
