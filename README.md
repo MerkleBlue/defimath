@@ -35,13 +35,13 @@ contract OptionsExchange {
 # Math
 The following table compares performance of DeFiMath with other implementations of math functions. It plots maximum relative error compared to known JS implementation.  
 
-| Function      |  DeFiMath | PRBMath | ABDK     |  
+| Function      |  DeFiMath | PRBMath | ABDKQuad |  
 | :------------ | -------: | -------: | -------: |
-| exp           | 4.0e-9   | 1.9e-12  |   0.2    |
-| ln            | 7.3e-11  | 1.3e-12  |   0.2    |
-| log2          | 7.3e-11  | 1.3e-12  |   0.2    |
-| log10         | 7.3e-11  | 1.3e-12  |   0.2    |
-| sqrt          | 7.1e-11  | 2.6e-12  |   0.2    |
+| exp           | 4.0e-9   | 1.9e-12  | 1.9e-12  |
+| ln            | 7.3e-11  | 1.3e-12  | 1.6e-12  |
+| log2          | 7.3e-11  | 1.3e-12  | 1.6e-12  |
+| log10         | 7.3e-11  | 1.3e-12  |   n/a    |
+| sqrt          | 7.1e-11  | 2.6e-12  | 2.6e-12  |
 | stdNormCDF    |          |     n/a  |   n/a    |
 | erf           |          |     n/a  |   n/a    |
 
