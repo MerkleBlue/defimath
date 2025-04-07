@@ -1,24 +1,24 @@
-# OpenSolidity [![License: MIT][license-badge]][license]
+# DeFiMath [![License: MIT][license-badge]][license]
 
 [license]: https://opensource.org/licenses/MIT
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
 
-OpenSolidity is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
+DeFiMath is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
 
 # Usage
 The library is designed to be used in Ethereum smart contracts. It provides a set of mathematical functions and utilities that can be easily integrated into your Solidity projects.
-To use OpenSolidity in your project, you can import the library into your Solidity contract as follows:
+To use DeFiMath in your project, you can import the library into your Solidity contract as follows:
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "open-solidity/derivatives/OpenOptions.sol";
+import "defimath/derivatives/OpenOptions.sol";
 ```
 To use the library, you can call the functions provided by the library directly in your Solidity contract. For example, to calculate the call option price using the Black-Scholes formula, you can use the following code:
 
 ```solidity
-contract BlackScholesCaller {
+contract OptionsExchange {
     function getCallOptionPrice(
         uint128 spot,
         uint128 strike,
@@ -26,7 +26,7 @@ contract BlackScholesCaller {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BlackScholesNUM.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        return DeFiMathOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 }
 ```
@@ -65,9 +65,9 @@ Maximum absolute error when call or put option is calculated is < $0.0000002 for
 
 Calculating call or put option price costs around 4k gas on average (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.  
 
-The following table compares performance of OpenSolidity with other implementations of Black-Scholes formula when a call option is called over a typical range of parameters. 
+The following table compares performance of DeFiMath with other implementations of Black-Scholes formula when a call option is called over a typical range of parameters. 
 
-| Metric    |  [OpenSolidity](https://github.com/MerkleBlue/open-solidity) |  [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol) |     [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol) |   [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol) |   [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol) |
+| Metric    |  [DeFiMath](https://github.com/MerkleBlue/defimath) |  [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol) |     [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol) |   [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol) |   [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol) |
 | :------------ | ------------: | ---------: | ---------: | ----------: | ------: | 
 | Avg abs error |  0.00000000   | 0.00000000 | 0.03957955 |  5.69158932 |         |
 | Max abs error |  0.00000002   | 0.00000000 | 0.17114025 | 37.66781134 |         |
@@ -76,4 +76,4 @@ The following table compares performance of OpenSolidity with other implementati
 
 # License
 
-OpenSolidity is released under the MIT License.
+DeFiMath project is released under the MIT License.

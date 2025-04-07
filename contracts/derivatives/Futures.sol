@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../math/OpenMath.sol";
+import "../math/Math.sol";
 
-library OpenFutures {
+library DeFiMathFutures {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
@@ -35,7 +35,7 @@ library OpenFutures {
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
-            return uint256(spot) * OpenMath.expPositive(scaledRate) / 1e18;
+            return uint256(spot) * DeFiMath.expPositive(scaledRate) / 1e18;
         }
     }
 }

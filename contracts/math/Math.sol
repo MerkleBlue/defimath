@@ -7,11 +7,11 @@ import "hardhat/console.sol";
 /**
  * @title Math library for common math functions like exponential, logarithm, 
  * square root, error function, standard normal distribution, etc..
- * @author OpenSolidity
+ * @author DeFiMath
  * @notice This library provides a set of mathematical functions for use in Solidity smart contracts.
  * @dev The functions are designed to be gas-efficient and to avoid overflows and underflows.
  */
-library OpenMath {
+library DeFiMath {
 
     function exp(int256 x) internal pure returns (uint256) {
         unchecked {

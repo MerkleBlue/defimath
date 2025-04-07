@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../derivatives/OpenOptions.sol";
+import "../derivatives/Options.sol";
 
-contract OpenOptionsWrapper {
+contract OptionsWrapper {
 
     function getCallOptionPrice(
         uint128 spot,
@@ -12,7 +12,7 @@ contract OpenOptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return OpenOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        return DeFiMathOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 
     function getPutOptionPrice(
@@ -22,7 +22,7 @@ contract OpenOptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return OpenOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        return DeFiMathOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 
     function getCallOptionPriceMG(
@@ -37,7 +37,7 @@ contract OpenOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = OpenOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        result = DeFiMathOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
 
         endGas = gasleft();
         
@@ -56,7 +56,7 @@ contract OpenOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = OpenOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        result = DeFiMathOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
 
         endGas = gasleft();
         

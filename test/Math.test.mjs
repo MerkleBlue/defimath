@@ -10,28 +10,28 @@ const duoTest = true;
 const MAX_ERF_ABS_ERROR = 4.5e-9; // OLD: 1.4e-7; // with error correction: 4.5e-9
 const MAX_CDF_ABS_ERROR = 1.8e-11; // OLD: 7e-8; // with error correction: 2.3e-9
 
-describe("OpenMath (SOL and JS)", function () {
+describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
 
   async function deploy() {
     const [owner] = await ethers.getSigners();
 
-    const OpenMathWrapper = await ethers.getContractFactory("OpenMathWrapper");
-    const openMath = await OpenMathWrapper.deploy();
+    const MathWrapper = await ethers.getContractFactory("MathWrapper");
+    const deFiMath = await MathWrapper.deploy();
 
-    return { owner, openMath };
+    return { owner, deFiMath };
   }
 
   async function deployCompare() {
     const [owner] = await ethers.getSigners();
 
-    const OpenMathWrapper = await ethers.getContractFactory("OpenMathWrapper");
-    const openMath = await OpenMathWrapper.deploy();
+    const MathWrapper = await ethers.getContractFactory("MathWrapper");
+    const deFiMath = await MathWrapper.deploy();
 
     const AdapterPRBMath = await ethers.getContractFactory("AdapterPRBMath");
     const prbMath = await AdapterPRBMath.deploy();
 
-    return { owner, openMath, prbMath };
+    return { owner, deFiMath, prbMath };
   }
 
   // before all tests, called once
@@ -42,53 +42,53 @@ describe("OpenMath (SOL and JS)", function () {
   duoTest && describe("performance", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         let totalGas = 0, count = 0;
         for (let x = 0; x < 0.03125; x += 0.0003) { 
-          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
       it("exp positive [0.03125, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         let totalGas = 0, count = 0;
         for (let x = 0.03125; x < 1; x += 0.0020125) { 
-          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp positive [1, 32)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 32; x += 0.06200125) { 
-          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp positive [32, 50)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 32; x < 50; x += 0.25600125) { 
-          totalGas += parseInt((await openMath.expPositiveMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
       it("exp negative [-50, -0.05]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 0.05; x <= 50; x += 0.1 ) { 
-          totalGas += parseInt((await openMath.expMG(tokens(-x))).gasUsed);
+          totalGas += parseInt((await deFiMath.expMG(tokens(-x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -97,33 +97,33 @@ describe("OpenMath (SOL and JS)", function () {
 
     describe("ln", function () {
       it("ln upper [1, 1.0905]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
-          totalGas += parseInt((await openMath.lnMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("ln upper [1.0905, 16]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          totalGas += parseInt((await openMath.lnMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("ln lower [0.0625, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 0.0625; x < 1; x += 0.002) { 
-          totalGas += parseInt((await openMath.lnMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -132,55 +132,55 @@ describe("OpenMath (SOL and JS)", function () {
 
     describe("sqrt", function () {
       it("sqrt upper [1, 1.0746]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1.074607828321317497; x += 0.0002) {
-          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [1.04427, 100)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1.074607828321317497; x < 100; x += 0.2) {
-          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [100, 10000)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 100; x < 10000; x += 21.457) {
-          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [1e4, 1e6)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1e4; x < 1e6; x += 2012.3) {
-          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
       it("sqrt upper [1e6, 1e8)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1e6; x < 1e8; x += 202463) {
-          totalGas += parseInt((await openMath.sqrtMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -188,11 +188,11 @@ describe("OpenMath (SOL and JS)", function () {
 
       // todo: tests for 1 / (1-100, 100-10000, 10000-1000000)
       it("sqrt lower [1e-6, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 1; x < 1000000; x += 2234) {
-          totalGas += parseInt((await openMath.sqrtMG(tokens(1 / x))).gasUsed);
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(1 / x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
@@ -201,22 +201,22 @@ describe("OpenMath (SOL and JS)", function () {
 
     describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         const d1 = 0.6100358074173348;
 
-        totalGas += parseInt(await openMath.stdNormCDFMG(tokens(d1)));
+        totalGas += parseInt(await deFiMath.stdNormCDFMG(tokens(d1)));
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
       it("stdNormCDF multiple", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let d1 = -2; d1 < 2; d1 += 0.01234) {
-          totalGas += parseInt(await openMath.stdNormCDFMG(tokens(d1)));
+          totalGas += parseInt(await deFiMath.stdNormCDFMG(tokens(d1)));
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
@@ -227,7 +227,7 @@ describe("OpenMath (SOL and JS)", function () {
   describe("functionality", function () {
     describe("exp", function () {
       it("exp positive < 0.03125", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0; x < 0.03125; x += 0.0003) { 
           const expected = Math.exp(x);
@@ -235,14 +235,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000050);
 
           if (duoTest) {
-            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
           }
         }
       });
 
       it("exp positive [0.03125, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.03125; x < 1; x += 0.0010125) { 
           const expected = Math.exp(x);
@@ -250,14 +250,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000110);
 
           if (duoTest) {
-            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000110);
           }
         }
       });
 
       it("exp positive [1, 32)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 32; x += 0.03200125) { 
           const expected = Math.exp(x);
@@ -265,14 +265,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000004200);
 
           if (duoTest) {
-            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000004200);
           }
         }
       });
 
       it("exp positive [32, 50)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 32; x < 50; x += 0.25600125) { 
           const expected = Math.exp(x);
@@ -280,14 +280,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000004200);
 
           if (duoTest) {
-            const actualSOL = (await openMath.expPositive(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000004200);
           }
         }
       });
 
       it("exp negative [-50, -0.05]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.05; x <= 50; x += 0.05 ) { 
           const expected = Math.exp(-x);
@@ -295,7 +295,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000042);
 
           if (duoTest) {
-            const actualSOL = (await openMath.exp(tokens(-x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, 0.000000000042);
           }
         }
@@ -305,7 +305,7 @@ describe("OpenMath (SOL and JS)", function () {
     describe("ln", function () {
       // todo: test all limits like 1.090507732665257659
       it("ln upper [1, 1.0905]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
           const expected = Math.log(x);
@@ -313,14 +313,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
 
           if (duoTest) {
-            const actualSOL = (await openMath.ln(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
             assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
           }
         }
       });
 
       it("ln upper [1.0905, 16]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
           const expected = Math.log(x);
@@ -328,14 +328,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           if (duoTest) {
-            const actualSOL = (await openMath.ln(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000150);
           }
         }
       });
 
       it("ln lower [0.0625, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.0625; x < 1; x += 0.001) { 
           const expected = Math.log(x);
@@ -343,7 +343,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           if (duoTest) {
-            const actualSOL = (await openMath.ln(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000150);
           }
         }
@@ -353,7 +353,7 @@ describe("OpenMath (SOL and JS)", function () {
     describe("log2", function () {
       // todo: test all limits like 1.090507732665257659
       it("log2 upper [1, 1.0905]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
           const expected = Math.log2(x);
@@ -361,14 +361,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
 
           if (duoTest) {
-            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
             assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
           }
         }
       });
 
       it("log2 upper [1.0905, 16]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
           const expected = Math.log2(x);
@@ -376,14 +376,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           if (duoTest) {
-            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000150);
           }
         }
       });
 
       it("log2 lower [0.0625, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.0625; x < 1; x += 0.001) { 
           const expected = Math.log2(x);
@@ -391,7 +391,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           if (duoTest) {
-            const actualSOL = (await openMath.log2(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000150);
           }
         }
@@ -401,7 +401,7 @@ describe("OpenMath (SOL and JS)", function () {
     describe("log10", function () {
       // todo: test all limits like 1.090507732665257659
       it("log10 upper [1, 1.0905]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
           const expected = Math.log10(x);
@@ -409,15 +409,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
 
           if (duoTest) {
-            const actualSOL = (await openMath.log10(tokens(x))).toString() / 1e18;
-            console.log(expected, actualJS, actualSOL);
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
             assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
           }
         }
       });
 
       it("log10 upper [1.0905, 16]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
           const expected = Math.log10(x);
@@ -425,14 +424,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           // if (duoTest) {
-          //   const actualSOL = (await openMath.log10(tokens(x))).toString() / 1e18;
+          //   const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           //   assertRelativeBelow(actualSOL, expected, 0.000000000150);
           // }
         }
       });
 
       it("log10 lower [0.0625, 1)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.0625; x < 1; x += 0.001) { 
           const expected = Math.log10(x);
@@ -440,7 +439,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000150);
 
           // if (duoTest) {
-          //   const actualSOL = (await openMath.log10(tokens(x))).toString() / 1e18;
+          //   const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           //   assertRelativeBelow(actualSOL, expected, 0.000000000150);
           // }
         }
@@ -450,7 +449,7 @@ describe("OpenMath (SOL and JS)", function () {
     describe("sqrt", function () {
       // todo: test all limits like 1.04427
       it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 1.074607828321317497; x += 0.0001) {
           const expected = Math.sqrt(x);
@@ -458,14 +457,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [1.04427, 100)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1.074607828321317497; x < 100; x += 0.1) {
           const expected = Math.sqrt(x);
@@ -473,14 +472,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [100, 10000)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 100; x < 10000; x += 9.89) {
           const expected = Math.sqrt(x);
@@ -488,14 +487,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [1e4, 1e6)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1e4; x < 1e6; x += 1e3) {
           const expected = Math.sqrt(x);
@@ -503,14 +502,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt upper [1e6, 1e8)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1e6; x < 1e8; x += 1e5) {
           const expected = Math.sqrt(x);
@@ -518,21 +517,21 @@ describe("OpenMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const actualSOL = (await openMath.sqrt(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000072);
           }
         }
       });
 
       it("sqrt lower [1e-6, 1)", async function () { // todo: test better
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         for (let x = 1; x < 1000000; x += 1234) {
           const expected = Math.sqrt(1 / x);
           const actualJS = blackScholesJS.sqrt(1 / x);
           assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
-            const actualSOL = (await openMath.sqrt(tokens(1 / x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.sqrt(tokens(1 / x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, 0.000000000800); // todo: why lower than JS?
           }
         }
@@ -541,7 +540,7 @@ describe("OpenMath (SOL and JS)", function () {
 
     describe("erf", function () {
       it("erf single value in [0, 0.35]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         const x = 0.123;
         const expected = erf(x);
@@ -550,13 +549,13 @@ describe("OpenMath (SOL and JS)", function () {
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
-          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
           assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
         }
       });
 
       it("erf single value in [0.35, 1.13]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         const x = 0.6;
         const expected = erf(x);
@@ -565,14 +564,14 @@ describe("OpenMath (SOL and JS)", function () {
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
-          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
           // console.log(expected, actualJS, actualSOL)
           assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
         }
       });
 
       it("erf single value in [1.13, 2.8]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         const x = 1.3;
         const expected = erf(x);
@@ -581,13 +580,13 @@ describe("OpenMath (SOL and JS)", function () {
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
-          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
           assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
         }
       });
 
       it("erf single value in [2.8, 3.5]", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         const x = 3.1;
         const expected = erf(x);
@@ -596,13 +595,13 @@ describe("OpenMath (SOL and JS)", function () {
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
-          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
           assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
         }
       });
 
       it("erf regression", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         const x = 0.01;
         const expected = erf(x);
@@ -611,13 +610,13 @@ describe("OpenMath (SOL and JS)", function () {
         assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
         if (duoTest) {
-          const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
           assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
         }
       });
 
       it("erf [0, 0.35)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0; x <= 0.35; x += 0.01) {
           const expected = erf(x);
@@ -626,14 +625,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
             assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
           }
         }
       });
 
       it("erf [0.35, 1.13)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.35; x <= 1.13; x += 0.01) {
           const expected = erf(x);
@@ -642,14 +641,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
             assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR);
           }
         }
       });
 
       it("erf [1.13, 2.8)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1.13; x <= 2.8; x += 0.01) {
           const expected = erf(x);
@@ -658,14 +657,14 @@ describe("OpenMath (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
             assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR); // todo: why more than JS, replace Math.sin in JS
           }
         }
       });
 
       it("erf [2.8, 3.5)", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2.8; x <= 3.5; x += 0.01) {
           const expected = erf(x);
@@ -674,7 +673,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, MAX_ERF_ABS_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await openMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
             assertAbsoluteBelow(actualSOL, expected, MAX_ERF_ABS_ERROR); // todo: why more than JS, replace Math.sin in JS
           }
         }
@@ -683,7 +682,7 @@ describe("OpenMath (SOL and JS)", function () {
 
     describe("stdNormCDF", function () {
       it("stdNormCDF single", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         const d1 = 0.6100358074173348;
         const expected = bs.stdNormCDF(d1);
@@ -691,13 +690,13 @@ describe("OpenMath (SOL and JS)", function () {
         assertAbsoluteBelow(actualJS, expected, MAX_CDF_ABS_ERROR);
 
         if (duoTest) {
-          const actualSOL = (await openMath.stdNormCDF(tokens(d1))).toString() / 1e18;
+          const actualSOL = (await deFiMath.stdNormCDF(tokens(d1))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
         }
       });
 
       it("stdNormCDF multiple", async function () {
-        const { openMath } = duoTest ? await loadFixture(deploy) : { openMath: null };
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let d1 = -4; d1 < 4; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
@@ -705,7 +704,7 @@ describe("OpenMath (SOL and JS)", function () {
           assertAbsoluteBelow(actualJS, expected, MAX_CDF_ABS_ERROR);
 
           if (duoTest) {
-            const actualSOL = (await openMath.stdNormCDF(tokens(d1))).toString() / 1e18;
+            const actualSOL = (await deFiMath.stdNormCDF(tokens(d1))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_CDF_ABS_ERROR);
           }
         }
@@ -713,9 +712,9 @@ describe("OpenMath (SOL and JS)", function () {
     });
   });
 
-    duoTest && describe.only("compare", function () {
+    duoTest && describe("compare", function () {
       it("exp", async function () {
-        const { openMath, prbMath } = await loadFixture(deployCompare);
+        const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
         let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
@@ -724,8 +723,8 @@ describe("OpenMath (SOL and JS)", function () {
         for (let x = -10; x <= 10; x += 0.123 ) { 
           const expected = Math.exp(x);
 
-          // OpenSolidity
-          const result1 = await openMath.expMG(tokens(x));
+          // DeFiMath
+          const result1 = await deFiMath.expMG(tokens(x));
           const y1 = result1.y.toString() / 1e18;
           avgGas1 += parseInt(result1.gasUsed);
   
@@ -742,14 +741,14 @@ describe("OpenMath (SOL and JS)", function () {
           maxError1 = Math.max(maxError1, error1);
           maxError2 = Math.max(maxError2, error2);
         }
-        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Metric            DeFiMath       PRBMath     ");
         console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
         console.log("Max rel error (%)      ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
       it("ln", async function () {
-        const { openMath, prbMath } = await loadFixture(deployCompare);
+        const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
         let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
@@ -758,8 +757,8 @@ describe("OpenMath (SOL and JS)", function () {
         for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
           const expected = Math.log(x);
 
-          // OpenSolidity
-          const result1 = await openMath.lnMG(tokens(x));
+          // DeFiMath
+          const result1 = await deFiMath.lnMG(tokens(x));
           const y1 = result1.y.toString() / 1e18;
           avgGas1 += parseInt(result1.gasUsed);
   
@@ -776,14 +775,14 @@ describe("OpenMath (SOL and JS)", function () {
           maxError1 = Math.max(maxError1, error1);
           maxError2 = Math.max(maxError2, error2);
         }
-        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Metric            DeFiMath       PRBMath     ");
         console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
         console.log("Max rel error (%)     ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
       it("log2", async function () {
-        const { openMath, prbMath } = await loadFixture(deployCompare);
+        const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
         let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
@@ -792,8 +791,8 @@ describe("OpenMath (SOL and JS)", function () {
         for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
           const expected = Math.log2(x);
 
-          // OpenSolidity
-          const result1 = await openMath.log2MG(tokens(x));
+          // DeFiMath
+          const result1 = await deFiMath.log2MG(tokens(x));
           const y1 = result1.y.toString() / 1e18;
           avgGas1 += parseInt(result1.gasUsed);
   
@@ -810,14 +809,14 @@ describe("OpenMath (SOL and JS)", function () {
           maxError1 = Math.max(maxError1, error1);
           maxError2 = Math.max(maxError2, error2);
         }
-        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Metric            DeFiMath       PRBMath     ");
         console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
         console.log("Max rel error (%)     ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
       it("log10", async function () {
-        const { openMath, prbMath } = await loadFixture(deployCompare);
+        const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
         let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
@@ -826,8 +825,8 @@ describe("OpenMath (SOL and JS)", function () {
         for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
           const expected = Math.log10(x);
 
-          // OpenSolidity
-          const result1 = await openMath.log10MG(tokens(x));
+          // DeFiMath
+          const result1 = await deFiMath.log10MG(tokens(x));
           const y1 = result1.y.toString() / 1e18;
           avgGas1 += parseInt(result1.gasUsed);
   
@@ -844,14 +843,14 @@ describe("OpenMath (SOL and JS)", function () {
           maxError1 = Math.max(maxError1, error1);
           maxError2 = Math.max(maxError2, error2);
         }
-        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Metric            DeFiMath       PRBMath     ");
         console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
         console.log("Max rel error (%)     ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
       it("sqrt", async function () {
-        const { openMath, prbMath } = await loadFixture(deployCompare);
+        const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
         let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
@@ -860,8 +859,8 @@ describe("OpenMath (SOL and JS)", function () {
         for (let x = 1e-6; x <= 1e8; x += x / 4) {
           const expected = Math.sqrt(x);
 
-          // OpenSolidity
-          const result1 = await openMath.sqrtMG(tokens(x));
+          // DeFiMath
+          const result1 = await deFiMath.sqrtMG(tokens(x));
           const y1 = result1.y.toString() / 1e18;
           avgGas1 += parseInt(result1.gasUsed);
   
@@ -878,7 +877,7 @@ describe("OpenMath (SOL and JS)", function () {
           maxError1 = Math.max(maxError1, error1);
           maxError2 = Math.max(maxError2, error2);
         }
-        console.log("Metric            OpenSolidity   PRBMath     ");
+        console.log("Metric            DeFiMath       PRBMath     ");
         console.log("Avg rel error (%)     ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
         console.log("Max rel error (%)     ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
         console.log("Avg gas                   ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0));

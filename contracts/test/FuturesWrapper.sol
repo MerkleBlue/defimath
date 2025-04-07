@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../derivatives/OpenFutures.sol";
+import "../derivatives/Futures.sol";
 
-contract OpenFuturesWrapper {
+contract FuturesWrapper {
 
     function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) external pure returns (uint256) {
-        return OpenFutures.getFuturePrice(spot, timeToExpirySec, rate);
+        return DeFiMathFutures.getFuturePrice(spot, timeToExpirySec, rate);
     }
 
     function getFuturePriceMG(
@@ -19,7 +19,7 @@ contract OpenFuturesWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = OpenFutures.getFuturePrice(spot, timeToExpirySec, rate);
+        result = DeFiMathFutures.getFuturePrice(spot, timeToExpirySec, rate);
 
         endGas = gasleft();
         

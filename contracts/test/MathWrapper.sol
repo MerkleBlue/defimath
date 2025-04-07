@@ -1,50 +1,50 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../math/OpenMath.sol";
+import "../math/Math.sol";
 
-contract OpenMathWrapper {
+contract MathWrapper {
 
     function exp(int256 x) external pure returns (uint256) {
-        return OpenMath.exp(x);
+        return DeFiMath.exp(x);
     }
 
     function ln(uint256 x) external pure returns (int256) {
-        return OpenMath.ln(x);
+        return DeFiMath.ln(x);
     }
 
     function log2(uint256 x) external pure returns (int256) {
-        return OpenMath.log2(x);
+        return DeFiMath.log2(x);
     }
 
     function log10(uint256 x) external pure returns (int256) {
-        return OpenMath.log10(x);
+        return DeFiMath.log10(x);
     }
     
     function sqrt(uint256 x) external pure returns (uint256) {
-        return OpenMath.sqrt(x);
+        return DeFiMath.sqrt(x);
     }
 
     function stdNormCDF(int256 x) external pure returns (uint256) {
-        return OpenMath.stdNormCDF(x);
+        return DeFiMath.stdNormCDF(x);
     }
 
     function expPositive(uint256 x) external pure returns (uint256) {
-        return OpenMath.expPositive(x);
+        return DeFiMath.expPositive(x);
     }
 
     // x: [1, 16] 
     function lnUpper(uint256 x) external pure returns (uint256) {
-       return OpenMath.lnUpper(x);
+       return DeFiMath.lnUpper(x);
     }
 
     // x: [1, 1e8]
     function sqrtUpper(uint256 x) external pure returns (uint256) {
-        return OpenMath.sqrtUpper(x);
+        return DeFiMath.sqrtUpper(x);
     }
 
     function erfPositiveHalf(uint256 x) external pure returns (uint256) {
-        return OpenMath.erfPositiveHalf(x);
+        return DeFiMath.erfPositiveHalf(x);
     }
 
     // measure gas
@@ -56,7 +56,7 @@ contract OpenMathWrapper {
 
         startGas = gasleft();
 
-        result = OpenMath.exp(x);
+        result = DeFiMath.exp(x);
 
         endGas = gasleft();
 
@@ -70,7 +70,7 @@ contract OpenMathWrapper {
 
         startGas = gasleft();
 
-        result = OpenMath.expPositive(x);
+        result = DeFiMath.expPositive(x);
 
         endGas = gasleft();
 
@@ -82,7 +82,7 @@ contract OpenMathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = OpenMath.ln(x);
+        y = DeFiMath.ln(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);
@@ -93,7 +93,7 @@ contract OpenMathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = OpenMath.log2(x);
+        y = DeFiMath.log2(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);
@@ -104,7 +104,7 @@ contract OpenMathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = OpenMath.log10(x);
+        y = DeFiMath.log10(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);
@@ -115,7 +115,7 @@ contract OpenMathWrapper {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
-        result = OpenMath.sqrt(x);
+        result = DeFiMath.sqrt(x);
         endGas = gasleft();
 
         
@@ -128,7 +128,7 @@ contract OpenMathWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = OpenMath.stdNormCDF(x);
+        result = DeFiMath.stdNormCDF(x);
 
         endGas = gasleft();
         

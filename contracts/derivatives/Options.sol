@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../math/OpenMath.sol";
+import "../math/Math.sol";
 
-library OpenOptions {
+library DeFiMathOptions {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
@@ -48,16 +48,16 @@ library OpenOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * OpenMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (OpenMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / OpenMath.expPositive(scaledRate);
+            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
 
-            uint256 spotNd1 = uint256(spot) * OpenMath.stdNormCDF(d1);              // spot * N(d1)
-            uint256 strikeNd2 = discountedStrike * OpenMath.stdNormCDF(d2);         // strike * N(d2)
+            uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(d1);              // spot * N(d1)
+            uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(d2);         // strike * N(d2)
 
             if (spotNd1 > strikeNd2) {
                 price = (spotNd1 - strikeNd2) / 1e18;
@@ -90,16 +90,16 @@ library OpenOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * OpenMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (OpenMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / OpenMath.expPositive(scaledRate);
+            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
 
-            uint256 spotNd1 = uint256(spot) * OpenMath.stdNormCDF(-d1);             // spot * N(-d1)
-            uint256 strikeNd2 = discountedStrike * OpenMath.stdNormCDF(-d2);        // strike * N(-d2)
+            uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(-d1);             // spot * N(-d1)
+            uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(-d2);        // strike * N(-d2)
 
             if (strikeNd2 > spotNd1) {
                 price = (strikeNd2 - spotNd1) / 1e18;
