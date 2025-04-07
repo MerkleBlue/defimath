@@ -26,19 +26,24 @@ contract AdapterABDKMath {
         return (uint256(ABDKMathQuad.toInt(ABDKMathQuad.mul(result, ABDKMathQuad.fromInt(1e18)))), startGas - endGas);
     }
 
-    // function lnMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
-    //     SD59x18 result;
-    //     uint256 startGas;
-    //     uint256 endGas;
+    function lnMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
+        bytes16 result;
+        uint256 startGas;
+        uint256 endGas;
 
-    //     startGas = gasleft();
+        bytes16 quadX = ABDKMathQuad.div(
+            ABDKMathQuad.fromInt(x),
+            ABDKMathQuad.fromInt(1e18)
+        );
 
-    //     result = ln(sd(x));
+        startGas = gasleft();
 
-    //     endGas = gasleft();
+        result = ABDKMathQuad.ln(quadX);
+
+        endGas = gasleft();
         
-    //     return (result.unwrap(), startGas - endGas);
-    // }
+        return (int256(ABDKMathQuad.toInt(ABDKMathQuad.mul(result, ABDKMathQuad.fromInt(1e18)))), startGas - endGas);
+    }
 
     // function log2MG(int256 x) external view returns (int256 y, uint256 gasUsed) {
     //     SD59x18 result;
