@@ -33,17 +33,29 @@ contract OptionsExchange {
 # Features
 
 # Math
-The following table compares performance of DeFiMath with other implementations of math functions. It plots maximum relative error compared to known JS implementation.  
+The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
 
 | Function      | PRBMath  | ABDKQuad |  Solady | SolStat | DeFiMath |  
 | :------------ | -------: | -------: | ------: | ------: | -------: |
-| exp           | 1.9e-12  | 1.9e-12  |    -    |    -    | 4.0e-9   |
-| ln            | 1.3e-12  | 1.6e-12  |    -    |    -    | 7.3e-11  |
+| exp           | 1.9e-12  | 1.9e-12  | 1.9e-12 |    -    | 4.0e-9   |
+| ln            | 1.3e-12  | 1.6e-12  | 1.6e-12 |    -    | 7.3e-11  |
 | log2          | 1.3e-12  | 1.6e-12  |    -    |    -    | 7.3e-11  |
 | log10         | 1.3e-12  |     -    |    -    |    -    | 7.3e-11  |
-| sqrt          | 2.6e-12  | 2.6e-12  |    -    |    -    | 7.1e-11  |
+| sqrt          | 2.6e-12  | 2.6e-12  | 2.6e-12 |    -    | 7.1e-11  |
 | stdNormCDF    |    -     |    -     |    -    | 9.3e-6  | 4.9e-9   |
 | erf           |    -     |    -     |    -    | 2.6e-2  | 4.4e-7   | 
+
+Here's gas efficiency comparison table for the same implementations. 
+
+| Function      | PRBMath  | ABDKQuad |  Solady | SolStat | DeFiMath |  
+| :------------ | -------: | -------: | ------: | ------: | -------: |
+| exp           |    2748  |    5371  |     420 |    -    |    665   |
+| ln            |    6994  |   15843  |     536 |    -    |    580   |
+| log2          |    6691  |   15191  |    -    |    -    |    613   |
+| log10         |    8570  |     -    |    -    |    -    |    613   |
+| sqrt          |     952  |     731  |     415 |    -    |    787   |
+| stdNormCDF    |    -     |    -     |    -    |   4884  |   1080   |
+| erf           |    -     |    -     |    -    |   4236  |    986   | 
 
 
 # Derivatives
