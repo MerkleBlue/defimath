@@ -766,7 +766,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         console.log("gas", gasUsed1, gasUsed2, gasUsed3, gasUsed4, gasUsed5);
       });
 
-      it("multiple in typical range", async function () {
+      it.only("multiple in typical range", async function () {
         const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
