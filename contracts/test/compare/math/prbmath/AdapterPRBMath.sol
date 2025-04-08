@@ -9,11 +9,10 @@ contract AdapterPRBMath {
         SD59x18 result;
         uint256 startGas;
         uint256 endGas;
+        SD59x18 sdX = sd(x);
 
         startGas = gasleft();
-
-        result = exp(sd(x));
-
+        result = exp(sdX);
         endGas = gasleft();
         
         return (uint256(result.unwrap()), startGas - endGas);
@@ -23,11 +22,10 @@ contract AdapterPRBMath {
         SD59x18 result;
         uint256 startGas;
         uint256 endGas;
+        SD59x18 sdX = sd(x);
 
         startGas = gasleft();
-
-        result = ln(sd(x));
-
+        result = ln(sdX);
         endGas = gasleft();
         
         return (result.unwrap(), startGas - endGas);
@@ -37,11 +35,10 @@ contract AdapterPRBMath {
         SD59x18 result;
         uint256 startGas;
         uint256 endGas;
+        SD59x18 sdX = sd(x);
 
         startGas = gasleft();
-
-        result = log2(sd(x));
-
+        result = log2(sdX);
         endGas = gasleft();
         
         return (result.unwrap(), startGas - endGas);
@@ -51,11 +48,10 @@ contract AdapterPRBMath {
         SD59x18 result;
         uint256 startGas;
         uint256 endGas;
+        SD59x18 sdX = sd(x);
 
         startGas = gasleft();
-
-        result = log10(sd(x));
-
+        result = log10(sdX);
         endGas = gasleft();
         
         return (result.unwrap(), startGas - endGas);
@@ -65,11 +61,10 @@ contract AdapterPRBMath {
         SD59x18 result;
         uint256 startGas;
         uint256 endGas;
+        SD59x18 sdX = sd(int256(x));
 
         startGas = gasleft();
-
-        result = sqrt(sd(int256(x)));
-
+        result = sqrt(sdX);
         endGas = gasleft();
         
         gasUsed = startGas - endGas;
