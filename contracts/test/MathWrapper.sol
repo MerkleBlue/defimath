@@ -122,16 +122,15 @@ contract MathWrapper {
         return (result, startGas - endGas);
     }
 
-    function stdNormCDFMG(int256 x) external view returns (uint256) {
-        uint256 result;
+    function stdNormCDFMG(int256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        result = DeFiMath.stdNormCDF(x);
+        y = DeFiMath.stdNormCDF(x);
 
         endGas = gasleft();
         
-        return startGas - endGas;
+        return (y, startGas - endGas);
     }
 }
