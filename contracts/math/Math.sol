@@ -215,6 +215,8 @@ library DeFiMath {
         // return x > 0 ? 1 - 2 * c : 2 * c - 1;
     }
 
+    // todo: implement erf
+
     function getExp1Precompute(uint256 exponent) internal pure returns (uint256) {
         unchecked {
             return 78962960182681 ** exponent;

@@ -930,7 +930,7 @@ describe("DeFiMath (SOL and JS)", function () {
         let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
         let count = 0;
 
-        for (let x = -2; x <= 2; x += 0.123) {
+        for (let x = -4; x <= 4; x += 0.123) {
           const expected = bs.stdNormCDF(x);
 
           // DeFiMath
@@ -955,6 +955,41 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
         console.log("Max rel error (%)  ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
         console.log("Avg gas              ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
+      });
+
+      it.only("erf", async function () {
+        const { deFiMath, solStat } = await loadFixture(deployCompare);
+
+        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+        let count = 0;
+
+        for (let x = 0.0001; x <= 3.5; x += 0.123) { // todo: handle 0
+          const expected = erf(x);
+
+          // DeFiMath
+          const result1 = await deFiMath.erfMG(tokens(x));
+          const y1 = result1.y.toString() / 5e17;
+          avgGas1 += parseInt(result1.gasUsed);
+
+          // SolStat
+          const result4 = await solStat.erfMG(tokens(x));
+
+          const y4 = result4.y.toString() / 1e18;
+          avgGas4 += parseInt(result4.gasUsed);
+
+          count++;
+          const error1 = Math.abs((y1 - expected) / expected) * 100;
+          const error4 = Math.abs((y4 - expected) / expected) * 100;
+          avgError1 += error1;
+          avgError4 += error4;
+          maxError1 = Math.max(maxError1, error1);
+          maxError4 = Math.max(maxError4, error4);
+        }
+        console.log("Metric            DeFiMath  SolStat");
+        console.log("Avg rel error (%)  ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
+        console.log("Max rel error (%)  ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
+        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
       });
   });
 });

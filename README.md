@@ -35,15 +35,15 @@ contract OptionsExchange {
 # Math
 The following table compares performance of DeFiMath with other implementations of math functions. It plots maximum relative error compared to known JS implementation.  
 
-| Function      | DeFiMath | PRBMath  | ABDKQuad |  Solady | SolStat |   
-| :------------ | -------: | -------: | -------: | ------: | ------: |
-| exp           | 4.0e-9   | 1.9e-12  | 1.9e-12  |    -    |    -    |
-| ln            | 7.3e-11  | 1.3e-12  | 1.6e-12  |    -    |    -    |
-| log2          | 7.3e-11  | 1.3e-12  | 1.6e-12  |    -    |    -    |
-| log10         | 7.3e-11  | 1.3e-12  |     -    |    -    |    -    |
-| sqrt          | 7.1e-11  | 2.6e-12  | 2.6e-12  |    -    |    -    |
-| stdNormCDF    | 4.2e-9   |    -     |    -     |    -    | 9.0e-6  |
-| erf           |          |    -     |    -     |    -    |    -    |
+| Function      | PRBMath  | ABDKQuad |  Solady | SolStat | DeFiMath |  
+| :------------ | -------: | -------: | ------: | ------: | -------: |
+| exp           | 1.9e-12  | 1.9e-12  |    -    |    -    | 4.0e-9   |
+| ln            | 1.3e-12  | 1.6e-12  |    -    |    -    | 7.3e-11  |
+| log2          | 1.3e-12  | 1.6e-12  |    -    |    -    | 7.3e-11  |
+| log10         | 1.3e-12  |     -    |    -    |    -    | 7.3e-11  |
+| sqrt          | 2.6e-12  | 2.6e-12  |    -    |    -    | 7.1e-11  |
+| stdNormCDF    |    -     |    -     |    -    | 9.3e-6  | 4.9e-9   |
+| erf           |    -     |    -     |    -    | 2.6e-2  | 4.4e-7   | 
 
 
 # Derivatives

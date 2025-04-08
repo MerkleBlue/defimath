@@ -17,4 +17,17 @@ contract AdapterSolStat {
         return (y, startGas - endGas);
     }
 
+    function erfMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+
+        y = Gaussian.erfc(x);
+
+        endGas = gasleft();
+        
+        return (1e18 - y, startGas - endGas);
+    }
+
 }
