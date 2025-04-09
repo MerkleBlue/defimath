@@ -35,27 +35,27 @@ contract OptionsExchange {
 # Math
 The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
 
-| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady | SolStat |
-| :------------ | -------: | -------: | -------: | ------: | ------: |
-| exp           | 1.9e-12  | 1.9e-12  | 1.9e-12  | 1.9e-12 |    -    |
-| ln            | 7.3e-11  | 1.3e-12  | 1.6e-12  | 1.6e-12 |    -    |
-| log2          | 7.3e-11  | 1.3e-12  | 1.6e-12  |    -    |    -    |
-| log10         | 7.3e-11  | 1.3e-12  |     -    |    -    |    -    |
-| sqrt          | 7.1e-11  | 2.6e-12  | 2.6e-12  | 2.6e-12 |    -    |
-| stdNormCDF    | 4.9e-9   |    -     |    -     |    -    | 9.3e-6  |
-| erf           | 4.4e-7   |    -     |    -     |    -    | 2.6e-2  |
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| exp           |  1.9e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
+| ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
+| log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
+| log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
+| sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
+| stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
+| erf           |  1.0e-12 |        - |        - |        - |   2.6e-2 |
 
 Here's gas efficiency comparison table for the same implementations. 
 
-| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady | SolStat | 
-| :------------ | -------: | -------: | -------: | ------: | ------: |
-| exp           |    440   |    2748  |    5371  |     420 |    -    |
-| ln            |    580   |    6994  |   15843  |     536 |    -    |
-| log2          |    613   |    6691  |   15191  |    -    |    -    |
-| log10         |    613   |    8570  |     -    |    -    |    -    |
-| sqrt          |    787   |     952  |     731  |     415 |    -    |
-| stdNormCDF    |   1080   |    -     |    -     |    -    |   4884  |
-| erf           |    986   |    -     |    -     |    -    |   4236  |
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| exp           |      440 |     2748 |     5371 |      420 |        - |
+| ln            |      580 |     6994 |    15843 |      536 |        - |
+| log2          |      613 |     6691 |    15191 |        - |        - |
+| log10         |      613 |     8570 |        - |        - |        - |
+| sqrt          |      787 |      952 |      731 |      415 |        - |
+| stdNormCDF    |      914 |        - |        - |        - |     4884 |
+| erf           |      821 |        - |        - |        - |     4236 |
 
 
 # Derivatives
