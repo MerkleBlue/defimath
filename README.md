@@ -35,27 +35,27 @@ contract OptionsExchange {
 # Math
 The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
 
-| Function      | PRBMath  | ABDKQuad |  Solady | SolStat | DeFiMath |  
-| :------------ | -------: | -------: | ------: | ------: | -------: |
-| exp           | 1.9e-12  | 1.9e-12  | 1.9e-12 |    -    | 4.0e-9   |
-| ln            | 1.3e-12  | 1.6e-12  | 1.6e-12 |    -    | 7.3e-11  |
-| log2          | 1.3e-12  | 1.6e-12  |    -    |    -    | 7.3e-11  |
-| log10         | 1.3e-12  |     -    |    -    |    -    | 7.3e-11  |
-| sqrt          | 2.6e-12  | 2.6e-12  | 2.6e-12 |    -    | 7.1e-11  |
-| stdNormCDF    |    -     |    -     |    -    | 9.3e-6  | 4.9e-9   |
-| erf           |    -     |    -     |    -    | 2.6e-2  | 4.4e-7   | 
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady | SolStat |
+| :------------ | -------: | -------: | -------: | ------: | ------: |
+| exp           | 1.9e-12  | 1.9e-12  | 1.9e-12  | 1.9e-12 |    -    |
+| ln            | 7.3e-11  | 1.3e-12  | 1.6e-12  | 1.6e-12 |    -    |
+| log2          | 7.3e-11  | 1.3e-12  | 1.6e-12  |    -    |    -    |
+| log10         | 7.3e-11  | 1.3e-12  |     -    |    -    |    -    |
+| sqrt          | 7.1e-11  | 2.6e-12  | 2.6e-12  | 2.6e-12 |    -    |
+| stdNormCDF    | 4.9e-9   |    -     |    -     |    -    | 9.3e-6  |
+| erf           | 4.4e-7   |    -     |    -     |    -    | 2.6e-2  |
 
 Here's gas efficiency comparison table for the same implementations. 
 
-| Function      | PRBMath  | ABDKQuad |  Solady | SolStat | DeFiMath |  
-| :------------ | -------: | -------: | ------: | ------: | -------: |
-| exp           |    2748  |    5371  |     420 |    -    |    665   |
-| ln            |    6994  |   15843  |     536 |    -    |    580   |
-| log2          |    6691  |   15191  |    -    |    -    |    613   |
-| log10         |    8570  |     -    |    -    |    -    |    613   |
-| sqrt          |     952  |     731  |     415 |    -    |    787   |
-| stdNormCDF    |    -     |    -     |    -    |   4884  |   1080   |
-| erf           |    -     |    -     |    -    |   4236  |    986   | 
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady | SolStat | 
+| :------------ | -------: | -------: | -------: | ------: | ------: |
+| exp           |    440   |    2748  |    5371  |     420 |    -    |
+| ln            |    580   |    6994  |   15843  |     536 |    -    |
+| log2          |    613   |    6691  |   15191  |    -    |    -    |
+| log10         |    613   |    8570  |     -    |    -    |    -    |
+| sqrt          |    787   |     952  |     731  |     415 |    -    |
+| stdNormCDF    |   1080   |    -     |    -     |    -    |   4884  |
+| erf           |    986   |    -     |    -     |    -    |   4236  |
 
 
 # Derivatives
@@ -93,11 +93,11 @@ Calculating call or put option price costs around 4k gas on average (not account
 
 The following table compares performance of DeFiMath with other implementations of Black-Scholes formula when a call option is called over a typical range of parameters. 
 
-| Metric        |  DeFiMath     |  Derivexyz | Premia     | Party1983   | Dopex   |
-| :------------ | ------------: | ---------: | ---------: | ----------: | ------: | 
-| Avg abs error |  0.00000000   | 0.00000000 | 0.03957955 |  5.69158932 |         |
-| Max abs error |  0.00000002   | 0.00000000 | 0.17114025 | 37.66781134 |         |
-| Avg gas   |        4118   |      30226 |      20635 |       40010 |   95458 |
+| Metric        | DeFiMath   |  Derivexyz | Premia     | Party1983  | Dopex   |
+| :------------ | ---------: | ---------: | ---------: | ---------: | ------: | 
+| Avg abs error |    5.3e-12 |    8.9e-14 |     4.0e-2 |     5.7e+0 |         |
+| Max abs error |    2.7e-11 |    6.8e-13 |     1.7e-1 |     3.8e+1 |         |
+| Avg gas       |       4115 |      30226 |      20635 |      40010 |   95458 |
 
 # Credits
 
