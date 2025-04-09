@@ -104,6 +104,11 @@ library DeFiMath {
 
     function expPositive(uint256 x) internal pure returns (uint256 r) {
         unchecked {
+
+            if (x >= 135305999368893231589) {
+                return 4e58;
+            }
+            
             // // When the result is less than 0.5 we return zero.
             // // This happens when `x <= (log(1e-18) * 1e18) ~ -4.15e19`.
             // if (x <= -41446531673892822313) return r;

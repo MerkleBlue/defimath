@@ -109,11 +109,11 @@ And here's the gas efficiency comparison table for the same implementations.
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | call          |     4115 |    30220 |    20635 |    39974 |    95447 |
 | put           |     4151 |    30220 |    20827 |    40137 |    94808 |
-| greeks        |          |          |          |          |        - |
-| delta         |          |      +   |          |          |        - |
-| gamma         |          |          |          |          |        - |
-| theta         |          |          |          |          |        - |
-| vega          |          |      +   |          |          |        - |
+| greeks        |          |        - |        - |        - |        - |
+| delta         |          |        + |        - |        + |        - |
+| gamma         |          |        - |        - |        - |        - |
+| theta         |          |        - |        - |        - |        + |
+| vega          |          |        + |        - |        - |        - |
 
 
 # Credits

@@ -22,7 +22,7 @@ export class BlackScholesNUMJS {
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
-    // handle expired option 
+    // handle expired call 
     if (timeSec == 0) {
       if (spot > strike) {
           return spot - strike;
@@ -56,7 +56,7 @@ export class BlackScholesNUMJS {
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
     if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
 
-    // handle expired option 
+    // handle expired put 
     if (timeSec == 0) {
       if (strike > spot) {
           return strike - spot;
@@ -99,6 +99,33 @@ export class BlackScholesNUMJS {
     return spot * this.exp(scaledRate);
   };
 
+  getDelta(spot, strike, timeSec, vol, rate) {
+    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
+    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
+    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
+    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
+
+    // handle expired option 
+    if (timeSec == 0) {
+      if (spot > strike) {
+          return { deltaCall: 1, deltaPut: 0 };
+      }
+      return { deltaCall: 0, deltaPut: 1 };
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+
+    const deltaCall = this.stdNormCDF(d1);
+    const deltaPut = deltaCall - 1;
+
+    return { deltaCall, deltaPut };
+  };
+
   // x: [-50, 50]
   exp(x) {
     if (x >= 0) {
@@ -110,6 +137,8 @@ export class BlackScholesNUMJS {
 
   // x: [0, 50]
   expPositive(x) {
+
+    return Math.exp(x); // todo: override because sol is now more precise
     // add limits to simulate solidity
     if (x > 50) {
       return 1e18;

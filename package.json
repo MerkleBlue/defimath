@@ -7,6 +7,7 @@
   "dependencies": {
     "asciichart": "^1.5.25",
     "black-scholes": "^1.1.0",
+    "greeks": "1.0.0",
     "decimal.js": "^10.5.0",
     "export-to-csv": "^1.4.0",
     "math-erf": "^1.0.0",

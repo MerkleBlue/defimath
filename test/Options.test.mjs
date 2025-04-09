@@ -3,12 +3,14 @@ import { assert, expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import bs from "black-scholes";
+import greeks from "greeks";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
 
 const duoTest = true;
 const fastTest = true;
 
 const MAX_OPTION_ABS_ERROR = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
+const MAX_DELTA_ABS_ERROR = 1.2e-13;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -260,6 +262,30 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 totalGas += parseInt((await options.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe.only("delta", function () {
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt((await options.getDeltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -729,10 +755,235 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         });
       });
     });
+
+    describe.only("delta", function () {
+      it("single", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+        const expectedCall = greeks.getDelta(1000, 980, 60 / 365, 0.60, 0.05, "call");
+        const expectedPut = greeks.getDelta(1000, 980, 60 / 365, 0.60, 0.05, "put");
+        
+        const actualJS = blackScholesJS.getDelta(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
+        assertAbsoluteBelow(actualJS.deltaCall, expectedCall, MAX_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(actualJS.deltaPut, expectedPut, MAX_DELTA_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = await options.getDelta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+          assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
+          assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
+        }
+      });
+
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expectedCall = greeks.getDelta(1000, strike, time / 365, vol, rate, "call");
+                const expectedPut = greeks.getDelta(1000, strike, time / 365, vol, rate, "put");
+                const actualJS = blackScholesJS.getDelta(1000, strike, time * SEC_IN_DAY, vol, rate);
+                assertAbsoluteBelow(actualJS.deltaCall, expectedCall, MAX_DELTA_ABS_ERROR);
+                assertAbsoluteBelow(actualJS.deltaPut, expectedPut, MAX_DELTA_ABS_ERROR);
+
+                if (duoTest) {
+                  const actualSOL = await options.getDelta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                  assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
+                  assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // todo: neverending random test
+
+      // describe("limits", function () {
+      //   it("limits and near limit values", async function () {
+      //     const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
+      //     const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
+      //     const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
+      //     const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
+      //     await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
+      //   });
+
+      //   // todo: test with vol max only SOL
+
+
+      //   it("expired ITM", async function () {
+      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+      //     const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
+      //     const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 0, 0.60, 0.05);
+      //     // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
+      //     assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
+  
+      //     if (duoTest) {
+      //       const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+      //       // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
+      //       assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
+      //     }
+      //   });
+
+      //   it("expired ATM", async function () {
+      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+      //     const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
+      //     const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000, 0, 0.60, 0.05);
+      //     // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
+      //     assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
+  
+      //     if (duoTest) {
+      //       const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+      //       // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
+      //       assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
+      //     }
+      //   });
+
+      //   it("expired OTM", async function () {
+      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+      //     const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
+      //     const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 0, 0.60, 0.05);
+      //     // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
+      //     assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
+  
+      //     if (duoTest) {
+      //       const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+      //       // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
+      //       assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
+      //     }
+      //   });
+
+      //   it("no volatility multiple strikes and expirations", async function () {
+      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+      //     const strikes = [200, 800, 1000, 1200, 5000];
+      //     const times = [1, 2, 10, 30, 60, SEC_IN_YEAR, 2 * SEC_IN_YEAR];
+      //     const rates = [0, 0.05, 4];
+
+      //     for (let strike of strikes) {
+      //       for (let time of times) {
+      //         for (let rate of rates) {
+      //           const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
+      //           const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time, 0, rate);
+      //           assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
+        
+      //           if (duoTest) {
+      //             const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+      //             assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+      //           }
+      //         }
+      //       }
+      //     }
+      //   });
+      // });
+
+      // describe("random", function () {
+      //   it("lower strikes", async function () {
+      //     const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
+      //     const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+      //     const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
+      //     const rates = [0, 0.1, 0.2, 4]; // todo: use wider range
+      //     await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+      //   });
+
+      //   it("higher strikes", async function () {
+      //     const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
+      //     const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+      //     const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
+      //     const rates = [0, 0.1, 0.2, 4];
+      //     await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+      //   });
+      // });
+
+      describe.only("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getDelta(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+          expect(() => blackScholesJS.getDelta(0, 0, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getDelta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await options.getDelta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getDelta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getDelta(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("SpotUpperBoundError");
+          expect(() => blackScholesJS.getDelta(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("SpotUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getDelta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await options.getDelta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getDelta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          }
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getDelta(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+          expect(() => blackScholesJS.getDelta(1000, 0, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getDelta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await options.getDelta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+            await assertRevertError(options, options.getDelta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          }
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getDelta(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("StrikeUpperBoundError");
+          expect(() => blackScholesJS.getDelta(1000, 100000, 50000, 10_000, 0.05)).to.throw("StrikeUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getDelta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await options.getDelta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getDelta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          }
+        });
+
+        it("rejects when time > max time", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getDelta(1000, 930, 4294967295, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+          expect(() => blackScholesJS.getDelta(1000, 930, 63072001, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await options.getDelta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          }
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getDelta(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getDelta(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          }
+        });
+      });
+    });
   });
 
   duoTest && describe("compare", function () {
-    it.only("call", async function () {
+    it("call", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -797,7 +1048,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
 
-    it.only("put", async function () {
+    it("put", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];

@@ -39,7 +39,7 @@ library DeFiMathOptions {
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option 
+            // handle expired call 
             if (timeToExpirySec == 0) {
                 if (spot > strike) {
                     return spot - strike;
@@ -81,7 +81,7 @@ library DeFiMathOptions {
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option 
+            // handle expired put 
             if (timeToExpirySec == 0) {
                 if (strike > spot) {
                     return strike - spot;
@@ -104,6 +104,41 @@ library DeFiMathOptions {
             if (strikeNd2 > spotNd1) {
                 price = (strikeNd2 - spotNd1) / 1e18;
             }
+        }
+    }
+
+    function getDelta(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (int128 deltaCall, int128 deltaPut) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option 
+            if (timeToExpirySec == 0) {
+                if (spot > strike) {
+                    return (1e18, 0);
+                }
+                return (0, 1e18);
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
+
+            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+
+            deltaCall = int128(int256(DeFiMath.stdNormCDF(d1)));
+            deltaPut = deltaCall - 1e18;
         }
     }
 }
