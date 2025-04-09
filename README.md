@@ -91,13 +91,30 @@ Maximum absolute error when call or put option is calculated is < $0.0000002 for
 
 Calculating call or put option price costs around 4k gas on average (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.  
 
-The following table compares performance of DeFiMath with other implementations of Black-Scholes formula when a call option is called over a typical range of parameters. 
+The following table compares maximum absolute error of DeFiMath with other implementations over a typical range of parameters. 
 
-| Metric        | DeFiMath   |  Derivexyz | Premia     | Party1983  | Dopex   |
-| :------------ | ---------: | ---------: | ---------: | ---------: | ------: | 
-| Avg abs error |    5.3e-12 |    8.9e-14 |     4.0e-2 |     5.7e+0 |         |
-| Max abs error |    2.7e-11 |    6.8e-13 |     1.7e-1 |     3.8e+1 |         |
-| Avg gas       |       4115 |      30226 |      20635 |      40010 |   95458 |
+| Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| callPrice     |  2.7e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
+| putPrice      |          |          |          |          |        - |
+| greeks        |          |          |          |          |        - |
+| delta         |          |          |          |          |        - |
+| gamma         |          |          |          |          |        - |
+| theta         |          |          |          |          |        - |
+| vega          |          |          |          |          |        - |
+
+And here's the gas efficiency comparison table for the same implementations.
+
+| Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| callPrice     |     4115 |    30226 |    20635 |    40010 |    95458 |
+| putPrice      |          |          |          |          |        - |
+| greeks        |          |          |          |          |        - |
+| delta         |          |          |          |          |        - |
+| gamma         |          |          |          |          |        - |
+| theta         |          |          |          |          |        - |
+| vega          |          |          |          |          |        - |
+
 
 # Credits
 
