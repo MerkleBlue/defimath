@@ -722,7 +722,7 @@ describe("DeFiMath (SOL and JS)", function () {
   });
 
     duoTest && describe("compare", function () {
-      it.only("exp", async function () {
+      it("exp", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -772,7 +772,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
       });
 
-      it.only("ln", async function () {
+      it("ln", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -822,7 +822,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
       });
 
-      it.only("log2", async function () {
+      it("log2", async function () {
         const { deFiMath, prbMath, abdkMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -864,7 +864,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0));
       });
 
-      it.only("log10", async function () {
+      it("log10", async function () {
         const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -898,7 +898,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
-      it.only("sqrt", async function () {
+      it("sqrt", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -948,7 +948,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
       });
 
-      it.only("cdf", async function () {
+      it("cdf", async function () {
         const { deFiMath, solStat } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -982,7 +982,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas              ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
       });
 
-      it.only("erf", async function () {
+      it("erf", async function () {
         const { deFiMath, solStat } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;

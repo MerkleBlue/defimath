@@ -732,104 +732,134 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   });
 
   duoTest && describe("compare", function () {
+    it.only("call", async function () {
+      const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
-    describe("call", function () {
-      it("single", async function () {
-        const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
-        const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
 
-        const result1 = await options.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        const price1 = result1.price.toString() / 1e18;
-        const gasUsed1 = parseInt(result1.gasUsed);
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-        // Derivexyz
-        const result2 = await adapterDerivexyz.callPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        const price2 = result2.price.toString() / 1e18;
-        const gasUsed2 = parseInt(result2.gasUsed);
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
 
-        // Premia (using discounted strike instead of rate, it's the same, also using vol squared because it uses variance
-        const result3 = await adapterPremia.callPrice(tokens(1000), tokens(980 / Math.exp(0.05 * 60 / 365)), 60 * SEC_IN_DAY, tokens(0.60 ** 2));
-        const price3 = result3.price.toString() / 1e18;
-        const gasUsed3 = parseInt(result3.gasUsed);
+              const result1 = await options.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price1 = result1.price.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+      
+              // Derivexyz
+              const result2 = await adapterDerivexyz.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price2 = result2.price.toString() / 1e18;
+              avgGas2 += parseInt(result2.gasUsed);
 
-        // Partylikeits1983
-        const result4 = await adapterParty.callPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        const price4 = result4.price.toString() / 1e18;
-        const gasUsed4 = parseInt(result4.gasUsed);
+              // Premia (using discounted strike instead of rate, it's the same, also using vol squared because it uses variance
+              const result3 = await adapterPremia.callPrice(tokens(1000), tokens(strike / Math.exp(rate * time / 365)), time * SEC_IN_DAY, tokens(vol ** 2));
+              const price3 = result3.price.toString() / 1e18;
+              avgGas3 += parseInt(result3.gasUsed);
 
-        // Dopex
-        const result5 = await adapterDopex.callPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        const price5 = result5.price.toString() / 1e18;
-        const gasUsed5 = parseInt(result5.gasUsed);
+              // Partylikeits1983
+              const result4 = await adapterParty.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price4 = result4.price.toString() / 1e18;
+              avgGas4 += parseInt(result4.gasUsed);
 
-        console.log(expected, price1, price2, price3, price4, price5);
-        console.log("gas", gasUsed1, gasUsed2, gasUsed3, gasUsed4, gasUsed5);
-      });
+              // Dopex
+              const result5 = await adapterDopex.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price5 = result5.price.toString() / 1e18;
+              avgGas5 += parseInt(result5.gasUsed);
 
-      it.only("multiple in typical range", async function () {
-        const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
-
-        const strikes = [800, 900, 1000.01, 1100, 1200];
-        const times = [7, 30, 60, 90, 180];
-        const vols = [0.4, 0.6, 0.8];
-        const rates = [0.05, 0.1, 0.2];
-
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
-
-        for (const strike of strikes) {
-          for (const time of times) {
-            for (const vol of vols) {
-              for (const rate of rates) {
-                const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
-
-                const result1 = await options.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                const price1 = result1.price.toString() / 1e18;
-                avgGas1 += parseInt(result1.gasUsed);
-        
-                // Derivexyz
-                const result2 = await adapterDerivexyz.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                const price2 = result2.price.toString() / 1e18;
-                avgGas2 += parseInt(result2.gasUsed);
-
-                // Premia (using discounted strike instead of rate, it's the same, also using vol squared because it uses variance
-                const result3 = await adapterPremia.callPrice(tokens(1000), tokens(strike / Math.exp(rate * time / 365)), time * SEC_IN_DAY, tokens(vol ** 2));
-                const price3 = result3.price.toString() / 1e18;
-                avgGas3 += parseInt(result3.gasUsed);
-
-                // Partylikeits1983
-                const result4 = await adapterParty.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                const price4 = result4.price.toString() / 1e18;
-                avgGas4 += parseInt(result4.gasUsed);
-
-                // Dopex
-                const result5 = await adapterDopex.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                const price5 = result5.price.toString() / 1e18;
-                avgGas5 += parseInt(result5.gasUsed);
-
-                count++;
-                const error1 = Math.abs(price1 - expected);
-                const error2 = Math.abs(price2 - expected);
-                const error3 = Math.abs(price3 - expected);
-                const error4 = Math.abs(price4 - expected);
-                avgError1 += error1;
-                avgError2 += error2;
-                avgError3 += error3;
-                avgError4 += error4;
-                maxError1 = Math.max(maxError1, error1);
-                maxError2 = Math.max(maxError2, error2);
-                maxError3 = Math.max(maxError3, error3);
-                maxError4 = Math.max(maxError4, error4);
-              }
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              const error2 = Math.abs(price2 - expected);
+              const error3 = Math.abs(price3 - expected);
+              const error4 = Math.abs(price4 - expected);
+              avgError1 += error1;
+              avgError2 += error2;
+              avgError3 += error3;
+              avgError4 += error4;
+              maxError1 = Math.max(maxError1, error1);
+              maxError2 = Math.max(maxError2, error2);
+              maxError3 = Math.max(maxError3, error3);
+              maxError4 = Math.max(maxError4, error4);
             }
           }
         }
-        console.log("Metric     DeFiMath      Derivexyz  Premia  Party1983   Dopex");
-        console.log("Avg error       ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
-        console.log("Max error       ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
-        console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
-      });
+      }
+      console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
+      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
+    });
+
+    it.only("put", async function () {
+      const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
+
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
+
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
+
+              const result1 = await options.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price1 = result1.price.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+      
+              // Derivexyz
+              const result2 = await adapterDerivexyz.putPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price2 = result2.price.toString() / 1e18;
+              avgGas2 += parseInt(result2.gasUsed);
+
+              // Premia (using discounted strike instead of rate, it's the same, also using vol squared because it uses variance
+              const result3 = await adapterPremia.putPrice(tokens(1000), tokens(strike / Math.exp(rate * time / 365)), time * SEC_IN_DAY, tokens(vol ** 2));
+              const price3 = result3.price.toString() / 1e18;
+              avgGas3 += parseInt(result3.gasUsed);
+
+              // Partylikeits1983
+              const result4 = await adapterParty.putPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price4 = result4.price.toString() / 1e18;
+              avgGas4 += parseInt(result4.gasUsed);
+
+              // Dopex
+              const result5 = await adapterDopex.putPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price5 = result5.price.toString() / 1e18;
+              avgGas5 += parseInt(result5.gasUsed);
+
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              const error2 = Math.abs(price2 - expected);
+              const error3 = Math.abs(price3 - expected);
+              const error4 = Math.abs(price4 - expected);
+              avgError1 += error1;
+              avgError2 += error2;
+              avgError3 += error3;
+              avgError4 += error4;
+              maxError1 = Math.max(maxError1, error1);
+              maxError2 = Math.max(maxError2, error2);
+              maxError3 = Math.max(maxError3, error3);
+              maxError4 = Math.max(maxError4, error4);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
+      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
   });
 });

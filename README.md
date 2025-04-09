@@ -95,8 +95,8 @@ The following table compares maximum absolute error of DeFiMath with other imple
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| callPrice     |  2.7e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
-| putPrice      |          |          |          |          |        - |
+| call          |  2.7e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
+| put           |  2.7e-11 |  6.5e-13 |   1.7e-1 |   9.9e+1 |        - |
 | greeks        |          |          |          |          |        - |
 | delta         |          |          |          |          |        - |
 | gamma         |          |          |          |          |        - |
@@ -107,13 +107,13 @@ And here's the gas efficiency comparison table for the same implementations.
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| callPrice     |     4115 |    30226 |    20635 |    40010 |    95458 |
-| putPrice      |          |          |          |          |        - |
+| call          |     4115 |    30220 |    20635 |    39974 |    95447 |
+| put           |     4151 |    30220 |    20827 |    40137 |    94808 |
 | greeks        |          |          |          |          |        - |
-| delta         |          |          |          |          |        - |
+| delta         |          |      +   |          |          |        - |
 | gamma         |          |          |          |          |        - |
 | theta         |          |          |          |          |        - |
-| vega          |          |          |          |          |        - |
+| vega          |          |      +   |          |          |        - |
 
 
 # Credits

@@ -19,7 +19,6 @@ contract AdapterDopex {
         uint256 timeToExpiryDays = uint256(timeToExpirySec) * 1e18 / (24 * 60 * 60);
 
         startGas = gasleft();
-
         call = BlackScholes.calculate(
             0,
             spot,
@@ -28,10 +27,35 @@ contract AdapterDopex {
             rate,
             volatility
         );
-
         endGas = gasleft();
         
-        gasUsed = startGas - endGas;
-        return (call, gasUsed);
+        return (call, startGas - endGas);
+    }
+
+    function putPrice(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) external view returns (uint256 price, uint256 gasUsed) {
+        uint256 put;
+        uint256 startGas;
+        uint256 endGas;
+
+        uint256 timeToExpiryDays = uint256(timeToExpirySec) * 1e18 / (24 * 60 * 60);
+
+        startGas = gasleft();
+        put = BlackScholes.calculate(
+            1,
+            spot,
+            strike,
+            timeToExpiryDays,
+            rate,
+            volatility
+        );
+        endGas = gasleft();
+        
+        return (put, startGas - endGas);
     }
 }
