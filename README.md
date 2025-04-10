@@ -49,13 +49,13 @@ Here's gas efficiency comparison table for the same implementations.
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |      440 |     2748 |     5371 |      420 |        - |
+| exp           |      475 |     2748 |     5371 |      420 |        - |
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
 | sqrt          |      787 |      952 |      731 |      415 |        - |
-| stdNormCDF    |      914 |        - |        - |        - |     4884 |
-| erf           |      821 |        - |        - |        - |     4236 |
+| stdNormCDF    |      949 |        - |        - |        - |     4884 |
+| erf           |      856 |        - |        - |        - |     4236 |
 
 
 # Derivatives

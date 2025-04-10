@@ -274,7 +274,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe.only("delta", function () {
+    describe("delta", function () {
       it("multiple in typical range", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -298,7 +298,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe.only("gamma", function () {
+    describe("gamma", function () {
       it("multiple in typical range", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -322,7 +322,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe.only("theta", function () {
+    describe("theta", function () {
       it("multiple in typical range", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -853,7 +853,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
-      describe.only("failure", function () {
+      describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -977,7 +977,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       // todo: limits and random tests
 
 
-      describe.only("failure", function () {
+      describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -1104,7 +1104,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
-      describe.only("failure", function () {
+      describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -1228,7 +1228,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       // todo: limits and random tests
 
 
-      describe.only("failure", function () {
+      describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
@@ -1311,7 +1311,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   });
 
   duoTest && describe("compare", function () {
-    it.only("call", async function () {
+    it("call", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1376,7 +1376,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
 
-    it.only("put", async function () {
+    it("put", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1441,7 +1441,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
 
-    it.only("delta", async function () {
+    it("delta", async function () {
       const { options, adapterDerivexyz, adapterParty } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1493,7 +1493,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0) + "              " + (avgGas4 / count).toFixed(0));
     });
 
-    it.only("gamma", async function () {
+    it("gamma", async function () {
       const { options } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1529,7 +1529,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0));
     });
 
-    it.only("theta", async function () {
+    it("theta", async function () {
       const { options, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1565,7 +1565,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0));
     });
 
-    it.only("vega", async function () {
+    it("vega", async function () {
       const { options, adapterDerivexyz } = duoTest ? await loadFixture(deployCompare) : { options: null };
   
       const strikes = [800, 900, 1000.01, 1100, 1200];
