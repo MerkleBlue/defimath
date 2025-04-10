@@ -1311,7 +1311,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   });
 
   duoTest && describe("compare", function () {
-    it("call", async function () {
+    it.only("call", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1372,11 +1372,11 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
       console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
-      console.log("Max rel error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
+      console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
 
-    it("put", async function () {
+    it.only("put", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1437,8 +1437,176 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
       console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
-      console.log("Max rel error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
+      console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
+    });
+
+    it.only("delta", async function () {
+      const { options, adapterDerivexyz, adapterParty } = duoTest ? await loadFixture(deployCompare) : { options: null };
+
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
+
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              const expected = greeks.getDelta(1000, strike, time / 365, vol, rate, "call");
+
+              const result1 = await options.getDeltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price1 = result1.deltaCall.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+      
+              // Derivexyz
+              const result2 = await adapterDerivexyz.delta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price2 = result2.deltaCall.toString() / 1e18;
+              avgGas2 += parseInt(result2.gasUsed);
+
+              // Partylikeits1983
+              const result4 = await adapterParty.delta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price4 = result4.deltaCall.toString() / 1e18;
+              avgGas4 += parseInt(result4.gasUsed);
+
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              const error2 = Math.abs(price2 - expected);
+              const error4 = Math.abs(price4 - expected);
+              avgError1 += error1;
+              avgError2 += error2;
+              avgError4 += error4;
+              maxError1 = Math.max(maxError1, error1);
+              maxError2 = Math.max(maxError2, error2);
+              maxError4 = Math.max(maxError4, error4);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
+      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + "            ", (avgError4 / count).toExponential(1));
+      console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + "            ", (maxError4).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0) + "              " + (avgGas4 / count).toFixed(0));
+    });
+
+    it.only("gamma", async function () {
+      const { options } = duoTest ? await loadFixture(deployCompare) : { options: null };
+
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
+
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              const expected = greeks.getGamma(1000, strike, time / 365, vol, rate, "call");
+
+              const result1 = await options.getGammaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price1 = result1.gamma.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              avgError1 += error1;
+              maxError1 = Math.max(maxError1, error1);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
+      console.log("Avg abs error  ", (avgError1 / count).toExponential(1));
+      console.log("Max abs error  ", (maxError1).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0));
+    });
+
+    it.only("theta", async function () {
+      const { options, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
+
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
+
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              const expected = greeks.getTheta(1000, strike, time / 365, vol, rate, "call");
+
+              const result1 = await options.getThetaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price1 = result1.thetaCall.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+  
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              avgError1 += error1;
+              maxError1 = Math.max(maxError1, error1);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
+      console.log("Avg abs error  ", (avgError1 / count).toExponential(1));
+      console.log("Max abs error  ", (maxError1).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0));
+    });
+
+    it.only("vega", async function () {
+      const { options, adapterDerivexyz } = duoTest ? await loadFixture(deployCompare) : { options: null };
+  
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+  
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
+  
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              const expected = greeks.getVega(1000, strike, time / 365, vol, rate, "call");
+  
+              const result1 = await options.getVegaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price1 = result1.vega.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+      
+              // Derivexyz
+              const result2 = await adapterDerivexyz.vega(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price2 = result2._vega.toString() / 1e18;
+              avgGas2 += parseInt(result2.gasUsed);
+  
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              const error2 = Math.abs(price2 - expected);
+              avgError1 += error1;
+              avgError2 += error2;
+              maxError1 = Math.max(maxError1, error1);
+              maxError2 = Math.max(maxError2, error2);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
+      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1));
+      console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
     });
   });
 });

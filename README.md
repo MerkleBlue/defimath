@@ -97,10 +97,10 @@ The following table compares maximum absolute error of DeFiMath with other imple
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | call          |  2.7e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
 | put           |  2.7e-11 |  6.5e-13 |   1.7e-1 |   9.9e+1 |        - |
-| delta         |          |          |          |          |        - |
-| gamma         |          |          |          |          |        - |
-| theta         |          |          |          |          |        - |
-| vega          |          |          |          |          |        - |
+| delta         |  1.2e-13 |  6.7e-16 |        - |   9.2e-1 |        - |
+| gamma         |  3.2e-15 |        - |        - |        - |        - |
+| theta         |  1.8e-12 |        - |        - |        - |        - |
+| vega          |  4.0e-13 |  1.1e-15 |        - |        - |        - |
 
 And here's the gas efficiency comparison table for the same implementations.
 
@@ -108,10 +108,10 @@ And here's the gas efficiency comparison table for the same implementations.
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | call          |     4115 |    30220 |    20635 |    39974 |    95447 |
 | put           |     4151 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2785 |        + |        - |        + |        - |
-| gamma         |     2352 |        - |        - |        - |        - |
-| theta         |     4900 |        - |        - |        - |        + |
-| vega          |          |        + |        - |        - |        - |
+| delta         |     2785 |    19574 |        - |    26853 |        - |
+| gamma         |     2364 |        - |        - |        - |        - |
+| theta         |     4900 |        - |        - |        - |        - |
+| vega          |     3062 |    16503 |        - |        - |        - |
 
 
 # Credits
