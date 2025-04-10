@@ -158,6 +158,24 @@ export class BlackScholesNUMJS {
     return { thetaCall, thetaPut };
   };
 
+  getVega(spot, strike, timeSec, vol, rate) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired option 
+    if (timeSec == 0) {
+      return 0;
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+
+    const phi = Math.exp(-(d1 ** 2) / 2) / Math.sqrt(2 * Math.PI);    // N'(d1)
+    return spot * Math.sqrt(timeYear) * phi / 100;                    // 
+  };
+
   checkInputs(spot, strike, timeSec, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");

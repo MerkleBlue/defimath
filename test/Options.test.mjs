@@ -13,6 +13,7 @@ const MAX_OPTION_ABS_ERROR = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, fo
 const MAX_DELTA_ABS_ERROR = 1.2e-13;
 const MAX_GAMMA_ABS_ERROR = 3.2e-15;
 const MAX_THETA_ABS_ERROR = 1.9e-12;
+const MAX_VEGA_ABS_ERROR = 4e-13;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -806,7 +807,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe.only("delta", function () {
+    describe("delta", function () {
       it("single", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
         const expectedCall = greeks.getDelta(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -933,7 +934,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe.only("gamma", function () {
+    describe("gamma", function () {
       it("single", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
         const expected = greeks.getGamma(1000, 980, 60 / 365, 0.60, 0.05);
@@ -1057,7 +1058,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe.only("theta", function () {
+    describe("theta", function () {
       it("single", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
         const expectedCall = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -1179,6 +1180,130 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
             await options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
             await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          }
+        });
+      });
+    });
+
+    describe("vega", function () {
+      it("single", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+        const expected = greeks.getVega(1000, 980, 60 / 365, 0.60, 0.05);
+        
+        const actualJS = blackScholesJS.getVega(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
+        assertAbsoluteBelow(actualJS, expected, MAX_VEGA_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await options.getVega(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_VEGA_ABS_ERROR);
+        }
+      });
+
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expected = greeks.getVega(1000, strike, time / 365, vol, rate, "call");
+                const actualJS = blackScholesJS.getVega(1000, strike, time * SEC_IN_DAY, vol, rate);
+                assertAbsoluteBelow(actualJS, expected, MAX_VEGA_ABS_ERROR);
+
+                if (duoTest) {
+                  const actualSOL = (await options.getVega(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  assertAbsoluteBelow(actualSOL, expected, MAX_VEGA_ABS_ERROR);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // todo: limits and random tests
+
+
+      describe.only("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getVega(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+          expect(() => blackScholesJS.getVega(0, 0, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getVega("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await options.getVega("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getVega(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getVega(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("SpotUpperBoundError");
+          expect(() => blackScholesJS.getVega(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("SpotUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getVega("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await options.getVega("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getVega("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          }
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getVega(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+          expect(() => blackScholesJS.getVega(1000, 0, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getVega(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await options.getVega(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+            await assertRevertError(options, options.getVega(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          }
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getVega(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("StrikeUpperBoundError");
+          expect(() => blackScholesJS.getVega(1000, 100000, 50000, 10_000, 0.05)).to.throw("StrikeUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getVega(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await options.getVega(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getVega(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          }
+        });
+
+        it("rejects when time > max time", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getVega(1000, 930, 4294967295, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+          expect(() => blackScholesJS.getVega(1000, 930, 63072001, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await options.getVega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          }
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getVega(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getVega(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
       });

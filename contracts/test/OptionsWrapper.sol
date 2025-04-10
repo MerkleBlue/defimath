@@ -55,6 +55,16 @@ contract OptionsWrapper {
         return DeFiMathOptions.getTheta(spot, strike, timeToExpirySec, volatility, rate);
     }
 
+    function getVega(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) external pure returns (uint256 vega) {
+        return DeFiMathOptions.getVega(spot, strike, timeToExpirySec, volatility, rate);
+    }
+
     function getCallOptionPriceMG(
         uint128 spot,
         uint128 strike,
@@ -142,5 +152,22 @@ contract OptionsWrapper {
         endGas = gasleft();
         
         return (thetaCall, thetaPut, startGas - endGas);
+    }
+
+    function getVegaMG(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) external view returns (uint256 vega, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        vega = DeFiMathOptions.getVega(spot, strike, timeToExpirySec, volatility, rate);
+        endGas = gasleft();
+        
+        return (vega, startGas - endGas);
     }
 }

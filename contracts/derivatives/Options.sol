@@ -217,11 +217,41 @@ library DeFiMathOptions {
             // console.log("carryCall SOL", carryCall);
 
             int256 carryPut = int256(_rate * discountedStrike * DeFiMath.stdNormCDF(-d2) / 1e36);
-            // console.log("carryPut SOL", carryPut);
 
             return (int128(-timeDecay - carryCall) / 365, int128(-timeDecay + carryPut) / 365);
-            // deltaCall = int128(int256(DeFiMath.stdNormCDF(d1)));
-            // deltaPut = deltaCall - 1e18;
+        }
+    }
+
+    function getVega(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (uint256 vega) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option 
+            if (timeToExpirySec == 0) {
+                return 0;
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
+            uint256 sqrtTimeYear = DeFiMath.sqrt(timeYear);
+            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
+
+            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+
+            uint256 phi = (1e36 / DeFiMath.expPositive(uint256(d1 * d1 / 2e18))) * 1e18 / SQRT_2PI;  // N'(d1)
+            vega = spot * sqrtTimeYear * phi / 100e36;                                               // N'(d1) * spot * sqrt(T) / 100
         }
     }
 }
