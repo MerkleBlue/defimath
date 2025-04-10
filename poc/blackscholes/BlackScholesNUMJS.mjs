@@ -132,6 +132,32 @@ export class BlackScholesNUMJS {
     return phi / (spot * scaledVol);                                  // N'(d1) / (spot * scaledVol)
   };
 
+  getTheta(spot, strike, timeSec, vol, rate) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired option 
+    if (timeSec == 0) {
+      return { thetaCall: 0, thetaPut: 0 };
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+
+    const phi = Math.exp(-(d1 ** 2) / 2) / Math.sqrt(2 * Math.PI);
+
+    // console.log("timeDecay JS ", (spot * vol * phi) / (2 * Math.sqrt(timeYear)));
+    // console.log("carryCall JS ", rate * strike * this.exp(-rate * timeYear) * this.stdNormCDF(d2));
+    // console.log("carryPut JS ", rate * strike * this.exp(-rate * timeYear) * this.stdNormCDF(-d2));
+
+    const thetaCall = (-(spot * vol * phi) / (2 * Math.sqrt(timeYear)) - rate * strike * this.exp(-rate * timeYear) * this.stdNormCDF(d2)) / 365; // N'(d1) / (2 * sqrt(t)) - r * K * e^(-r*t) * N(d2)
+    const thetaPut = (-(spot * vol * phi) / (2 * Math.sqrt(timeYear)) + rate * strike * this.exp(-rate * timeYear) * this.stdNormCDF(-d2)) / 365; // N'(d1) / (2 * sqrt(t)) + r * K * e^(-r*t) * N(-d2)
+    return { thetaCall, thetaPut };
+  };
+
   checkInputs(spot, strike, timeSec, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");

@@ -174,4 +174,54 @@ library DeFiMathOptions {
             gamma = phi * 1e18 / (spot * scaledVol / 1e18);                                         // N'(d1) / (spot * scaledVol)
         }
     }
+
+    function getTheta(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (int128 thetaCall, int128 thetaPut) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option 
+            if (timeToExpirySec == 0) {
+                return (0, 0);
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;                   // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
+            uint256 _spot = uint256(spot);
+            // uint256 _strike = uint256(strike);
+            uint256 _rate = rate;
+
+            int256 d1 = (DeFiMath.ln(uint256(_spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d2 = d1 - int256(scaledVol);
+
+            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
+
+            uint256 phi = (1e36 / DeFiMath.expPositive(uint256(d1 * d1 / 2e18))) * 1e18 / SQRT_2PI;  // N'(d1)
+
+            int256 timeDecay = int256(_spot * phi * scaledVol / (2e18 * timeYear));             // spot * N'(d1) * sigma / (2 * sqrt(T))
+            // console.log("timeDecay SOL", timeDecay);
+
+            int256 carryCall = int256(_rate * discountedStrike * DeFiMath.stdNormCDF(d2) / 1e36); 
+            // console.log("carryCall SOL", carryCall);
+
+            int256 carryPut = int256(_rate * discountedStrike * DeFiMath.stdNormCDF(-d2) / 1e36);
+            // console.log("carryPut SOL", carryPut);
+
+            return (int128(-timeDecay - carryCall) / 365, int128(-timeDecay + carryPut) / 365);
+            // deltaCall = int128(int256(DeFiMath.stdNormCDF(d1)));
+            // deltaPut = deltaCall - 1e18;
+        }
+    }
 }

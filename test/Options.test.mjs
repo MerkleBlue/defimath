@@ -12,6 +12,7 @@ const fastTest = true;
 const MAX_OPTION_ABS_ERROR = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
 const MAX_DELTA_ABS_ERROR = 1.2e-13;
 const MAX_GAMMA_ABS_ERROR = 3.2e-15;
+const MAX_THETA_ABS_ERROR = 1.9e-12;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -311,6 +312,30 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 totalGas += parseInt((await options.getGammaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe.only("theta", function () {
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt((await options.getThetaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -827,104 +852,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
-      // todo: neverending random test
-
-      // describe("limits", function () {
-      //   it("limits and near limit values", async function () {
-      //     const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
-      //     const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
-      //     const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
-      //     const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-      //     await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
-      //   });
-
-      //   // todo: test with vol max only SOL
-
-
-      //   it("expired ITM", async function () {
-      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
-      //     const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
-      //     const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 0, 0.60, 0.05);
-      //     // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
-      //     assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
-  
-      //     if (duoTest) {
-      //       const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-      //       // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
-      //       assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
-      //     }
-      //   });
-
-      //   it("expired ATM", async function () {
-      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
-      //     const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
-      //     const actualJS = blackScholesJS.getCallOptionPrice(1000, 1000, 0, 0.60, 0.05);
-      //     // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
-      //     assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
-  
-      //     if (duoTest) {
-      //       const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-      //       // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
-      //       assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
-      //     }
-      //   });
-
-      //   it("expired OTM", async function () {
-      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
-      //     const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
-      //     const actualJS = blackScholesJS.getCallOptionPrice(1000, 1020, 0, 0.60, 0.05);
-      //     // assertBothBelow(actualJS, expected, MIN_ERROR, MIN_ERROR);
-      //     assertAbsoluteBelow(actualJS, expected, MIN_ERROR);
-  
-      //     if (duoTest) {
-      //       const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
-      //       // assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
-      //       assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
-      //     }
-      //   });
-
-      //   it("no volatility multiple strikes and expirations", async function () {
-      //     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
-
-      //     const strikes = [200, 800, 1000, 1200, 5000];
-      //     const times = [1, 2, 10, 30, 60, SEC_IN_YEAR, 2 * SEC_IN_YEAR];
-      //     const rates = [0, 0.05, 4];
-
-      //     for (let strike of strikes) {
-      //       for (let time of times) {
-      //         for (let rate of rates) {
-      //           const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
-      //           const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time, 0, rate);
-      //           assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
-        
-      //           if (duoTest) {
-      //             const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-      //             assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
-      //           }
-      //         }
-      //       }
-      //     }
-      //   });
-      // });
-
-      // describe("random", function () {
-      //   it("lower strikes", async function () {
-      //     const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
-      //     const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
-      //     const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-      //     const rates = [0, 0.1, 0.2, 4]; // todo: use wider range
-      //     await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
-      //   });
-
-      //   it("higher strikes", async function () {
-      //     const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
-      //     const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
-      //     const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-      //     const rates = [0, 0.1, 0.2, 4];
-      //     await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
-      //   });
-      // });
-
       describe.only("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
@@ -1125,6 +1052,133 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
             await options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
             await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          }
+        });
+      });
+    });
+
+    describe.only("theta", function () {
+      it("single", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+        const expectedCall = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "call");
+        const expectedPut = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "put");
+        
+        const actualJS = blackScholesJS.getTheta(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
+        assertAbsoluteBelow(actualJS.thetaCall, expectedCall, MAX_THETA_ABS_ERROR);
+        assertAbsoluteBelow(actualJS.thetaPut, expectedPut, MAX_THETA_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = await options.getTheta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+          assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
+          assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
+        }
+      });
+
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expectedCall = greeks.getTheta(1000, strike, time / 365, vol, rate, "call");
+                const expectedPut = greeks.getTheta(1000, strike, time / 365, vol, rate, "put");
+                const actualJS = blackScholesJS.getTheta(1000, strike, time * SEC_IN_DAY, vol, rate);
+                assertAbsoluteBelow(actualJS.thetaCall, expectedCall, MAX_THETA_ABS_ERROR);
+                assertAbsoluteBelow(actualJS.thetaPut, expectedPut, MAX_THETA_ABS_ERROR);
+
+                if (duoTest) {
+                  const actualSOL = await options.getTheta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                  assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
+                  assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      describe.only("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getTheta(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+          expect(() => blackScholesJS.getTheta(0, 0, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getTheta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await options.getTheta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getTheta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getTheta(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("SpotUpperBoundError");
+          expect(() => blackScholesJS.getTheta(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("SpotUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getTheta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await options.getTheta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getTheta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          }
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getTheta(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+          expect(() => blackScholesJS.getTheta(1000, 0, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getTheta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await options.getTheta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+            await assertRevertError(options, options.getTheta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          }
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getTheta(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("StrikeUpperBoundError");
+          expect(() => blackScholesJS.getTheta(1000, 100000, 50000, 10_000, 0.05)).to.throw("StrikeUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getTheta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await options.getTheta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getTheta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          }
+        });
+
+        it("rejects when time > max time", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getTheta(1000, 930, 4294967295, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+          expect(() => blackScholesJS.getTheta(1000, 930, 63072001, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await options.getTheta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          }
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getTheta(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getTheta(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
       });
