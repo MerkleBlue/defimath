@@ -109,7 +109,7 @@ And here's the gas efficiency comparison table for the same implementations.
 | call          |     4115 |    30220 |    20635 |    39974 |    95447 |
 | put           |     4151 |    30220 |    20827 |    40137 |    94808 |
 | delta         |     2785 |        + |        - |        + |        - |
-| gamma         |          |        - |        - |        - |        - |
+| gamma         |     2352 |        - |        - |        - |        - |
 | theta         |          |        - |        - |        - |        + |
 | vega          |          |        + |        - |        - |        - |
 

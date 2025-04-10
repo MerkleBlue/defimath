@@ -11,6 +11,7 @@ const fastTest = true;
 
 const MAX_OPTION_ABS_ERROR = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
 const MAX_DELTA_ABS_ERROR = 1.2e-13;
+const MAX_GAMMA_ABS_ERROR = 3.2e-15;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
@@ -286,6 +287,30 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 totalGas += parseInt((await options.getDeltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe.only("gamma", function () {
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt((await options.getGammaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -976,6 +1001,130 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
             await options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
             await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          }
+        });
+      });
+    });
+
+    describe.only("gamma", function () {
+      it("single", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+        const expected = greeks.getGamma(1000, 980, 60 / 365, 0.60, 0.05);
+        
+        const actualJS = blackScholesJS.getGamma(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
+        assertAbsoluteBelow(actualJS, expected, MAX_GAMMA_ABS_ERROR);
+
+        if (duoTest) {
+          const actualSOL = (await options.getGamma(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_GAMMA_ABS_ERROR);
+        }
+      });
+
+      it("multiple in typical range", async function () {
+        const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expected = greeks.getGamma(1000, strike, time / 365, vol, rate, "call");
+                const actualJS = blackScholesJS.getGamma(1000, strike, time * SEC_IN_DAY, vol, rate);
+                assertAbsoluteBelow(actualJS, expected, MAX_GAMMA_ABS_ERROR);
+
+                if (duoTest) {
+                  const actualSOL = (await options.getGamma(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                  assertAbsoluteBelow(actualSOL, expected, MAX_GAMMA_ABS_ERROR);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // todo: limits and random tests
+
+
+      describe.only("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getGamma(0.00000099, 0.00000099, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+          expect(() => blackScholesJS.getGamma(0, 0, 50000, 0.6, 0.05)).to.throw("SpotLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getGamma("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+            await options.getGamma("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getGamma(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          }
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getGamma(1e15 + 1, 1e15 + 1, 50000, 1.920000001, 0.05)).to.throw("SpotUpperBoundError");
+          expect(() => blackScholesJS.getGamma(1e18, 1e18, 50000, 10_000, 0.05)).to.throw("SpotUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getGamma("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+            await options.getGamma("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getGamma("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          }
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getGamma(1000, 199.999999, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+          expect(() => blackScholesJS.getGamma(1000, 0, 50000, 0.6, 0.05)).to.throw("StrikeLowerBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getGamma(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+            await options.getGamma(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+            await assertRevertError(options, options.getGamma(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          }
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getGamma(1000, 5000.000001, 50000, 1.920000001, 0.05)).to.throw("StrikeUpperBoundError");
+          expect(() => blackScholesJS.getGamma(1000, 100000, 50000, 10_000, 0.05)).to.throw("StrikeUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getGamma(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+            await options.getGamma(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+            await assertRevertError(options, options.getGamma(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          }
+        });
+
+        it("rejects when time > max time", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getGamma(1000, 930, 4294967295, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+          expect(() => blackScholesJS.getGamma(1000, 930, 63072001, 0.60, 0.05)).to.throw("TimeToExpiryUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+            await options.getGamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+            await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          }
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+
+          expect(() => blackScholesJS.getGamma(1000, 930, 50000, 0.6, 18)).to.throw("RateUpperBoundError");
+          expect(() => blackScholesJS.getGamma(1000, 930, 50000, 0.6, 4 + 1e-15)).to.throw("RateUpperBoundError");
+
+          if (duoTest) {
+            await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+            await options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+            await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
           }
         });
       });

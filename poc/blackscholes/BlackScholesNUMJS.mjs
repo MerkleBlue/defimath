@@ -15,12 +15,8 @@ export class BlackScholesNUMJS {
   
 
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
-    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
-    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
-    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
-    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
-    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
 
     // handle expired call 
     if (timeSec == 0) {
@@ -49,12 +45,8 @@ export class BlackScholesNUMJS {
   };
 
   getPutOptionPrice(spot, strike, timeSec, vol, rate) {
-    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
-    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
-    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
-    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
-    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
 
     // handle expired put 
     if (timeSec == 0) {
@@ -100,12 +92,8 @@ export class BlackScholesNUMJS {
   };
 
   getDelta(spot, strike, timeSec, vol, rate) {
-    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
-    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
-    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
-    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
-    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
-    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
 
     // handle expired option 
     if (timeSec == 0) {
@@ -125,6 +113,33 @@ export class BlackScholesNUMJS {
 
     return { deltaCall, deltaPut };
   };
+
+  getGamma(spot, strike, timeSec, vol, rate) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired option 
+    if (timeSec == 0) {
+      return 0;
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+
+    const phi = Math.exp(-(d1 ** 2) / 2) / Math.sqrt(2 * Math.PI);    // N'(d1)
+    return phi / (spot * scaledVol);                                  // N'(d1) / (spot * scaledVol)
+  };
+
+  checkInputs(spot, strike, timeSec, rate) {
+    if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
+    if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
+    if (spot * MAX_STRIKE_SPOT_RATIO < strike) throw new Error("StrikeUpperBoundError");
+    if (strike * MAX_STRIKE_SPOT_RATIO < spot) throw new Error("StrikeLowerBoundError");
+    if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
+    if (rate > MAX_RATE) throw new Error("RateUpperBoundError");
+  }
 
   // x: [-50, 50]
   exp(x) {

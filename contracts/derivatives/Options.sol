@@ -6,6 +6,7 @@ import "../math/Math.sol";
 library DeFiMathOptions {
 
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
+    uint256 internal constant SQRT_2PI = 2506628274631000502;
 
     // limits
     uint256 internal constant MIN_SPOT = 1e12 - 1;               // 1 milionth of a $
@@ -139,6 +140,38 @@ library DeFiMathOptions {
 
             deltaCall = int128(int256(DeFiMath.stdNormCDF(d1)));
             deltaPut = deltaCall - 1e18;
+        }
+    }
+
+    function getGamma(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (uint256 gamma) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option 
+            if (timeToExpirySec == 0) {
+                return 0;
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
+
+            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+
+            uint256 phi = (1e36 / DeFiMath.expPositive(uint256(d1 * d1 / 2e18))) * 1e18 / SQRT_2PI;  // N'(d1)
+            gamma = phi * 1e18 / (spot * scaledVol / 1e18);                                         // N'(d1) / (spot * scaledVol)
         }
     }
 }
