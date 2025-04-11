@@ -3,7 +3,7 @@
 [license]: https://opensource.org/licenses/MIT
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
 
-DeFiMath is an open-source, high-performance Solidity library for Ethereum smart contract development. The library is optimized for gas efficiency while preserving very high precision. 
+DeFiMath is a high-performance, open-source Solidity library designed for Ethereum smart contracts. It provides optimized, gas-efficient implementations of core DeFi primitives and mathematical utilities—built with precision and performance in mind.
 
 # Usage
 The library is designed to be used in Ethereum smart contracts. It provides a set of mathematical functions and utilities that can be easily integrated into your Solidity projects.
@@ -32,31 +32,17 @@ contract OptionsExchange {
 ```
 # Features
 
-# Math
-The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
+- __DeFi Primitives__: Core building blocks tailored for advanced financial protocols like options, futures, and other derivatives.
 
-| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
-| :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |  1.9e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
-| ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
-| log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
-| log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
-| sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
-| stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
-| erf           |  1.0e-12 |        - |        - |        - |   2.6e-2 |
+- __High-Precision Math__: Accurate fixed-point and integer operations essential for financial calculations.
 
-Here's gas efficiency comparison table for the same implementations. 
+- __Gas Optimized__: Carefully engineered for minimal gas usage without compromising precision.
 
-| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
-| :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |      475 |     2748 |     5371 |      420 |        - |
-| ln            |      580 |     6994 |    15843 |      536 |        - |
-| log2          |      613 |     6691 |    15191 |        - |        - |
-| log10         |      613 |     8570 |        - |        - |        - |
-| sqrt          |      787 |      952 |      731 |      415 |        - |
-| stdNormCDF    |      949 |        - |        - |        - |     4884 |
-| erf           |      856 |        - |        - |        - |     4236 |
+- __100% Test Coverage__: Fully tested with comprehensive unit tests to ensure correctness and reliability.
 
+- __Modular & Extensible__: Designed for flexibility—import only what you need or extend to suit your protocol.
+
+- __Open-Source__: MIT-licensed and community-friendly—transparent, auditable, and free to use.
 
 # Derivatives
 
@@ -74,7 +60,7 @@ d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}}
 ```math
 d_2 = d_1 - \sigma \sqrt{T}
 ```
-where \(\sigma\) is the volatility of the underlying asset.
+where \(\sigma\) σ is the volatility of the underlying asset.
 
 Learn more about [Black Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
 
@@ -106,12 +92,37 @@ And here's the gas efficiency comparison table for the same implementations.
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     4115 |    30220 |    20635 |    39974 |    95447 |
-| put           |     4151 |    30220 |    20827 |    40137 |    94808 |
+| call          |     4231 |    30220 |    20635 |    39974 |    95447 |
+| put           |     4256 |    30220 |    20827 |    40137 |    94808 |
 | delta         |     2785 |    19574 |        - |    26853 |        - |
 | gamma         |     2364 |        - |        - |        - |        - |
 | theta         |     4900 |        - |        - |        - |        - |
 | vega          |     3062 |    16503 |        - |        - |        - |
+
+# Math
+The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
+
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| exp           |  1.9e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
+| ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
+| log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
+| log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
+| sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
+| stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
+| erf           |  1.0e-12 |        - |        - |        - |   2.6e-2 |
+
+Here's gas efficiency comparison table for the same implementations. 
+
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| exp           |      475 |     2748 |     5371 |      420 |        - |
+| ln            |      580 |     6994 |    15843 |      536 |        - |
+| log2          |      613 |     6691 |    15191 |        - |        - |
+| log10         |      613 |     8570 |        - |        - |        - |
+| sqrt          |      787 |      952 |      731 |      415 |        - |
+| stdNormCDF    |      949 |        - |        - |        - |     4884 |
+| erf           |      856 |        - |        - |        - |     4236 |
 
 
 # Credits
