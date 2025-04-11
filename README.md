@@ -32,17 +32,17 @@ contract OptionsExchange {
 ```
 # Features
 
-- __DeFi Primitives__: Core building blocks tailored for advanced financial protocols like options, futures, and other derivatives.
+- __DeFi primitives__: core building blocks tailored for advanced financial protocols like options, futures, and other derivatives.
 
-- __High-Precision Math__: Accurate fixed-point and integer operations essential for financial calculations.
+- __High-precision math__: accurate fixed-point and integer operations essential for financial calculations.
 
-- __Gas Optimized__: Carefully engineered for minimal gas usage without compromising precision.
+- __Gas optimized__: carefully engineered for minimal gas usage without compromising precision.
 
-- __100% Test Coverage__: Fully tested with comprehensive unit tests to ensure correctness and reliability.
+- __Test coverage__: fully tested with comprehensive unit tests to ensure correctness and reliability.
 
-- __Modular & Extensible__: Designed for flexibility—import only what you need or extend to suit your protocol.
+- __Modular & extensible__: designed for flexibility—import only what you need or extend to suit your protocol.
 
-- __Open-Source__: MIT-licensed and community-friendly—transparent, auditable, and free to use.
+- __Open-source__: MIT-licensed and community-friendly—transparent, auditable, and free to use.
 
 # Derivatives
 
@@ -63,19 +63,11 @@ d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}},  d_2 = d_1 - \sigma 
 ```
 where σ is the volatility of the underlying asset. Learn more about [Black Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
 
-### Limits
-
-The following limitations apply to the BlackScholes implementation:
- - strike prices - up to 5x spot price on both sides, i.e. strike from $200 to $5000 for a $1000 spot
- - time to expiration - up to 2 years
- - volatility - up to 1800%
- - risk-free rate - up to 400%
-
 ### Performance
 
 The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
 
-Option pricing computations cost roughly 4,000 gas on average—orders of magnitude cheaper than a typical Uniswap V3 swap (~130,000 gas).
+Option pricing computations cost roughly 4,200 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
 The following table compares __gas efficiency__ of DeFiMath with other implementations over a typical range of parameters. 
 
@@ -99,24 +91,18 @@ The table below compares the performance of DeFiMath with other option pricing i
 | theta         |  1.8e-12 |        - |        - |        - |        - |
 | vega          |  4.0e-13 |  1.1e-15 |        - |        - |        - |
 
+### Limits
 
+The following limitations apply to all functions:
 
-
+ - __Strike price__: supported range is 0.2x to 5x the spot price (e.g., $200–$5,000 for a $1,000 spot).
+ - __Time to expiration__: up to 2 years.
+ - __Volatility__: up to 1800%.
+ - __Risk-free rate__: up to 400%.
 
 # Math
-The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
 
-| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
-| :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |  1.9e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
-| ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
-| log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
-| log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
-| sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
-| stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
-| erf           |  1.0e-12 |        - |        - |        - |   2.6e-2 |
-
-Here's gas efficiency comparison table for the same implementations. 
+The following table compares __gas efficiency__ of DeFiMath with other math function implementations over a typical range of parameters. 
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
@@ -128,18 +114,32 @@ Here's gas efficiency comparison table for the same implementations.
 | stdNormCDF    |      949 |        - |        - |        - |     4884 |
 | erf           |      856 |        - |        - |        - |     4236 |
 
+The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
+
+| Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| exp           |  1.9e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
+| ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
+| log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
+| log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
+| sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
+| stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
+| erf           |  1.0e-12 |        - |        - |        - |   2.6e-2 |
+
+
 
 # Credits
 
 The following libraries were used for comparison:
- - [PRBMath](https://github.com/PaulRBerg/prb-math)
- - [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity)
- - [Solady](https://github.com/Vectorized/solady)
- - [SolStat](https://github.com/primitivefinance/solstat)
  - [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol)
  - [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol)
  - [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol)
  - [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol)
+ - [PRBMath](https://github.com/PaulRBerg/prb-math)
+ - [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity)
+ - [Solady](https://github.com/Vectorized/solady)
+ - [SolStat](https://github.com/primitivefinance/solstat)
+
 # License
 
-DeFiMath project is released under the MIT License.
+This project is released under the MIT License.
