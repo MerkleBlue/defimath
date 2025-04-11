@@ -50,19 +50,18 @@ contract OptionsExchange {
 
 The implementation is based on the original Black-Scholes formula, which is a mathematical model used to calculate the theoretical price of options. The formula is widely used in the financial industry for pricing European-style options.
 The Black-Scholes formula is given by:  
+
 ```math
 C = S N(d_1) - K e^{-rT} N(d_2)
 ```
-where \(C\) is the call option price, \(S\) is the current asset price, \(K\) is the strike price, \(T\) is the time to expiration (in years), \(r\) is the annualized risk-free interest rate, \(N(d)\) is the cumulative distribution function of the standard normal distribution, and \(d_1\) and \(d_2\) are given by:
 ```math
-d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}}
+P = K e^{-rT} N(-d_2) - S N(-d_1)
 ```
+where \(C\) is the call option price, \(P\) is the put option price, \(S\) is the current asset price, \(K\) is the strike price, \(T\) is the time to expiration (in years), \(r\) is the annualized risk-free interest rate, \(N(d)\) is the cumulative distribution function of the standard normal distribution, and d₁ and d₂ are given by:
 ```math
-d_2 = d_1 - \sigma \sqrt{T}
+d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}},  d_2 = d_1 - \sigma \sqrt{T}
 ```
-where \(\sigma\) σ is the volatility of the underlying asset.
-
-Learn more about [Black Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
+where σ is the volatility of the underlying asset. Learn more about [Black Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
 
 ### Limits
 
@@ -73,11 +72,23 @@ The following limitations apply to the BlackScholes implementation:
  - risk-free rate - up to 400%
 
 ### Performance
-Maximum absolute error when call or put option is calculated is < $0.0000002 for a $1000 spot price.  
 
-Calculating call or put option price costs around 4k gas on average (not accounting for 21k gas paid by each tx). For reference, Uniswap V3 swap costs around 130k gas.  
+The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
 
-The following table compares maximum absolute error of DeFiMath with other implementations over a typical range of parameters. 
+Option pricing computations cost roughly 4,000 gas on average—orders of magnitude cheaper than a typical Uniswap V3 swap (~130,000 gas).
+
+The following table compares __gas efficiency__ of DeFiMath with other implementations over a typical range of parameters. 
+
+| Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
+| :------------ | -------: | -------: | -------: | -------: | -------: |
+| call          |     4231 |    30220 |    20635 |    39974 |    95447 |
+| put           |     4256 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2785 |    19574 |        - |    26853 |        - |
+| gamma         |     2364 |        - |        - |        - |        - |
+| theta         |     4900 |        - |        - |        - |        - |
+| vega          |     3062 |    16503 |        - |        - |        - |
+
+The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
@@ -88,16 +99,9 @@ The following table compares maximum absolute error of DeFiMath with other imple
 | theta         |  1.8e-12 |        - |        - |        - |        - |
 | vega          |  4.0e-13 |  1.1e-15 |        - |        - |        - |
 
-And here's the gas efficiency comparison table for the same implementations.
 
-| Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
-| :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     4231 |    30220 |    20635 |    39974 |    95447 |
-| put           |     4256 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2785 |    19574 |        - |    26853 |        - |
-| gamma         |     2364 |        - |        - |        - |        - |
-| theta         |     4900 |        - |        - |        - |        - |
-| vega          |     3062 |    16503 |        - |        - |        - |
+
+
 
 # Math
 The table below compares the performance of DeFiMath with other math function implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.  
