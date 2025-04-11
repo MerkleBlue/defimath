@@ -169,8 +169,7 @@ library DeFiMathOptions {
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
-
-            uint256 phi = (1e36 / DeFiMath.expPositive(uint256(d1 * d1 / 2e18))) * 1e18 / SQRT_2PI;  // N'(d1)
+            uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
             gamma = phi * 1e18 / (spot * scaledVol / 1e18);                                         // N'(d1) / (spot * scaledVol)
         }
     }
@@ -208,7 +207,7 @@ library DeFiMathOptions {
 
             uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
 
-            uint256 phi = (1e36 / DeFiMath.expPositive(uint256(d1 * d1 / 2e18))) * 1e18 / SQRT_2PI;  // N'(d1)
+            uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
 
             int256 timeDecay = int256(_spot * phi * scaledVol / (2e18 * timeYear));             // spot * N'(d1) * sigma / (2 * sqrt(T))
             // console.log("timeDecay SOL", timeDecay);
@@ -250,8 +249,8 @@ library DeFiMathOptions {
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
 
-            uint256 phi = (1e36 / DeFiMath.expPositive(uint256(d1 * d1 / 2e18))) * 1e18 / SQRT_2PI;  // N'(d1)
-            vega = spot * sqrtTimeYear * phi / 100e36;                                               // N'(d1) * spot * sqrt(T) / 100
+            uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
+            vega = spot * sqrtTimeYear * phi / 100e36;                              // N'(d1) * spot * sqrt(T) / 100
         }
     }
 }

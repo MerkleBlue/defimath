@@ -15,8 +15,18 @@ library DeFiMath {
 
     function exp(int256 x) internal pure returns (uint256) {
         unchecked {
+            // positive
             if (x >= 0) {
+                if (x >= 135305999368893231589) {
+                    return 4e58;
+                }
+
                 return expPositive(uint256(x));
+            }
+
+            // negative
+            if (x <= -41446531673892822313) {
+                return 0;
             }
 
             return 1e36 / expPositive(uint256(-x));
@@ -104,25 +114,6 @@ library DeFiMath {
 
     function expPositive(uint256 x) internal pure returns (uint256 r) {
         unchecked {
-
-            if (x >= 135305999368893231589) {
-                return 4e58;
-            }
-            
-            // // When the result is less than 0.5 we return zero.
-            // // This happens when `x <= (log(1e-18) * 1e18) ~ -4.15e19`.
-            // if (x <= -41446531673892822313) return r;
-
-            // /// @solidity memory-safe-assembly
-            // assembly {
-            //     // When the result is greater than `(2**255 - 1) / 1e18` we can not represent it as
-            //     // an int. This happens when `x >= floor(log((2**255 - 1) / 1e18) * 1e18) ≈ 135`.
-            //     if iszero(slt(x, 135305999368893231589)) {
-            //         mstore(0x00, 0xa37bfec9) // `ExpOverflow()`.
-            //         revert(0x1c, 0x04)
-            //     }
-            // }
-
             // `x` is now in the range `(-42, 136) * 1e18`. Convert to `(-42, 136) * 2**96`
             // for more intermediate precision and a binary basis. This base conversion
             // is a multiplication by 1e18 / 2**96 = 5**18 / 2**78.
@@ -241,9 +232,20 @@ library DeFiMath {
             // int256 erfResult = erf(x * 707106781186547524 / 1e18);
             // if (log) { if (erfResult > 0) { console.log("erfResult SOL: %d", uint256(erfResult)); } else { console.log("erfResult SOL: -%d", uint256(-erfResult)); }}
             int256 argument = x * 707106781186547524 / 1e18;
+
+
+
             if (argument >= 0) {
+                if (argument >= 11.63e18) {
+                    return 1e18;
+                }
+
                 return 5e17 + erfPositiveHalf(uint256(argument));
             } 
+
+            if (argument <= -11.63e18) {
+                return 0;
+            }
                 
             return 5e17 - erfPositiveHalf(uint256(-argument));
         }

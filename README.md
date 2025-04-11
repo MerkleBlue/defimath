@@ -73,12 +73,12 @@ The following table compares __gas efficiency__ of DeFiMath with other implement
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     4231 |    30220 |    20635 |    39974 |    95447 |
-| put           |     4256 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2785 |    19574 |        - |    26853 |        - |
-| gamma         |     2364 |        - |        - |        - |        - |
-| theta         |     4900 |        - |        - |        - |        - |
-| vega          |     3062 |    16503 |        - |        - |        - |
+| call          |     4172 |    30220 |    20635 |    39974 |    95447 |
+| put           |     4197 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2773 |    19574 |        - |    26853 |        - |
+| gamma         |     2427 |        - |        - |        - |        - |
+| theta         |     4904 |        - |        - |        - |        - |
+| vega          |     3125 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
@@ -106,13 +106,13 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |      475 |     2748 |     5371 |      420 |        - |
+| exp           |      463 |     2748 |     5371 |      420 |        - |
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
 | sqrt          |      787 |      952 |      731 |      415 |        - |
-| stdNormCDF    |      949 |        - |        - |        - |     4884 |
-| erf           |      856 |        - |        - |        - |     4236 |
+| stdNormCDF    |      937 |        - |        - |        - |     4884 |
+| erf           |      821 |        - |        - |        - |     4236 |
 
 The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
