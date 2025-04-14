@@ -13,106 +13,47 @@ import "hardhat/console.sol";
  */
 library DeFiMath {
 
-    function expPositive3(uint256 x) internal pure returns (uint256 r) {
+    // exponential function - 
+    function expPositive(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-            // `x` is now in the range `(-42, 136) * 1e18`. Convert to `(-42, 136) * 2**96`
-            // for more intermediate precision and a binary basis. This base conversion
-            // is a multiplication by 1e18 / 2**96 = 5**18 / 2**78.
-            // x = (x << 78) / 3814697265625;
+            // WARNING: this function doesn't check input parameter x, and should 
+            // not be called directly if x is not in the range [0, 135]. This
+            // function is used only for internal calculations, and should be
+            // called only from exp(int256) function.
 
-            // Reduce range of x to (-½ ln 2, ½ ln 2) * 2**96 by factoring out powers
-            // of two such that exp(x) = exp(x') * 2**k, where k is an integer.
-            // Solving this gives k = round(x / log(2)) and x' = x - k * log(2).
-            // uint256 k = (x << 96) / 54916777467707473351141471128 + 2 ** 95 >> 96;
-            // x = (x - k * 54916777467707473351141471128) / 32;
+            // How it works: it starts by reducing the range of x from [0, 135] down to
+            // [0, ln(2)] by factoring out powers of two using the formula
+            // exp(x) = exp(x') * 2 ** k, where k is an integer. k is calculated
+            // simply by dividing x by ln(2) and rounding down to the nearest integer.
+            // The value of x' is calculated by subtracting k * ln(2) from x.
+            // The range is then reduced to [0, 0.0027] by dividing x by 256. 
+            uint256 k = x / 693147180559945309;             // find integer k
+            x -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+            x >>= 8;                                        // reduce x to [0, 0.0027]
 
-            // uint256 k;
-            // /// @solidity memory-safe-assembly
-            // assembly {
-            //     k := div(x, 693147180559945309)
-            // }
-            uint256 k = x / 693147180559945309;
-            x -= k * 693147180559945309;
-            x >>= 8;
 
-            // console.log("step 1 SOL:", k, x);
-
-            // `k` is in the range `[-61, 195]`.
-
-            // Evaluate using a (6, 7)-term rational approximation.
-            // `p` is made monic, we'll multiply by a scale factor later.
-            // int256 intX = int256(x);
-            // int256 y = intX + 1346386616545796478920950773328;
-            // y = ((y * intX) >> 96) + 57155421227552351082224309758442;
-            // int256 p = y + intX - 94201549194550492254356042504812;
-            // p = ((p * y) >> 96) + 28719021644029726153956944680412240;
-            // p = p * intX + (4385272521454847904659076985693276 << 96);
-
-            // // We leave `p` in `2**192` basis so we don't need to scale it back up for the division.
-            // int256 q = intX - 2855989394907223263936484059900;
-            // q = ((q * intX) >> 96) + 50020603652535783019961831881945;
-            // q = ((q * intX) >> 96) - 533845033583426703283633433725380;
-            // q = ((q * intX) >> 96) + 3604857256930695427073651918091429;
-            // q = ((q * intX) >> 96) - 14423608567350463180887372962807573;
-            // // q = ((q * intX) >> 96) + 26449188498355588339934803723976023;
-
-            uint256 denominator = ((3e18 - x) * (3e18 - x)) + 3e36;
+            // The function then uses a rational approximation formula to calculate
+            // exp(x) in the range [0, 0.0027]. The formula is given by:
+            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+            uint256 q = (x - 3e18) * (x - 3e18) + 3e36;
             x *= 1e9;
-            uint256 numerator = ((x + 3e27) * (x + 3e27)) + 3e54;
-
+            uint256 p = (3e27 + x) * (3e27 + x) + 3e54;
 
             /// @solidity memory-safe-assembly
             assembly {
-                // Div in assembly because solidity adds a zero check despite the unchecked.
-                // The q polynomial won't have zeros in the domain as all its roots are complex.
-                // No scaling is necessary because p is already `2**96` too large.
-                r := div(numerator, denominator)
-
-                // r := div(mul(r, mul(r, mul(r, r))), 1000000000000000000000000000000000000000000000000000000)
-                // r := div(mul(r, mul(r, mul(r, r))), 1000000000000000000000000000000000000000000000000000000)
-                // r := div(mul(r, r), 1000000000000000000)
+                y := div(p, q)                              // assembly for gas savings
             }
 
-            // console.log("step 2 SOL", r);
 
-            // r = (r * r) / 1e18; // r2
-            // // console.log("step 2.1 SOL", r);
-
-            // r = (r * r) / 1e18; // r4
-            // // console.log("step 2.2 SOL", r);
-            // // r = (r * r * r * r) / 1e54; // r8
-            // r = (r * r) / 1e18; // r8
-            // // console.log("step 2.3 SOL", r);
-
-            // r = (r * r) / 1e18; // r16
-            // // console.log("step 2.4 SOL", r);
-            // // r = (r * r * r * r) / 1e54; // r16
-            // r = (r * r) / 1e18; // r32 
-            // // console.log("step 2.5 SOL", r);
-
-            // r = (r * r) / 1e18; // r64
-            // r = (r * r) / 1e18; // r128
-            // r = (r * r) / 1e18; // r256
-
-            r = (r * r * r * r) / 1e54; // r ** 4 
-            r = (r * r * r * r) / 1e54; // r ** 16
-            r = (r * r * r * r) / 1e54; // r ** 64
-            r = (r * r * r * r) / 1e54; // r ** 256
-
-            r <<= k;
-
-            // console.log("step 3 SOL", r);
-
-
-            // r should be in the range `(0.09, 0.25) * 2**96`.
-
-            // We now need to multiply r by:
-            // - The scale factor `s ≈ 6.031367120`.
-            // - The `2**k` factor from the range reduction.
-            // - The `1e18 / 2**96` factor for base conversion.
-            // We do this all at once, with an intermediate result in `2**213`
-            // basis, so the final right shift is always by a positive amount.
-            // return r << k;
+            // The result is then raised to the power of 256 to account for the
+            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
+            // raise to the power of 4 in one expression. Finally, the result is 
+            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+            y = y * y * y * y / 1e54;                       // y ** 4 
+            y = y * y * y * y / 1e54;                       // y ** 16
+            y = y * y * y * y / 1e54;                       // y ** 64
+            y = y * y * y * y / 1e54;                       // y ** 256
+            y <<= k;                                        // multiply y by 2 ** k
         }
     }
 
@@ -215,7 +156,7 @@ library DeFiMath {
         }
     }
 
-    function expPositive(uint256 x) internal pure returns (uint256 r) {
+    function expPositive3(uint256 x) internal pure returns (uint256 r) {
         unchecked {
             // `x` is now in the range `(-42, 136) * 1e18`. Convert to `(-42, 136) * 2**96`
             // for more intermediate precision and a binary basis. This base conversion

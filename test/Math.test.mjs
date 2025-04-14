@@ -9,7 +9,7 @@ const duoTest = true;
 
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 1.8e-11;
-const MAX_REL_ERROR_EXP_POS = 1e-14;
+const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_EXP_POS3 = 5.4e-14;
 
 describe("DeFiMath (SOL and JS)", function () {
@@ -52,7 +52,7 @@ describe("DeFiMath (SOL and JS)", function () {
   duoTest && describe("performance", function () {
     describe("exp", function () {
 
-      it.only("expPositive3 experimental 6.9", async function () {
+      it("expPositive3 experimental 6.9", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 6.9;
 
@@ -75,7 +75,7 @@ describe("DeFiMath (SOL and JS)", function () {
 
       });
 
-      it.only("expPositive3 experimental test error for approx", async function () {
+      it("expPositive3 experimental test error for approx", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 6.9;
 
