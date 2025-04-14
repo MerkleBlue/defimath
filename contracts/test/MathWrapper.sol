@@ -63,6 +63,20 @@ contract MathWrapper {
         return (result, startGas - endGas);
     }
 
+    function expPositive3MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+
+        result = DeFiMath.expPositive3(x);
+
+        endGas = gasleft();
+
+        return (result, startGas - endGas);
+    }
+
     function expPositiveMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 result;
         uint256 startGas;

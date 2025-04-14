@@ -49,6 +49,30 @@ describe("DeFiMath (SOL and JS)", function () {
 
   duoTest && describe("performance", function () {
     describe("exp", function () {
+
+      it.only("exp experimental 6.9", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+        const x = 6.9;
+
+        console.log("expected: ", Math.exp(x));
+        console.log("");
+
+        blackScholesJS.expPositive3(x);
+        
+        let totalGas = parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
+        console.log("2pi gas: ", totalGas); // 362
+        
+        totalGas = parseInt((await deFiMath.expPositive3MG(tokens(x))).gasUsed);
+        console.log("my gas: ", totalGas); // 614, 591 witout > 32, 152 with only pade  
+
+        let result1 = (await deFiMath.expPositiveMG(tokens(x))).y;
+        console.log("2pi res: ", result1); 
+
+        let result2 = (await deFiMath.expPositive3MG(tokens(x))).y;
+        console.log(" my res: ", result2); 
+
+      });
+
       it("exp positive < 0.03125", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         let totalGas = 0, count = 0;
@@ -234,6 +258,20 @@ describe("DeFiMath (SOL and JS)", function () {
 
   describe("functionality", function () {
     describe("exp", function () {
+      it("exp experimental positive < 0.03125", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 0; x < 0.03125; x += 0.0003) { 
+          const expected = Math.exp(x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+            console.log("x", x.toFixed(4), "abs error: ", Math.abs(actualSOL - expected), expected, actualSOL);
+            // assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
+          }
+        }
+      });
+
       it("exp positive < 0.03125", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 

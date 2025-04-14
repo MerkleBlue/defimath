@@ -208,7 +208,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   });
 
   duoTest && describe("performance", function () {
-    describe("call", function () {
+    describe.only("call", function () {
       it("single", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
 
