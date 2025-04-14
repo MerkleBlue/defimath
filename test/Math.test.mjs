@@ -94,7 +94,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("max error: ", maxError);
       });
 
-      it.only("exp positive 3 < 0.03125", async function () {
+      it("exp positive 3 < 0.03125", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0; x < 0.03125; x += 0.0003) { 
@@ -110,7 +110,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("exp positive 3 [0.03125, 0.69)", async function () {
+      it("exp positive 3 [0.03125, 0.69)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.03125; x < 0.69; x += 0.0010125) { 
