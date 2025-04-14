@@ -243,20 +243,37 @@ export class BlackScholesNUMJS {
 
     // step 1
     const k = Math.floor(x / 0.693147180559945309);
-    x = (x - k * 0.693147180559945309) / 32;
+    x = (x - k * 0.693147180559945309) / 256;
 
-    console.log("step 1 JS ", k, x);
+    // console.log("step 1 JS ", k, x);
 
     const numerator = (x + 3) ** 2 + 3;
     const denominator = (x - 3) ** 2 + 3;
     let r = (numerator / denominator);
 
-    console.log("step 2 JS ", r);
+    // console.log("step 2 JS ", r);
 
-    r = r ** 32 * 2 ** k;
+    r = r * r;
+    // console.log("step 2.1 JS ", r);
+
+    r = r * r;
+    // console.log("step 2.2 JS ", r);
+
+    r = r * r;
+    // console.log("step 2.3 JS ", r);
+
+    r = r * r;
+    // console.log("step 2.4 JS ", r);
+
+    r = r * r;
+    // console.log("step 2.5 JS ", r);
+
+    r = r ** 8 * 2 ** k;
+
+    return r;
 
 
-    console.log("step 3 JS ", r);
+    // console.log("step 3 JS ", r);
 
     // // add limits to simulate solidity
     // if (x > 50) {

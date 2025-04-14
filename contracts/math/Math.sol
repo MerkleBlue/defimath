@@ -25,11 +25,12 @@ library DeFiMath {
             // Solving this gives k = round(x / log(2)) and x' = x - k * log(2).
             // uint256 k = (x << 96) / 54916777467707473351141471128 + 2 ** 95 >> 96;
             // x = (x - k * 54916777467707473351141471128) / 32;
-            // console.log("Input X:", x);
-            uint256 k = (x / 693147180559945309);
-            x = (x - k * 693147180559945309) >> 5;
 
-            console.log("step 1 SOL:", k, x);
+            x *= 1e2;
+            uint256 k = (x / 69314718055994530942);
+            x = (x - k * 69314718055994530942) >> 8;
+
+            // console.log("step 1 SOL:", k, x);
 
             // `k` is in the range `[-61, 195]`.
 
@@ -50,16 +51,10 @@ library DeFiMath {
             // q = ((q * intX) >> 96) - 14423608567350463180887372962807573;
             // // q = ((q * intX) >> 96) + 26449188498355588339934803723976023;
 
-            uint256 denominator = ((3e18 - x) * (3e18 - x)) + 3e36;
+            uint256 denominator = ((3e20 - x) * (3e20 - x)) + 3e40;
             // x /= 1e6;
-            uint256 numerator = (((x + 3e18) * (x + 3e18)) + 3e36) * 1e18;
+            uint256 numerator = (((x + 3e20) * (x + 3e20)) + 3e40) * 1e20;
 
-            // r = numerator * 1e18 / denominator; // using e ^ (a + b) = e ^ a * e ^ b
-
-            // console.log("denominator:", denominator);
-            // console.log("numerator:", numerator);
-
-            // console.log("r", r);
 
             /// @solidity memory-safe-assembly
             assembly {
@@ -73,19 +68,32 @@ library DeFiMath {
                 // r := div(mul(r, r), 1000000000000000000)
             }
 
-            console.log("step 2 SOL", r);
+            // console.log("step 2 SOL", r);
 
-            // r = (r * r) / 1e18; // r2 
-            // r = (r * r) / 1e18; // r4
-            r = (r * r * r * r) / 1e54; // r8
-            // r = (r * r) / 1e18; // r8
-            // r = (r * r) / 1e18; // r16
-            r = (r * r * r * r) / 1e54; // r16
-            r = (r * r) / 1e18 << k; // r32 
+            r = (r * r) / 1e20; // r2
+            // console.log("step 2.1 SOL", r);
 
-            console.log("step 3 SOL", r);
+            r = (r * r) / 1e20; // r4
+            // console.log("step 2.2 SOL", r);
+            // r = (r * r * r * r) / 1e54; // r8
+            r = (r * r) / 1e20; // r8
+            // console.log("step 2.3 SOL", r);
 
-            
+            r = (r * r) / 1e20; // r16
+            // console.log("step 2.4 SOL", r);
+            // r = (r * r * r * r) / 1e54; // r16
+            r = (r * r) / 1e20; // r32 
+            // console.log("step 2.5 SOL", r);
+
+            r = (r * r) / 1e20; // r64
+            r = (r * r) / 1e20; // r128
+            r = (r * r) / 1e22; // r256
+
+            r <<= k;
+
+            // console.log("step 3 SOL", r);
+
+
             // r should be in the range `(0.09, 0.25) * 2**96`.
 
             // We now need to multiply r by:

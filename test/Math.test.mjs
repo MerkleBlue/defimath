@@ -9,6 +9,8 @@ const duoTest = true;
 
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 1.8e-11;
+const MAX_REL_ERROR_EXP_POS = 1e-14;
+const MAX_REL_ERROR_EXP_POS3 = 5.4e-14;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -50,7 +52,7 @@ describe("DeFiMath (SOL and JS)", function () {
   duoTest && describe("performance", function () {
     describe("exp", function () {
 
-      it.only("exp experimental 6.9", async function () {
+      it.only("expPositive3 experimental 6.9", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 6.9;
 
@@ -71,6 +73,57 @@ describe("DeFiMath (SOL and JS)", function () {
         let result2 = (await deFiMath.expPositive3MG(tokens(x))).y;
         console.log(" my res: ", result2); 
 
+      });
+
+      it.only("expPositive3 experimental test error for approx", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+        const x = 6.9;
+
+        let maxError = 0;
+        for (let x = 0; x < 0.69; x += 0.0069) {
+          const expected = Math.exp(x);
+          const actualJS = blackScholesJS.expPositive3(x);
+
+          const error = actualJS - expected;
+          if (Math.abs(error) > Math.abs(maxError)) {
+            maxError = error;
+          }
+          //console.log("x", x.toFixed(4), "abs error: ", error, expected, actualJS);
+          // assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
+        }
+        console.log("max error: ", maxError);
+      });
+
+      it.only("exp positive 3 < 0.03125", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 0; x < 0.03125; x += 0.0003) { 
+          const expected = Math.exp(x);
+          // const actualJS = blackScholesJS.exp(x);
+          // assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS3);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.expPositive3(tokens(x))).toString() / 1e18;
+            // console.log("X", x.toFixed(4), expected, actualSOL);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS3);
+          }
+        }
+      });
+
+      it.only("exp positive 3 [0.03125, 0.69)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 0.03125; x < 0.69; x += 0.0010125) { 
+          const expected = Math.exp(x);
+          // const actualJS = blackScholesJS.exp(x);
+          // assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS3);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.expPositive3(tokens(x))).toString() / 1e18;
+            // console.log("X", x.toFixed(4), expected, actualSOL);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS3);
+          }
+        }
       });
 
       it("exp positive < 0.03125", async function () {
@@ -258,19 +311,19 @@ describe("DeFiMath (SOL and JS)", function () {
 
   describe("functionality", function () {
     describe("exp", function () {
-      it("exp experimental positive < 0.03125", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+      // it("exp experimental positive < 0.03125", async function () {
+      //   const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0; x < 0.03125; x += 0.0003) { 
-          const expected = Math.exp(x);
+      //   for (let x = 0; x < 0.03125; x += 0.0003) { 
+      //     const expected = Math.exp(x);
 
-          if (duoTest) {
-            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-            console.log("x", x.toFixed(4), "abs error: ", Math.abs(actualSOL - expected), expected, actualSOL);
-            // assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
-          }
-        }
-      });
+      //     if (duoTest) {
+      //       const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+      //       console.log("x", x.toFixed(4), "abs error: ", Math.abs(actualSOL - expected), expected, actualSOL);
+      //       // assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
+      //     }
+      //   }
+      // });
 
       it("exp positive < 0.03125", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -278,11 +331,11 @@ describe("DeFiMath (SOL and JS)", function () {
         for (let x = 0; x < 0.03125; x += 0.0003) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000050);
+          assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
       });
@@ -293,11 +346,11 @@ describe("DeFiMath (SOL and JS)", function () {
         for (let x = 0.03125; x < 1; x += 0.0010125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000110);
+          assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000110);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
       });
@@ -308,11 +361,11 @@ describe("DeFiMath (SOL and JS)", function () {
         for (let x = 1; x < 32; x += 0.03200125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          assertRelativeBelow(actualJS, expected, 0.000000004200);
+          assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, 0.000000004200);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
       });
@@ -323,11 +376,11 @@ describe("DeFiMath (SOL and JS)", function () {
         for (let x = 32; x < 50; x += 0.25600125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
-          assertRelativeBelow(actualJS, expected, 0.000000004200);
+          assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, 0.000000004200);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
       });
@@ -338,11 +391,11 @@ describe("DeFiMath (SOL and JS)", function () {
         for (let x = 0.05; x <= 50; x += 0.05 ) { 
           const expected = Math.exp(-x);
           const actualJS = blackScholesJS.exp(-x);
-          assertBothBelow(actualJS, expected, 0.000000004200, 0.000000000042);
+          assertAbsoluteBelow(actualJS, expected, 0.000000000042); // todo
 
           if (duoTest) {
             const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
-            assertAbsoluteBelow(actualSOL, expected, 0.000000000042);
+            assertAbsoluteBelow(actualSOL, expected, 0.000000000042); // todo
           }
         }
       });

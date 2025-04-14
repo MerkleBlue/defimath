@@ -33,6 +33,10 @@ contract MathWrapper {
         return DeFiMath.expPositive(x);
     }
 
+    function expPositive3(uint256 x) external pure returns (uint256) {
+        return DeFiMath.expPositive3(x);
+    }
+
     // x: [1, 16] 
     function lnUpper(uint256 x) external pure returns (uint256) {
        return DeFiMath.lnUpper(x);
