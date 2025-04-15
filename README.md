@@ -73,11 +73,11 @@ The following table compares __gas efficiency__ of DeFiMath with other implement
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     3889 |    30220 |    20635 |    39974 |    95447 |
-| put           |     3914 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2670 |    19574 |        - |    26853 |        - |
+| call          |     3861 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3886 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2656 |    19574 |        - |    26853 |        - |
 | gamma         |     2289 |        - |        - |        - |        - |
-| theta         |     4505 |        - |        - |        - |        - |
+| theta         |     4477 |        - |        - |        - |        - |
 | vega          |     2965 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
@@ -110,9 +110,9 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
-| sqrt          |      787 |      952 |      731 |      415 |        - |
-| stdNormCDF    |      856 |        - |        - |        - |     4884 |
-| erf           |      740 |        - |        - |        - |     4236 |
+| sqrt          |      776 |      952 |      731 |      415 |        - |
+| stdNormCDF    |      842 |        - |        - |        - |     4884 |
+| erf           |      726 |        - |        - |        - |     4236 |
 
 The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
