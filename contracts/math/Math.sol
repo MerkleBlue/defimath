@@ -18,7 +18,6 @@ library DeFiMath {
     // exponential function - 
     function expPositive(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-            // if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
             // WARNING: this function doesn't check input parameter x, and should 
             // not be called directly if x is not in the range [0, 135]. This
             // function is used only for internal calculations, and should be
