@@ -64,7 +64,7 @@ library DeFiMath {
         unchecked {
             // negative
             if (x <= 0) {
-                uint256 absX = (uint256(x) + uint256(x >> 255)) ^ uint256(x >> 255);
+                uint256 absX = uint256(-x);
 
                 // check input
                 if (absX >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
@@ -96,47 +96,48 @@ library DeFiMath {
                 y = y * y * y * y / 1e54;                       // y ** 64
                 y = y * y * y * y / 1e54;                       // y ** 256
                 y <<= k;                                        // multiply y by 2 ** k
-                
+
                 /// @solidity memory-safe-assembly
                 assembly {
                     y := div(1000000000000000000000000000000000000, y)
                 }
+            } else {
+                // positive
+                if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
 
-                return y;
-            } 
-
-            // positive
-            if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
-
-            uint256 absX = uint256(x);
-
-            uint256 k = absX / 693147180559945309;             // find integer k
-            absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
-            absX >>= 8;                                        // reduce x to [0, 0.0027]
+                uint256 absX = uint256(x);                         // since x is positive, absX = x
 
 
-            // The function then uses a rational approximation formula to calculate
-            // exp(x) in the range [0, 0.0027]. The formula is given by:
-            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
-            absX *= 1e9;
-            uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+                uint256 k = absX / 693147180559945309;             // find integer k
+                absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+                absX >>= 8;                                        // reduce x to [0, 0.0027]
 
-            /// @solidity memory-safe-assembly
-            assembly {
-                y := div(p, q)                              // assembly for gas savings
+
+                // The function then uses a rational approximation formula to calculate
+                // exp(x) in the range [0, 0.0027]. The formula is given by:
+                // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+                uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
+                absX *= 1e9;
+                uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+
+                /// @solidity memory-safe-assembly
+                assembly {
+                    y := div(p, q)                              // assembly for gas savings
+                }
+
+
+                // The result is then raised to the power of 256 to account for the
+                // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
+                // raise to the power of 4 in one expression. Finally, the result is 
+                // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+                y = y * y * y * y / 1e54;                       // y ** 4 
+                y = y * y * y * y / 1e54;                       // y ** 16
+                y = y * y * y * y / 1e54;                       // y ** 64
+                y = y * y * y * y / 1e54;                       // y ** 256
+                y <<= k;                                        // multiply y by 2 ** k
             }
 
 
-            // The result is then raised to the power of 256 to account for the
-            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
-            // raise to the power of 4 in one expression. Finally, the result is 
-            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
-            y = y * y * y * y / 1e54;                       // y ** 4 
-            y = y * y * y * y / 1e54;                       // y ** 16
-            y = y * y * y * y / 1e54;                       // y ** 64
-            y = y * y * y * y / 1e54;                       // y ** 256
-            y <<= k;                                        // multiply y by 2 ** k
         }
     }
 
