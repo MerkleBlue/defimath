@@ -311,21 +311,7 @@ describe("DeFiMath (SOL and JS)", function () {
   });
 
   describe("functionality", function () {
-    describe.only("exp", function () {
-      // it("exp experimental positive < 0.03125", async function () {
-      //   const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-      //   for (let x = 0; x < 0.03125; x += 0.0003) { 
-      //     const expected = Math.exp(x);
-
-      //     if (duoTest) {
-      //       const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-      //       console.log("x", x.toFixed(4), "abs error: ", Math.abs(actualSOL - expected), expected, actualSOL);
-      //       // assertBothBelow(actualSOL, expected, 0.000000004200, 0.000000000050);
-      //     }
-      //   }
-      // });
-
+    describe("exp", function () {
       it("exp when x is 0", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -340,7 +326,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("exp positive < 0.03125", async function () {
+      it("exp when x in [0, 0.03125)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0; x < 0.03125; x += 0.0003) { 
@@ -355,7 +341,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("exp positive [0.03125, 1)", async function () {
+      it("exp when x in [0.03125, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.03125; x < 1; x += 0.0010125) { 
@@ -370,7 +356,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("exp positive [1, 32)", async function () {
+      it("exp when x in [1, 32)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 32; x += 0.03200125) { 
@@ -385,10 +371,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("exp positive [32, 50)", async function () {
+      it("exp when x in [32, 135)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 32; x < 50; x += 0.25600125) { 
+        for (let x = 32; x < 135; x += 0.25600125) { 
           const expected = Math.exp(x);
           const actualJS = blackScholesJS.exp(x);
           assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);

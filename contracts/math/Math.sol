@@ -13,9 +13,7 @@ import "hardhat/console.sol";
  */
 library DeFiMath {
 
-    error ExpLowerBoundError();
     error ExpUpperBoundError();
-
 
     // exponential function - 
     function expPositive(uint256 x) internal pure returns (uint256 y) {
@@ -80,7 +78,9 @@ library DeFiMath {
                 // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
                 uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
                 absX *= 1e9;
-                uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+                uint temp = 3e27 + absX;
+                uint256 p = temp * temp + 3e54;
+                // uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
 
                 /// @solidity memory-safe-assembly
                 assembly {
@@ -102,8 +102,7 @@ library DeFiMath {
                 uint256 absX = uint256(-x);                         // since x is negative, absX = -x
 
                 // check input
-                if (absX >= 135305999368893231589) revert ExpLowerBoundError();
-
+                if (absX >= 41446531673892822313) return 0;
 
                 uint256 k = absX / 693147180559945309;             // find integer k
                 absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
