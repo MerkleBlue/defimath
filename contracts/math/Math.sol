@@ -78,9 +78,7 @@ library DeFiMath {
                 // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
                 uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
                 absX *= 1e9;
-                uint temp = 3e27 + absX;
-                uint256 p = temp * temp + 3e54;
-                // uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+                uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
 
                 /// @solidity memory-safe-assembly
                 assembly {

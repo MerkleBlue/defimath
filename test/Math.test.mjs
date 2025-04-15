@@ -320,9 +320,11 @@ describe("DeFiMath (SOL and JS)", function () {
         assert.equal(actualJS, 1);
 
         if (duoTest) {
-          const actualSOL = (await deFiMath.exp(0)).toString() / 1e18;
+          let actualSOL = (await deFiMath.exp(0)).toString() / 1e18;
           assert.equal(actualSOL, 1);
-          // assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+
+          actualSOL = (await deFiMath.expPositive(0)).toString() / 1e18;
+          assert.equal(actualSOL, 1);
         }
       });
 
@@ -335,7 +337,10 @@ describe("DeFiMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+            let actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+
+            actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
@@ -350,7 +355,10 @@ describe("DeFiMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+            let actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+
+            actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
@@ -365,7 +373,10 @@ describe("DeFiMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+            let actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+
+            actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
@@ -380,7 +391,10 @@ describe("DeFiMath (SOL and JS)", function () {
           assertRelativeBelow(actualJS, expected, MAX_REL_ERROR_EXP_POS);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+            let actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+
+            actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
           }
         }
