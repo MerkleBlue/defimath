@@ -18,6 +18,7 @@ library DeFiMath {
     // exponential function - 
     function expPositive(uint256 x) internal pure returns (uint256 y) {
         unchecked {
+            // if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
             // WARNING: this function doesn't check input parameter x, and should 
             // not be called directly if x is not in the range [0, 135]. This
             // function is used only for internal calculations, and should be
@@ -62,64 +63,21 @@ library DeFiMath {
 
     function exp(int256 x) internal pure returns (uint256 y) {
         unchecked {
-
-            uint256 absX = x > 0 ? uint256(x) : uint256(-x);
-            // /// @solidity memory-safe-assembly
-            // assembly {
-            // z := xor(x, mul(xor(x, y), iszero(condition)))
-
-            // console.log(absX);
+            uint256 absX = (uint256(x) + uint256(x >> 255)) ^ uint256(x >> 255);
 
             // check input
-            if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
+            if (absX >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
 
-            // How it works: it starts by reducing the range of x from [0, 135] down to
-            // [0, ln(2)] by factoring out powers of two using the formula
-            // exp(x) = exp(x') * 2 ** k, where k is an integer. k is calculated
-            // simply by dividing x by ln(2) and rounding down to the nearest integer.
-            // The value of x' is calculated by subtracting k * ln(2) from x.
-            // Credit for this method: https://xn--2-umb.com/22/exp-ln/
-            // The range is then reduced to [0, 0.0027] by dividing x by 256. 
-            uint256 k = absX / 693147180559945309;             // find integer k
-            absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
-            absX >>= 8;                                        // reduce x to [0, 0.0027]
-
-
-            // The function then uses a rational approximation formula to calculate
-            // exp(x) in the range [0, 0.0027]. The formula is given by:
-            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
-            absX *= 1e9;
-            uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
-
-            /// @solidity memory-safe-assembly
-            assembly {
-                y := div(p, q)                              // assembly for gas savings
-            }
-
-
-            // The result is then raised to the power of 256 to account for the
-            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
-            // raise to the power of 4 in one expression. Finally, the result is 
-            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
-            y = y * y * y * y / 1e54;                       // y ** 4 
-            y = y * y * y * y / 1e54;                       // y ** 16
-            y = y * y * y * y / 1e54;                       // y ** 64
-            y = y * y * y * y / 1e54;                       // y ** 256
-            y <<= k;                                        // multiply y by 2 ** k
+            // positive
+            if (x > 0) {
+                return expPositive(absX);
+            } 
             
-
             // negative
-            // if (x < 0) {
-            //     y = 1e36 / y;
-            // }
-
-            // // negative
-            // if (x <= -41446531673892822313) {
-            //     return 0;
-            // }
-
-            // return 1e36 / expPositive(uint256(-x));
+            y = expPositive(absX);
+            assembly {
+                y := div(1000000000000000000000000000000000000, y)
+            }
         }
     }
 

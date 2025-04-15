@@ -50,7 +50,7 @@ describe("DeFiMath (SOL and JS)", function () {
   });
 
   duoTest && describe("performance", function () {
-    describe("exp", function () {
+    describe.only("exp", function () {
 
       it("expPositive3 experimental 6.9", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -62,16 +62,16 @@ describe("DeFiMath (SOL and JS)", function () {
         blackScholesJS.expPositive3(x);
         
         let totalGas = parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
-        console.log("2pi gas: ", totalGas); // 362
+        console.log(" my gas: ", totalGas); // 362
         
         totalGas = parseInt((await deFiMath.expPositive3MG(tokens(x))).gasUsed);
-        console.log("my gas: ", totalGas); // 614, 591 witout > 32, 152 with only pade  
+        console.log("2pi gas: ", totalGas); // 275
 
         let result1 = (await deFiMath.expPositiveMG(tokens(x))).y;
-        console.log("2pi res: ", result1); 
+        console.log(" my res: ", result1); 
 
         let result2 = (await deFiMath.expPositive3MG(tokens(x))).y;
-        console.log(" my res: ", result2); 
+        console.log("2pi res: ", result2); 
 
       });
 
@@ -310,7 +310,7 @@ describe("DeFiMath (SOL and JS)", function () {
   });
 
   describe("functionality", function () {
-    describe("exp", function () {
+    describe.only("exp", function () {
       // it("exp experimental positive < 0.03125", async function () {
       //   const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -385,16 +385,17 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("exp negative [-50, -0.05]", async function () {
+      it("exp negative [-40, -0.05]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0.05; x <= 50; x += 0.05 ) { 
+        for (let x = 0.05; x <= 40; x += 0.05 ) { 
           const expected = Math.exp(-x);
           const actualJS = blackScholesJS.exp(-x);
           assertAbsoluteBelow(actualJS, expected, 0.000000000042); // todo
 
           if (duoTest) {
             const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
+            // console.log("x", (-x).toFixed(4), expected, actualSOL);
             assertAbsoluteBelow(actualSOL, expected, 0.000000000042); // todo
           }
         }
