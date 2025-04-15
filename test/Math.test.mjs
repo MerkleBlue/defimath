@@ -51,7 +51,7 @@ describe("DeFiMath (SOL and JS)", function () {
   });
 
   duoTest && describe("performance", function () {
-    describe.only("exp", function () {
+    describe("exp", function () {
 
       it("expPositive3 experimental 6.9", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -842,8 +842,6 @@ describe("DeFiMath (SOL and JS)", function () {
           const result1 = await deFiMath.expMG(tokens(x));
           const y1 = result1.y.toString() / 1e18;
           avgGas1 += parseInt(result1.gasUsed);
-
-          console.log("x", x, parseInt(result1.gasUsed));
   
           // PRBMath
           const result2 = await prbMath.expMG(tokens(x));

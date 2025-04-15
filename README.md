@@ -67,24 +67,24 @@ where σ is the volatility of the underlying asset. Learn more about [Black Scho
 
 The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
 
-Option pricing computations cost roughly 4,200 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
+Option pricing computations cost roughly 3,900 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
 The following table compares __gas efficiency__ of DeFiMath with other implementations over a typical range of parameters. 
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     4172 |    30220 |    20635 |    39974 |    95447 |
-| put           |     4197 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2773 |    19574 |        - |    26853 |        - |
-| gamma         |     2427 |        - |        - |        - |        - |
-| theta         |     4904 |        - |        - |        - |        - |
-| vega          |     3125 |    16503 |        - |        - |        - |
+| call          |     3911 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3936 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2692 |    19574 |        - |    26853 |        - |
+| gamma         |     2315 |        - |        - |        - |        - |
+| theta         |     4531 |        - |        - |        - |        - |
+| vega          |     3013 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |  2.7e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
+| call          |  2.6e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
 | put           |  2.7e-11 |  6.5e-13 |   1.7e-1 |   9.9e+1 |        - |
 | delta         |  1.2e-13 |  6.7e-16 |        - |   9.2e-1 |        - |
 | gamma         |  3.2e-15 |        - |        - |        - |        - |
@@ -106,25 +106,25 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |      463 |     2748 |     5371 |      420 |        - |
+| exp           |      354 |     2748 |     5371 |      420 |        - |
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
 | sqrt          |      787 |      952 |      731 |      415 |        - |
-| stdNormCDF    |      937 |        - |        - |        - |     4884 |
-| erf           |      821 |        - |        - |        - |     4236 |
+| stdNormCDF    |      856 |        - |        - |        - |     4884 |
+| erf           |      740 |        - |        - |        - |     4236 |
 
 The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |  1.9e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
+| exp           |  5.1e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
 | ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
 | log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
 | log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
 | sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
 | stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
-| erf           |  1.0e-12 |        - |        - |        - |   2.6e-2 |
+| erf           |  2.3e-10 |        - |        - |        - |   2.6e-2 |
 
 
 
