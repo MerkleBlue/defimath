@@ -168,13 +168,26 @@ library DeFiMath {
         }
     }
 
-    function sqrt(uint256 x) internal pure returns (uint256) {
+    function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-            if (x >= 1e18) {
-                return sqrtUpper(x);
-            }
 
-            return 1e36 / sqrtUpper(1e36 / x);
+            if (x >= 1e18) {
+                // upper range [1, 1e8]
+                y = sqrtUpper(x);
+            } else {
+                /// @solidity memory-safe-assembly
+                assembly {
+                    x := div(1000000000000000000000000000000000000, x)
+                }
+
+
+                y = sqrtUpper(x);
+
+                /// @solidity memory-safe-assembly
+                assembly {
+                    y := div(1000000000000000000000000000000000000, y)
+                }
+            }
         }
     }
 

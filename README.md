@@ -73,12 +73,12 @@ The following table compares __gas efficiency__ of DeFiMath with other implement
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     3911 |    30220 |    20635 |    39974 |    95447 |
-| put           |     3936 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2692 |    19574 |        - |    26853 |        - |
-| gamma         |     2315 |        - |        - |        - |        - |
-| theta         |     4531 |        - |        - |        - |        - |
-| vega          |     3013 |    16503 |        - |        - |        - |
+| call          |     3889 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3914 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2670 |    19574 |        - |    26853 |        - |
+| gamma         |     2289 |        - |        - |        - |        - |
+| theta         |     4505 |        - |        - |        - |        - |
+| vega          |     2965 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
