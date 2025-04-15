@@ -62,13 +62,13 @@ library DeFiMath {
 
     function exp(int256 x) internal pure returns (uint256 y) {
         unchecked {
-            uint256 absX = (uint256(x) + uint256(x >> 255)) ^ uint256(x >> 255);
-
-            // check input
-            if (absX >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
-
             // negative
             if (x <= 0) {
+                uint256 absX = (uint256(x) + uint256(x >> 255)) ^ uint256(x >> 255);
+
+                // check input
+                if (absX >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
+                
                 y = expPositive(absX);
                 /// @solidity memory-safe-assembly
                 assembly {
@@ -78,7 +78,9 @@ library DeFiMath {
             } 
 
             // positive
-            return expPositive(absX);
+            if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
+
+            return expPositive(uint256(x));
         }
     }
 
