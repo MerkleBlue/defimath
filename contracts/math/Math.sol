@@ -20,8 +20,7 @@ library DeFiMath {
         unchecked {
             // WARNING: this function doesn't check input parameter x, and should 
             // not be called directly if x is not in the range [0, 135]. This
-            // function is used only for internal calculations, and should be
-            // called only from exp(int256) function.
+            // function is used only for internal calculations.
 
             // How it works: it starts by reducing the range of x from [0, 135] down to
             // [0, ln(2)] by factoring out powers of two using the formula
@@ -44,6 +43,7 @@ library DeFiMath {
 
             /// @solidity memory-safe-assembly
             assembly {
+                // p := mul(p, 1000000000000000000)
                 y := div(p, q)                              // assembly for gas savings
             }
 
@@ -68,19 +68,75 @@ library DeFiMath {
 
                 // check input
                 if (absX >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
+
+                uint256 k = absX / 693147180559945309;             // find integer k
+                absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+                absX >>= 8;                                        // reduce x to [0, 0.0027]
+
+
+                // The function then uses a rational approximation formula to calculate
+                // exp(x) in the range [0, 0.0027]. The formula is given by:
+                // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+                uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
+                absX *= 1e9;
+                uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+
+                /// @solidity memory-safe-assembly
+                assembly {
+                    y := div(p, q)                              // assembly for gas savings
+                }
+
+
+                // The result is then raised to the power of 256 to account for the
+                // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
+                // raise to the power of 4 in one expression. Finally, the result is 
+                // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+                y = y * y * y * y / 1e54;                       // y ** 4 
+                y = y * y * y * y / 1e54;                       // y ** 16
+                y = y * y * y * y / 1e54;                       // y ** 64
+                y = y * y * y * y / 1e54;                       // y ** 256
+                y <<= k;                                        // multiply y by 2 ** k
                 
-                y = expPositive(absX);
                 /// @solidity memory-safe-assembly
                 assembly {
                     y := div(1000000000000000000000000000000000000, y)
                 }
+
                 return y;
             } 
 
             // positive
             if (x >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
 
-            return expPositive(uint256(x));
+            uint256 absX = uint256(x);
+
+            uint256 k = absX / 693147180559945309;             // find integer k
+            absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+            absX >>= 8;                                        // reduce x to [0, 0.0027]
+
+
+            // The function then uses a rational approximation formula to calculate
+            // exp(x) in the range [0, 0.0027]. The formula is given by:
+            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+            uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
+            absX *= 1e9;
+            uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+
+            /// @solidity memory-safe-assembly
+            assembly {
+                y := div(p, q)                              // assembly for gas savings
+            }
+
+
+            // The result is then raised to the power of 256 to account for the
+            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
+            // raise to the power of 4 in one expression. Finally, the result is 
+            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+            y = y * y * y * y / 1e54;                       // y ** 4 
+            y = y * y * y * y / 1e54;                       // y ** 16
+            y = y * y * y * y / 1e54;                       // y ** 64
+            y = y * y * y * y / 1e54;                       // y ** 256
+            y <<= k;                                        // multiply y by 2 ** k
         }
     }
 
