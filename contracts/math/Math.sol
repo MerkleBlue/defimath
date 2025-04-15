@@ -68,16 +68,18 @@ library DeFiMath {
             // check input
             if (absX >= 135305999368893231589) revert ExpUpperBoundError(); // todo rename
 
-            // positive
-            if (x > 0) {
-                return expPositive(absX);
-            } 
-            
             // negative
-            y = expPositive(absX);
-            assembly {
-                y := div(1000000000000000000000000000000000000, y)
-            }
+            if (x <= 0) {
+                y = expPositive(absX);
+                /// @solidity memory-safe-assembly
+                assembly {
+                    y := div(1000000000000000000000000000000000000, y)
+                }
+                return y;
+            } 
+
+            // positive
+            return expPositive(absX);
         }
     }
 
