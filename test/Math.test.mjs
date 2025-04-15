@@ -4,6 +4,7 @@ import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import bs from "black-scholes";
 import erf from 'math-erf';
 import { assertAbsoluteBelow, assertBothBelow, assertRelativeBelow, tokens } from "./Common.test.mjs";
+import { assert } from "chai";
 
 const duoTest = true;
 
@@ -324,6 +325,20 @@ describe("DeFiMath (SOL and JS)", function () {
       //     }
       //   }
       // });
+
+      it("exp when x is 0", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const expected = Math.exp(0);
+        const actualJS = blackScholesJS.exp(0);
+        assert.equal(actualJS, 1);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.exp(0)).toString() / 1e18;
+          assert.equal(actualSOL, 1);
+          // assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+        }
+      });
 
       it("exp positive < 0.03125", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
