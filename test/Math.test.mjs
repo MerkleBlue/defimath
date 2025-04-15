@@ -169,7 +169,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
       });
 
-      it("exp negative [-50, -0.05]", async function () {
+      it("exp negative [-40, -0.05]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
