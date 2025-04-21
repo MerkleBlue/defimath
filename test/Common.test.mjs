@@ -15,7 +15,7 @@ export function assertAbsoluteBelow(actual, expected, maxAbsError = 1) {
 
 export function assertRelativeBelow(actual, expected, maxRelError = 100) {
   const absError = Math.abs(actual - expected);
-  const relError = (expected !== 0 && actual !== 0) ? Math.abs(absError / expected) : 0;
+  const relError = (expected !== 0) ? Math.abs(absError / expected) : 0;
 
   assert.isBelow(relError, maxRelError, "Relative error is above the threshold");
 }
@@ -29,8 +29,14 @@ export function assertBothBelow(actual, expected, maxRelError = 100, maxAbsError
 }
 
 export function tokens(value) {
-  const trimmedValue = Math.round(value * 1e18) / 1e18;
-  return hre.ethers.parseUnits(trimmedValue.toString(), 18).toString();
+  let trimmedValue = Math.round(value * 1e18) / 1e18;
+  // console.log(trimmedValue);
+  // console.log(toPreciseString(trimmedValue));
+  return hre.ethers.parseUnits(toPreciseString(trimmedValue), 18).toString();
+}
+
+export function toPreciseString(value, maxDigits = 18) {
+  return value.toLocaleString("fullwide", { useGrouping: false, maximumFractionDigits: maxDigits });
 }
 
 export async function assertRevertError(contract, method, errorName) {

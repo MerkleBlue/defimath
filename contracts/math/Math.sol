@@ -168,19 +168,53 @@ library DeFiMath {
         }
     }
 
+    // x: [1, 1e18]
+    function sqrtUpper(uint256 x) internal pure returns (uint256 y) {
+        unchecked {
+            // gas: 199 with brute guess
+            // gas: 305 with up to 2 ** 60
+
+            uint256 multi;
+            /// @solidity memory-safe-assembly
+            assembly {
+                x := mul(x, 1000000000000000000) // convert to 1e36 base
+                y := 8000000000000000000 // starting point is 8
+
+                // we want to keep y = sqrt(x) at max 8 times from actual sqrt(x)
+                multi := div(x, 4096000000000000000000000000000000000000)
+                multi := add(iszero(multi), multi) // multi is min 1
+                y := add(mul(y, multi), 64)                 // add 64 - handles when x is 0
+                y := shr(mul(6, gt(multi, 4096)), y) 
+                y := shr(mul(6, gt(multi, 16777216)), y)
+                y := shr(mul(6, gt(multi, 68719476736)), y)
+            }
+
+            // console.log("x, y, multi: %d, %d, %d", x / 1e36, y / 1e18, multi);
+
+            assembly {
+                // 8x Newton method
+                y := shr(1, add(y, div(x, y))) // 20 gas each
+                y := shr(1, add(y, div(x, y)))
+                y := shr(1, add(y, div(x, y)))
+                y := shr(1, add(y, div(x, y)))
+                y := shr(1, add(y, div(x, y)))
+                y := shr(1, add(y, div(x, y)))
+                y := shr(1, add(y, div(x, y)))
+                y := shr(1, add(y, div(x, y)))
+            }
+        }
+    }
+
     function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-
             if (x >= 1e18) {
-                // upper range [1, 1e8]
+                // upper range [1, 1e18]
                 y = sqrtUpper(x);
             } else {
                 /// @solidity memory-safe-assembly
                 assembly {
                     x := div(1000000000000000000000000000000000000, x)
                 }
-
-
                 y = sqrtUpper(x);
 
                 /// @solidity memory-safe-assembly
@@ -191,94 +225,24 @@ library DeFiMath {
         }
     }
 
-    function expPositive2(uint256 x) internal pure returns (uint256) {
+    function sqrtTime(uint256 x) internal pure returns (uint256 z) {
         unchecked {
-            uint256 exp123 = 1;
-
-            // x: [32, 50)
-            if (x >= 32e18) {
-                // console.log(x / 32e18);
-                exp123 = 78962960182681; // todo: getExp1Precompute(x / 32e18); // this is always 1 if x < 50
-                x %= 32e18;
-            }
-
-            // x: [1, 32)
-            if (x >= 1e18) {
-                exp123 *= getExp2Precompute(x / 1e18);
-                x %= 1e18;
-            } else {
-                exp123 *= 1e15;
-            }
-
-            // x: [0.03125, 1)
-            if (x >= 3125e13) {
-                exp123 *= getExp3Precompute(x / 3125e13);
-                x %= 3125e13;
-            } else {
-                exp123 *= 1e15;
-            }
-
-            // if (log) { if (exp1 > 0) { console.log("exp1 SOL: %d", uint256(exp1)); } else { console.log("exp1 SOL: -%d", uint256(-exp1)); }}
-
-            // we use Pade approximation for exp(x)
-            // e ^ x ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 denominator = ((3e18 - x) * (3e18 - x)) + 3e36;
-            x /= 1e6;
-            uint256 numerator = ((x + 3e12) * (x + 3e12)) + 3e24;
-
-            return exp123 * numerator / denominator; // using e ^ (a + b) = e ^ a * e ^ b
-        }
-    }
-
-    function expPositive3(uint256 x) internal pure returns (uint256 r) {
-        unchecked {
-            // `x` is now in the range `(-42, 136) * 1e18`. Convert to `(-42, 136) * 2**96`
-            // for more intermediate precision and a binary basis. This base conversion
-            // is a multiplication by 1e18 / 2**96 = 5**18 / 2**78.
-            x = (x << 78) / 5 ** 18;
-
-            // Reduce range of x to (-½ ln 2, ½ ln 2) * 2**96 by factoring out powers
-            // of two such that exp(x) = exp(x') * 2**k, where k is an integer.
-            // Solving this gives k = round(x / log(2)) and x' = x - k * log(2).
-            uint256 k = (x << 96) / 54916777467707473351141471128 + 2 ** 95 >> 96;
-            x = x - k * 54916777467707473351141471128;
-
-            // `k` is in the range `[-61, 195]`.
-
-            // Evaluate using a (6, 7)-term rational approximation.
-            // `p` is made monic, we'll multiply by a scale factor later.
-            int256 intX = int256(x);
-            int256 y = intX + 1346386616545796478920950773328;
-            y = ((y * intX) >> 96) + 57155421227552351082224309758442;
-            int256 p = y + intX - 94201549194550492254356042504812;
-            p = ((p * y) >> 96) + 28719021644029726153956944680412240;
-            p = p * intX + (4385272521454847904659076985693276 << 96);
-
-            // We leave `p` in `2**192` basis so we don't need to scale it back up for the division.
-            int256 q = intX - 2855989394907223263936484059900;
-            q = ((q * intX) >> 96) + 50020603652535783019961831881945;
-            q = ((q * intX) >> 96) - 533845033583426703283633433725380;
-            q = ((q * intX) >> 96) + 3604857256930695427073651918091429;
-            q = ((q * intX) >> 96) - 14423608567350463180887372962807573;
-            q = ((q * intX) >> 96) + 26449188498355588339934803723976023;
-
-            /// @solidity memory-safe-assembly
             assembly {
-                // Div in assembly because solidity adds a zero check despite the unchecked.
-                // The q polynomial won't have zeros in the domain as all its roots are complex.
-                // No scaling is necessary because p is already `2**96` too large.
-                r := sdiv(p, q)
+                x := mul(x, 1000000000000000000) // convert to 1e36 base
+                z := 1424579477600000 // starting point
+
+                z := shl(mul(7, gt(x, 519469812544000000000000000000000)), z) // up to 8 years
+
+                // 8x Newton method
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
+                z := shr(1, add(z, div(x, z)))
             }
-
-            // r should be in the range `(0.09, 0.25) * 2**96`.
-
-            // We now need to multiply r by:
-            // - The scale factor `s ≈ 6.031367120`.
-            // - The `2**k` factor from the range reduction.
-            // - The `1e18 / 2**96` factor for base conversion.
-            // We do this all at once, with an intermediate result in `2**213`
-            // basis, so the final right shift is always by a positive amount.
-            r = (r * 3822833074963236453042738258902158003155416615667 >> uint256(195 - k));
         }
     }
 
@@ -305,41 +269,6 @@ library DeFiMath {
             uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7);
             
             return naturalLog / 5e35 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
-        }
-    }
-
-    // x: [1, 1e8]
-    function sqrtUpper(uint256 x) internal pure returns (uint256) {
-        unchecked {
-            uint256 zeros = 1;
-            uint256 sqrtPrecompute = 1e18;
-
-            // x: [100, 1e8) use scalability rule: sqrt(1234) = 10 * sqrt(12.34);
-            if (x >= 1e20) {
-                zeros = getSqrtZerosPrecompute(x);
-                x /= zeros * zeros;
-            }
-
-            // x: [1.076, 100) use precomputed values
-            if (x >= 1_074607828321317497) {
-                sqrtPrecompute = getSqrtPrecompute(x);
-                x = x * 1e36 / (sqrtPrecompute * sqrtPrecompute);
-            }
-
-            // x: [1, 1.076] use Maclaurin series
-            x -= 1e18;
-            uint256 x2 =  x * x / 1e18;
-            uint256 x3 = x2 * x / 1e18;
-            uint256 x4 = x3 * x / 1e18;
-            uint256 sqrtAprox = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120 - 135135 * x4 / 10321920);
-
-            return sqrtAprox * sqrtPrecompute * zeros / 1e36;
-
-            // this is 10 gas faster, but maybe there are overflows
-            // uint256 result = 1e36 + 5e17 * x - 125e15 * x2 + 625e14 * x3 - 390625e11 * x4 + x4 * (105 * x / 3840 - 945 * x2 / 46080 + 10395 * x3 / 645120);
-            // return exp123 * result / 1e54;
-
-            // const result = 1 + x/2 - 1/8 * x^2 + 3/48 * x^3 - 15/384 * x^4 + 105/3840 * x^5 - 945/46080 * x^6 + 10395/645120 * x^7 - 135135/10321920 * x^8;
         }
     }
 
@@ -407,278 +336,6 @@ library DeFiMath {
     }
 
     // todo: implement erf
-
-    function getExp1Precompute(uint256 exponent) internal pure returns (uint256) {
-        unchecked {
-            return 78962960182681 ** exponent;
-        }
-    }
-
-    function getExp2Precompute(uint256 exponent) internal pure returns (uint256) {
-        // base is e
-        unchecked {
-            if (exponent >= 16) { // 16
-                if (exponent >= 24) { // 24
-                    if (exponent >= 28) { // 28
-                        if (exponent >= 30) { // 30
-                            if (exponent >= 31) { // 31
-                                return 29048849665247_425231085682112;
-                            } else {
-                                return 10686474581524_462146990468651;
-                            }
-                        } else {
-                            if (exponent >= 29) { // 29
-                                return 3931334297144_042074388620581;
-                            } else {
-                                return 1446257064291_475173677047423;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 26) { // 26
-                            if (exponent >= 27) { // 27
-                                return 532048240601_798616683747304;
-                            } else {
-                                return 195729609428_838764269776398;
-                            }
-                        } else {
-                            if (exponent >= 25) { // 25
-                                return 72004899337_385872524161351;
-                            } else {
-                                return 26489122129_843472294139162;
-                            }
-                        }
-                    }
-                } else {
-                    if (exponent >= 20) { // 20
-                        if (exponent >= 22) { // 22
-                            if (exponent >= 23) { // 23
-                                return 9744803446_248902600034633;
-                            } else {
-                                return 3584912846_131591561681164;
-                            }
-                        } else {
-                            if (exponent >= 21) { // 21
-                                return 1318815734_483214697209999;
-                            } else {
-                                return 485165195_409790277969107;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 18) { // 18
-                            if (exponent >= 19) { // 19
-                                return 178482300_963187260844914;
-                            } else {
-                                return 65659969_137330511138787; // 65659969137330511138787499
-                            }
-                        } else {
-                            if (exponent >= 17) { // 17
-                                return 24154952_753575298214775;
-                            } else {
-                                return 8886110_520507872636763;
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (exponent >= 8) { // 8
-                    if (exponent >= 12) { // 12
-                        if (exponent >= 14) { // 14
-                            if (exponent >= 15) { // 15
-                                return 3269017_372472110639302;
-                            } else {
-                                return 1202604_284164776777749;
-                            }
-                        } else {
-                            if (exponent >= 13) { // 13
-                                return 442413_392008920503326;
-                            } else {
-                                return 162754_791419003920808;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 10) { // 10
-                            if (exponent >= 11) { // 11
-                                return 59874_141715197818455;
-                            } else {
-                                return 22026_465794806716517;
-                            }
-                        } else {
-                            if (exponent >= 9) { // 9
-                                return 8103_083927575384008;
-                            } else {
-                                return 2980_957987041728275;
-                            }
-                        }
-                    }
-                } else {
-                    if (exponent >= 4) { // 4
-                        if (exponent >= 6) { // 6
-                            if (exponent >= 7) { // 7
-                                return 1096_633158428458599;
-                            } else {
-                                return 403_428793492735123;
-                            }
-                        } else {
-                            if (exponent >= 5) { // 5
-                                return 148_413159102576603;
-                            } else {
-                                return 54_598150033144239;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 2) { // 2
-                            if (exponent >= 3) { // 3
-                                return 20_085536923187668;
-                            } else {
-                                return 7_389056098930650;
-                            }
-                        } else {
-                            // there is no 0
-                            return 2_718281828459045;
-                            // if (exponent >= 1) { // 1
-                            //     return 2_718281828459045;
-                            // } else {
-                            //     return 1e15;
-                            // }
-                        }
-                    }
-                }
-            } 
-        }
-    }
-
-    function getExp3Precompute(uint256 exponent) internal pure returns (uint256) {
-        // base is 1.031743407499102671
-        unchecked {
-            if (exponent >= 16) { // 16
-                if (exponent >= 24) { // 24
-                    if (exponent >= 28) { // 28
-                        if (exponent >= 30) { // 30
-                            if (exponent >= 31) { // 31
-                                return 2_634649088815631;
-                            } else {
-                                return 2_553589458062927;
-                            }
-                        } else {
-                            if (exponent >= 29) { // 29
-                                return 2_475023769963025;
-                            } else {
-                                return 2_398875293967098;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 26) { // 26
-                            if (exponent >= 27) { // 27
-                                return 2_325069660277121;
-                            } else {
-                                return 2_253534787213208;
-                            }
-                        } else {
-                            if (exponent >= 25) { // 25
-                                return 2_184200810815618;
-                            } else {
-                                return 2_117000016612675;
-                            }
-                        }
-                    }
-                } else {
-                    if (exponent >= 20) { // 20
-                        if (exponent >= 22) { // 22
-                            if (exponent >= 23) { // 23
-                                return 2_051866773487977;
-                            } else {
-                                return 1_988737469582292;
-                            }
-                        } else {
-                            if (exponent >= 21) { // 21
-                                return 1_927550450167545;
-                            } else {
-                                return 1_868245957432222;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 18) { // 18
-                            if (exponent >= 19) { // 19
-                                return 1_810766072119387;
-                            } else {
-                                return 1_755054656960299;
-                            }
-                        } else {
-                            if (exponent >= 17) { // 17
-                                return 1_701057301848401;
-                            } else {
-                                return 1_648721270700128;
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (exponent >= 8) { // 8
-                    if (exponent >= 12) { // 12
-                        if (exponent >= 14) { // 14
-                            if (exponent >= 15) { // 15
-                                return 1_597995449950633;
-                            } else {
-                                return 1_548830298634133;
-                            }
-                        } else {
-                            if (exponent >= 13) { // 13
-                                return 1_501177800000123;
-                            } else {
-                                return 1_454991414618201;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 10) { // 10
-                            if (exponent >= 11) { // 11
-                                return 1_410226034925711;
-                            } else {
-                                return 1_366837941173796;
-                            }
-                        } else {
-                            if (exponent >= 9) { // 9
-                                return 1_324784758728866;
-                            } else {
-                                return 1_284025416687741;
-                            }
-                        }
-                    }
-                } else {
-                    if (exponent >= 4) { // 4
-                        if (exponent >= 6) { // 6
-                            if (exponent >= 7) { // 7
-                                return 1_244520107766095;
-                            } else {
-                                return 1_206230249420981;
-                            }
-                        } else {
-                            if (exponent >= 5) { // 5
-                                return 1_169118446169504;
-                            } else {
-                                return 1_133148453066826;
-                            }
-                        }
-                    } else {
-                        if (exponent >= 2) { // 2
-                            if (exponent >= 3) { // 3
-                                return 1_098285140307826;
-                            } else {
-                                return 1_064494458917859;
-                            }
-                        } else {
-                            // there is no 0
-                            return 1_031743407499103;
-                            // if (exponent >= 1) { // 1
-                            //     return 1_031743407499103;
-                            // } else {
-                            //     return 1e15;
-                            // }
-                        }
-                    }
-                }
-            } 
-        }
-    }
 
     function getLnPrecompute(uint256 exponent) internal pure returns (uint256, uint256) {
         // use >=, fastest

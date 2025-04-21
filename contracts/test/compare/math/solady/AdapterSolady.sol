@@ -56,6 +56,9 @@ contract AdapterSolady {
         uint256 endGas;
 
         startGas = gasleft();
+        // NOTE: converting x to 1e36 precision, and counting gas, 
+        // simulates fixed-point math in x around 1e18, but function is not
+        // actually fixed-point math
         y = FixedPointMathLib.sqrt(x * 1e18);
         endGas = gasleft();
         

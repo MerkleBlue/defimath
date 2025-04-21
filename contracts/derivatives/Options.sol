@@ -49,13 +49,13 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
+            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate); // todo try with exp, could be cheaper
 
             uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(d1);              // spot * N(d1)
             uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(d2);         // strike * N(d2)
@@ -91,7 +91,7 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -133,7 +133,7 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -165,7 +165,7 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -196,7 +196,7 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;                   // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;                   // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
             uint256 _spot = uint256(spot);
             // uint256 _strike = uint256(strike);
@@ -243,8 +243,8 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 sqrtTimeYear = DeFiMath.sqrt(timeYear);
-            uint256 scaledVol = volatility * DeFiMath.sqrt(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 sqrtTimeYear = DeFiMath.sqrtTime(timeYear);
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);

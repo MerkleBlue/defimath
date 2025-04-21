@@ -21,6 +21,10 @@ contract MathWrapper {
         return DeFiMath.log10(x);
     }
     
+    function sqrtTime(uint256 x) external pure returns (uint256) {
+        return DeFiMath.sqrtTime(x);
+    }
+
     function sqrt(uint256 x) external pure returns (uint256) {
         return DeFiMath.sqrt(x);
     }
@@ -33,16 +37,12 @@ contract MathWrapper {
         return DeFiMath.expPositive(x);
     }
 
-    function expPositive3(uint256 x) external pure returns (uint256) {
-        return DeFiMath.expPositive3(x);
-    }
-
     // x: [1, 16] 
     function lnUpper(uint256 x) external pure returns (uint256) {
        return DeFiMath.lnUpper(x);
     }
 
-    // x: [1, 1e8]
+    // x: [1, 1e18]
     function sqrtUpper(uint256 x) external pure returns (uint256) {
         return DeFiMath.sqrtUpper(x);
     }
@@ -61,20 +61,6 @@ contract MathWrapper {
         startGas = gasleft();
 
         result = DeFiMath.exp(x);
-
-        endGas = gasleft();
-
-        return (result, startGas - endGas);
-    }
-
-    function expPositive3MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
-        uint256 result;
-        uint256 startGas;
-        uint256 endGas;
-
-        startGas = gasleft();
-
-        result = DeFiMath.expPositive3(x);
 
         endGas = gasleft();
 
@@ -117,15 +103,38 @@ contract MathWrapper {
         return (y, startGas - endGas);
     }
 
-    function log10MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
+    function log10MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.log10(x);
+        y = DeFiMath.getSqrtZerosPrecompute(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);
+    }
+
+    function sqrtTimeMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+        result = DeFiMath.sqrtTime(x);
+        endGas = gasleft();
+
+        
+        return (result, startGas - endGas);
+    }
+
+    function sqrtUpperMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+        uint256 result;
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+        result = DeFiMath.sqrtUpper(x);
+        endGas = gasleft();
+        
+        return (result, startGas - endGas);
     }
 
     function sqrtMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
@@ -135,7 +144,6 @@ contract MathWrapper {
         startGas = gasleft();
         result = DeFiMath.sqrt(x);
         endGas = gasleft();
-
         
         return (result, startGas - endGas);
     }

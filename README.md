@@ -67,29 +67,29 @@ where σ is the volatility of the underlying asset. Learn more about [Black Scho
 
 The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
 
-Option pricing computations cost roughly 3,900 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
+Option pricing computations cost roughly 3,400 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
 The following table compares __gas efficiency__ of DeFiMath with other implementations over a typical range of parameters. 
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     3861 |    30220 |    20635 |    39974 |    95447 |
-| put           |     3886 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2656 |    19574 |        - |    26853 |        - |
-| gamma         |     2289 |        - |        - |        - |        - |
-| theta         |     4477 |        - |        - |        - |        - |
-| vega          |     2965 |    16503 |        - |        - |        - |
+| call          |     3383 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3407 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2178 |    19574 |        - |    26853 |        - |
+| gamma         |     1815 |        - |        - |        - |        - |
+| theta         |     4003 |        - |        - |        - |        - |
+| vega          |     1788 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |  2.6e-11 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
-| put           |  2.7e-11 |  6.5e-13 |   1.7e-1 |   9.9e+1 |        - |
-| delta         |  1.2e-13 |  6.7e-16 |        - |   9.2e-1 |        - |
-| gamma         |  3.2e-15 |        - |        - |        - |        - |
-| theta         |  1.8e-12 |        - |        - |        - |        - |
-| vega          |  4.0e-13 |  1.1e-15 |        - |        - |        - |
+| call          |  5.6e-12 |  6.8e-13 |   1.7e-1 |   3.8e+1 |        - |
+| put           |  5.4e-12 |  6.5e-13 |   1.7e-1 |   9.9e+1 |        - |
+| delta         |  6.9e-15 |  6.7e-16 |        - |   9.2e-1 |        - |
+| gamma         |  9.1e-17 |        - |        - |        - |        - |
+| theta         |  3.7e-14 |        - |        - |        - |        - |
+| vega          |  4.8e-14 |  1.1e-15 |        - |        - |        - |
 
 ### Limits
 
@@ -110,7 +110,7 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
-| sqrt          |      776 |      952 |      731 |      415 |        - |
+| sqrt          |      409 |      961 |      731 |      415 |        - |
 | stdNormCDF    |      842 |        - |        - |        - |     4884 |
 | erf           |      726 |        - |        - |        - |     4236 |
 
@@ -122,7 +122,7 @@ The table below compares DeFiMath to other math libraries, highlighting the __ma
 | ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
 | log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
 | log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
-| sqrt          |  7.1e-11 |  2.6e-12 |  2.6e-12 |  2.6e-12 |        - |
+| sqrt          |  2.8e-14 |  2.8e-14 |  2.8e-14 |  2.8e-14 |        - |
 | stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
 | erf           |  2.3e-10 |        - |        - |        - |   2.6e-2 |
 
