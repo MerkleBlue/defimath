@@ -206,10 +206,11 @@ library DeFiMath {
     }
 
     function sqrt(uint256 x) internal pure returns (uint256 y) {
+        // todo: input check
         unchecked {
             if (x >= 1e18) {
                 // upper range [1, 1e18]
-                y = sqrtUpper(x);
+                y = sqrtUpper(x); // todo: inlining sqrtUpper calls saves 40 gas
             } else {
                 /// @solidity memory-safe-assembly
                 assembly {
