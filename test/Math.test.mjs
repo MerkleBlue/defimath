@@ -143,7 +143,7 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrt", function () {
-      it("sqrt upper [1, 1.0746]", async function () {
+      it("sqrt [1, 1.0746]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -154,7 +154,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt upper [1.04427, 100)", async function () {
+      it("sqrt [1.04427, 100)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -165,7 +165,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt upper [100, 10000)", async function () {
+      it("sqrt [100, 10000)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -176,7 +176,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt upper [1e4, 1e6)", async function () {
+      it("sqrt [1e4, 1e6)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -187,7 +187,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt upper [1e6, 1e8)", async function () {
+      it("sqrt [1e6, 1e8)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -199,7 +199,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
 
       // todo: tests for 1 / (1-100, 100-10000, 10000-1000000)
-      it("sqrt lower [1e-6, 1)", async function () {
+      it("sqrt [1e-6, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -588,20 +588,15 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrt", function () {
-      // todo: test all limits like 1.04427
-      it("sqrt upper [1, 1.0746]", async function () { // root(64, 100) = 1.074607828321317497
+      it("sqrt [1, 2)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1; x < 1.074607828321317497; x += 0.0001) {
+        for (let x = 1; x < 2; x += 0.01) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesJS.sqrtUpper(x);
-
-          // assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-            //console.log("x", x.toFixed(4), expected, actualSOL);
-            // assertRelativeBelow(actualSOL, expected, 0.000000000072);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
           }
         }
       });
