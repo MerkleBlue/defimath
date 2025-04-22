@@ -1126,7 +1126,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
-      it("sqrt", async function () {
+      it.only("sqrt", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;

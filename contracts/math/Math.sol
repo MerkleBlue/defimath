@@ -183,10 +183,11 @@ library DeFiMath {
                 // we want to keep y = sqrt(x) at max 16 times from actual sqrt(x)
                 multi := div(x, 65536000000000000000000000000000000000000)
                 multi := add(iszero(multi), multi) // multi is min 1
-                y := add(mul(y, multi), 128)                      // up to 2^32  // add 64 - handles when x is 0
+                y := mul(y, multi)                      // up to 2^32  // add 64 - handles when x is 0
+                y := add(y, 128)
+
                 y := shr(mul(8, gt(multi, 65536)), y)             // up to 2^48
                 y := shr(mul(8, gt(multi, 4294967296)), y)        // up to 2^64
-                // y := shr(mul(6, gt(multi, 68719476736)), y)
             }
 
             // console.log("x, y, multi: %d, %d, %d", x / 1e36, y / 1e18, multi);
