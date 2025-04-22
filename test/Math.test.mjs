@@ -176,7 +176,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it.only("sqrt [1e4, 1e6)", async function () {
+      it("sqrt [1e4, 1e6)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -212,79 +212,6 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrtUpper", function () {
-
-      it("sqrtUpper experimental #0", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 0; // 32 on 1 is good, 64 on 1 is error 1e-13
-        const expected = Math.sqrt(x);
-        const result = await deFiMath.sqrtUpperMG(tokens(x));
-        const gasUsed = parseInt(result.gasUsed);
-        console.log("Result: ", expected, result.y.toString() / 1e18);
-        console.log("Error: ", expected - result.y.toString() / 1e18);
-        console.log("Gas: ", gasUsed);     
-      });
-
-      it("sqrtUpper experimental #1", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 2 ** 12; // 32 on 1 is good, 64 on 1 is error 1e-13
-        const expected = Math.sqrt(x);
-        const result = await deFiMath.sqrtUpperMG(tokens(x));
-        const gasUsed = parseInt(result.gasUsed);
-        console.log("Result: ", expected, result.y.toString() / 1e18);
-        console.log("Error: ", expected - result.y.toString() / 1e18);
-        console.log("Gas: ", gasUsed);     
-      });
-
-      it("sqrtUpper experimental #2", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 2 ** 24;
-        const expected = Math.sqrt(x);
-        const result = await deFiMath.sqrtUpperMG(tokens(x));
-        const gasUsed = parseInt(result.gasUsed);
-        console.log("Result: ", expected, result.y.toString() / 1e18);
-        console.log("Error: ", expected - result.y.toString() / 1e18);
-        console.log("Gas: ", gasUsed);     
-      });
-
-      it("sqrtUpper experimental #3", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 2 ** 36;
-        const expected = Math.sqrt(x);
-        const result = await deFiMath.sqrtUpperMG(tokens(x));
-        const gasUsed = parseInt(result.gasUsed);
-        console.log("Result: ", expected, result.y.toString() / 1e18);
-        console.log("Error: ", expected - result.y.toString() / 1e18);
-        console.log("Gas: ", gasUsed);     
-      });
-
-      it("sqrtUpper experimental #4", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 2 ** 48;
-        const expected = Math.sqrt(x);
-        const result = await deFiMath.sqrtUpperMG(tokens(x));
-        const gasUsed = parseInt(result.gasUsed);
-        console.log("Result: ", expected, result.y.toString() / 1e18);
-        console.log("Error: ", expected - result.y.toString() / 1e18);
-        console.log("Gas: ", gasUsed);     
-      });
-
-      it("sqrtUpper experimental #5", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 2 ** 60;
-        const expected = Math.sqrt(x);
-        const result = await deFiMath.sqrtUpperMG(tokens(x));
-        const gasUsed = parseInt(result.gasUsed);
-        console.log("Result: ", expected, result.y.toString() / 1e18);
-        console.log("Error: ", expected - result.y.toString() / 1e18);
-        console.log("Gas: ", gasUsed);     
-      });
-
 
       it("sqrt upper [1, 1.0746]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -587,8 +514,8 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe.only("sqrt", function () {
-      it.only("sqrt [1, 2)", async function () {
+    describe("sqrt", function () {
+      it("sqrt [1, 2)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 2; x += 0.01) {
@@ -601,13 +528,11 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("sqrt [1, 2^16)", async function () {
+      it("sqrt [1, 2^20)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1; x < 2 ** 16; x += 65.536) {
+        for (let x = 1; x < 2 ** 20; x += 1048.576) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesJS.sqrtUpper(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
@@ -618,13 +543,11 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("sqrt [2^16, 2^32)", async function () {
+      it("sqrt [2^20, 2^40)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2**16; x < 2**32; x += 2**16 * 65.536) {
+        for (let x = 2**20; x < 2**40; x += 2**40 * 1048.576) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesJS.sqrtUpper(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
@@ -635,13 +558,11 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("sqrt [2^32, 2^48)", async function () {
+      it("sqrt [2^40, 2^60)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2**32; x < 2**48; x += 2**32 * 65.536) {
+        for (let x = 2**40; x < 2**60; x += 2**40 * 1048.576) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesJS.sqrtUpper(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
@@ -652,30 +573,11 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("sqrt [2^48, 2^64)", async function () {
+      it("sqrt [2^60, 2^80)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2**48; x < 2**64; x += 2**48 * 65.536) {
+        for (let x = 2**60; x < 2**80; x += 2**60 * 1048.576) {
           const expected = Math.sqrt(x);
-          const actualJS = blackScholesJS.sqrtUpper(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000072);
-
-          if (duoTest) {
-            const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
-            // console.log("x", x.toFixed(2), expected, actualSOL, relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-          }
-        }
-      });
-
-      it("sqrt [2^48, 2^60)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let x = 2**48; x < 2**60; x += 2**48 * 4.096) {
-          const expected = Math.sqrt(x);
-          const actualJS = blackScholesJS.sqrtUpper(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
@@ -1126,7 +1028,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
       });
 
-      it.only("sqrt", async function () {
+      it("sqrt", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;

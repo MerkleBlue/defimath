@@ -1311,7 +1311,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   });
 
   duoTest && describe("compare", function () {
-    it.only("call", async function () {
+    it("call", async function () {
       const { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex } = duoTest ? await loadFixture(deployCompare) : { options: null };
 
       const strikes = [800, 900, 1000.01, 1100, 1200];

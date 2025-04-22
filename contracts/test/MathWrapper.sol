@@ -42,9 +42,13 @@ contract MathWrapper {
        return DeFiMath.lnUpper(x);
     }
 
-    // x: [1, 1e18]
-    function sqrtUpper(uint256 x) external pure returns (uint256) {
-        return DeFiMath.sqrtUpper(x);
+    // // x: [1, 1e18]
+    // function sqrtUpper(uint256 x) external pure returns (uint256) {
+    //     return DeFiMath.sqrtUpper(x);
+    // }
+
+    function sqrtUpper2(uint256 x) external pure returns (uint256) {
+        return DeFiMath.sqrtUpper2(x);
     }
 
     function erfPositiveHalf(uint256 x) external pure returns (uint256) {
@@ -126,12 +130,23 @@ contract MathWrapper {
         return (result, startGas - endGas);
     }
 
-    function sqrtUpperMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+    // function sqrtUpperMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+    //     uint256 result;
+    //     uint256 startGas;
+    //     uint256 endGas;
+    //     startGas = gasleft();
+    //     result = DeFiMath.sqrtUpper(x);
+    //     endGas = gasleft();
+        
+    //     return (result, startGas - endGas);
+    // }
+
+    function sqrtUpper2MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 result;
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
-        result = DeFiMath.sqrtUpper(x);
+        result = DeFiMath.sqrtUpper2(x);
         endGas = gasleft();
         
         return (result, startGas - endGas);

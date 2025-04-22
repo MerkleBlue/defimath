@@ -110,7 +110,7 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
-| sqrt          |      391 |      961 |      731 |      415 |        - |
+| sqrt          |      371 |      961 |      731 |      415 |        - |
 | stdNormCDF    |      842 |        - |        - |        - |     4884 |
 | erf           |      726 |        - |        - |        - |     4236 |
 
