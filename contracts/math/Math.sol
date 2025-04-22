@@ -178,22 +178,23 @@ library DeFiMath {
             /// @solidity memory-safe-assembly
             assembly {
                 x := mul(x, 1000000000000000000) // convert to 1e36 base
-                y := 8000000000000000000 // starting point is 8
+                y := 16000000000000000000 // starting point is 16
 
-                // we want to keep y = sqrt(x) at max 8 times from actual sqrt(x)
-                multi := div(x, 4096000000000000000000000000000000000000)
+                // we want to keep y = sqrt(x) at max 16 times from actual sqrt(x)
+                multi := div(x, 65536000000000000000000000000000000000000)
                 multi := add(iszero(multi), multi) // multi is min 1
-                y := add(mul(y, multi), 64)                 // add 64 - handles when x is 0
-                y := shr(mul(6, gt(multi, 4096)), y) 
-                y := shr(mul(6, gt(multi, 16777216)), y)
-                y := shr(mul(6, gt(multi, 68719476736)), y)
+                y := add(mul(y, multi), 128)                      // up to 2^32  // add 64 - handles when x is 0
+                y := shr(mul(8, gt(multi, 65536)), y)             // up to 2^48
+                y := shr(mul(8, gt(multi, 4294967296)), y)        // up to 2^64
+                // y := shr(mul(6, gt(multi, 68719476736)), y)
             }
 
             // console.log("x, y, multi: %d, %d, %d", x / 1e36, y / 1e18, multi);
 
             assembly {
-                // 8x Newton method
+                // 9x Newton method
                 y := shr(1, add(y, div(x, y))) // 20 gas each
+                y := shr(1, add(y, div(x, y)))
                 y := shr(1, add(y, div(x, y)))
                 y := shr(1, add(y, div(x, y)))
                 y := shr(1, add(y, div(x, y)))

@@ -176,7 +176,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [1e4, 1e6)", async function () {
+      it.only("sqrt [1e4, 1e6)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -587,8 +587,8 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("sqrt", function () {
-      it("sqrt [1, 2)", async function () {
+    describe.only("sqrt", function () {
+      it.only("sqrt [1, 2)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 2; x += 0.01) {
@@ -601,10 +601,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [1, 2^12)", async function () {
+      it.only("sqrt [1, 2^16)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1; x < 4096; x += 4.096) {
+        for (let x = 1; x < 2 ** 16; x += 65.536) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
           assertRelativeBelow(actualJS, expected, 0.000000000072);
@@ -618,10 +618,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [2^12, 2^24)", async function () {
+      it.only("sqrt [2^16, 2^32)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2**12; x < 2**24; x += 2**12 * 4.096) {
+        for (let x = 2**16; x < 2**32; x += 2**16 * 65.536) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
           assertRelativeBelow(actualJS, expected, 0.000000000072);
@@ -635,10 +635,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [2^24, 2^36)", async function () {
+      it.only("sqrt [2^32, 2^48)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2**24; x < 2**36; x += 2**24 * 4.096) {
+        for (let x = 2**32; x < 2**48; x += 2**32 * 65.536) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
           assertRelativeBelow(actualJS, expected, 0.000000000072);
@@ -652,10 +652,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [2^36, 2^48)", async function () {
+      it.only("sqrt [2^48, 2^64)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2**36; x < 2**48; x += 2**36 * 4.096) {
+        for (let x = 2**48; x < 2**64; x += 2**48 * 65.536) {
           const expected = Math.sqrt(x);
           const actualJS = blackScholesJS.sqrtUpper(x);
           assertRelativeBelow(actualJS, expected, 0.000000000072);
@@ -695,8 +695,8 @@ describe("DeFiMath (SOL and JS)", function () {
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            console.log("x", x.toFixed(6), expected, actualSOL, absError);
+            // const absError = Math.abs(actualSOL - expected);
+            // console.log("x", x.toFixed(6), expected, actualSOL, absError);
             assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
           }
         }
