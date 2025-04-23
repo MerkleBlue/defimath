@@ -14,6 +14,8 @@ import "hardhat/console.sol";
 library DeFiMath {
 
     error ExpUpperBoundError();
+    error SqrtUpperBoundError();
+    error SqrtLowerBoundError();
 
     // exponential function - 
     function expPositive(uint256 x) internal pure returns (uint256 y) {
@@ -231,9 +233,11 @@ library DeFiMath {
     // }
 
     function sqrt(uint256 x) internal pure returns (uint256 y) {
-        // todo: input check
         unchecked {
             if (x >= 1e18) {
+                // check input
+                if (x >= 1.208925819614629e42) revert SqrtUpperBoundError(); // up to 2^80
+
                 /// @solidity memory-safe-assembly
                 assembly {
                     // x to 1e36 base, and y to best guess

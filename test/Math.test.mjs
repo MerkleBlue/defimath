@@ -588,19 +588,30 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [1e-6, 1)", async function () {
+      it.only("sqrt [1e-18, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-        for (let x = 1 / 1e9; x < 1; x += x / 4) {
+        for (let x = 1 / 1e18; x < 1; x += x) {
           const expected = Math.sqrt(x);
-          // const actualJS = blackScholesJS.sqrt(x);
-          // assertRelativeBelow(actualJS, expected, 0.000000000072);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-            // const absError = Math.abs(actualSOL - expected);
-            // console.log("x", x.toFixed(6), expected, actualSOL, absError);
+            const absError = Math.abs(actualSOL - expected);
+            console.log("x", x.toFixed(18), expected, actualSOL, absError);
             assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
           }
+        }
+      });
+
+      it.only("sqrt 0", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+        const x = 0;
+        const expected = Math.sqrt(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
+          const absError = Math.abs(actualSOL - expected);
+          console.log("x", x.toFixed(18), expected, actualSOL, absError);
+          assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
         }
       });
     });
