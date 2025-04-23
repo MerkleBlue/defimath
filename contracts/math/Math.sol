@@ -280,7 +280,6 @@ library DeFiMath {
                     y := add(y, 64)
 
                     y := shr(mul(10, gt(multi, 1048576)), y)             // up to 2^60
-                    y := shr(mul(10, gt(multi, 1099511627776)), y)       // up to 2^80
 
                     // 9x Newton method
                     y := shr(1, add(y, div(x, y))) // after this step, we know y > sqrt(x)
