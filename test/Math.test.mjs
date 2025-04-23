@@ -595,8 +595,8 @@ describe("DeFiMath (SOL and JS)", function () {
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-            const absError = Math.abs(actualSOL - expected);
-            console.log("x", x.toFixed(18), expected, actualSOL, absError);
+            // const absError = Math.abs(actualSOL - expected);
+            // console.log("x", x.toFixed(18), expected, actualSOL, absError);
             assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
           }
         }
@@ -609,8 +609,8 @@ describe("DeFiMath (SOL and JS)", function () {
 
         if (duoTest) {
           const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          const absError = Math.abs(actualSOL - expected);
-          console.log("x", x.toFixed(18), expected, actualSOL, absError);
+          // const absError = Math.abs(actualSOL - expected);
+          // console.log("x", x.toFixed(18), expected, actualSOL, absError);
           assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
         }
       });
