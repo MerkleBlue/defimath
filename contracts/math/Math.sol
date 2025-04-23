@@ -265,6 +265,8 @@ library DeFiMath {
                     y := shr(1, add(y, div(x, y)))
                 }
             } else {
+                if (x == 0) return 0;
+
                 /// @solidity memory-safe-assembly
                 assembly {
                     // x to 1e36 base, and y to best guess

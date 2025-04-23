@@ -515,7 +515,7 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrt", function () {
-      it("sqrt [1, 2)", async function () {
+      it("sqrt when x in [1, 2)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 2; x += 0.01) {
@@ -528,7 +528,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [1, 2^20)", async function () {
+      it("sqrt when x in [1, 2^20)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 2 ** 20; x += 1048.576) {
@@ -543,7 +543,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [2^20, 2^40)", async function () {
+      it("sqrt when x in [2^20, 2^40)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2**20; x < 2**40; x += 2**40 * 1048.576) {
@@ -558,7 +558,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [2^40, 2^60)", async function () {
+      it("sqrt when x in [2^40, 2^60)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2**40; x < 2**60; x += 2**40 * 1048.576) {
@@ -573,7 +573,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt [2^60, 2^80)", async function () {
+      it("sqrt when x in [2^60, 2^80)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2**60; x < 2**80; x += 2**60 * 1048.576) {
@@ -588,7 +588,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("sqrt [1e-18, 1)", async function () {
+      it("sqrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         for (let x = 1 / 1e18; x < 1; x += x) {
           const expected = Math.sqrt(x);
@@ -602,7 +602,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("sqrt 0", async function () {
+      it("sqrt 0", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 0;
         const expected = Math.sqrt(x);
