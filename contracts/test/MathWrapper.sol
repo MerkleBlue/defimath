@@ -42,11 +42,6 @@ contract MathWrapper {
        return DeFiMath.lnUpper(x);
     }
 
-    // // x: [1, 1e18]
-    // function sqrtUpper(uint256 x) external pure returns (uint256) {
-    //     return DeFiMath.sqrtUpper(x);
-    // }
-
     function sqrtUpper2(uint256 x) external pure returns (uint256) {
         return DeFiMath.sqrtUpper2(x);
     }
@@ -107,12 +102,12 @@ contract MathWrapper {
         return (y, startGas - endGas);
     }
 
-    function log10MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+    function log10MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.getSqrtZerosPrecompute(x);
+        y = DeFiMath.log10(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);

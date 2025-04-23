@@ -110,10 +110,11 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | ln            |      580 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
-| sqrt          |      383 |      961 |      731 |      415 |        - |
+| sqrt          |      383 |     961* |      731 |     415* |        - |
 | stdNormCDF    |      842 |        - |        - |        - |     4884 |
 | erf           |      726 |        - |        - |        - |     4236 |
 
+\* - not a fixed-point function  
 The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
