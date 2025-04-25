@@ -320,6 +320,122 @@ library DeFiMath {
         }
     }
 
+    function lnUpper2(uint256 x) internal pure returns (uint256 r) {
+        unchecked {
+            uint256 multiplier;
+
+            uint256 a; 
+            uint256 b;
+
+            assembly {
+                // reduce range of x to [1, 1.414]
+                a := gt(x, 1414213562373095049)
+                x := mul(x, 1000000000000000000)
+                x := div(x, add(1000000000000000000, mul(gt(a, 0), 414213562373095049)))
+
+                // reduce range of x to [1, 1.189] which is 
+                b := gt(x, 1189207115002721067)
+                x := mul(x, 1000000000000000000)
+                x := div(x, add(1000000000000000000, mul(gt(b, 0), 189207115002721067))) // sqrt2
+
+                multiplier := add(b, shl(1, a)) // 2^0.5 + 2^0.25
+            }
+
+            // multiplier = 2 * a + b; // 2^0.5 + 2 * 2^0.25
+
+
+            // we use Mercator series for ln(x)
+            // ln(x) = 1/(2n + 1) * ((x - 1) / (x + 1)) ^ (2n + 1)
+            // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
+            // fraction = (x - 1) / (x + 1)
+            uint256 fraction = (x - 1e18) * 1e18; //  / (x + 1e18);
+            assembly {
+                fraction := div(fraction, add(x, 1000000000000000000)) // convert to 1e36 base
+            }
+            uint256 fraction2 = fraction * fraction;
+            uint256 fraction4 = fraction2 * fraction2 / 1e36;
+            uint256 fraction6 = fraction4 * fraction2 / 1e36;
+            uint256 fraction8 = fraction6 * fraction2 / 1e36;
+            uint256 fraction10 = fraction8 * fraction2 / 1e36;
+            uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7 + fraction8 / 9 + fraction10 / 11 /* + fraction12 / 13 + fraction14 / 15*/);
+            
+            return naturalLog / 5e35 + multiplier * 173286795139986327; // using ln(a * b) = ln(a) + ln(b)
+        }
+    }
+
+    function lnWad(int256 x) internal pure returns (int256 r) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            // We want to convert `x` from `10**18` fixed point to `2**96` fixed point.
+            // We do this by multiplying by `2**96 / 10**18`. But since
+            // `ln(x * C) = ln(x) + ln(C)`, we can simply do nothing here
+            // and add `ln(2**96 / 10**18)` at the end.
+
+            // Compute `k = log2(x) - 96`, `r = 159 - k = 255 - log2(x) = 255 ^ log2(x)`.
+            r := 195
+            // r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x)) // 128 bits
+            // r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x)))) // 64 bits
+            // r := or(r, shl(5, lt(0xffffffff, shr(r, x)))) // 32 bits
+            // r := or(r, shl(4, lt(0xffff, shr(r, x)))) // 16 bits
+            // r := or(r, shl(3, lt(0xff, shr(r, x))))     // 8 bits
+            // // We place the check here for more optimal stack operations.
+            // if iszero(sgt(x, 0)) { // 26 gas
+            //     mstore(0x00, 0x1615e638) // `LnWadUndefined()`.
+            //     revert(0x1c, 0x04)
+            // }
+            // // forgefmt: disable-next-item
+            // r := xor(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
+            //     0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))
+
+            // // Reduce range of x to (1, 2) * 2**96
+            // // ln(2^k * x) = k * ln(2) + ln(x)
+            x := shr(159, shl(r, x))
+
+            // Evaluate using a (8, 8)-term rational approximation.
+            // `p` is made monic, we will multiply by a scale factor later.
+            // forgefmt: disable-next-item
+            let p := sub( // This heavily nested expression is to avoid stack-too-deep for via-ir.
+                sar(96, mul(add(43456485725739037958740375743393,
+                sar(96, mul(add(24828157081833163892658089445524,
+                sar(96, mul(add(3273285459638523848632254066296,
+                    x), x))), x))), x)), 11111509109440967052023855526967)
+            p := sub(sar(96, mul(p, x)), 45023709667254063763336534515857)
+            p := sub(sar(96, mul(p, x)), 14706773417378608786704636184526)
+            p := sub(mul(p, x), shl(96, 795164235651350426258249787498))
+            // We leave `p` in `2**192` basis so we don't need to scale it back up for the division.
+
+            // `q` is monic by convention.
+            let q := add(5573035233440673466300451813936, x)
+            q := add(71694874799317883764090561454958, sar(96, mul(x, q)))
+            q := add(283447036172924575727196451306956, sar(96, mul(x, q)))
+            q := add(401686690394027663651624208769553, sar(96, mul(x, q)))
+            q := add(204048457590392012362485061816622, sar(96, mul(x, q)))
+            q := add(31853899698501571402653359427138, sar(96, mul(x, q)))
+            q := add(909429971244387300277376558375, sar(96, mul(x, q)))
+
+            // `p / q` is in the range `(0, 0.125) * 2**96`.
+
+            // Finalization, we need to:
+            // - Multiply by the scale factor `s = 5.549…`.
+            // - Add `ln(2**96 / 10**18)`.
+            // - Add `k * ln(2)`.
+            // - Multiply by `10**18 / 2**96 = 5**18 >> 78`.
+
+            // The q polynomial is known not to have zeros in the domain.
+            // No scaling required because p is already `2**96` too large.
+            p := sdiv(p, q)
+            // Multiply by the scaling factor: `s * 5**18 * 2**96`, base is now `5**18 * 2**192`.
+            p := mul(1677202110996718588342820967067443963516166, p)
+            // Add `ln(2) * k * 5**18 * 2**192`.
+            // forgefmt: disable-next-item
+            p := add(mul(16597577552685614221487285958193947469193820559219878177908093499208371, sub(159, r)), p)
+            // Add `ln(2**96 / 10**18) * 5**18 * 2**192`.
+            p := add(600920179829731861736702779321621459595472258049074101567377883020018308, p)
+            // Base conversion: mul `2**18 / 2**192`.
+            r := sar(174, p)
+        }
+    }
+
     // x: [1, 16] 
     function lnUpper(uint256 x) internal pure returns (uint256) {
         unchecked {

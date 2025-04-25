@@ -13,6 +13,7 @@ const MAX_ABS_ERROR_CDF = 1.8e-11;
 const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
+const MAX_ABS_ERROR_LN = 1.2e-13;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -245,7 +246,7 @@ describe("DeFiMath (SOL and JS)", function () {
         let totalGas = 0, count = 0;
         const d1 = 0.6100358074173348;
 
-        totalGas += parseInt(await deFiMath.stdNormCDFMG(tokens(d1)));
+        totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(d1))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
@@ -255,7 +256,7 @@ describe("DeFiMath (SOL and JS)", function () {
 
         let totalGas = 0, count = 0;
         for (let d1 = -2; d1 < 2; d1 += 0.01234) {
-          totalGas += parseInt(await deFiMath.stdNormCDFMG(tokens(d1)));
+          totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(d1))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
@@ -371,6 +372,65 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("ln", function () {
+      it("lnUpper2 [1, 1.0905]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+          const expected = Math.log(x);
+
+          if (duoTest) {
+            const result1 = await deFiMath.lnUpper2MG(tokens(x));
+            const actualSOL = result1.y.toString() / 1e18;
+            totalGas += parseInt(result1.gasUsed);
+            count++;
+            const absError = Math.abs(actualSOL - expected);
+            console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), absError);
+
+            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it.only("lnUpper2 [1, 2]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 2; x += 0.01) { 
+          const expected = Math.log(x);
+
+          if (duoTest) {
+            const result1 = await deFiMath.lnUpper2MG(tokens(x));
+            const actualSOL = result1.y.toString() / 1e18;
+            totalGas += parseInt(result1.gasUsed);
+            count++;
+            const absError = Math.abs(actualSOL - expected);
+            console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), absError);
+            // assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+
+        totalGas = 0; count = 0;
+        for (let x = 1; x < 2; x += 0.01) { 
+          const expected = Math.log(x);
+
+          if (duoTest) {
+            const result1 = await deFiMath.lnWadMG(tokens(x));
+            const actualSOL = result1.y.toString() / 1e18;
+            totalGas += parseInt(result1.gasUsed);
+            count++;
+            const absError = Math.abs(actualSOL - expected);
+            console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), absError);
+            // assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+
+
+      });
+
       // todo: test all limits like 1.090507732665257659
       it("ln upper [1, 1.0905]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -913,7 +973,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
       });
 
-      it("ln", async function () {
+      it.only("ln", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -1086,10 +1146,10 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
         console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
         console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
+        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0), "      " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
       });
 
-      it("cdf", async function () {
+      it("stdNormCDF", async function () {
         const { deFiMath, solStat } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
@@ -1120,7 +1180,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Metric            DeFiMath  SolStat");
         console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
         console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas              ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
+        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
       });
 
       it("erf", async function () {

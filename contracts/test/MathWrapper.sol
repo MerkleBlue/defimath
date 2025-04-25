@@ -42,6 +42,10 @@ contract MathWrapper {
        return DeFiMath.lnUpper(x);
     }
 
+    function lnUpper2(uint256 x) external pure returns (uint256) {
+       return DeFiMath.lnUpper2(x);
+    }
+
     function sqrtUpper2(uint256 x) external pure returns (uint256) {
         return DeFiMath.sqrtUpper2(x);
     }
@@ -78,6 +82,28 @@ contract MathWrapper {
         endGas = gasleft();
 
         return (result, startGas - endGas);
+    }
+
+    function lnUpper2MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = DeFiMath.lnUpper2(x);
+        endGas = gasleft();
+        
+        return (y, startGas - endGas);
+    }
+
+    function lnWadMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = DeFiMath.lnWad(x);
+        endGas = gasleft();
+        
+        return (y, startGas - endGas);
     }
 
     function lnMG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
@@ -124,17 +150,6 @@ contract MathWrapper {
         
         return (result, startGas - endGas);
     }
-
-    // function sqrtUpperMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
-    //     uint256 result;
-    //     uint256 startGas;
-    //     uint256 endGas;
-    //     startGas = gasleft();
-    //     result = DeFiMath.sqrtUpper(x);
-    //     endGas = gasleft();
-        
-    //     return (result, startGas - endGas);
-    // }
 
     function sqrtUpper2MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 result;

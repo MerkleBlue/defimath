@@ -271,49 +271,6 @@ export class BlackScholesNUMJS {
     r = r ** 8 * 2 ** k;
 
     return r;
-
-
-    // console.log("step 3 JS ", r);
-
-    // // add limits to simulate solidity
-    // if (x > 50) {
-    //   return 1e18;
-    // }
-
-    // // handle special case where x = 0
-    // if( x === 0) {
-    //   return 1;
-    // }
-
-    // let exp1 = 1;
-    // let exp2 = 1;
-    // let exp3 = 1;
-
-    // if (x > 32) {
-    //   const exponent = Math.floor(x / 32);
-    //   x -= exponent * 32;
-    //   exp1 = E_TO_32 ** exponent;
-    // }
-
-    // if (x > 1) {
-    //   const exponent = Math.floor(x);
-    //   x -= exponent;
-    //   exp2 = E ** exponent;
-    // }
-
-    // // below 1
-    // if (x > 0.03125) {
-    //   const exponent = Math.floor(x / 0.03125);
-    //   x -= exponent * 0.03125;
-    //   exp3 = E_TO_0_03125 ** exponent;
-    // }
-
-    // // we use Pade approximation for exp(x)
-    // // e ^ (x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-    // const numerator = (x + 3) ** 2 + 3;
-    // const denominator = (x - 3) ** 2 + 3;
-    // const exp4 = (numerator / denominator);
-    // return exp1 * exp2 * exp3 * exp4; // using e ^ (a + b) = e ^ a * e ^ b
   };
 
   ln(x) {
