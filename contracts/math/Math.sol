@@ -329,16 +329,16 @@ library DeFiMath {
 
             assembly {
                 // reduce range of x to [1, 1.414]
-                a := gt(x, 1414213562373095049)
-                x := mul(x, 1000000000000000000)
-                x := div(x, add(1000000000000000000, mul(gt(a, 0), 414213562373095049)))
+                // a := gt(x, 1414213562373095049)
+                // x := mul(x, 1000000000000000000)
+                // x := div(x, add(1000000000000000000, mul(gt(a, 0), 414213562373095049)))
 
-                // reduce range of x to [1, 1.189] which is 
-                b := gt(x, 1189207115002721067)
-                x := mul(x, 1000000000000000000)
-                x := div(x, add(1000000000000000000, mul(gt(b, 0), 189207115002721067))) // sqrt2
+                // // reduce range of x to [1, 1.189] which is 
+                // b := gt(x, 1189207115002721067)
+                // x := mul(x, 1000000000000000000)
+                // x := div(x, add(1000000000000000000, mul(gt(b, 0), 189207115002721067))) // sqrt2
 
-                multiplier := add(b, shl(1, a)) // 2^0.5 + 2^0.25
+                // multiplier := add(b, shl(1, a)) // 2^0.5 + 2^0.25
             }
 
             // multiplier = 2 * a + b; // 2^0.5 + 2 * 2^0.25
@@ -348,16 +348,57 @@ library DeFiMath {
             // ln(x) = 1/(2n + 1) * ((x - 1) / (x + 1)) ^ (2n + 1)
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
             // fraction = (x - 1) / (x + 1)
+            // uint256 fraction;
+            // uint256 naturalLog;
+            // assembly {
+            //     fraction := mul(1000000000000000000, sub(x, 1000000000000000000))
+            //     fraction := div(fraction, add(x, 1000000000000000000)) // convert to 1e36 base
+
+            //     naturalLog := 1000000000000000000000000000000000000
+            //     let fraction2 := mul(fraction, fraction)
+            //     naturalLog := add(naturalLog, div(fraction2, 3))
+
+            //     let fraction4 := div(mul(fraction2, fraction2), 1000000000000000000000000000000000000)
+            //     naturalLog := add(naturalLog, div(fraction4, 5))
+
+            //     let fraction6 := div(mul(fraction4, fraction2), 1000000000000000000000000000000000000)
+            //     naturalLog := add(naturalLog, div(fraction6, 7))
+
+            //     let fraction8 := div(mul(fraction6, fraction2), 1000000000000000000000000000000000000)
+            //     naturalLog := add(naturalLog, div(fraction8, 9))
+
+            //     let fraction10 := div(mul(fraction8, fraction2), 1000000000000000000000000000000000000)
+            //     naturalLog := add(naturalLog, div(fraction10, 11))
+
+            //     naturalLog := mul(naturalLog, fraction)
+            // }
+
             uint256 fraction = (x - 1e18) * 1e18; //  / (x + 1e18);
             assembly {
                 fraction := div(fraction, add(x, 1000000000000000000)) // convert to 1e36 base
             }
-            uint256 fraction2 = fraction * fraction;
-            uint256 fraction4 = fraction2 * fraction2 / 1e36;
-            uint256 fraction6 = fraction4 * fraction2 / 1e36;
-            uint256 fraction8 = fraction6 * fraction2 / 1e36;
-            uint256 fraction10 = fraction8 * fraction2 / 1e36;
-            uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7 + fraction8 / 9 + fraction10 / 11 /* + fraction12 / 13 + fraction14 / 15*/);
+            // uint256 fraction2 = fraction * fraction;
+            // uint256 fraction4 = fraction2 * fraction2 / 1e36;
+            // uint256 fraction6 = fraction4 * fraction2 / 1e36; // 195
+            // uint256 fraction8 = fraction6 * fraction2 / 1e36; // 243
+            // uint256 fraction10 = fraction8 * fraction2 / 1e36; // gas 282
+            // uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7 + fraction8 / 9 + fraction10 / 11);
+            // uint256 naturalLog = fraction2 / 11;
+            // naturalLog = fraction2 * (0.111111111111111e36 + naturalLog) / 1e36;
+            // naturalLog = fraction2 * (0.142857142857143e36 + naturalLog) / 1e36;
+            // naturalLog = fraction2 * (0.2e36 + naturalLog) / 1e36;
+            // naturalLog = fraction * (1e36 + fraction2 * (333333333333333333e18 + naturalLog) / 1e36);
+
+            uint256 naturalLog;
+            assembly {
+                let fraction2 := mul(fraction, fraction)
+                naturalLog := div(fraction2, 11)
+                naturalLog := div(mul(fraction2, add(111111111111111111111111111111111111, naturalLog)), 1000000000000000000000000000000000000)
+                naturalLog := div(mul(fraction2, add(142857142857143000000000000000000000, naturalLog)), 1000000000000000000000000000000000000)
+                naturalLog := div(mul(fraction2, add(200000000000000000000000000000000000, naturalLog)), 1000000000000000000000000000000000000)
+                naturalLog := div(mul(fraction2, add(333333333333333333333333333333333333, naturalLog)), 1000000000000000000000000000000000000)
+                naturalLog := mul(fraction, add(1000000000000000000000000000000000000, naturalLog))
+            }
             
             return naturalLog / 5e35 + multiplier * 173286795139986327; // using ln(a * b) = ln(a) + ln(b)
         }
