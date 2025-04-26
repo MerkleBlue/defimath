@@ -389,16 +389,16 @@ library DeFiMath {
             // naturalLog = fraction2 * (0.2e36 + naturalLog) / 1e36;
             // naturalLog = fraction * (1e36 + fraction2 * (333333333333333333e18 + naturalLog) / 1e36);
 
-            // uint256 naturalLog;
+
             assembly {
                 let fraction := mul(sub(x, 1000000000000000000), 1000000000000000000)
-                fraction := div(fraction, add(x, 1000000000000000000))
-                let fraction2 := mul(fraction, fraction)
+                fraction := div(fraction, add(x, 1000000000000000000)) // 18
+                let fraction2 := div(mul(fraction, fraction), 1000000000000000000) // 18
                 r := div(fraction2, 11)
-                r := div(mul(fraction2, add(111111111111111111111111111111111111, r)), 1000000000000000000000000000000000000)
-                r := div(mul(fraction2, add(142857142857143000000000000000000000, r)), 1000000000000000000000000000000000000)
-                r := div(mul(fraction2, add(200000000000000000000000000000000000, r)), 1000000000000000000000000000000000000)
-                r := div(mul(fraction2, add(333333333333333333333333333333333333, r)), 1000000000000000000000000000000000000)
+                r := div(mul(fraction2, add(111111111111111111, r)), 1000000000000000000) // 18
+                r := mul(fraction2, add(142857142857143000, r)) // 36
+                r := div(mul(fraction2, add(200000000000000000000000000000000000, r)), 1000000000000000000)
+                r := div(mul(fraction2, add(333333333333333333333333333333333333, r)), 1000000000000000000)
                 r := div(mul(fraction, add(1000000000000000000000000000000000000, r)), 500000000000000000000000000000000000)
                 r := add(r, mul(multiplier, 173286795139986327))
             }
