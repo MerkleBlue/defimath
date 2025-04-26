@@ -329,16 +329,16 @@ library DeFiMath {
 
             assembly {
                 // reduce range of x to [1, 1.414]
-                // a := gt(x, 1414213562373095049)
+                // multiplier := gt(x, 1414213562373095049)
                 // x := mul(x, 1000000000000000000)
-                // x := div(x, add(1000000000000000000, mul(gt(a, 0), 414213562373095049)))
+                // x := div(x, add(1000000000000000000, mul(gt(multiplier, 0), 414213562373095049)))
 
                 // // reduce range of x to [1, 1.189] which is 
                 // b := gt(x, 1189207115002721067)
                 // x := mul(x, 1000000000000000000)
                 // x := div(x, add(1000000000000000000, mul(gt(b, 0), 189207115002721067))) // sqrt2
 
-                // multiplier := add(b, shl(1, a)) // 2^0.5 + 2^0.25
+                // multiplier := shl(1, a) // 2^0.5 + 2^0.25
             }
 
             // multiplier = 2 * a + b; // 2^0.5 + 2 * 2^0.25
@@ -394,13 +394,19 @@ library DeFiMath {
                 let fraction := mul(sub(x, 1000000000000000000), 1000000000000000000)
                 fraction := div(fraction, add(x, 1000000000000000000)) // 18
                 let fraction2 := div(mul(fraction, fraction), 1000000000000000000) // 18
-                r := div(fraction2, 11) // 18
+                r := div(fraction2, 17)                                              // r: 18 -> 18
+                r := mul(fraction2, add(66666666666666667, r))                       // r: 18 -> 36 
+
+                r := mul(fraction2, add(76923076923077000000000000000000000, r)) // r: 36 -> 54
+                r := div(mul(fraction2, add(90909090909091000000000000000000000000000000000000000, r)), 1000000000000000000000000000000000000000000000000000000) // 18
                 r := mul(fraction2, add(111111111111111111, r)) // 36
+
                 r := mul(fraction2, add(142857142857143000000000000000000000, r)) // 54
                 r := div(mul(fraction2, add(200000000000000000000000000000000000000000000000000000, r)), 1000000000000000000000000000000000000000000000000000000) // 18
                 r := mul(fraction2, add(333333333333333333, r)) // 36
                 r := div(mul(fraction, add(1000000000000000000000000000000000000, r)), 500000000000000000000000000000000000)
-                r := add(r, mul(multiplier, 173286795139986327))
+                
+                r := add(r, mul(multiplier, 346573590279973000))
             }
             
             //return naturalLog + multiplier * 173286795139986327; // using ln(a * b) = ln(a) + ln(b)
