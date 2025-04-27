@@ -397,7 +397,7 @@ describe("DeFiMath (SOL and JS)", function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 2; x += 0.01) { 
+        for (let x = 1; x <= 2.005; x += 0.01) { 
           const expected = Math.log(x);
 
           if (duoTest) {

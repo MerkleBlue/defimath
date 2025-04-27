@@ -325,29 +325,33 @@ library DeFiMath {
             uint256 multiplier;
 
             uint256 a; 
-            uint256 b;
+            uint256 xRound;
 
             assembly {
+
+                xRound := div(x, 1000000000000000000) // convert to 1e0 base
+
+                // a := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+                a := shl(6, lt(0xffffffffffffffff, xRound))
+                a := or(a, shl(5, lt(0xffffffff, shr(a, xRound))))
+                a := or(a, shl(4, lt(0xffff, shr(a, xRound))))
+                a := or(a, shl(3, lt(0xff, shr(a, xRound))))
+                // forgefmt: disable-next-item
+                a := xor(a, byte(and(0x1f, shr(shr(a, xRound), 0x8421084210842108cc6318c6db6d54be)),
+                    0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))    
+
+                let bits := sub(255, a)
+                x := shr(bits, x) // reduce range of x to [1, 2]
+
                 // reduce range of x to [1, 1.414]
                 multiplier := gt(x, 1414213562373095049)
                 x := mul(x, 1000000000000000000)
                 x := div(x, add(1000000000000000000, mul(gt(multiplier, 0), 414213562373095049)))
 
-                // multiplier := gt(x, 1414213562373095049)
-                // let x2 := mul(x, 1414213562373095049)
+            // }
 
-                // x := shr(gt(multiplier, 0), div(x2, 1000000000000000000))
+            // console.log("a", a);
 
-
-                // // reduce range of x to [1, 1.189] which is 
-                // b := gt(x, 1189207115002721067)
-                // x := mul(x, 1000000000000000000)
-                // x := div(x, add(1000000000000000000, mul(gt(b, 0), 189207115002721067))) // sqrt2
-
-                // multiplier := shl(1, a) // 2^0.5 + 2^0.25
-            }
-
-            // multiplier = 2 * a + b; // 2^0.5 + 2 * 2^0.25
 
 
             // we use Mercator series for ln(x)
@@ -355,49 +359,29 @@ library DeFiMath {
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
             // fraction = (x - 1) / (x + 1)
 
-
-
-            // uint256 fraction = (x - 1e18) * 1e18; //  / (x + 1e18);
             // assembly {
-            //     fraction := div(fraction, add(x, 1000000000000000000)) // convert to 1e36 base
-            // }
-            // uint256 fraction2 = fraction * fraction;
-            // uint256 fraction4 = fraction2 * fraction2 / 1e36;
-            // uint256 fraction6 = fraction4 * fraction2 / 1e36; // 195
-            // uint256 fraction8 = fraction6 * fraction2 / 1e36; // 243
-            // uint256 fraction10 = fraction8 * fraction2 / 1e36; // gas 282
-            // uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7 + fraction8 / 9 + fraction10 / 11);
-            // uint256 naturalLog = fraction2 / 11;
-            // naturalLog = fraction2 * (0.111111111111111e36 + naturalLog) / 1e36;
-            // naturalLog = fraction2 * (0.142857142857143e36 + naturalLog) / 1e36;
-            // naturalLog = fraction2 * (0.2e36 + naturalLog) / 1e36;
-            // naturalLog = fraction * (1e36 + fraction2 * (333333333333333333e18 + naturalLog) / 1e36);
-
-
-            assembly {
                 let fraction := mul(sub(x, 1000000000000000000), 1000000000000000000)
                 fraction := div(fraction, add(x, 1000000000000000000)) // 18
                 let fraction2 := div(mul(fraction, fraction), 1000000000000000000) // 18
-                r := div(fraction2, 17)                                              // r: 18 -> 18
+                r := div(fraction2, 19)                                              // r: 18 -> 18
 
-                r := mul(fraction2, add(66666666666666667, r))                       // r: 18 -> 36 
-                r := mul(fraction2, add(76923076923077000000000000000000000, r)) // r: 36 -> 54
-                r := mul(fraction2, add(90909090909091000000000000000000000000000000000000000, r)) // 18
+                r := mul(fraction2, add(58823529411765000, r))   
+                r := mul(fraction2, add(66666666666666667000000000000000000, r))                       // r: 18 -> 36 
+                r := mul(fraction2, add(76923076923077000000000000000000000000000000000000000, r)) // r: 36 -> 54
+                r := div(r, 1000000000000000000000000000000000000000000000000000000)
+                
+                r := mul(fraction2, add(90909090909091000, r)) // 18
+                r := mul(fraction2, add(111111111111111111000000000000000000, r)) // 36
+                r := mul(fraction2, add(142857142857143000000000000000000000000000000000000000, r)) // 54
                 r := div(r, 1000000000000000000000000000000000000000000000000000000)
 
-                r := mul(fraction2, add(111111111111111111, r)) // 36
-                r := mul(fraction2, add(142857142857143000000000000000000000, r)) // 54
-                r := mul(fraction2, add(200000000000000000000000000000000000000000000000000000, r)) // 18
-                r := div(r, 1000000000000000000000000000000000000000000000000000000)
+                r := mul(fraction2, add(200000000000000000, r)) // 18
+                r := mul(fraction2, add(333333333333333333000000000000000000, r)) // 36
+                r := mul(fraction, add(1000000000000000000000000000000000000000000000000000000, r))
+                r := div(r, 500000000000000000000000000000000000000000000000000000)
 
-                r := mul(fraction2, add(333333333333333333, r)) // 36
-                r := mul(fraction, add(1000000000000000000000000000000000000, r))
-                r := div(r, 500000000000000000000000000000000000)
-
-                r := add(r, mul(multiplier, 346573590279973000))
+                r := add(add(r, mul(bits, 693147180559945000)), mul(multiplier, 346573590279973000))
             }
-            
-            //return naturalLog + multiplier * 173286795139986327; // using ln(a * b) = ln(a) + ln(b)
         }
     }
 
@@ -410,20 +394,20 @@ library DeFiMath {
             // and add `ln(2**96 / 10**18)` at the end.
 
             // Compute `k = log2(x) - 96`, `r = 159 - k = 255 - log2(x) = 255 ^ log2(x)`.
-            r := 195
-            // r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x)) // 128 bits
-            // r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x)))) // 64 bits
-            // r := or(r, shl(5, lt(0xffffffff, shr(r, x)))) // 32 bits
-            // r := or(r, shl(4, lt(0xffff, shr(r, x)))) // 16 bits
-            // r := or(r, shl(3, lt(0xff, shr(r, x))))     // 8 bits
-            // // We place the check here for more optimal stack operations.
-            // if iszero(sgt(x, 0)) { // 26 gas
-            //     mstore(0x00, 0x1615e638) // `LnWadUndefined()`.
-            //     revert(0x1c, 0x04)
-            // }
-            // // forgefmt: disable-next-item
-            // r := xor(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
-            //     0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))
+            // r := 195
+            r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x)) // 128 bits
+            r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x)))) // 64 bits
+            r := or(r, shl(5, lt(0xffffffff, shr(r, x)))) // 32 bits
+            r := or(r, shl(4, lt(0xffff, shr(r, x)))) // 16 bits
+            r := or(r, shl(3, lt(0xff, shr(r, x))))     // 8 bits
+            // We place the check here for more optimal stack operations.
+            if iszero(sgt(x, 0)) { // 26 gas
+                mstore(0x00, 0x1615e638) // `LnWadUndefined()`.
+                revert(0x1c, 0x04)
+            }
+            // forgefmt: disable-next-item
+            r := xor(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
+                0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))
 
             // // Reduce range of x to (1, 2) * 2**96
             // // ln(2^k * x) = k * ln(2) + ln(x)
