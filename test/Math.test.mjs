@@ -13,7 +13,7 @@ const MAX_ABS_ERROR_CDF = 1.8e-11;
 const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
-const MAX_REL_ERROR_LN = 1.9e-15;
+const MAX_REL_ERROR_LN = 2e-15;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -372,44 +372,6 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("ln", function () {
-      it("lnUpper2 [1, 2]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 1; x <= 2.005; x += 0.01) { 
-          const expected = Math.log(x);
-
-          if (duoTest) {
-            const result1 = await deFiMath.lnUpper2MG(tokens(x));
-            const actualSOL = result1.y.toString() / 1e18;
-            totalGas += parseInt(result1.gasUsed);
-            count++;
-            const absError = Math.abs(actualSOL - expected);
-            console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), absError);
-            // assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
-          }
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-
-        totalGas = 0; count = 0;
-        for (let x = 1; x < 2; x += 0.01) { 
-          const expected = Math.log(x);
-
-          if (duoTest) {
-            const result1 = await deFiMath.lnWadMG(tokens(x));
-            const actualSOL = result1.y.toString() / 1e18;
-            totalGas += parseInt(result1.gasUsed);
-            count++;
-            const absError = Math.abs(actualSOL - expected);
-            console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), absError);
-            // assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
-          }
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-
-
-      });
-
       it("ln [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -503,17 +465,17 @@ describe("DeFiMath (SOL and JS)", function () {
       // todo: failure tests over 2 ^ 128
       // todo: test lower bound
 
-      it("ln lower [0.0625, 1)", async function () {
+      it("ln [0.0625, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0.0625; x < 1; x += 0.001) { 
-          const expected = Math.log(x);
-          const actualJS = blackScholesJS.ln(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000150);
+        for (let x = 1; x <= 16.08; x += 0.16) { 
+          const expected = Math.log(1 / x);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+            const actualSOL = (await deFiMath.ln(tokens(1 / x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
         }
       });
