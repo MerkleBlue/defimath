@@ -527,28 +527,26 @@ library DeFiMath {
     }
 
     // x: [1, 16] 
-    function lnUpper(uint256 x) internal pure returns (uint256) {
+    function lnUpper(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             uint256 multiplier;
 
             // x: [1.0905, 16)
-            if (x >= 1_090507732665257659) {
+            if (x >= 1090507732665257659) {
                 uint256 divider;
-                (divider, multiplier) = getLnPrecompute(x); // todo: should we return multiplier, why not value?
+                (divider, multiplier) = getLnPrecompute(x);
                 x = x * 1e18 / divider;
             }
 
             // we use Pade approximation for ln(x)
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
             // fraction = (x - 1) / (x + 1)
-            uint256 fraction = (x - 1e18) * 1e18 / (x + 1e18);
+            uint256 t = (x - 1e18) * 1e18 / (x + 1e18);
 
-            uint256 fraction2 = fraction * fraction;
-            uint256 fraction4 = fraction2 * fraction2 / 1e36;
-            uint256 fraction6 = fraction4 * fraction2 / 1e36;
-            uint256 naturalLog = fraction * (1e36 + fraction2 / 3 + fraction4 / 5 + fraction6 / 7);
+            uint256 t2 = t * t / 1e18;
+            y = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
             
-            return naturalLog / 5e35 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
+            y = y / 5e17 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
         }
     }
 
