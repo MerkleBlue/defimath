@@ -196,7 +196,7 @@ library DeFiMath {
                 assembly {
                     x := div(1000000000000000000000000000000000000, x)
 
-                                        let xRound := div(x, 1000000000000000000) // convert to 1e0 base
+                    let xRound := div(x, 1000000000000000000) // convert to 1e0 base
 
                     // a := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
                     let a := shl(6, lt(0xffffffffffffffff, xRound))
@@ -242,13 +242,9 @@ library DeFiMath {
                     y := mul(t, add(1000000000000000000000000000000000000000000000000000000, y))
                     y := sdiv(y, 500000000000000000000000000000000000000000000000000000)
 
-                    y := add(y, mul(multiplier, 346573590279972655))
+                    y := sub(sub(0, y), mul(multiplier, 346573590279972655))
                 }
-
-                return -y;
-            }
-
-            
+            }   
         }
     }
 
