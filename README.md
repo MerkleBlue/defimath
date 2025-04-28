@@ -67,7 +67,7 @@ where σ is the volatility of the underlying asset. Learn more about [Black Scho
 
 The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
 
-Option pricing computations cost roughly 3,400 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
+Option pricing computations cost roughly 3,300 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
 The following table compares __gas efficiency__ of DeFiMath with other implementations over a typical range of parameters. 
 
@@ -108,8 +108,8 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | exp           |      354 |     2748 |     5371 |      420 |        - |
 | ln            |      586 |     6994 |    15843 |      536 |        - |
-| log2          |      613 |     6691 |    15191 |        - |        - |
-| log10         |      613 |     8570 |        - |        - |        - |
+| log2          |      659 |     6691 |    15191 |        - |        - |
+| log10         |      659 |     8570 |        - |        - |        - |
 | sqrt          |      383 |     961* |      731 |     415* |        - |
 | stdNormCDF    |      842 |        - |        - |        - |     4884 |
 | erf           |      726 |        - |        - |        - |     4236 |
