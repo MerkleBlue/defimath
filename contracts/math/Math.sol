@@ -535,14 +535,17 @@ library DeFiMath {
             if (x >= 1090507732665257659) {
                 uint256 divider;
                 (divider, multiplier) = getLnPrecompute(x);
-                x = x * 1e18 / divider;
+                x *= 1e18;
+                /// @solidity memory-safe-assembly
+                assembly {
+                    x := div(x, divider)
+                }
             }
 
             // we use Pade approximation for ln(x)
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
             // fraction = (x - 1) / (x + 1)
             uint256 t = (x - 1e18) * 1e18 / (x + 1e18);
-
             uint256 t2 = t * t / 1e18;
             y = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
             
