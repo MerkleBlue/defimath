@@ -256,7 +256,6 @@ library DeFiMath {
                 assembly {
                     x := div(1000000000000000000000000000000000000, x)
                 }
-                // x = 1e36 / x;
                 y = -int256(lnUpper(x));
             }   
         }
@@ -543,8 +542,29 @@ library DeFiMath {
             // we use Pade approximation for ln(x)
             // ln(x) ≈ (x - 1) / (x + 1) * (1 + 1/3 * ((x - 1) / (x + 1)) ^ 2 + 1/5 * ((x - 1) / (x + 1)) ^ 4 + 1/7 * ((x - 1) / (x + 1)) ^ 6)
             // fraction = (x - 1) / (x + 1)
-            uint256 t = (x - 1e18) * 1e18 / (x + 1e18);
-            uint256 t2 = t * t / 1e18;
+            /// @solidity memory-safe-assembly
+            // assembly {
+            //     let t := mul(sub(x, 1000000000000000000), 1000000000000000000)
+            //     t := div(t, add(x, 1000000000000000000)) // 18
+            //     let t2 := div(mul(t, t), 1000000000000000000) // 18
+
+            //     y := div(t2, 7) // 18
+            //     y := mul(t2, add(200000000000000000, y)) // 36
+            //     y := mul(t2, add(333333333333333333000000000000000000, y)) // 54
+            //     y := div(y, 1000000000000000000000000000000000000) // 18
+            //     y := mul(t, add(1000000000000000000, y)) // 36
+            //     y := sdiv(y, 500000000000000000000000000000000000)
+            //     y := add(y, mul(multiplier, 346573590279972655))
+            // }
+
+
+            uint256 t = (x - 1e18) * 1e18; //  / (x + 1e18);
+            
+            /// @solidity memory-safe-assembly
+            assembly {
+                t := div(t, add(x, 1000000000000000000))
+            }
+            uint256 t2 = t * t / 1e18; // 18
             y = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
             
             y = y / 5e17 + multiplier * 86643397569993164; // using ln(a * b) = ln(a) + ln(b)
