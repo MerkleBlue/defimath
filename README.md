@@ -67,18 +67,18 @@ where σ is the volatility of the underlying asset. Learn more about [Black Scho
 
 The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
 
-Option pricing computations cost roughly 3,300 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
+Option pricing computations cost roughly 3,200 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
 The following table compares __gas efficiency__ of DeFiMath with other implementations over a typical range of parameters. 
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     3276 |    30220 |    20635 |    39974 |    95447 |
-| put           |     3300 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2071 |    19574 |        - |    26853 |        - |
-| gamma         |     1704 |        - |        - |        - |        - |
-| theta         |     3892 |        - |        - |        - |        - |
-| vega          |     1677 |    16503 |        - |        - |        - |
+| call          |     3201 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3225 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2032 |    19574 |        - |    26853 |        - |
+| gamma         |     1707 |        - |        - |        - |        - |
+| theta         |     3820 |        - |        - |        - |        - |
+| vega          |     1680 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
@@ -111,8 +111,8 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | log2          |      659 |     6691 |    15191 |        - |        - |
 | log10         |      659 |     8570 |        - |        - |        - |
 | sqrt          |      383 |     961* |      731 |     415* |        - |
-| stdNormCDF    |      842 |        - |        - |        - |     4884 |
-| erf           |      726 |        - |        - |        - |     4236 |
+| stdNormCDF    |      803 |        - |        - |        - |     4884 |
+| erf           |      687 |        - |        - |        - |     4236 |
 
 \* - not a fixed-point function  
 The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
@@ -120,9 +120,9 @@ The table below compares DeFiMath to other math libraries, highlighting the __ma
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | exp           |  5.1e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |        - |
-| ln            |  7.3e-11 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
-| log2          |  7.3e-11 |  1.3e-12 |  1.6e-12 |        - |        - |
-| log10         |  7.3e-11 |  1.3e-12 |        - |        - |        - |
+| ln            |  1.5e-12 |  1.3e-12 |  1.6e-12 |  1.6e-12 |        - |
+| log2          |  1.5e-12 |  1.3e-12 |  1.6e-12 |        - |        - |
+| log10         |  1.4e-12 |  1.3e-12 |        - |        - |        - |
 | sqrt          |  2.8e-14 |  2.8e-14 |  2.8e-14 |  2.8e-14 |        - |
 | stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
 | erf           |  2.3e-10 |        - |        - |        - |   2.6e-2 |

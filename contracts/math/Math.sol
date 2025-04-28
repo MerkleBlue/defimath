@@ -430,7 +430,7 @@ library DeFiMath {
 
     // erf from West's paper - https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf 
     // abs error 1e-15, now exp function is bottleneck
-    function erfPositiveHalf(uint256 x) internal pure returns (uint256) {
+    function erfPositiveHalf(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             uint256 t = x * 1414213562373095049 / 1e18;
             uint256 t2 = t * t / 1e18;
@@ -440,7 +440,14 @@ library DeFiMath {
             uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18; 
             uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
 
-            return 5e17 - 1e36 / expPositive(t2 >> 1) * num / denom;
+            uint256 expRes = expPositive(t2 >> 1);
+
+            assembly {
+                let res := div(1000000000000000000000000000000000000, expRes)
+                res := mul(res, num)
+                res := div(res, denom)
+                y := sub(500000000000000000, res)
+            }
         }
 
         // let xAbs = Math.abs(x) * Math.SQRT2;
