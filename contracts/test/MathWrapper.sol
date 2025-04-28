@@ -42,7 +42,7 @@ contract MathWrapper {
        return DeFiMath.lnUpper(x);
     }
 
-    function lnUpper2(uint256 x) external pure returns (uint256) {
+    function lnUpper2(uint256 x) external pure returns (int256) {
        return DeFiMath.lnUpper2(x);
     }
 
@@ -84,7 +84,7 @@ contract MathWrapper {
         return (result, startGas - endGas);
     }
 
-    function lnUpper2MG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+    function lnUpper2MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
 

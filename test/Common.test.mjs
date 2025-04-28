@@ -14,6 +14,11 @@ export function assertAbsoluteBelow(actual, expected, maxAbsError = 1) {
 }
 
 export function assertRelativeBelow(actual, expected, maxRelError = 100) {
+  // handle 0
+  if (actual === 0 && expected === 0) {
+    return;
+  }
+  
   const absError = Math.abs(actual - expected);
   const relError = (expected !== 0) ? Math.abs(absError / expected) : 0;
 
