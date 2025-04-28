@@ -39,7 +39,7 @@ contract MathWrapper {
 
     // x: [1, 16] 
     function lnUpper(uint256 x) external pure returns (uint256) {
-       return DeFiMath.lnUpper(x);
+       return DeFiMath.ln16Up(x);
     }
 
     function lnUpper2(uint256 x) external pure returns (int256) {

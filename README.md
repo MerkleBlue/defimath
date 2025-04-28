@@ -73,12 +73,12 @@ The following table compares __gas efficiency__ of DeFiMath with other implement
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     3383 |    30220 |    20635 |    39974 |    95447 |
-| put           |     3407 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2178 |    19574 |        - |    26853 |        - |
-| gamma         |     1815 |        - |        - |        - |        - |
-| theta         |     4003 |        - |        - |        - |        - |
-| vega          |     1788 |    16503 |        - |        - |        - |
+| call          |     3321 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3346 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2116 |    19574 |        - |    26853 |        - |
+| gamma         |     1749 |        - |        - |        - |        - |
+| theta         |     3937 |        - |        - |        - |        - |
+| vega          |     1722 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
 
@@ -107,7 +107,7 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | exp           |      354 |     2748 |     5371 |      420 |        - |
-| ln            |      580 |     6994 |    15843 |      536 |        - |
+| ln            |      586 |     6994 |    15843 |      536 |        - |
 | log2          |      613 |     6691 |    15191 |        - |        - |
 | log10         |      613 |     8570 |        - |        - |        - |
 | sqrt          |      383 |     961* |      731 |     415* |        - |

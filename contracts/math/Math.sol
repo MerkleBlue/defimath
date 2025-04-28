@@ -248,15 +248,15 @@ library DeFiMath {
         }
     }
 
-    function lnUpto16(uint256 x) internal pure returns (int256 y) {
+    function ln16(uint256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 1e18) {
-                y = int256(lnUpper(x));
+                y = int256(ln16Up(x));
             } else {
                 assembly {
                     x := div(1000000000000000000000000000000000000, x)
                 }
-                y = -int256(lnUpper(x));
+                y = -int256(ln16Up(x));
             }   
         }
     }
@@ -264,20 +264,20 @@ library DeFiMath {
     function log2(uint256 x) internal pure returns (int256) {
         unchecked {
             if (x >= 1e18) {
-                return int256(lnUpper(x)) * 1e18 / 693147180559945309;
+                return int256(ln16Up(x)) * 1e18 / 693147180559945309;
             }
 
-            return -int256(lnUpper(1e36 / x)) * 1e18 / 693147180559945309;
+            return -int256(ln16Up(1e36 / x)) * 1e18 / 693147180559945309;
         }
     }
 
     function log10(uint256 x) internal pure returns (int256) {
         unchecked {
             if (x >= 1e18) {
-                return int256(lnUpper(x)) * 1e18 / 2302585092994045684;
+                return int256(ln16Up(x)) * 1e18 / 2302585092994045684;
             }
 
-            return -int256(lnUpper(1e36 / x)) * 1e18 / 2302585092994045684;
+            return -int256(ln16Up(1e36 / x)) * 1e18 / 2302585092994045684;
         }
     }
 
@@ -524,7 +524,7 @@ library DeFiMath {
     }
 
     // x: [1, 16] 
-    function lnUpper(uint256 x) internal pure returns (uint256 y) {
+    function ln16Up(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             uint256 multiplier;
 

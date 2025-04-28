@@ -372,7 +372,7 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("ln", function () {
-      it.only("lnUpper2 [1, 2]", async function () {
+      it("lnUpper2 [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -410,7 +410,7 @@ describe("DeFiMath (SOL and JS)", function () {
 
       });
 
-      it.only("ln [1, 2]", async function () {
+      it("ln [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x <= 2.005; x += 0.01) { 
@@ -425,7 +425,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("ln [2, 2^16]", async function () {
+      it("ln [2, 2^16]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
@@ -440,7 +440,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("ln [2^16, 2^32]", async function () {
+      it("ln [2^16, 2^32]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
@@ -455,7 +455,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("ln [2^32, 2^48]", async function () {
+      it("ln [2^32, 2^48]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
@@ -470,7 +470,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("ln [2^48, 2^64]", async function () {
+      it("ln [2^48, 2^64]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
@@ -485,7 +485,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it.only("ln [2^64, 2^128]", async function () {
+      it("ln [2^64, 2^128]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 2 ** 64; x <= 2 ** 128; x += 2 ** 120) { 
@@ -501,6 +501,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
 
       // todo: failure tests over 2 ^ 128
+      // todo: test lower bound
 
       it("ln lower [0.0625, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -1013,7 +1014,7 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
       });
 
-      it.only("ln", async function () {
+      it("ln", async function () {
         const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
         let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
