@@ -248,6 +248,20 @@ library DeFiMath {
         }
     }
 
+    function lnUpto16(uint256 x) internal pure returns (int256 y) {
+        unchecked {
+            if (x >= 1e18) {
+                y = int256(lnUpper(x));
+            } else {
+                assembly {
+                    x := div(1000000000000000000000000000000000000, x)
+                }
+                // x = 1e36 / x;
+                y = -int256(lnUpper(x));
+            }   
+        }
+    }
+
     function log2(uint256 x) internal pure returns (int256) {
         unchecked {
             if (x >= 1e18) {
