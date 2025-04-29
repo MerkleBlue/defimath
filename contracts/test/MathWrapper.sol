@@ -153,12 +153,12 @@ contract MathWrapper {
         return (y, startGas - endGas);
     }
 
-    function erfMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
+    function erfMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
         startGas = gasleft();
 
-        y = DeFiMath.erfPositiveHalf(x);
+        y = DeFiMath.erf(x);
 
         endGas = gasleft();
         

@@ -522,8 +522,6 @@ library DeFiMath {
         // return x > 0 ? 1 - 2 * c : 2 * c - 1;
     }
 
-    // todo: implement erf
-
     function getLnPrecompute(uint256 exponent) internal pure returns (uint256, uint256) {
         // use >=, fastest
         unchecked {
