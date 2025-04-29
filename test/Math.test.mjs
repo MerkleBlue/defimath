@@ -955,300 +955,299 @@ describe.only("DeFiMath (SOL and JS)", function () {
     });
   });
 
-    duoTest && describe("compare", function () {
-      it("exp", async function () {
-        const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
+  duoTest && describe("compare", function () {
+    it("exp", async function () {
+      const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-        for (let x = -10; x <= 10; x += 0.123 ) { 
-          const expected = Math.exp(x);
+      for (let x = -10; x <= 10; x += 0.123 ) { 
+        const expected = Math.exp(x);
 
-          // DeFiMath
-          const result1 = await deFiMath.expMG(tokens(x));
-          const y1 = result1.y.toString() / 1e18;
-          avgGas1 += parseInt(result1.gasUsed);
-  
-          // PRBMath
-          const result2 = await prbMath.expMG(tokens(x));
-          const y2 = result2.y.toString() / 1e18;
-          avgGas2 += parseInt(result2.gasUsed);
+        // DeFiMath
+        const result1 = await deFiMath.expMG(tokens(x));
+        const y1 = result1.y.toString() / 1e18;
+        avgGas1 += parseInt(result1.gasUsed);
 
-          // ABDKMath
-          const result3 = await abdkMath.expMG(tokens(x));
-          const y3 = result3.y.toString() / 1e18;
-          avgGas3 += parseInt(result3.gasUsed);
+        // PRBMath
+        const result2 = await prbMath.expMG(tokens(x));
+        const y2 = result2.y.toString() / 1e18;
+        avgGas2 += parseInt(result2.gasUsed);
 
-          // Solady
-          const result4 = await solady.expMG(tokens(x));
-          const y4 = result4.y.toString() / 1e18;
-          avgGas4 += parseInt(result4.gasUsed);
+        // ABDKMath
+        const result3 = await abdkMath.expMG(tokens(x));
+        const y3 = result3.y.toString() / 1e18;
+        avgGas3 += parseInt(result3.gasUsed);
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error2 = Math.abs((y2 - expected) / expected) * 100;
-          const error3 = Math.abs((y3 - expected) / expected) * 100;
-          const error4 = Math.abs((y4 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError2 += error2;
-          avgError3 += error3;
-          avgError4 += error4;
-          maxError1 = Math.max(maxError1, error1);
-          maxError2 = Math.max(maxError2, error2);
-          maxError3 = Math.max(maxError3, error3);
-          maxError4 = Math.max(maxError4, error4);
-        }
-        console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
-      });
+        // Solady
+        const result4 = await solady.expMG(tokens(x));
+        const y4 = result4.y.toString() / 1e18;
+        avgGas4 += parseInt(result4.gasUsed);
 
-      it("ln", async function () {
-        const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error2 = Math.abs((y2 - expected) / expected) * 100;
+        const error3 = Math.abs((y3 - expected) / expected) * 100;
+        const error4 = Math.abs((y4 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError2 += error2;
+        avgError3 += error3;
+        avgError4 += error4;
+        maxError1 = Math.max(maxError1, error1);
+        maxError2 = Math.max(maxError2, error2);
+        maxError3 = Math.max(maxError3, error3);
+        maxError4 = Math.max(maxError4, error4);
+      }
+      console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
+    });
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+    it("ln", async function () {
+      const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
-        for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
-          const expected = Math.log(x);
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-          // DeFiMath
-          const result1 = await deFiMath.lnMG(tokens(x));
-          const y1 = result1.y.toString() / 1e18;
-          avgGas1 += parseInt(result1.gasUsed);
-  
-          // PRBMath
-          const result2 = await prbMath.lnMG(tokens(x));
-          const y2 = result2.y.toString() / 1e18;
-          avgGas2 += parseInt(result2.gasUsed);
+      for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+        const expected = Math.log(x);
 
-          // ABDKMath
-          const result3 = await abdkMath.lnMG(tokens(x));
-          const y3 = result3.y.toString() / 1e18;
-          avgGas3 += parseInt(result3.gasUsed);
+        // DeFiMath
+        const result1 = await deFiMath.lnMG(tokens(x));
+        const y1 = result1.y.toString() / 1e18;
+        avgGas1 += parseInt(result1.gasUsed);
 
-          // Solady
-          const result4 = await solady.lnMG(tokens(x));
-          const y4 = result4.y.toString() / 1e18;
-          avgGas4 += parseInt(result4.gasUsed);
+        // PRBMath
+        const result2 = await prbMath.lnMG(tokens(x));
+        const y2 = result2.y.toString() / 1e18;
+        avgGas2 += parseInt(result2.gasUsed);
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error2 = Math.abs((y2 - expected) / expected) * 100;
-          const error3 = Math.abs((y3 - expected) / expected) * 100;
-          const error4 = Math.abs((y4 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError2 += error2;
-          avgError3 += error3;
-          avgError4 += error4;
-          maxError1 = Math.max(maxError1, error1);
-          maxError2 = Math.max(maxError2, error2);
-          maxError3 = Math.max(maxError3, error3);
-          maxError4 = Math.max(maxError4, error4);
-        }
-        console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
-      });
+        // ABDKMath
+        const result3 = await abdkMath.lnMG(tokens(x));
+        const y3 = result3.y.toString() / 1e18;
+        avgGas3 += parseInt(result3.gasUsed);
 
-      it("log2", async function () {
-        const { deFiMath, prbMath, abdkMath } = await loadFixture(deployCompare);
+        // Solady
+        const result4 = await solady.lnMG(tokens(x));
+        const y4 = result4.y.toString() / 1e18;
+        avgGas4 += parseInt(result4.gasUsed);
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error2 = Math.abs((y2 - expected) / expected) * 100;
+        const error3 = Math.abs((y3 - expected) / expected) * 100;
+        const error4 = Math.abs((y4 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError2 += error2;
+        avgError3 += error3;
+        avgError4 += error4;
+        maxError1 = Math.max(maxError1, error1);
+        maxError2 = Math.max(maxError2, error2);
+        maxError3 = Math.max(maxError3, error3);
+        maxError4 = Math.max(maxError4, error4);
+      }
+      console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
+    });
 
-        for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
-          const expected = Math.log2(x);
+    it("log2", async function () {
+      const { deFiMath, prbMath, abdkMath } = await loadFixture(deployCompare);
 
-          // DeFiMath
-          const result1 = await deFiMath.log2MG(tokens(x));
-          const y1 = result1.y.toString() / 1e18;
-          avgGas1 += parseInt(result1.gasUsed);
-  
-          // PRBMath
-          const result2 = await prbMath.log2MG(tokens(x));
-          const y2 = result2.y.toString() / 1e18;
-          avgGas2 += parseInt(result2.gasUsed);
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-          // ABDKMath
-          const result3 = await abdkMath.log2MG(tokens(x));
-          const y3 = result3.y.toString() / 1e18;
-          avgGas3 += parseInt(result3.gasUsed);
+      for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+        const expected = Math.log2(x);
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error2 = Math.abs((y2 - expected) / expected) * 100;
-          const error3 = Math.abs((y3 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError2 += error2;
-          avgError3 += error3;
-          maxError1 = Math.max(maxError1, error1);
-          maxError2 = Math.max(maxError2, error2);
-          maxError3 = Math.max(maxError3, error3);
-        }
-        console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0));
-      });
+        // DeFiMath
+        const result1 = await deFiMath.log2MG(tokens(x));
+        const y1 = result1.y.toString() / 1e18;
+        avgGas1 += parseInt(result1.gasUsed);
 
-      it("log10", async function () {
-        const { deFiMath, prbMath } = await loadFixture(deployCompare);
+        // PRBMath
+        const result2 = await prbMath.log2MG(tokens(x));
+        const y2 = result2.y.toString() / 1e18;
+        avgGas2 += parseInt(result2.gasUsed);
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+        // ABDKMath
+        const result3 = await abdkMath.log2MG(tokens(x));
+        const y3 = result3.y.toString() / 1e18;
+        avgGas3 += parseInt(result3.gasUsed);
 
-        for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
-          const expected = Math.log10(x);
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error2 = Math.abs((y2 - expected) / expected) * 100;
+        const error3 = Math.abs((y3 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError2 += error2;
+        avgError3 += error3;
+        maxError1 = Math.max(maxError1, error1);
+        maxError2 = Math.max(maxError2, error2);
+        maxError3 = Math.max(maxError3, error3);
+      }
+      console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "    " + (avgGas3 / count).toFixed(0));
+    });
 
-          // DeFiMath
-          const result1 = await deFiMath.log10MG(tokens(x));
-          const y1 = result1.y.toString() / 1e18;
-          avgGas1 += parseInt(result1.gasUsed);
-  
-          // PRBMath
-          const result2 = await prbMath.log10MG(tokens(x));
-          const y2 = result2.y.toString() / 1e18;
-          avgGas2 += parseInt(result2.gasUsed);
+    it("log10", async function () {
+      const { deFiMath, prbMath } = await loadFixture(deployCompare);
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error2 = Math.abs((y2 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError2 += error2;
-          maxError1 = Math.max(maxError1, error1);
-          maxError2 = Math.max(maxError2, error2);
-        }
-        console.log("Metric            DeFiMath   PRBMath  ABDKQuad");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
-      });
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-      it("sqrt", async function () {
-        const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
+      for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+        const expected = Math.log10(x);
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+        // DeFiMath
+        const result1 = await deFiMath.log10MG(tokens(x));
+        const y1 = result1.y.toString() / 1e18;
+        avgGas1 += parseInt(result1.gasUsed);
 
-        for (let x = 1e-4; x <= 1e4; x += x / 4) {
-          const expected = Math.sqrt(x);
+        // PRBMath
+        const result2 = await prbMath.log10MG(tokens(x));
+        const y2 = result2.y.toString() / 1e18;
+        avgGas2 += parseInt(result2.gasUsed);
 
-          // DeFiMath
-          const result1 = await deFiMath.sqrtMG(tokens(x));
-          const y1 = result1.y.toString() / 1e18;
-          avgGas1 += parseInt(result1.gasUsed);
-  
-          // PRBMath
-          const result2 = await prbMath.sqrtMG(tokens(x));
-          const y2 = result2.y.toString() / 1e18;
-          avgGas2 += parseInt(result2.gasUsed);
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error2 = Math.abs((y2 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError2 += error2;
+        maxError1 = Math.max(maxError1, error1);
+        maxError2 = Math.max(maxError2, error2);
+      }
+      console.log("Metric            DeFiMath   PRBMath  ABDKQuad");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
+    });
 
-          // ABDKMath
-          const result3 = await abdkMath.sqrtMG(tokens(x));
-          const y3 = result3.y.toString() / 1e18;
-          avgGas3 += parseInt(result3.gasUsed);
+    it("sqrt", async function () {
+      const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
-          // Solady
-          const result4 = await solady.sqrtMG(tokens(x));
-          const y4 = result4.y.toString() / 1e18;
-          avgGas4 += parseInt(result4.gasUsed);
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error2 = Math.abs((y2 - expected) / expected) * 100;
-          const error3 = Math.abs((y3 - expected) / expected) * 100;
-          const error4 = Math.abs((y4 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError2 += error2;
-          avgError3 += error3;
-          avgError4 += error4;
-          maxError1 = Math.max(maxError1, error1);
-          maxError2 = Math.max(maxError2, error2);
-          maxError3 = Math.max(maxError3, error3);
-          maxError4 = Math.max(maxError4, error4);
-        }
-        console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0), "      " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
-      });
+      for (let x = 1e-4; x <= 1e4; x += x / 4) {
+        const expected = Math.sqrt(x);
 
-      it("stdNormCDF", async function () {
-        const { deFiMath, solStat } = await loadFixture(deployCompare);
+        // DeFiMath
+        const result1 = await deFiMath.sqrtMG(tokens(x));
+        const y1 = result1.y.toString() / 1e18;
+        avgGas1 += parseInt(result1.gasUsed);
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+        // PRBMath
+        const result2 = await prbMath.sqrtMG(tokens(x));
+        const y2 = result2.y.toString() / 1e18;
+        avgGas2 += parseInt(result2.gasUsed);
 
-        for (let x = -4; x <= 4; x += 0.123) {
-          const expected = bs.stdNormCDF(x);
+        // ABDKMath
+        const result3 = await abdkMath.sqrtMG(tokens(x));
+        const y3 = result3.y.toString() / 1e18;
+        avgGas3 += parseInt(result3.gasUsed);
 
-          // DeFiMath
-          const result1 = await deFiMath.stdNormCDFMG(tokens(x));
-          const y1 = result1.y.toString() / 1e18;
-          avgGas1 += parseInt(result1.gasUsed);
+        // Solady
+        const result4 = await solady.sqrtMG(tokens(x));
+        const y4 = result4.y.toString() / 1e18;
+        avgGas4 += parseInt(result4.gasUsed);
 
-          // SolStat
-          const result4 = await solStat.cdfMG(tokens(x));
-          const y4 = result4.y.toString() / 1e18;
-          avgGas4 += parseInt(result4.gasUsed);
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error2 = Math.abs((y2 - expected) / expected) * 100;
+        const error3 = Math.abs((y3 - expected) / expected) * 100;
+        const error4 = Math.abs((y4 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError2 += error2;
+        avgError3 += error3;
+        avgError4 += error4;
+        maxError1 = Math.max(maxError1, error1);
+        maxError2 = Math.max(maxError2, error2);
+        maxError3 = Math.max(maxError3, error3);
+        maxError4 = Math.max(maxError4, error4);
+      }
+      console.log("Metric            DeFiMath   PRBMath  ABDKQuad    Solady");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError2 / count).toExponential(1) + "  ", (avgError3 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError3).toExponential(1) + "  ", (maxError4).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0), "      " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
+    });
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error4 = Math.abs((y4 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError4 += error4;
-          maxError1 = Math.max(maxError1, error1);
-          maxError4 = Math.max(maxError4, error4);
-        }
-        console.log("Metric            DeFiMath  SolStat");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
-      });
+    it("stdNormCDF", async function () {
+      const { deFiMath, solStat } = await loadFixture(deployCompare);
 
-      it("erf", async function () {
-        const { deFiMath, solStat } = await loadFixture(deployCompare);
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
 
-        let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
-        let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
-        let count = 0;
+      for (let x = -4; x <= 4; x += 0.123) {
+        const expected = bs.stdNormCDF(x);
 
-        for (let x = 0.0001; x <= 3.5; x += 0.123) { // todo: handle 0
-          const expected = erf(x);
+        // DeFiMath
+        const result1 = await deFiMath.stdNormCDFMG(tokens(x));
+        const y1 = result1.y.toString() / 1e18;
+        avgGas1 += parseInt(result1.gasUsed);
 
-          // DeFiMath
-          const result1 = await deFiMath.erfMG(tokens(x));
-          const y1 = result1.y.toString() / 5e17;
-          avgGas1 += parseInt(result1.gasUsed);
+        // SolStat
+        const result4 = await solStat.cdfMG(tokens(x));
+        const y4 = result4.y.toString() / 1e18;
+        avgGas4 += parseInt(result4.gasUsed);
 
-          // SolStat
-          const result4 = await solStat.erfMG(tokens(x));
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error4 = Math.abs((y4 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError4 += error4;
+        maxError1 = Math.max(maxError1, error1);
+        maxError4 = Math.max(maxError4, error4);
+      }
+      console.log("Metric            DeFiMath  SolStat");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
+    });
 
-          const y4 = result4.y.toString() / 1e18;
-          avgGas4 += parseInt(result4.gasUsed);
+    it("erf", async function () {
+      const { deFiMath, solStat } = await loadFixture(deployCompare);
 
-          count++;
-          const error1 = Math.abs((y1 - expected) / expected) * 100;
-          const error4 = Math.abs((y4 - expected) / expected) * 100;
-          avgError1 += error1;
-          avgError4 += error4;
-          maxError1 = Math.max(maxError1, error1);
-          maxError4 = Math.max(maxError4, error4);
-        }
-        console.log("Metric            DeFiMath  SolStat");
-        console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
-        console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
-        console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
-      });
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
+      let count = 0;
+
+      for (let x = 0.0001; x <= 3.5; x += 0.123) { // todo: handle 0
+        const expected = erf(x);
+
+        // DeFiMath
+        const result1 = await deFiMath.erfMG(tokens(x));
+        const y1 = result1.y.toString() / 5e17;
+        avgGas1 += parseInt(result1.gasUsed);
+
+        // SolStat
+        const result4 = await solStat.erfMG(tokens(x));
+        const y4 = result4.y.toString() / 1e18;
+        avgGas4 += parseInt(result4.gasUsed);
+
+        count++;
+        const error1 = Math.abs((y1 - expected) / expected) * 100;
+        const error4 = Math.abs((y4 - expected) / expected) * 100;
+        avgError1 += error1;
+        avgError4 += error4;
+        maxError1 = Math.max(maxError1, error1);
+        maxError4 = Math.max(maxError4, error4);
+      }
+      console.log("Metric            DeFiMath  SolStat");
+      console.log("Avg rel error (%) ", (avgError1 / count).toExponential(1) + "  ", (avgError4 / count).toExponential(1));
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError4).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas4 / count).toFixed(0));
+    });
   });
 });
