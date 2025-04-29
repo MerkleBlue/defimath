@@ -257,7 +257,6 @@ describe.only("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrtTime", function () {
-
       it("sqrtTime when x in [1s, 8y]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -268,27 +267,26 @@ describe.only("DeFiMath (SOL and JS)", function () {
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
-
     });
 
     describe("stdNormCDF", function () {
-      it("stdNormCDF single", async function () {
+      it("stdNormCDF when x in [0, 11.63]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        const d1 = 0.6100358074173348;
-
-        totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(d1))).gasUsed);
-        count++;
+        for (let x = 0; x < 11.63; x += 0.1163 / 4) {
+          totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(x))).gasUsed);
+          count++;
+        }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
 
-      it("stdNormCDF multiple", async function () {
+      it("stdNormCDF when x in [-11.63, 0]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        for (let d1 = -2; d1 < 2; d1 += 0.01234) {
-          totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(d1))).gasUsed);
+        for (let x = 0; x < 11.63; x += 0.1163 / 4) {
+          totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(-x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   

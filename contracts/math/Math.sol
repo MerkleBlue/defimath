@@ -408,24 +408,20 @@ library DeFiMath {
     function stdNormCDF(int256 x) internal pure returns (uint256) {
         unchecked {
             // todo: make sure erf(x) is < 1
-            // int256 erfResult = erf(x * 707106781186547524 / 1e18);
-            // if (log) { if (erfResult > 0) { console.log("erfResult SOL: %d", uint256(erfResult)); } else { console.log("erfResult SOL: -%d", uint256(-erfResult)); }}
             int256 argument = x * 707106781186547524 / 1e18;
-
-
 
             if (argument >= 0) {
                 if (argument >= 11.63e18) {
                     return 1e18;
                 }
-
+                // todo: inline
                 return 5e17 + erfPositiveHalf(uint256(argument));
             } 
 
             if (argument <= -11.63e18) {
                 return 0;
             }
-                
+            // todo: inline
             return 5e17 - erfPositiveHalf(uint256(-argument));
         }
     }
