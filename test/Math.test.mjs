@@ -148,63 +148,102 @@ describe.only("DeFiMath (SOL and JS)", function () {
       });
     });
 
+    describe("log2", function () {
+      it("log2 when x in [1, 1e6]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.090507732665257659; x += 0.01) { 
+          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 16; x < 1000; x += 10) { 
+          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1000; x < 1e6; x += 10000) { 
+          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("log2 when x in [1e-6, 1)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e-6; x < 1; x += 1e-2 / 4) { 
+          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("log10", function () {
+      it("log10 when x in [1, 1e6]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1.090507732665257659; x += 0.01) { 
+          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
+          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 16; x < 1000; x += 10) { 
+          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1000; x < 1e6; x += 10000) { 
+          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("log10 when x in [1e-6, 1)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e-6; x < 1; x += 1e-2 / 4) { 
+          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
     describe("sqrt", function () {
-      it("sqrt [1, 1.0746]", async function () {
+      it("sqrt [1, 1e6]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.074607828321317497; x += 0.0002) {
+        for (let x = 1; x < 1.074607828321317497; x += 0.0007) {
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1.074607828321317497; x < 100; x += 1.00232) {
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 100; x < 10000; x += 101.213) {
+          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1e4; x < 1e6; x += 1e4) {
           totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [1.04427, 100)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 1.074607828321317497; x < 100; x += 0.2) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("sqrt [100, 10000)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 100; x < 10000; x += 21.457) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("sqrt [1e4, 1e6)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 1e4; x < 1e6; x += 2012.3) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("sqrt [1e6, 1e8)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 1e6; x < 1e8; x += 202463) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      // todo: tests for 1 / (1-100, 100-10000, 10000-1000000)
       it("sqrt [1e-6, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
