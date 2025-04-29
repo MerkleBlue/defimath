@@ -136,12 +136,12 @@ describe.only("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("ln when x in [0.0625, 1)", async function () {
+      it("ln16 when x in [0.0625, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
         for (let x = 0.0625; x < 1; x += 0.0625 / 24) { 
-          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
+          totalGas += parseInt((await deFiMath.ln16MG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
