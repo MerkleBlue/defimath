@@ -89,33 +89,34 @@ describe.only("DeFiMath (SOL and JS)", function () {
     });
 
     describe("ln", function () {
-      it("ln upper [1, 1.0905]", async function () {
+      it("ln when x in [1, 1e6]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
+        for (let x = 1; x < 1.090507732665257659; x += 0.01) { 
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("ln upper [1.0905, 16]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
         for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
+        for (let x = 16; x < 1000; x += 10) { 
+          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1000; x < 1e6; x += 10000) { 
+          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
+          count++;
+        }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("ln lower [0.0625, 1)", async function () {
+      it("ln when x in [1e-6, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        for (let x = 0.0625; x < 1; x += 0.002) { 
+        for (let x = 1e-6; x < 1; x += 1e-2 / 4) { 
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
