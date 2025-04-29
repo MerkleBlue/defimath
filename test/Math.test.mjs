@@ -124,6 +124,30 @@ describe.only("DeFiMath (SOL and JS)", function () {
       });
     });
 
+    describe("ln16", function () {
+      it("ln16 when x in [1, 16]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 16; x += 0.16 / 4) { 
+          totalGas += parseInt((await deFiMath.ln16MG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+
+      it("ln when x in [0.0625, 1)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        let totalGas = 0, count = 0;
+        for (let x = 0.0625; x < 1; x += 0.0625 / 24) { 
+          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
     describe("sqrt", function () {
       it("sqrt [1, 1.0746]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };

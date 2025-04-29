@@ -302,15 +302,15 @@ library DeFiMath {
         }
     }
 
-    function log2(uint256 x) internal pure returns (int256) {
+    function log2(uint256 x) internal pure returns (int256 y) {
         unchecked {
-            return ln(x) * 1e18 / 693147180559945309;
+            y = ln(x) * 1e18 / 693147180559945309;
         }
     }
 
-    function log10(uint256 x) internal pure returns (int256) {
+    function log10(uint256 x) internal pure returns (int256 y) {
         unchecked {
-            return ln(x) * 1e18 / 2302585092994045684;
+            y = ln(x) * 1e18 / 2302585092994045684;
         }
     }
 

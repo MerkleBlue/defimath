@@ -82,6 +82,17 @@ contract MathWrapper {
         return (y, startGas - endGas);
     }
 
+    function ln16MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = DeFiMath.ln16(x);
+        endGas = gasleft();
+        
+        return (y, startGas - endGas);
+    }
+
     function log2MG(uint256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
