@@ -32,27 +32,30 @@ describe("DeFiMathFutures (SOL and JS)", function () {
 
   duoTest && describe("performance", function () {
     describe("future", function () {
-      it("multiple in typical range", async function () {
+      it("future when parameters in a typical range", async function () {
         const { futures } = duoTest ? await loadFixture(deploy) : { futures: null };
 
+        const spots = [10, 100, 500, 1000, 100000, 1000000];
         const times = [7, 30, 60, 90, 180];
         const rates = [0.05, 0.1, 0.2];
 
         let totalGas = 0, count = 0;
-        for (const time of times) {
-          for (const rate of rates) {
-            totalGas += parseInt(await futures.getFuturePriceMG(tokens(1000), time * SEC_IN_DAY, tokens(rate)));
-            count++;
+        for (const spot of spots) {
+          for (const time of times) {
+            for (const rate of rates) {
+              totalGas += parseInt(await futures.getFuturePriceMG(tokens(spot), time * SEC_IN_DAY, tokens(rate)));
+              count++;
+            }
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas:", Math.round(totalGas / count), "tests: ", count);     
       });
     });
   });
 
   describe("functionality", function () {
     describe("future", function () {
-      it("multiple in typical range", async function () {
+      it("future when parameters in a typical range", async function () {
         const { futures } = duoTest ? await loadFixture(deploy) : { futures: null };
 
         for (let timeSec = 0; timeSec < SEC_IN_YEAR; timeSec += SEC_IN_YEAR / 50) { 
