@@ -15,7 +15,7 @@ const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_LN = 2e-15;
 
-describe("DeFiMath (SOL and JS)", function () {
+describe.only("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
 
   async function deploy() {
@@ -54,49 +54,29 @@ describe("DeFiMath (SOL and JS)", function () {
 
   duoTest && describe("performance", function () {
     describe("exp", function () {
-      it("exp positive < 0.03125", async function () {
+      it("exp when x in [0, 135]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         let totalGas = 0, count = 0;
-        for (let x = 0; x < 0.03125; x += 0.0003) { 
+        for (let x = 0; x < 0.03125; x += 0.0003125212) { 
+          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 0.03125; x < 1; x += 0.01012) { 
+          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 1; x < 32; x += 0.32087) { 
+          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 32; x < 135; x += 1.0123) { 
           totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it("exp positive [0.03125, 1)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-        let totalGas = 0, count = 0;
-        for (let x = 0.03125; x < 1; x += 0.0020125) { 
-          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
-      });
-
-      it("exp positive [1, 32)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 1; x < 32; x += 0.06200125) { 
-          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
-      });
-
-      it("exp positive [32, 135)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        let totalGas = 0, count = 0;
-        for (let x = 32; x < 135; x += 1.0123) { 
-          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);      
-      });
-
-      it("exp negative [-40, -0.05]", async function () {
+      it("exp when x in [-40, -0.05]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
