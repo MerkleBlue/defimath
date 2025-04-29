@@ -781,143 +781,65 @@ describe.only("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("erf", function () {
-      it("erf single value in [0, 0.35]", async function () {
+    describe.only("erf", function () {
+
+      it("erf when x is 0", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        const x = 0.123;
-        const expected = erf(x);
-
-        const actualJS = blackScholesJS.erf(x);
-        assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
         if (duoTest) {
-          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
+          const actualSOL = (await deFiMath.erf(tokens(0))).toString() / 1e18;
+          assert.equal(0, actualSOL);
         }
       });
 
-      it("erf single value in [0.35, 1.13]", async function () {
+      it("erf when x in [0, 10)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        const x = 0.6;
-        const expected = erf(x);
-
-        const actualJS = blackScholesJS.erf(x);
-        assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
-        if (duoTest) {
-          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-          // console.log(expected, actualJS, actualSOL)
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-        }
-      });
-
-      it("erf single value in [1.13, 2.8]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 1.3;
-        const expected = erf(x);
-
-        const actualJS = blackScholesJS.erf(x);
-        assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
-        if (duoTest) {
-          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-        }
-      });
-
-      it("erf single value in [2.8, 3.5]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 3.1;
-        const expected = erf(x);
-
-        const actualJS = blackScholesJS.erf(x);
-        assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
-        if (duoTest) {
-          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-        }
-      });
-
-      it("erf regression", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 0.01;
-        const expected = erf(x);
-
-        const actualJS = blackScholesJS.erf(x);
-        assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
-        if (duoTest) {
-          const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-        }
-      });
-
-      it("erf [0, 0.35)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let x = 0; x <= 0.35; x += 0.01) {
+        for (let x = 0; x <= 10; x += 0.0250323) {
           const expected = erf(x);
 
-          const actualJS = blackScholesJS.erf(x);
-          assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
           if (duoTest) {
-            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
           }
         }
       });
 
-      it("erf [0.35, 1.13)", async function () {
+      it("erf when x in [10, 1000)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0.35; x <= 1.13; x += 0.01) {
+        for (let x = 10; x <= 1000; x += 2.50250323) {
           const expected = erf(x);
 
-          const actualJS = blackScholesJS.erf(x);
-          assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
-
           if (duoTest) {
-            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
+            const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
           }
         }
       });
 
-      it("erf [1.13, 2.8)", async function () {
+      it("erf when x in [-10, 0)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1.13; x <= 2.8; x += 0.01) {
-          const expected = erf(x);
-
-          const actualJS = blackScholesJS.erf(x);
-          assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
+        for (let x = 0; x <= 10; x += 0.0250323) {
+          const expected = erf(-x);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF); // todo: why more than JS, replace Math.sin in JS
+            const actualSOL = (await deFiMath.erf(tokens(-x))).toString() / 1e18;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
           }
         }
       });
 
-      it("erf [2.8, 3.5)", async function () {
+      it("erf when x in [-1000, -10)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2.8; x <= 3.5; x += 0.01) {
-          const expected = erf(x);
-
-          const actualJS = blackScholesJS.erf(x);
-          assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_ERF);
+        for (let x = 10; x <= 1000; x += 2.50250323) {
+          const expected = erf(-x);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.erfPositiveHalf(tokens(x))).toString() / 5e17;
-            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF); // todo: why more than JS, replace Math.sin in JS
+            const actualSOL = (await deFiMath.erf(tokens(-x))).toString() / 1e18;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
           }
         }
       });

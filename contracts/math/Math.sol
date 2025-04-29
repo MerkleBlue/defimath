@@ -408,6 +408,7 @@ library DeFiMath {
     function stdNormCDF(int256 x) internal pure returns (uint256) {
         unchecked {
             // todo: make sure erf(x) is < 1
+            // todo: x is mul with sqrt(2) / 2, but later in erfPositiveHalf it's mul with sqrt(2) => 1
             int256 argument = x * 707106781186547524 / 1e18;
 
             if (argument >= 0) {
@@ -423,6 +424,57 @@ library DeFiMath {
             }
             // todo: inline
             return 5e17 - erfPositiveHalf(uint256(-argument));
+        }
+    }
+
+    function erf(int256 x) internal pure returns (int256 y) {
+        unchecked {
+            if (x >= 0) {
+                // todo: add input check
+                // positive
+                uint256 absX = uint256(x);                         // since x is positive, absX = x
+
+                uint256 t = absX * 1414213562373095049 / 1e18;
+                uint256 t2 = t * t / 1e18;
+                uint256 t3 = t2 * t / 1e18;
+                uint256 t4 = t3 * t / 1e18;
+
+                uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18; 
+                uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
+
+                uint256 expRes = expPositive(t2 >> 1);
+
+                // NOTE: denom and expRes can never be 0
+                assembly {
+                    let res := div(1000000000000000000000000000000000000, expRes)
+                    res := mul(res, num)
+                    res := div(res, denom) // todo: test with x = 0
+                    y := sub(500000000000000000, res)
+                    y := shl(1, y)
+                }
+            } else {
+                // negative
+                uint256 absX = uint256(-x);                         // since x is negative, absX = -x
+                
+                uint256 t = absX * 1414213562373095049 / 1e18;
+                uint256 t2 = t * t / 1e18;
+                uint256 t3 = t2 * t / 1e18;
+                uint256 t4 = t3 * t / 1e18;
+
+                uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18; 
+                uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
+
+                uint256 expRes = expPositive(t2 >> 1);
+
+                assembly {
+                    let res := div(1000000000000000000000000000000000000, expRes)
+                    res := mul(res, num)
+                    res := div(res, denom)
+                    y := sub(500000000000000000, res)
+                    y := shl(1, y)
+                    y := sub(0, y)
+                }
+            }
         }
     }
 

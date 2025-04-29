@@ -33,6 +33,10 @@ contract MathWrapper {
         return DeFiMath.stdNormCDF(x);
     }
 
+    function erf(int256 x) external pure returns (int256) {
+        return DeFiMath.erf(x);
+    }
+
     function expPositive(uint256 x) external pure returns (uint256) {
         return DeFiMath.expPositive(x);
     }
