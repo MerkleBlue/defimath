@@ -15,7 +15,7 @@ const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_LN = 2e-15;
 
-describe.only("DeFiMath (SOL and JS)", function () {
+describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
 
   async function deploy() {

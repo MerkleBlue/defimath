@@ -384,23 +384,21 @@ library DeFiMath {
     }
 
     function sqrtTime(uint256 x) internal pure returns (uint256 z) {
-        unchecked {
-            assembly {
-                x := mul(x, 1000000000000000000) // convert to 1e36 base
-                z := 1424579477600000 // starting point
+        assembly {
+            x := mul(x, 1000000000000000000) // convert to 1e36 base
+            z := 1424579477600000 // starting point
 
-                z := shl(mul(7, gt(x, 519469812544000000000000000000000)), z) // up to 8 years
+            z := shl(mul(7, gt(x, 519469812544000000000000000000000)), z) // up to 8 years
 
-                // 8x Newton method
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-                z := shr(1, add(z, div(x, z)))
-            }
+            // 8x Newton method
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
         }
     }
 
@@ -446,10 +444,10 @@ library DeFiMath {
 
                 // NOTE: denom and expRes can never be 0
                 assembly {
-                    let res := div(1000000000000000000000000000000000000, expRes)
-                    res := mul(res, num)
-                    res := div(res, denom) // todo: test with x = 0
-                    y := sub(500000000000000000, res)
+                    y := div(1000000000000000000000000000000000000, expRes)
+                    y := mul(y, num)
+                    y := div(y, denom)
+                    y := sub(500000000000000000, y)
                     y := shl(1, y)
                 }
             } else {
@@ -466,11 +464,12 @@ library DeFiMath {
 
                 uint256 expRes = expPositive(t2 >> 1);
 
+                // NOTE: denom and expRes can never be 0
                 assembly {
-                    let res := div(1000000000000000000000000000000000000, expRes)
-                    res := mul(res, num)
-                    res := div(res, denom)
-                    y := sub(500000000000000000, res)
+                    y := div(1000000000000000000000000000000000000, expRes)
+                    y := mul(y, num)
+                    y := div(y, denom)
+                    y := sub(500000000000000000, y)
                     y := shl(1, y)
                     y := sub(0, y)
                 }
