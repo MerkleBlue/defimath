@@ -115,27 +115,26 @@ contract MathWrapper {
         return (y, startGas - endGas);
     }
 
-    function sqrtTimeMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
-        uint256 result;
+    function sqrtMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
-        startGas = gasleft();
-        result = DeFiMath.sqrtTime(x);
-        endGas = gasleft();
 
+        startGas = gasleft();
+        y = DeFiMath.sqrt(x);
+        endGas = gasleft();
         
-        return (result, startGas - endGas);
+        return (y, startGas - endGas);
     }
 
-    function sqrtMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
-        uint256 result;
+    function sqrtTimeMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
+
         startGas = gasleft();
-        result = DeFiMath.sqrt(x);
+        y = DeFiMath.sqrtTime(x);
         endGas = gasleft();
-        
-        return (result, startGas - endGas);
+
+        return (y, startGas - endGas);
     }
 
     function stdNormCDFMG(int256 x) external view returns (uint256 y, uint256 gasUsed) {

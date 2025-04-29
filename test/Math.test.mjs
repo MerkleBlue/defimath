@@ -221,7 +221,7 @@ describe.only("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrt", function () {
-      it("sqrt [1, 1e6]", async function () {
+      it("sqrt when x in [1, 1e6]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -244,7 +244,7 @@ describe.only("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-      it("sqrt [1e-6, 1)", async function () {
+      it("sqrt when x in [1e-6, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
@@ -256,31 +256,19 @@ describe.only("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("sqrtUpper", function () {
+    describe("sqrtTime", function () {
 
-      it("sqrt upper [1, 1.0746]", async function () {
+      it("sqrtTime when x in [1s, 8y]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.074607828321317497; x += 0.0002) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
+        for (let x = 1; x < 252288000; x += 252288000 / 400) {
+          totalGas += parseInt((await deFiMath.sqrtTimeMG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
 
-
-      // todo: this needs to be done
-      // it("sqrt lower [1e-6, 1)", async function () {
-      //   const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-      //   let totalGas = 0, count = 0;
-      //   for (let x = 1; x < 1000000; x += 2234) {
-      //     totalGas += parseInt((await deFiMath.sqrtMG(tokens(1 / x))).gasUsed);
-      //     count++;
-      //   }
-      //   console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      // });
     });
 
     describe("stdNormCDF", function () {
