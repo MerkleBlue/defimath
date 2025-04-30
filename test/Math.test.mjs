@@ -659,6 +659,17 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
+      it("ln16 when x is 1", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 1;
+        if (duoTest) {
+          const actualSOL = (await deFiMath.ln16(tokens(x))).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assert.equal(actualSOL, 0);
+        }
+      });
 
       it("ln when x is 16", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
