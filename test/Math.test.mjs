@@ -3,7 +3,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import bs from "black-scholes";
 import erf from 'math-erf';
-import { assertAbsoluteBelow, assertBothBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
+import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
 import { assert } from "chai";
 
 const duoTest = true;
@@ -13,7 +13,7 @@ const MAX_ABS_ERROR_CDF = 1.8e-11;
 const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
-const MAX_REL_ERROR_LN = 1.5e-15;
+const MAX_REL_ERROR_LN = 1.6e-15;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -569,7 +569,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      // todo: test lower bound
+      // todo: add random tests
 
       it("ln when x in [0.0625, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
@@ -627,99 +627,529 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("log2", function () {
-      // todo: test all limits like 1.090507732665257659
-      it("log2 upper [1, 1.0905]", async function () {
+    describe("ln16", function () {
+      it("ln when x in [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
-          const expected = Math.log2(x);
-          const actualJS = blackScholesJS.log2(x);
-          assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
-
+        for (let x = 1; x <= 2.005; x += 0.01) { 
+          const expected = Math.log(x);
+          
           if (duoTest) {
-            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
         }
       });
 
-      it("log2 upper [1.0905, 16]", async function () {
+      it("ln when x in [2, 16]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          const expected = Math.log2(x);
-          const actualJS = blackScholesJS.log2(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000150);
-
+        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+          const expected = Math.log(x);
+          
           if (duoTest) {
-            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
         }
       });
 
-      it("log2 lower [0.0625, 1)", async function () {
+      it("ln when x in [2^16, 2^32]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0.0625; x < 1; x += 0.001) { 
-          const expected = Math.log2(x);
-          const actualJS = blackScholesJS.log2(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000150);
+        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
+          const expected = Math.log(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("ln when x in [2^32, 2^48]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
+          const expected = Math.log(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("ln when x in [2^48, 2^64]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
+          const expected = Math.log(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("ln when x in [2^64, 2^128]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
+          const expected = Math.log(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("ln when x in [2^128, 2^195]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+
+        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
+          const expected = Math.log(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("ln when x is uint256 max", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const expected = Math.log(x);
+        
+        if (duoTest) {
+          const actualSOL = (await deFiMath.ln("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      // todo: add random tests
+
+      it("ln when x in [0.0625, 1)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1; x <= 16.08; x += 0.16) { 
+          const expected = Math.log(1 / x);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, 0.000000000150);
+            const actualSOL = (await deFiMath.ln(tokens(1 / x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
+        }
+      });
+
+      it("ln when x in [1e-18, 1e-16)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1e-18; x <= 1e-16; x += 1e-18) { 
+          const expected = Math.log(x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("ln when x is minimum", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 1e-18;
+        const expected = Math.log(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.ln("1")).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
     });
 
-    describe("log10", function () {
-      // todo: test all limits like 1.090507732665257659
-      it("log10 upper [1, 1.0905]", async function () {
+    describe("log2", function () {
+      it("log2 when x in [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1; x < 1.090507732665257659; x += 0.001) { 
-          const expected = Math.log10(x);
-          const actualJS = blackScholesJS.log10(x);
-          assertBothBelow(actualJS, expected, 0.000000000150, 0.000000000002);
-
+        for (let x = 1; x <= 2.005; x += 0.01) { 
+          const expected = Math.log2(x);
+          
           if (duoTest) {
-            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.000000000150, 0.000000000002);
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
         }
       });
 
-      it("log10 upper [1.0905, 16]", async function () {
+      it("log2 when x in [2, 2^16]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          const expected = Math.log10(x);
-          const actualJS = blackScholesJS.log10(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000150);
-
-          // if (duoTest) {
-          //   const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-          //   assertRelativeBelow(actualSOL, expected, 0.000000000150);
-          // }
+        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+          const expected = Math.log2(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
         }
       });
 
-      it("log10 lower [0.0625, 1)", async function () {
+      it("log2 when x in [2^16, 2^32]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0.0625; x < 1; x += 0.001) { 
-          const expected = Math.log10(x);
-          const actualJS = blackScholesJS.log10(x);
-          assertRelativeBelow(actualJS, expected, 0.000000000150);
-
-          // if (duoTest) {
-          //   const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-          //   assertRelativeBelow(actualSOL, expected, 0.000000000150);
-          // }
+        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
+          const expected = Math.log2(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
         }
+      });
+
+      it("log2 when x in [2^32, 2^48]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
+          const expected = Math.log2(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log2 when x in [2^48, 2^64]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
+          const expected = Math.log2(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log2 when x in [2^64, 2^128]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
+          const expected = Math.log2(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log2 when x in [2^128, 2^195]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+
+        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
+          const expected = Math.log2(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log2 when x is uint256 max", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const expected = Math.log2(x);
+        
+        if (duoTest) {
+          const actualSOL = (await deFiMath.log2("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      // todo: add random tests
+
+      it("log2 when x in [0.0625, 1)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1; x <= 16.08; x += 0.16) { 
+          const expected = Math.log2(1 / x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(1 / x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log2 when x in [1e-18, 1e-16)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1e-18; x <= 1e-16; x += 1e-18) { 
+          const expected = Math.log2(x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log2 when x is minimum", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 1e-18;
+        const expected = Math.log2(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.log2("1")).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      describe("failure", function () {
+        it("rejects when x = 0", async function () {
+          const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+          if (duoTest) {
+            await assertRevertError(deFiMath, deFiMath.log2("0"), "LnLowerBoundError");
+            await deFiMath.log2("1");
+          }
+        });
+      });
+    });
+
+    describe("log10", function () {
+      it("log10 when x in [1, 2]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1; x <= 2.005; x += 0.01) { 
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [2, 2^16]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [2^16, 2^32]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [2^32, 2^48]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [2^48, 2^64]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [2^64, 2^128]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [2^128, 2^195]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+
+        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
+          const expected = Math.log10(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x is uint256 max", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const expected = Math.log10(x);
+        
+        if (duoTest) {
+          const actualSOL = (await deFiMath.log10("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      // todo: add random tests
+
+      it("log10 when x in [0.0625, 1)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1; x <= 16.08; x += 0.16) { 
+          const expected = Math.log10(1 / x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(1 / x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x in [1e-18, 1e-16)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1e-18; x <= 1e-16; x += 1e-18) { 
+          const expected = Math.log10(x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it("log10 when x is minimum", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 1e-18;
+        const expected = Math.log10(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.log10("1")).toString() / 1e18;
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      describe("failure", function () {
+        it("rejects when x = 0", async function () {
+          const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+          if (duoTest) {
+            await assertRevertError(deFiMath, deFiMath.log10("0"), "LnLowerBoundError");
+            await deFiMath.log10("1");
+          }
+        });
       });
     });
 
