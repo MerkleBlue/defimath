@@ -8,12 +8,13 @@ import { assert } from "chai";
 
 const duoTest = true;
 
+const MAX_REL_ERROR_EXP_POS = 5.4e-14;
+const MAX_REL_ERROR_LN = 1.6e-15;
+const MAX_REL_ERROR_LN16 = 1.4e-12;
+const MAX_REL_ERROR_SQRT = 2.2e-14;
+const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 1.8e-11;
-const MAX_REL_ERROR_EXP_POS = 5.4e-14;
-const MAX_REL_ERROR_SQRT_TIME = 9e-15;
-const MAX_REL_ERROR_SQRT = 2.2e-14;
-const MAX_REL_ERROR_LN = 1.6e-15;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -628,123 +629,48 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("ln16", function () {
-      it("ln when x in [1, 2]", async function () {
+      it("ln16 when x in [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x <= 2.005; x += 0.01) { 
           const expected = Math.log(x);
           
           if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.ln16(tokens(x))).toString() / 1e18;
             // const relError = Math.abs(actualSOL - expected) / expected;
             // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
           }
         }
       });
 
-      it("ln when x in [2, 16]", async function () {
+      it("ln16 when x in [2, 16]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+        for (let x = 2; x <= 2 ** 4; x += 0.2505638) { 
           const expected = Math.log(x);
           
           if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            const actualSOL = (await deFiMath.ln16(tokens(x))).toString() / 1e18;
             // const relError = Math.abs(actualSOL - expected) / expected;
             // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
           }
         }
       });
 
-      it("ln when x in [2^16, 2^32]", async function () {
+
+      it("ln when x is 16", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
-          const expected = Math.log(x);
-          
-          if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(actualSOL - expected) / expected;
-            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-          }
-        }
-      });
-
-      it("ln when x in [2^32, 2^48]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
-          const expected = Math.log(x);
-          
-          if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(actualSOL - expected) / expected;
-            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-          }
-        }
-      });
-
-      it("ln when x in [2^48, 2^64]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
-          const expected = Math.log(x);
-          
-          if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(actualSOL - expected) / expected;
-            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-          }
-        }
-      });
-
-      it("ln when x in [2^64, 2^128]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
-          const expected = Math.log(x);
-          
-          if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(actualSOL - expected) / expected;
-            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-          }
-        }
-      });
-
-      it("ln when x in [2^128, 2^195]", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-
-        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
-          const expected = Math.log(x);
-          
-          if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(actualSOL - expected) / expected;
-            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-          }
-        }
-      });
-
-      it("ln when x is uint256 max", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const x = 16;
         const expected = Math.log(x);
         
         if (duoTest) {
-          const actualSOL = (await deFiMath.ln("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+          const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
           // const relError = Math.abs(actualSOL - expected) / expected;
           // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
         }
       });
 
@@ -760,37 +686,8 @@ describe("DeFiMath (SOL and JS)", function () {
             const actualSOL = (await deFiMath.ln(tokens(1 / x))).toString() / 1e18;
             // const relError = Math.abs(actualSOL - expected) / expected;
             // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
           }
-        }
-      });
-
-      it("ln when x in [1e-18, 1e-16)", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let x = 1e-18; x <= 1e-16; x += 1e-18) { 
-          const expected = Math.log(x);
-
-          if (duoTest) {
-            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-            // const relError = Math.abs(actualSOL - expected) / expected;
-            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-          }
-        }
-      });
-
-      it("ln when x is minimum", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        const x = 1e-18;
-        const expected = Math.log(x);
-
-        if (duoTest) {
-          const actualSOL = (await deFiMath.ln("1")).toString() / 1e18;
-          // const relError = Math.abs(actualSOL - expected) / expected;
-          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
     });

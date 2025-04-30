@@ -13,6 +13,10 @@ contract MathWrapper {
         return DeFiMath.ln(x);
     }
 
+    function ln16(uint256 x) external pure returns (int256) {
+        return DeFiMath.ln16(x);
+    }
+
     function log2(uint256 x) external pure returns (int256) {
         return DeFiMath.log2(x);
     }
