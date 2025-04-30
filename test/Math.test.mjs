@@ -3,7 +3,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import bs from "black-scholes";
 import erf from 'math-erf';
-import { assertAbsoluteBelow, assertBothBelow, assertRelativeBelow, tokens } from "./Common.test.mjs";
+import { assertAbsoluteBelow, assertBothBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
 import { assert } from "chai";
 
 const duoTest = true;
@@ -316,10 +316,10 @@ describe("DeFiMath (SOL and JS)", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
     });
-  });
+  }); 
 
   describe("functionality", function () {
-    describe("exp", function () {
+    describe.only("exp", function () {
       it("exp when x is 0", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -408,7 +408,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("exp negative [-40, -0.05]", async function () {
+      it("exp when x in [-40, -0.05]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 0.05; x <= 40; x += 0.05 ) { 
@@ -422,6 +422,29 @@ describe("DeFiMath (SOL and JS)", function () {
             assertAbsoluteBelow(actualSOL, expected, 0.000000000042); // todo
           }
         }
+      });
+
+      it("exp when x below -41", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        if (duoTest) {
+          let actualSOL = (await deFiMath.exp("-41446531673892822313")).toString() / 1e18;
+          assert.equal(actualSOL, 0);
+          actualSOL = (await deFiMath.exp("-42446531673892822313")).toString() / 1e18;
+          assert.equal(actualSOL, 0);
+        }
+      });
+
+      describe("failure", function () {
+        it("rejects when x >= max", async function () {
+          const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+          if (duoTest) {
+            await assertRevertError(deFiMath, deFiMath.exp("135305999368893231589"), "ExpUpperBoundError");
+            await deFiMath.exp("135305999368893231588");
+            await assertRevertError(deFiMath, deFiMath.exp("136305999368893231589"), "ExpUpperBoundError");
+          }
+        });
       });
     });
 
