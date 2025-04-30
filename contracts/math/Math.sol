@@ -14,7 +14,7 @@ import "hardhat/console.sol";
 library DeFiMath {
 
     error ExpUpperBoundError();
-    error LnUpperBoundError();
+    error LnLowerBoundError();
     error SqrtUpperBoundError();
 
     // exponential function - 
@@ -143,31 +143,19 @@ library DeFiMath {
     function ln(uint256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 1e18) {
-                if (x >= 3.402823669209385e56) revert LnUpperBoundError();
-
-                uint256 bits;
-                uint256 a;
                 assembly {
-
-
                     let xRound := div(x, 1000000000000000000) // convert to 1e0 base
 
-                    // a := shl(7, lt(0xffffffffffffffffffffffffffffffff, xRound))
-                    a := shl(6, lt(0xffffffffffffffff, xRound))
+                    let a := shl(7, lt(0xffffffffffffffffffffffffffffffff, xRound))
+                    a := or(a, shl(6, lt(0xffffffffffffffff, shr(a, xRound))))
                     a := or(a, shl(5, lt(0xffffffff, shr(a, xRound))))
                     a := or(a, shl(4, lt(0xffff, shr(a, xRound))))
                     a := or(a, shl(3, lt(0xff, shr(a, xRound))))
                     a := xor(a, byte(and(0x1f, shr(shr(a, xRound), 0x8421084210842108cc6318c6db6d54be)),
                         0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))    
 
-                    bits := sub(255, a)
-                }
+                    let bits := sub(255, a)
 
-                // console.log("a", a);
-                // console.log("bits", bits);
-
-
-                assembly {
                     x := shr(bits, x) // reduce range of x to [1, 2]
 
                     // reduce range of x to [1, 1.414]
@@ -205,6 +193,8 @@ library DeFiMath {
                     y := add(y, mul(multiplier, 346573590279972655))
                 }
             } else {
+                if (x == 0) revert LnLowerBoundError();
+
                 assembly {
                     x := div(1000000000000000000000000000000000000, x)
 
