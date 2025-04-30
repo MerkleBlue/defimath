@@ -319,7 +319,7 @@ describe("DeFiMath (SOL and JS)", function () {
   }); 
 
   describe("functionality", function () {
-    describe.only("exp", function () {
+    describe("exp", function () {
       it("exp when x is 0", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -448,7 +448,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("ln", function () {
+    describe.only("ln", function () {
       it("ln [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -524,16 +524,46 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("ln [2^64, 2^128]", async function () {
+      it.only("ln [2^64, 2^128]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 2 ** 64; x <= 2 ** 128; x += 2 ** 120) { 
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
           const expected = Math.log(x);
           
           if (duoTest) {
             const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
             // const relError = Math.abs(actualSOL - expected) / expected;
             // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
+      it.only("ln single delete", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 2 ** 25 + 1;
+        const expected = Math.log(x);
+        
+        if (duoTest) {
+          const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+          const relError = Math.abs(actualSOL - expected) / expected;
+          console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      it("ln [2^128, 2^192]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+
+        for (let x = 2 ** 128; x <= 2 ** 192; x += 2 ** 184) { 
+          const expected = Math.log(x);
+          
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            const relError = Math.abs(actualSOL - expected) / expected;
+            console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
         }
@@ -555,6 +585,18 @@ describe("DeFiMath (SOL and JS)", function () {
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
           }
         }
+      });
+
+      describe("failure", function () {
+        it("rejects when x >= max", async function () {
+          const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+          if (duoTest) {
+            await assertRevertError(deFiMath, deFiMath.exp("135305999368893231589"), "ExpUpperBoundError");
+            await deFiMath.exp("135305999368893231588");
+            await assertRevertError(deFiMath, deFiMath.exp("136305999368893231589"), "ExpUpperBoundError");
+          }
+        });
       });
     });
 
@@ -974,7 +1016,7 @@ describe("DeFiMath (SOL and JS)", function () {
       console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "     " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
     });
 
-    it("ln", async function () {
+    it.only("ln", async function () {
       const { deFiMath, prbMath, abdkMath, solady } = await loadFixture(deployCompare);
 
       let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
