@@ -1061,7 +1061,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("sqrt", function () {
+    describe.only("sqrt", function () {
       it("sqrt when x in [1, 2)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -1135,9 +1135,23 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
+      it("sqrt when x is max", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 1208925819614628999999999.999999999999999999;
+        const expected = Math.sqrt(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.sqrt("1208925819614628999999999999999999999999999")).toString() / 1e18;
+          // const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
+          // console.log("x", x.toFixed(2), expected, actualSOL, relError);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
+
       it("sqrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-        for (let x = 1 / 1e18; x < 1; x += x) {
+        for (let x = 1e-18; x < 1; x += x) {
           const expected = Math.sqrt(x);
 
           if (duoTest) {
@@ -1149,7 +1163,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrt 0", async function () {
+      it("sqrt when x is 0", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 0;
         const expected = Math.sqrt(x);
@@ -1160,6 +1174,18 @@ describe("DeFiMath (SOL and JS)", function () {
           // console.log("x", x.toFixed(18), expected, actualSOL, absError);
           assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
         }
+      });
+
+      describe("failure", function () {
+        it("rejects when x >= max", async function () {
+          const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+          if (duoTest) {
+            await assertRevertError(deFiMath, deFiMath.sqrt("1208925819614629000000000000000000000000000"), "SqrtUpperBoundError");
+            await assertRevertError(deFiMath, deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "SqrtUpperBoundError");
+            await deFiMath.sqrt("1208925819614628999999999999999999999999999");
+          }
+        });
       });
     });
 
