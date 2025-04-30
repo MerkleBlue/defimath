@@ -13,7 +13,7 @@ const MAX_ABS_ERROR_CDF = 1.8e-11;
 const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
-const MAX_REL_ERROR_LN = 2e-15;
+const MAX_REL_ERROR_LN = 1.5e-15;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -448,7 +448,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe.only("ln", function () {
+    describe("ln", function () {
       it("ln when x in [1, 2]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -586,6 +586,21 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
+      it("ln when x in [1e-18, 1e-16)", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let x = 1e-18; x <= 1e-16; x += 1e-18) { 
+          const expected = Math.log(x);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
+            // const relError = Math.abs(actualSOL - expected) / expected;
+            // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+          }
+        }
+      });
+
       it("ln when x is minimum", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -594,8 +609,8 @@ describe("DeFiMath (SOL and JS)", function () {
 
         if (duoTest) {
           const actualSOL = (await deFiMath.ln("1")).toString() / 1e18;
-          const relError = Math.abs(actualSOL - expected) / expected;
-          console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
+          // const relError = Math.abs(actualSOL - expected) / expected;
+          // console.log("x", x.toFixed(4), expected.toFixed(16), actualSOL.toFixed(16), relError);
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });

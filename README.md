@@ -107,9 +107,9 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
 | exp           |      354 |     2748 |     5371 |      420 |        - |
-| ln            |      586 |     6994 |    15843 |      536 |        - |
-| log2          |      659 |     6691 |    15191 |        - |        - |
-| log10         |      659 |     8570 |        - |        - |        - |
+| ln            |      608 |     6994 |    15843 |      536 |        - |
+| log2          |      681 |     6691 |    15191 |        - |        - |
+| log10         |      681 |     8570 |        - |        - |        - |
 | sqrt          |      383 |     961* |      731 |     415* |        - |
 | stdNormCDF    |      803 |        - |        - |        - |     4884 |
 | erf           |      750 |        - |        - |        - |     4236 |
