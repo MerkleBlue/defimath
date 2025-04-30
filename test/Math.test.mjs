@@ -1250,10 +1250,9 @@ describe("DeFiMath (SOL and JS)", function () {
         for (let x = 1; x < 8.005; x += 0.01) {
           const expected = Math.sqrt(x);
 
-
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
-            const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
+            // const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
             // console.log("x", x.toFixed(4), expected, actualSOL, relError);
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
           }
