@@ -400,7 +400,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
 
         // todo: test with vol max only SOL
 
-
         it("expired ITM", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
@@ -853,6 +852,28 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
+      describe("limits", function () {
+        it("expired ITM call", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+  
+          if (duoTest) {
+            const actualSOL = await options.getDelta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+            assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 1, MAX_DELTA_ABS_ERROR);
+            assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 0, MAX_DELTA_ABS_ERROR);
+          }
+        });
+
+        it("expired ITM put", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+  
+          if (duoTest) {
+            const actualSOL = await options.getDelta(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05));
+            assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 0, MAX_DELTA_ABS_ERROR);
+            assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 1, MAX_DELTA_ABS_ERROR);
+          }
+        });
+      });
+
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
@@ -974,7 +995,18 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
-      // todo: limits and random tests
+      // todo: random tests
+
+      describe("limits", function () {
+        it("expired option", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+  
+          if (duoTest) {
+            const actualSOL = await options.getGamma(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+            assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_GAMMA_ABS_ERROR);
+          }
+        });
+      });
 
 
       describe("failure", function () {
@@ -1104,6 +1136,18 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
+      describe("limits", function () {
+        it("expired option", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+  
+          if (duoTest) {
+            const actualSOL = await options.getTheta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+            assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, 0, MAX_THETA_ABS_ERROR);
+            assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, 0, MAX_THETA_ABS_ERROR);
+          }
+        });
+      });
+
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = duoTest ? await loadFixture(deploy) : { options: null };
@@ -1225,8 +1269,17 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       });
 
-      // todo: limits and random tests
-
+      // todo: random tests
+      describe("limits", function () {
+        it("expired option", async function () {
+          const { options } = duoTest ? await loadFixture(deploy) : { options: null };
+  
+          if (duoTest) {
+            const actualSOL = await options.getVega(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+            assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_VEGA_ABS_ERROR);
+          }
+        });
+      });
 
       describe("failure", function () {
         it("rejects when spot < min spot", async function () {
