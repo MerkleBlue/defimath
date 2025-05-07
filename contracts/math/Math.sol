@@ -503,27 +503,6 @@ library DeFiMath {
                 y := sub(500000000000000000, res)
             }
         }
-
-        // let xAbs = Math.abs(x) * Math.SQRT2;
-        // let c = 0;
-        
-        // if (xAbs <= 37) {
-        //     let e = this.exp(-xAbs * xAbs / 2);
-        //     if (xAbs < 7.07106781186547) {
-        //     let num = 0.0352624965998911 * xAbs ** 6 + 0.700383064443688 * xAbs ** 5 + 6.37396220353165 * xAbs ** 4 + 33.912866078383 * xAbs ** 3 + 112.079291497871 * xAbs ** 2 + 221.213596169931 * xAbs + 220.206867912376;
-        //     let den = 0.0883883476483184 * xAbs ** 7 + 1.75566716318264 * xAbs ** 6 + 16.064177579207 * xAbs ** 5 + 86.7807322029461 * xAbs ** 4 + 296.564248779674 * xAbs ** 3 + 637.333633378831 * xAbs ** 2 + 793.826512519948 * xAbs + 440.413735824752;
-        //     c = e * num / den;
-        //     } else {
-        //         let b = xAbs + 0.65;
-        //         b = xAbs + 4 / b;
-        //         b = xAbs + 3 / b;
-        //         b = xAbs + 2 / b;
-        //         b = xAbs + 1 / b;
-        //         c = e / b / 2.506628274631;
-        //     }
-        // }
-        
-        // return x > 0 ? 1 - 2 * c : 2 * c - 1;
     }
 
     function getLnPrecompute(uint256 exponent) internal pure returns (uint256, uint256) {

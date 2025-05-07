@@ -73,11 +73,11 @@ The following table compares __gas efficiency__ of DeFiMath with other implement
 
 | Function      | DeFiMath | Derivexyz| Premia   | Party1983|  Dopex   |
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| call          |     3201 |    30220 |    20635 |    39974 |    95447 |
-| put           |     3225 |    30220 |    20827 |    40137 |    94808 |
-| delta         |     2032 |    19574 |        - |    26853 |        - |
+| call          |     3203 |    30220 |    20635 |    39974 |    95447 |
+| put           |     3229 |    30220 |    20827 |    40137 |    94808 |
+| delta         |     2033 |    19574 |        - |    26853 |        - |
 | gamma         |     1707 |        - |        - |        - |        - |
-| theta         |     3820 |        - |        - |        - |        - |
+| theta         |     3823 |        - |        - |        - |        - |
 | vega          |     1680 |    16503 |        - |        - |        - |
 
 The table below compares the performance of DeFiMath with other option pricing implementations, showing the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
@@ -106,12 +106,12 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 
 | Function      | DeFiMath |  PRBMath | ABDKQuad |  Solady  |  SolStat | 
 | :------------ | -------: | -------: | -------: | -------: | -------: |
-| exp           |      354 |     2748 |     5371 |      420 |        - |
+| exp           |      359 |     2748 |     5371 |      420 |        - |
 | ln            |      608 |     6994 |    15843 |      536 |        - |
 | log2          |      681 |     6691 |    15191 |        - |        - |
 | log10         |      681 |     8570 |        - |        - |        - |
 | sqrt          |      383 |     961* |      731 |     415* |        - |
-| stdNormCDF    |      804 |        - |        - |        - |     4884 |
+| stdNormCDF    |      799 |        - |        - |        - |     4884 |
 | erf           |      773 |        - |        - |        - |     4236 |
 
 \* - not a fixed-point function  

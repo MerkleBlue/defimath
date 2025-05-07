@@ -1190,7 +1190,7 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe("sqrtTime", function () {
-      it("sqrtTime 1s", async function () {
+      it("sqrtTime when x is 1s", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
         const expected = Math.sqrt(x); // 1 / 31536000
@@ -1202,7 +1202,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrtTime [1s, 8192s]", async function () {
+      it("sqrtTime when x in [1s, 8192s]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         for (let x = 1; x < 64 * 128; x += 32) {
           const expected = Math.sqrt(x * 31709792000 / 1e18);
@@ -1216,7 +1216,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrtTime [8192s, 1d]", async function () {
+      it("sqrtTime when x in [8192s, 1d]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         for (let x = 8292; x < 86400; x += 8292) {
           const expected = Math.sqrt(x * 31709792000 / 1e18);
@@ -1230,7 +1230,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrtTime [1d, 1y]", async function () {
+      it("sqrtTime when x in [1d, 1y]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         for (let x = 86400; x < 365 * 86400; x += 86400) {
           const expected = Math.sqrt(x / 31536000);
@@ -1244,7 +1244,7 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("sqrtTime [1y, 8y]", async function () {
+      it("sqrtTime when x in [1y, 8y]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
         for (let x = 1; x < 8.005; x += 0.01) {
