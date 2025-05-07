@@ -1061,7 +1061,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe.only("sqrt", function () {
+    describe("sqrt", function () {
       it("sqrt when x in [1, 2)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -1189,7 +1189,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("sqrtTime", function () {
+    describe.only("sqrtTime", function () {
       it("sqrtTime 1s", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
@@ -1209,7 +1209,7 @@ describe("DeFiMath (SOL and JS)", function () {
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrtTime(x * 31709792000)).toString() / 1e18;
-            const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
+            // const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
             // console.log("x", x + "s", expected, actualSOL, relError);
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
           }
@@ -1223,7 +1223,7 @@ describe("DeFiMath (SOL and JS)", function () {
 
           if (duoTest) {
             const actualSOL = (await deFiMath.sqrtTime(x * 31709792000)).toString() / 1e18;
-            const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
+            // const relError = Math.abs(Math.abs(actualSOL - expected) / expected);
             // console.log("x", x + "s", expected, actualSOL, relError);
             assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
           }
