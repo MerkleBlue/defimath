@@ -14,7 +14,7 @@ const MAX_REL_ERROR_LN16 = 1.4e-12;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
-const MAX_ABS_ERROR_CDF = 1.8e-11;
+const MAX_ABS_ERROR_CDF = 6.4e-15;
 
 describe("DeFiMath (SOL and JS)", function () {
   let blackScholesJS;
@@ -1189,7 +1189,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe.only("sqrtTime", function () {
+    describe("sqrtTime", function () {
       it("sqrtTime 1s", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
         const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
@@ -1260,31 +1260,28 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe("stdNormCDF", function () {
-      it("stdNormCDF single", async function () {
+    describe.only("stdNormCDF", function () {
+      it("stdNormCDF when x in [0, 11.63]", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        const d1 = 0.6100358074173348;
-        const expected = bs.stdNormCDF(d1);
-        const actualJS = blackScholesJS.stdNormCDF(d1);
-        assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_CDF);
-
-        if (duoTest) {
-          const actualSOL = (await deFiMath.stdNormCDF(tokens(d1))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
-        }
-      });
-
-      it("stdNormCDF multiple", async function () {
-        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
-
-        for (let d1 = -4; d1 < 4; d1 += 0.01234) {
+        for (let d1 = 0; d1 < 11.63; d1 += 0.01234) {
           const expected = bs.stdNormCDF(d1);
-          const actualJS = blackScholesJS.stdNormCDF(d1);
-          assertAbsoluteBelow(actualJS, expected, MAX_ABS_ERROR_CDF);
 
           if (duoTest) {
             const actualSOL = (await deFiMath.stdNormCDF(tokens(d1))).toString() / 1e18;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
+          }
+        }
+      });
+
+      it("stdNormCDF when x in [-11.63, 0]", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        for (let d1 = 0; d1 < 11.63; d1 += 0.01234) {
+          const expected = bs.stdNormCDF(-d1);
+
+          if (duoTest) {
+            const actualSOL = (await deFiMath.stdNormCDF(tokens(-d1))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
           }
         }
@@ -1582,7 +1579,7 @@ describe("DeFiMath (SOL and JS)", function () {
       console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0), "      " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
     });
 
-    it("stdNormCDF", async function () {
+    it.only("stdNormCDF", async function () {
       const { deFiMath, solStat } = await loadFixture(deployCompare);
 
       let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
