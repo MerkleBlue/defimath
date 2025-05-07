@@ -1261,29 +1261,77 @@ describe("DeFiMath (SOL and JS)", function () {
     });
 
     describe.only("stdNormCDF", function () {
-      it("stdNormCDF when x in [0, 11.63]", async function () {
+      it("stdNormCDF when x in [0, 16.447)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let d1 = 0; d1 < 11.63; d1 += 0.01234) {
-          const expected = bs.stdNormCDF(d1);
+        for (let x = 0; x < 16.447; x += 0.01234) {
+          const expected = bs.stdNormCDF(x);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.stdNormCDF(tokens(d1))).toString() / 1e18;
+            const actualSOL = (await deFiMath.stdNormCDF(tokens(x))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
           }
         }
       });
 
-      it("stdNormCDF when x in [-11.63, 0]", async function () {
+      it("stdNormCDF when x in [-16.447, 0)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let d1 = 0; d1 < 11.63; d1 += 0.01234) {
-          const expected = bs.stdNormCDF(-d1);
+        for (let x = -16.447; x < 0; x += 0.01234) {
+          const expected = bs.stdNormCDF(-x);
 
           if (duoTest) {
-            const actualSOL = (await deFiMath.stdNormCDF(tokens(-d1))).toString() / 1e18;
+            const actualSOL = (await deFiMath.stdNormCDF(tokens(-x))).toString() / 1e18;
             assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
           }
+        }
+      });
+
+      it("stdNormCDF when x is int max", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 57896044618658097711785492504343953926634992332820282019728.792003956564819967;
+        const expected = bs.stdNormCDF(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.stdNormCDF("57896044618658097711785492504343953926634992332820282019728792003956564819967")).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
+        }
+      });
+
+      it("stdNormCDF when x is 16.447", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 16.447;
+        const expected = bs.stdNormCDF(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.stdNormCDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
+        }
+      });
+
+      it("stdNormCDF when x is int min", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = 57896044618658097711785492504343953926634992332820282019728.792003956564819967;
+        const expected = bs.stdNormCDF(-x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.stdNormCDF("-57896044618658097711785492504343953926634992332820282019728792003956564819967")).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
+        }
+      });
+
+      it("stdNormCDF when x is -16.447", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = -16.447;
+        const expected = bs.stdNormCDF(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.stdNormCDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
         }
       });
     });

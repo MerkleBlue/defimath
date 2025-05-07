@@ -402,25 +402,26 @@ library DeFiMath {
     }
 
     // using erf function
-    function stdNormCDF(int256 x) internal pure returns (uint256) {
+    function stdNormCDF(int256 x) internal pure returns (uint256 y) {
         unchecked {
             // todo: make sure erf(x) is < 1
             // todo: x is mul with sqrt(2) / 2, but later in erfPositiveHalf it's mul with sqrt(2) => 1
-            int256 argument = x * 707106781186547524 / 1e18;
 
-            if (argument >= 0) {
-                if (argument >= 11.63e18) {
+            if (x >= 0) {
+                if (x >= 16.447e18) {
                     return 1e18;
                 }
                 // todo: inline
-                return 5e17 + erfPositiveHalf(uint256(argument));
-            } 
-
-            if (argument <= -11.63e18) {
-                return 0;
+                uint256 absX = uint256(x * 707106781186547524 / 1e18);
+                y = 5e17 + erfPositiveHalf(absX);
+            } else {
+                if (x <= -16.447e18) {
+                    return 0;
+                }
+                // todo: inline
+                uint256 absX = uint256(-x * 707106781186547524 / 1e18);
+                y = 5e17 - erfPositiveHalf(absX);
             }
-            // todo: inline
-            return 5e17 - erfPositiveHalf(uint256(-argument));
         }
     }
 
