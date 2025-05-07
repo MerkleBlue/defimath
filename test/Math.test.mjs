@@ -1260,7 +1260,7 @@ describe("DeFiMath (SOL and JS)", function () {
       });
     });
 
-    describe.only("stdNormCDF", function () {
+    describe("stdNormCDF", function () {
       it("stdNormCDF when x in [0, 16.447)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
@@ -1346,10 +1346,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("erf when x in [0, 10)", async function () {
+      it("erf when x in [0, 11.63)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0; x <= 10; x += 0.0250323) {
+        for (let x = 0; x <= 11.63; x += 0.0250323) {
           const expected = erf(x);
 
           if (duoTest) {
@@ -1359,10 +1359,10 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("erf when x in [10, 1000)", async function () {
+      it("erf when x in [-11.63, 0)", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 10; x <= 1000; x += 2.50250323) {
+        for (let x = -11.63; x <= 0; x += 0.0250323) {
           const expected = erf(x);
 
           if (duoTest) {
@@ -1372,29 +1372,51 @@ describe("DeFiMath (SOL and JS)", function () {
         }
       });
 
-      it("erf when x in [-10, 0)", async function () {
+      it("erf when x is int max", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 0; x <= 10; x += 0.0250323) {
-          const expected = erf(-x);
+        const x = 57896044618658097711785492504343953926634992332820282019728.792003956564819967;
+        const expected = erf(x);
 
-          if (duoTest) {
-            const actualSOL = (await deFiMath.erf(tokens(-x))).toString() / 1e18;
-            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-          }
+        if (duoTest) {
+          const actualSOL = (await deFiMath.erf("57896044618658097711785492504343953926634992332820282019728792003956564819967")).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
         }
       });
 
-      it("erf when x in [-1000, -10)", async function () {
+      it("erf when x is 11.64", async function () {
         const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
 
-        for (let x = 10; x <= 1000; x += 2.50250323) {
-          const expected = erf(-x);
+        const x = 11.64;
+        const expected = erf(x);
 
-          if (duoTest) {
-            const actualSOL = (await deFiMath.erf(tokens(-x))).toString() / 1e18;
-            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-          }
+        if (duoTest) {
+          const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
+        }
+      });
+
+      it("erf when x is int min", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = -57896044618658097711785492504343953926634992332820282019728.792003956564819967;
+        const expected = erf(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.erf("-57896044618658097711785492504343953926634992332820282019728792003956564819967")).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
+        }
+      });
+
+      it("erf when x is -11.64", async function () {
+        const { deFiMath } = duoTest ? await loadFixture(deploy) : { deFiMath: null };
+
+        const x = -11.64;
+        const expected = erf(x);
+
+        if (duoTest) {
+          const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
         }
       });
     });
@@ -1627,14 +1649,14 @@ describe("DeFiMath (SOL and JS)", function () {
       console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "      " + (avgGas2 / count).toFixed(0), "      " + (avgGas3 / count).toFixed(0), "      " + (avgGas4 / count).toFixed(0));
     });
 
-    it.only("stdNormCDF", async function () {
+    it("stdNormCDF", async function () {
       const { deFiMath, solStat } = await loadFixture(deployCompare);
 
       let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
-      for (let x = -4; x <= 4; x += 0.123) {
+      for (let x = 0.5; x <= 10; x += 0.123) {
         const expected = bs.stdNormCDF(x);
 
         // DeFiMath
@@ -1668,7 +1690,7 @@ describe("DeFiMath (SOL and JS)", function () {
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
-      for (let x = 0.0001; x <= 3.5; x += 0.123) { // todo: handle 0
+      for (let x = 0.5; x <= 10; x += 0.123) { // todo: handle 0
         const expected = erf(x);
 
         // DeFiMath

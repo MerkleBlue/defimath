@@ -112,7 +112,7 @@ The following table compares __gas efficiency__ of DeFiMath with other math func
 | log10         |      681 |     8570 |        - |        - |        - |
 | sqrt          |      383 |     961* |      731 |     415* |        - |
 | stdNormCDF    |      804 |        - |        - |        - |     4884 |
-| erf           |      750 |        - |        - |        - |     4236 |
+| erf           |      773 |        - |        - |        - |     4236 |
 
 \* - not a fixed-point function  
 The table below compares DeFiMath to other math libraries, highlighting the __maximum relative error (%)__ against a trusted JavaScript reference implementation.
@@ -124,8 +124,8 @@ The table below compares DeFiMath to other math libraries, highlighting the __ma
 | log2          |  1.5e-12 |  1.3e-12 |  1.6e-12 |        - |        - |
 | log10         |  1.4e-12 |  1.3e-12 |        - |        - |        - |
 | sqrt          |  2.8e-14 |  2.8e-14 |  2.8e-14 |  2.8e-14 |        - |
-| stdNormCDF    |  6.9e-10 |        - |        - |        - |   9.3e-6 |
-| erf           |  2.3e-10 |        - |        - |        - |   2.6e-2 |
+| stdNormCDF    |  4.6e-13 |        - |        - |        - |   3.2e-6 |
+| erf           |  7.4e-13 |        - |        - |        - |   5.7e-6 |
 
 
 

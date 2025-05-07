@@ -428,8 +428,10 @@ library DeFiMath {
     function erf(int256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 0) {
-                // todo: add input check
-                // positive
+                if (x >= 11.63e18) {
+                    return 1e18;
+                }
+
                 uint256 absX = uint256(x);                         // since x is positive, absX = x
 
                 uint256 t = absX * 1414213562373095049 / 1e18;
@@ -451,7 +453,10 @@ library DeFiMath {
                     y := shl(1, y)
                 }
             } else {
-                // negative
+                if (x <= -11.63e18) {
+                    return -1e18;
+                }
+
                 uint256 absX = uint256(-x);                         // since x is negative, absX = -x
                 
                 uint256 t = absX * 1414213562373095049 / 1e18;
