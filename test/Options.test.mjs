@@ -67,7 +67,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
     return { owner, options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
   }
 
-  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_OPTION_ABS_ERROR, multi = 10, log = true) { // todo: allowedAbsError
+  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_OPTION_ABS_ERROR, multi = 10, log = true) {
     const { options } = await loadFixture(deploy);
     log && console.log("Max abs error: $" + maxAbsError);
 
@@ -387,7 +387,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
-          const rates = [0, 0.1, 0.2, 4]; // todo: use wider range
+          const rates = [0, 0.1, 0.2, 4];
           await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
@@ -613,7 +613,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const { options } = await loadFixture(deploy);
 
           await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+          await options.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
           await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
@@ -717,7 +717,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const { options } = await loadFixture(deploy);
 
           await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getDelta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+          await options.getDelta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
           await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
@@ -811,7 +811,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const { options } = await loadFixture(deploy);
 
           await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getGamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+          await options.getGamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
           await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
@@ -907,7 +907,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const { options } = await loadFixture(deploy);
 
           await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getTheta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+          await options.getTheta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
           await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 

@@ -431,7 +431,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("ln when x in [2, 2^16]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+        for (let x = 2; x <= 2 ** 16; x += 2 ** 6 + Math.random() * 2) { 
           const expected = Math.log(x);
           
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
@@ -442,7 +442,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("ln when x in [2^16, 2^32]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
+        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22 + Math.random() * 32) { 
           const expected = Math.log(x);
           
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
@@ -453,7 +453,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("ln when x in [2^32, 2^48]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
+        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38 + Math.random() * 128) { 
           const expected = Math.log(x);
           
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
@@ -464,7 +464,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("ln when x in [2^48, 2^64]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
+        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54 + Math.random() * 128) { 
           const expected = Math.log(x);
           
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
@@ -475,7 +475,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("ln when x in [2^64, 2^128]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + Math.random() * 128) { 
           const expected = Math.log(x);
           
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
@@ -486,8 +486,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("ln when x in [2^128, 2^195]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-
-        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
+        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188 + Math.random() * 128) {
           const expected = Math.log(x);
           
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
@@ -619,7 +618,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log2 when x in [2, 2^16]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+        for (let x = 2; x <= 2 ** 16; x += 2 ** 6 + Math.random() * 2) { 
           const expected = Math.log2(x);
           
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
@@ -630,7 +629,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log2 when x in [2^16, 2^32]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
+        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22 + Math.random() * 128) { 
           const expected = Math.log2(x);
           
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
@@ -641,7 +640,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log2 when x in [2^32, 2^48]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
+        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38 + Math.random() * 128) { 
           const expected = Math.log2(x);
           
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
@@ -652,7 +651,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log2 when x in [2^48, 2^64]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
+        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54 + Math.random() * 128) { 
           const expected = Math.log2(x);
           
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
@@ -663,7 +662,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log2 when x in [2^64, 2^128]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + Math.random() * 128) { 
           const expected = Math.log2(x);
           
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
@@ -674,7 +673,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log2 when x in [2^128, 2^195]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
+        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188 + Math.random() * 128) {
           const expected = Math.log2(x);
           
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
@@ -751,7 +750,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log10 when x in [2, 2^16]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2; x <= 2 ** 16; x += 2 ** 6) { 
+        for (let x = 2; x <= 2 ** 16; x += 2 ** 6 + Math.random() * 2) { 
           const expected = Math.log10(x);
           
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
@@ -762,7 +761,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log10 when x in [2^16, 2^32]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22) { 
+        for (let x = 2 ** 16; x <= 2 ** 32; x += 2 ** 22 + Math.random() * 128) { 
           const expected = Math.log10(x);
           
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
@@ -773,7 +772,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log10 when x in [2^32, 2^48]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38) { 
+        for (let x = 2 ** 32; x <= 2 ** 48; x += 2 ** 38 + Math.random() * 128) { 
           const expected = Math.log10(x);
           
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
@@ -784,7 +783,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log10 when x in [2^48, 2^64]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54) { 
+        for (let x = 2 ** 48; x <= 2 ** 64; x += 2 ** 54 + Math.random() * 128) { 
           const expected = Math.log10(x);
           
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
@@ -795,7 +794,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log10 when x in [2^64, 2^128]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + 100000000) { 
+        for (let x = 2 ** 64; x < 2 ** 128; x += 2 ** 120 + Math.random() * 128) { 
           const expected = Math.log10(x);
           
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
@@ -806,7 +805,7 @@ describe("DeFiMath (SOL and JS)", function () {
       it("log10 when x in [2^128, 2^195]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188) { // todo: add random to x
+        for (let x = 2 ** 128; x <= 2 ** 196; x += 2 ** 188 + Math.random() * 128) {
           const expected = Math.log10(x);
           
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
@@ -1205,7 +1204,7 @@ describe("DeFiMath (SOL and JS)", function () {
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
-      for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+      for (let x = 1/16; x <= 16; x += 0.0123 ) {
         const expected = Math.log(x);
 
         // DeFiMath
@@ -1250,7 +1249,7 @@ describe("DeFiMath (SOL and JS)", function () {
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
-      for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+      for (let x = 1/16; x <= 16; x += 0.0123 ) {
         const expected = Math.log2(x);
 
         // DeFiMath
@@ -1288,7 +1287,7 @@ describe("DeFiMath (SOL and JS)", function () {
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
-      for (let x = 1/16; x <= 16; x += 0.0123 ) { // todo: range should be wider
+      for (let x = 1/16; x <= 16; x += 0.0123 ) {
         const expected = Math.log10(x);
 
         // DeFiMath
@@ -1395,7 +1394,7 @@ describe("DeFiMath (SOL and JS)", function () {
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
-      for (let x = 0.5; x <= 10; x += 0.123) { // todo: handle 0
+      for (let x = 0.5; x <= 10; x += 0.123) {
         const expected = erf(x);
 
         // DeFiMath

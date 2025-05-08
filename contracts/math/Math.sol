@@ -308,8 +308,6 @@ library DeFiMath {
     function stdNormCDF(int256 x) internal pure returns (uint256 y) {
         unchecked {
             // todo: make sure erf(x) is < 1
-            // todo: x is mul with sqrt(2) / 2, but later in erfPositiveHalf it's mul with sqrt(2) => 1
-
             if (x >= 0) {
                 if (x >= 16.447e18) {
                     return 1e18;

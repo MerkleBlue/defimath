@@ -197,7 +197,7 @@ export class BlackScholesNUMJS {
   // x: [0, 50]
   expPositive(x) {
 
-    return Math.exp(x); // todo: override because sol is now more precise
+    return Math.exp(x);
     // add limits to simulate solidity
     if (x > 50) {
       return 1e18;
@@ -315,7 +315,6 @@ export class BlackScholesNUMJS {
     }
 
     if (x > ROOT_32_OF_16) {
-      // todo: always reduce x to < 1 (if x is 5 then: return -exp(1/5))
       multiplier = Math.floor(this.getBaseLog(ROOT_32_OF_16, x));
       x = x / (ROOT_32_OF_16 ** multiplier);
     }
