@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// Uncomment this line to use console.log
-import "hardhat/console.sol";
-
-/**
- * @title Math library for common math functions like exponential, logarithm, 
- * square root, error function, standard normal distribution, etc..
- * @author DeFiMath
- * @notice This library provides a set of mathematical functions for use in Solidity smart contracts.
- * @dev The functions are designed to be gas-efficient and to avoid overflows and underflows.
- */
+/// @title DeFiMath: High-precision Math Library for Solidity
+/// @author DeFiMath
+/// @notice Provides optimized implementations of mathematical functions such as exp, ln, sqrt, erf, and standard normal CDF.
+/// @dev All functions use fixed-point arithmetic with 18 decimals (1e18) and are optimized for gas efficiency.
 library DeFiMath {
 
     // errors
+    /// @notice Thrown when input to exp() exceeds the upper bound (~135)
     error ExpUpperBoundError();
+
+    /// @notice Thrown when input to ln() is zero
     error LnLowerBoundError();
+
+    /// @notice Thrown when input to sqrt() exceeds the upper bound (~2^80)
     error SqrtUpperBoundError();
 
-    // exponential function - 
+    /// @notice Computes exp(x) for a positive fixed-point input x in range [0, ~135]
+    /// @dev Uses range reduction and rational approximation for gas efficiency
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
     function expPositive(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             // WARNING: this function doesn't check input parameter x, and should 
@@ -63,6 +65,10 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes exp(x) for signed input x
+    /// @dev Automatically handles negative inputs via reciprocal logic
+    /// @param x Signed input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
     function exp(int256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x >= 0) {
@@ -141,6 +147,10 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes ln(x) for a fixed-point input x
+    /// @dev Supports inputs both above and below 1, returns result in fixed-point
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Natural logarithm in 18-decimal fixed-point format
     function ln(uint256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 1e18) {
@@ -248,6 +258,10 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes ln(x) for x in [1/16, 16] using rational approximation
+    /// @dev Reduces range using precomputed logarithm multipliers
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
     function ln16(uint256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 1e18) {
@@ -302,6 +316,9 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes log base 2 of x
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
     function log2(uint256 x) internal pure returns (int256 y) {
         unchecked {
             // todo: inline
@@ -309,6 +326,9 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes log base 10 of x
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
     function log10(uint256 x) internal pure returns (int256 y) {
         unchecked {
             // todo: inline
@@ -316,6 +336,10 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes sqrt(x) using Newton's method
+    /// @dev Works for both x >= 1e18 and x < 1e18 via inversion trick
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Square root in 18-decimal fixed-point format
     function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x >= 1e18) {
@@ -383,6 +407,10 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes sqrt(x) with fixed-point precision for time values
+    /// @dev Optimized for values up to 8 years
+    /// @param x Time value in 18-decimal fixed-point format
+    /// @return z Resulting sqrt in 18-decimal fixed-point format
     function sqrtTime(uint256 x) internal pure returns (uint256 z) {
         assembly {
             x := mul(x, 1000000000000000000) // convert to 1e36 base
@@ -402,7 +430,10 @@ library DeFiMath {
         }
     }
 
-    // using erf function
+    /// @notice Computes standard normal cumulative distribution function Φ(x)
+    /// @dev Uses erf(x) internally, capped at ±16.447 to return 0 or 1
+    /// @param x Input value in 18-decimal fixed-point format
+    /// @return y Result in range [0, 1e18]
     function stdNormCDF(int256 x) internal pure returns (uint256 y) {
         unchecked {
             // todo: make sure erf(x) is < 1
@@ -426,6 +457,9 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes the error function erf(x)
+    /// @param x Input value in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format, in range [-1e18, 1e18]
     function erf(int256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 0) {
@@ -483,10 +517,14 @@ library DeFiMath {
         }
     }
 
-    // erf from West's paper - https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf 
-    // abs error 1e-15, now exp function is bottleneck
+
+    /// @notice Computes erf(x)/2 for positive x using West’s approximation
+    /// @dev Used by stdNormCDF and erf
+    /// @param x Positive input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
     function erfPositiveHalf(uint256 x) internal pure returns (uint256 y) {
         unchecked {
+            // erf from West's paper - https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf 
             uint256 t = x * 1414213562373095049 / 1e18;
             uint256 t2 = t * t / 1e18;
             uint256 t3 = t2 * t / 1e18;
@@ -506,6 +544,11 @@ library DeFiMath {
         }
     }
 
+    /// @notice Returns a pair (divider, multiplier) used to reduce range of ln(x) calculation
+    /// @dev Used internally by ln16
+    /// @param exponent Input value
+    /// @return divider Value used to scale x down
+    /// @return multiplier Logarithmic offset multiplier
     function getLnPrecompute(uint256 exponent) internal pure returns (uint256, uint256) {
         unchecked {
             if (exponent >= 4e18) { // 16
@@ -624,13 +667,8 @@ library DeFiMath {
                                 return (1_189207115002721067, 2);
                             }
                         } else {
-                            // there is no 0
+                            // NOTE: there is no 0
                             return (1_090507732665257659, 1);
-                            // if (exponent >= 1) { // 1
-                            //     return 1_031743407499103;
-                            // } else {
-                            //     return 1e15;
-                            // }
                         }
                     }
                 }
