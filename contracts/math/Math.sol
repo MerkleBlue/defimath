@@ -17,54 +17,6 @@ library DeFiMath {
     /// @notice Thrown when input to sqrt() exceeds the upper bound (~2^80)
     error SqrtUpperBoundError();
 
-    /// @notice Computes exp(x) for a positive fixed-point input x in range [0, ~135]
-    /// @dev Uses range reduction and rational approximation for gas efficiency
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
-    function expPositive(uint256 x) internal pure returns (uint256 y) {
-        unchecked {
-            // WARNING: this function doesn't check input parameter x, and should 
-            // not be called directly if x is not in the range [0, 135]. This
-            // function is used only for internal calculations.
-
-            // How it works: it starts by reducing the range of x from [0, 135] down to
-            // [0, ln(2)] by factoring out powers of two using the formula
-            // exp(x) = exp(x') * 2 ** k, where k is an integer. k is calculated
-            // simply by dividing x by ln(2) and rounding down to the nearest integer.
-            // The value of x' is calculated by subtracting k * ln(2) from x.
-            // Credit for this method: https://xn--2-umb.com/22/exp-ln/
-            // The range is then reduced to [0, 0.0027] by dividing x by 256. 
-            uint256 k = x / 693147180559945309;             // find integer k
-            x -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
-            x >>= 8;                                        // reduce x to [0, 0.0027]
-
-
-            // The function then uses a rational approximation formula to calculate
-            // exp(x) in the range [0, 0.0027]. The formula is given by:
-            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 q = (x - 3e18) * (x - 3e18) + 3e36;
-            x *= 1e9;
-            uint256 p = (3e27 + x) * (3e27 + x) + 3e54;
-
-            /// @solidity memory-safe-assembly
-            assembly {
-                // p := mul(p, 1000000000000000000)
-                y := div(p, q)                              // assembly for gas savings
-            }
-
-
-            // The result is then raised to the power of 256 to account for the
-            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
-            // raise to the power of 4 in one expression. Finally, the result is 
-            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
-            y = y * y * y * y / 1e54;                       // y ** 4 
-            y = y * y * y * y / 1e54;                       // y ** 16
-            y = y * y * y * y / 1e54;                       // y ** 64
-            y = y * y * y * y / 1e54;                       // y ** 256
-            y <<= k;                                        // multiply y by 2 ** k
-        }
-    }
-
     /// @notice Computes exp(x) for signed input x
     /// @dev Automatically handles negative inputs via reciprocal logic
     /// @param x Signed input in 18-decimal fixed-point format
@@ -258,64 +210,6 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes ln(x) for x in [1/16, 16] using rational approximation
-    /// @dev Reduces range using precomputed logarithm multipliers
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
-    function ln16(uint256 x) internal pure returns (int256 y) {
-        unchecked {
-            if (x >= 1e18) {
-                uint256 multiplier;
-
-                // reduce range of x to [1.0905, 16)
-                if (x >= 1090507732665257659) {
-                    uint256 divider;
-                    (divider, multiplier) = getLnPrecompute(x);
-                    x *= 1e18;
-                    /// @solidity memory-safe-assembly
-                    assembly {
-                        x := div(x, divider)
-                    }
-                }
-
-                uint256 t = (x - 1e18) * 1e18;
-                /// @solidity memory-safe-assembly
-                assembly {
-                    t := div(t, add(x, 1000000000000000000))
-                }
-                uint256 t2 = t * t / 1e18;
-                uint256 r = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
-                y = int256(r / 5e17 + multiplier * 86643397569993164);
-            } else {
-                /// @solidity memory-safe-assembly
-                assembly {
-                    x := div(1000000000000000000000000000000000000, x)
-                }
-                uint256 multiplier;
-
-                // reduce range of x to [1.0905, 16)
-                if (x >= 1090507732665257659) {
-                    uint256 divider;
-                    (divider, multiplier) = getLnPrecompute(x);
-                    x *= 1e18;
-                    /// @solidity memory-safe-assembly
-                    assembly {
-                        x := div(x, divider)
-                    }
-                }
-
-                uint256 t = (x - 1e18) * 1e18;
-                /// @solidity memory-safe-assembly
-                assembly {
-                    t := div(t, add(x, 1000000000000000000))
-                }
-                uint256 t2 = t * t / 1e18;
-                uint256 r = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
-                y = -int256(r / 5e17 + multiplier * 86643397569993164);
-            }   
-        }
-    }
-
     /// @notice Computes log base 2 of x
     /// @param x Input in 18-decimal fixed-point format
     /// @return y Result in 18-decimal fixed-point format
@@ -407,29 +301,6 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes sqrt(x) with fixed-point precision for time values
-    /// @dev Optimized for values up to 8 years
-    /// @param x Time value in 18-decimal fixed-point format
-    /// @return z Resulting sqrt in 18-decimal fixed-point format
-    function sqrtTime(uint256 x) internal pure returns (uint256 z) {
-        assembly {
-            x := mul(x, 1000000000000000000) // convert to 1e36 base
-            z := 1424579477600000 // starting point
-
-            z := shl(mul(7, gt(x, 519469812544000000000000000000000)), z) // up to 8 years
-
-            // 8x Newton method
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-        }
-    }
-
     /// @notice Computes standard normal cumulative distribution function Φ(x)
     /// @dev Uses erf(x) internally, capped at ±16.447 to return 0 or 1
     /// @param x Input value in 18-decimal fixed-point format
@@ -517,6 +388,133 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes exp(x) for a positive fixed-point input x in range [0, ~135]
+    /// @dev Uses range reduction and rational approximation for gas efficiency
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
+    function expPositive(uint256 x) internal pure returns (uint256 y) {
+        unchecked {
+            // WARNING: this function doesn't check input parameter x, and should 
+            // not be called directly if x is not in the range [0, 135]. This
+            // function is used only for internal calculations.
+
+            // How it works: it starts by reducing the range of x from [0, 135] down to
+            // [0, ln(2)] by factoring out powers of two using the formula
+            // exp(x) = exp(x') * 2 ** k, where k is an integer. k is calculated
+            // simply by dividing x by ln(2) and rounding down to the nearest integer.
+            // The value of x' is calculated by subtracting k * ln(2) from x.
+            // Credit for this method: https://xn--2-umb.com/22/exp-ln/
+            // The range is then reduced to [0, 0.0027] by dividing x by 256. 
+            uint256 k = x / 693147180559945309;             // find integer k
+            x -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+            x >>= 8;                                        // reduce x to [0, 0.0027]
+
+
+            // The function then uses a rational approximation formula to calculate
+            // exp(x) in the range [0, 0.0027]. The formula is given by:
+            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
+            uint256 q = (x - 3e18) * (x - 3e18) + 3e36;
+            x *= 1e9;
+            uint256 p = (3e27 + x) * (3e27 + x) + 3e54;
+
+            /// @solidity memory-safe-assembly
+            assembly {
+                y := div(p, q)                              // assembly for gas savings
+            }
+
+
+            // The result is then raised to the power of 256 to account for the
+            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
+            // raise to the power of 4 in one expression. Finally, the result is 
+            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+            y = y * y * y * y / 1e54;                       // y ^ 4 
+            y = y * y * y * y / 1e54;                       // y ^ 16
+            y = y * y * y * y / 1e54;                       // y ^ 64
+            y = y * y * y * y / 1e54;                       // y ^ 256
+            y <<= k;                                        // multiply y by 2 ** k
+        }
+    }
+
+    /// @notice Computes ln(x) for x in [1/16, 16] using rational approximation
+    /// @dev Reduces range using precomputed logarithm multipliers
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format
+    function ln16(uint256 x) internal pure returns (int256 y) {
+        unchecked {
+            if (x >= 1e18) {
+                uint256 multiplier;
+
+                // reduce range of x to [1.0905, 16)
+                if (x >= 1090507732665257659) {
+                    uint256 divider;
+                    (divider, multiplier) = getLnPrecompute(x);
+                    x *= 1e18;
+                    /// @solidity memory-safe-assembly
+                    assembly {
+                        x := div(x, divider)
+                    }
+                }
+
+                uint256 t = (x - 1e18) * 1e18;
+                /// @solidity memory-safe-assembly
+                assembly {
+                    t := div(t, add(x, 1000000000000000000))
+                }
+                uint256 t2 = t * t / 1e18;
+                uint256 r = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
+                y = int256(r / 5e17 + multiplier * 86643397569993164);
+            } else {
+                /// @solidity memory-safe-assembly
+                assembly {
+                    x := div(1000000000000000000000000000000000000, x)
+                }
+                uint256 multiplier;
+
+                // reduce range of x to [1.0905, 16)
+                if (x >= 1090507732665257659) {
+                    uint256 divider;
+                    (divider, multiplier) = getLnPrecompute(x);
+                    x *= 1e18;
+                    /// @solidity memory-safe-assembly
+                    assembly {
+                        x := div(x, divider)
+                    }
+                }
+
+                uint256 t = (x - 1e18) * 1e18;
+                /// @solidity memory-safe-assembly
+                assembly {
+                    t := div(t, add(x, 1000000000000000000))
+                }
+                uint256 t2 = t * t / 1e18;
+                uint256 r = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
+                y = -int256(r / 5e17 + multiplier * 86643397569993164);
+            }   
+        }
+    }
+
+    /// @notice Computes sqrt(x) with fixed-point precision for time values
+    /// @dev Optimized for values up to 8 years
+    /// @param x Time value in 18-decimal fixed-point format
+    /// @return z Resulting sqrt in 18-decimal fixed-point format
+    function sqrtTime(uint256 x) internal pure returns (uint256 z) {
+        assembly {
+            x := mul(x, 1000000000000000000) // convert to 1e36 base
+            z := 1424579477600000 // starting point
+
+            z := shl(mul(7, gt(x, 519469812544000000000000000000000)), z) // up to 8 years
+
+            // 8x Newton method
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+            z := shr(1, add(z, div(x, z)))
+        }
+    }
 
     /// @notice Computes erf(x)/2 for positive x using West’s approximation
     /// @dev Used by stdNormCDF and erf

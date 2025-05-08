@@ -66,7 +66,6 @@ library DeFiMathOptions {
         uint64 rate
     ) internal pure returns (uint256 price) {
         unchecked {
-            // todo: maybe have something like scale, and calculate always for $100, and then scale it to the actual spot
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
