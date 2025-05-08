@@ -3,7 +3,7 @@ require("@nomicfoundation/hardhat-toolbox");
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.28",
+    version: "0.8.30",
     settings: {
       viaIR: false, // enable for coverage
       optimizer: {

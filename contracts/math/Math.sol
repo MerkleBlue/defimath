@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.30;
 
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
@@ -13,6 +13,7 @@ import "hardhat/console.sol";
  */
 library DeFiMath {
 
+    // errors
     error ExpUpperBoundError();
     error LnLowerBoundError();
     error SqrtUpperBoundError();
@@ -506,7 +507,6 @@ library DeFiMath {
     }
 
     function getLnPrecompute(uint256 exponent) internal pure returns (uint256, uint256) {
-        // use >=, fastest
         unchecked {
             if (exponent >= 4e18) { // 16
                 if (exponent >= 8e18) { // 24
