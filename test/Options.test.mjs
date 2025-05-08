@@ -1372,7 +1372,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       const vols = [0.4, 0.6, 0.8];
       const rates = [0.05, 0.1, 0.2];
 
-      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
@@ -1411,10 +1411,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
               const error2 = Math.abs(price2 - expected);
               const error3 = Math.abs(price3 - expected);
               const error4 = Math.abs(price4 - expected);
-              avgError1 += error1;
-              avgError2 += error2;
-              avgError3 += error3;
-              avgError4 += error4;
               maxError1 = Math.max(maxError1, error1);
               maxError2 = Math.max(maxError2, error2);
               maxError3 = Math.max(maxError3, error3);
@@ -1424,7 +1420,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
-      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
       console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
@@ -1437,7 +1432,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       const vols = [0.4, 0.6, 0.8];
       const rates = [0.05, 0.1, 0.2];
 
-      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
@@ -1476,10 +1471,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
               const error2 = Math.abs(price2 - expected);
               const error3 = Math.abs(price3 - expected);
               const error4 = Math.abs(price4 - expected);
-              avgError1 += error1;
-              avgError2 += error2;
-              avgError3 += error3;
-              avgError4 += error4;
               maxError1 = Math.max(maxError1, error1);
               maxError2 = Math.max(maxError2, error2);
               maxError3 = Math.max(maxError3, error3);
@@ -1489,7 +1480,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
-      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + " ", (avgError3 / count).toExponential(1) + "    ", (avgError4 / count).toExponential(1));
       console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + " ", (maxError3).toExponential(1) + "    ", (maxError4).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0), "  " + (avgGas3 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0), "  " + (avgGas5 / count).toFixed(0));
     });
@@ -1502,7 +1492,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       const vols = [0.4, 0.6, 0.8];
       const rates = [0.05, 0.1, 0.2];
 
-      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
@@ -1530,9 +1520,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
               const error1 = Math.abs(price1 - expected);
               const error2 = Math.abs(price2 - expected);
               const error4 = Math.abs(price4 - expected);
-              avgError1 += error1;
-              avgError2 += error2;
-              avgError4 += error4;
               maxError1 = Math.max(maxError1, error1);
               maxError2 = Math.max(maxError2, error2);
               maxError4 = Math.max(maxError4, error4);
@@ -1541,7 +1528,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
-      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1) + "            ", (avgError4 / count).toExponential(1));
       console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1) + "            ", (maxError4).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0) + "              " + (avgGas4 / count).toFixed(0));
     });
@@ -1554,7 +1540,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       const vols = [0.4, 0.6, 0.8];
       const rates = [0.05, 0.1, 0.2];
 
-      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
@@ -1570,14 +1556,12 @@ describe("DeFiMathOptions (SOL and JS)", function () {
 
               count++;
               const error1 = Math.abs(price1 - expected);
-              avgError1 += error1;
               maxError1 = Math.max(maxError1, error1);
             }
           }
         }
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
-      console.log("Avg abs error  ", (avgError1 / count).toExponential(1));
       console.log("Max abs error  ", (maxError1).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0));
     });
@@ -1590,7 +1574,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       const vols = [0.4, 0.6, 0.8];
       const rates = [0.05, 0.1, 0.2];
 
-      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
 
@@ -1606,14 +1590,12 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   
               count++;
               const error1 = Math.abs(price1 - expected);
-              avgError1 += error1;
               maxError1 = Math.max(maxError1, error1);
             }
           }
         }
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
-      console.log("Avg abs error  ", (avgError1 / count).toExponential(1));
       console.log("Max abs error  ", (maxError1).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0));
     });
@@ -1626,7 +1608,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       const vols = [0.4, 0.6, 0.8];
       const rates = [0.05, 0.1, 0.2];
   
-      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0, avgError1 = 0, avgError2 = 0, avgError3 = 0, avgError4 = 0;
+      let maxError1 = 0, maxError2 = 0, maxError3 = 0, maxError4 = 0;
       let avgGas1 = 0, avgGas2 = 0, avgGas3 = 0, avgGas4 = 0, avgGas5 = 0;
       let count = 0;
   
@@ -1648,8 +1630,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
               count++;
               const error1 = Math.abs(price1 - expected);
               const error2 = Math.abs(price2 - expected);
-              avgError1 += error1;
-              avgError2 += error2;
               maxError1 = Math.max(maxError1, error1);
               maxError2 = Math.max(maxError2, error2);
             }
@@ -1657,7 +1637,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
         }
       }
       console.log("Metric         DeFiMath  Derivexyz  Premia  Party1983   Dopex");
-      console.log("Avg abs error  ", (avgError1 / count).toExponential(1) + "   ", (avgError2 / count).toExponential(1));
       console.log("Max abs error  ", (maxError1).toExponential(1) + "   ", (maxError2).toExponential(1));
       console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
     });
