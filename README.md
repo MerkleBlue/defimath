@@ -11,7 +11,7 @@ To use DeFiMath in your project, you can import the library into your Solidity c
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.30;
 
 import "defimath/derivatives/Options.sol";
 ```
@@ -44,7 +44,7 @@ contract OptionsExchange {
 
 - __Modular & extensible__: designed for flexibility—import only what you need or extend to suit your protocol.
 
-- __Open-source__: MIT-licensed and community-friendly—transparent, auditable, and free to use.
+- __Open-source__: MIT-licensed, community-friendly, transparent, auditable, and free to use.
 
 # Derivatives
 
@@ -67,7 +67,7 @@ where σ is the volatility of the underlying asset. Learn more about [Black Scho
 
 ### Performance
 
-The maximum absolute error for call or put option pricing is approximately 2.7e-11 at a $1,000 spot price—offering near-perfect precision.
+The maximum absolute error for call or put option pricing is approximately 1.1e-10 at a $1,000 spot price — offering near-perfect precision.
 
 Option pricing computations cost roughly 3,200 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 

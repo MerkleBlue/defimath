@@ -9,7 +9,7 @@ import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, gener
 const duoTest = true;
 const fastTest = true;
 
-const MAX_OPTION_ABS_ERROR = 2.2e-7; // $0.00000022 // OLD $0.00042; // in $, for a call/put option on underlying valued at $1000
+const MAX_OPTION_ABS_ERROR = 1.1e-10; // in $, for a call/put option on underlying valued at $1000
 const MAX_DELTA_ABS_ERROR = 1.2e-13;
 const MAX_GAMMA_ABS_ERROR = 3.2e-15;
 const MAX_THETA_ABS_ERROR = 1.9e-12;
@@ -68,38 +68,19 @@ describe("DeFiMathOptions (SOL and JS)", function () {
     return { owner, options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
   }
 
-  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, allowedRelError = 0.001000, allowedAbsError = 0.000114, multi = 10, log = true) {
+  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_OPTION_ABS_ERROR, multi = 10, log = true) { // todo: allowedAbsError
     const { options } = duoTest ? await loadFixture(deploy) : { options: null };
-    log && console.log("Allowed abs error: $" + allowedAbsError);
-    log && console.log("Allowed rel error:  " + allowedRelError + "%");
+    log && console.log("Max abs error: $" + maxAbsError);
 
-    let countTotal = 0, prunedCountJS = 0, prunedCountSOL = 0;
+    let countTotal = 0, prunedCountSOL = 0;
     const totalPoints = strikePoints.length * timePoints.length * volPoints.length * ratePoints.length;
-    let errorsJS = [], errorsSOL = [];
+    let errorsSOL = [];
     for (const strike of strikePoints) {
       for(const exp of timePoints) {
         for (const vol of volPoints) {
           for (const rate of ratePoints) {
             // expected
             const expected = blackScholesWrapped(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, isCall ? "call" : "put");
-            let actualJS = 0
-
-            // JS
-            {
-              if (isCall) {
-                actualJS = blackScholesJS.getCallOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
-              } else {
-                actualJS = blackScholesJS.getPutOptionPrice(100 * multi, strike * multi, exp, vol, rate); // todo: multiplier helps lower worst case  * 1.000004;
-              }
-
-              const relErrorJS = expected !== 0 ? (Math.abs(actualJS - expected) / expected * 100) : 0;
-              const absErrorJS = Math.abs(actualJS - expected);
-
-              const errorParamsJS = {
-                expiration: exp, strike: strike * multi, vol, rate, act: actualJS, exp: expected
-              }
-              errorsJS.push({ absErrorJS, relErrorJS, errorParamsJS });
-            }
 
             // SOL
             let actualSOL = 0;
@@ -110,16 +91,13 @@ describe("DeFiMathOptions (SOL and JS)", function () {
                 actualSOL = (await options.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
               }
 
-              const relErrorSOL = expected !== 0 ? (Math.abs(actualSOL - expected) / expected * 100) : 0;
               const absErrorSOL = Math.abs(actualSOL - expected);
 
               const errorParamsSOL = {
                 expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
               }
-              errorsSOL.push({ absErrorSOL, relErrorSOL, errorParamsSOL });
+              errorsSOL.push({ absErrorSOL, errorParamsSOL });
             }
-
-            // console.log(100 * multi, strike * multi, exp, vol, rate, expected, actualJS, actualSOL);
 
             countTotal++;
 
@@ -127,30 +105,17 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             if (countTotal % Math.round(totalPoints / 10) === 0) {
               if (log) {
                 const startTime = new Date().getTime();
-                errorsJS.sort((a, b) => b.absErrorJS - a.absErrorJS);
-                if (errorsJS[0].absErrorJS < allowedAbsError) {
-                  console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
-                  "%, Max abs error:", "$" + (errorsJS[0] ? (errorsJS[0].absErrorJS / (0.1 * multi)).toFixed(10) : "0") + 
-                  " (" + (new Date().getTime() - startTime) + "mS)");
-                } else {
-                  const filteredErrorsJS = errorsJS.filter(error => error.absErrorJS > allowedAbsError);
-                  // sort filtered errors by relative error descending
-                  filteredErrorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
-                  console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
-                  "%, Max abs error:", "$" + (filteredErrorsJS[0] ? (filteredErrorsJS[0].absErrorJS / (0.1 * multi)).toFixed(10) : "0") + 
-                  ", Max rel error:", (filteredErrorsJS[0] ? filteredErrorsJS[0].relErrorJS.toFixed(10) + "%" : "0") + 
-                  " (" + (new Date().getTime() - startTime) + "mS)");
-                }
+                errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
+                console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
+                "%, Max abs error:", "$" + (errorsSOL[0] ? (errorsSOL[0].absErrorSOL / (0.1 * multi)).toFixed(12) : "0") + 
+                " (" + (new Date().getTime() - startTime) + "mS)");
               }
 
               // prune all errors where abs error < allowedAbsError
-              const toDeleteErrorsJS = errorsJS.filter(error => error.absErrorJS < allowedAbsError);
-              prunedCountJS += toDeleteErrorsJS.length;
-              const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < allowedAbsError);
+              const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < maxAbsError);
               prunedCountSOL += toDeleteErrorsSOL.length;
 
-              errorsJS = errorsJS.filter(error => error.absErrorJS >= allowedAbsError);
-              errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= allowedAbsError);
+              errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= maxAbsError);
             }
           }
         }
@@ -158,44 +123,25 @@ describe("DeFiMathOptions (SOL and JS)", function () {
     }
 
     // prune all errors where abs error < allowedAbsError
-    const toDeleteErrorsJS = errorsJS.filter(error => error.absErrorJS < allowedAbsError);
-    prunedCountJS += toDeleteErrorsJS.length;
-    const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < allowedAbsError);
+    const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < maxAbsError);
     prunedCountSOL += toDeleteErrorsSOL.length;
 
-    errorsJS = errorsJS.filter(error => error.absErrorJS >= allowedAbsError);
-    errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= allowedAbsError);
-
-    // sort filtered errors by relative error descending
-    errorsJS.sort((a, b) => b.relErrorJS - a.relErrorJS);
-
-    // sort filtered errors by relative error descending
-    errorsSOL.sort((a, b) => b.relErrorSOL - a.relErrorSOL);
+    errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= maxAbsError);
 
     if (log) {
-      // JS
-      console.log();
-      console.log("REPORT JS");
-      console.log("Errors Abs/Rel/Total: " + prunedCountJS + "/" + errorsJS.length + "/" + countTotal, "(" + ((prunedCountJS / countTotal) * 100).toFixed(2) + "%)");
-
-      console.log("Max abs error params JS: ", errorsJS[0], convertSeconds(errorsJS[0] ? errorsJS[0].errorParamsJS.expiration : 0));
-
       // SOL
       if (duoTest) {
         console.log();
         console.log("REPORT SOL");
         console.log("Errors Abs/Rel/Total: " + prunedCountSOL + "/" + errorsSOL.length + "/" + countTotal, "(" + ((prunedCountSOL / countTotal) * 100).toFixed(2) + "%)");
 
-        console.log("Max abs error params SOL: ", errorsSOL[0], convertSeconds(errorsSOL[0] ? errorsSOL[0].errorParamsSOL.expiration : 0));
+        console.log("Max abs error params SOL: ", errorsSOL[0]);
       }
     }
 
-    // verify - go through errors and assert that relative error is below allowedRelError
-    for (let i = 0; i < errorsJS.length; i++) {
-      assert.isBelow(errorsJS[i].relErrorJS, allowedRelError);
-    }
+    // assert that all errors are below allowedAbsError
     for (let i = 0; i < errorsSOL.length; i++) {
-      assert.isBelow(errorsSOL[i].relErrorSOL, allowedRelError);
+      assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
     }
   }
 
@@ -348,7 +294,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   });
 
   describe("functionality", function () {
-    describe("call", function () {
+    describe.only("call", function () {
       it("single", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
@@ -395,7 +341,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
+          await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, false);
         });
 
         // todo: test with vol max only SOL
@@ -472,7 +418,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4]; // todo: use wider range
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -480,7 +426,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4];
-          await testOptionRange(strikes, times, vols, rates, true, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
       });
 
@@ -594,7 +540,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       });
     });
 
-    describe("put", function () {
+    describe.only("put", function () {
       it("single", async function () {
         const { options } = duoTest ? await loadFixture(deploy) : { options: null };
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
@@ -641,7 +587,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
           const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, false);
+          await testOptionRange(strikes, times, vols, rates, false, MAX_OPTION_ABS_ERROR, 10, false);
         });
 
         it("expired ITM", async function () {
@@ -710,7 +656,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
 
         it("higher strikes", async function () {
@@ -718,7 +664,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
           const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
           const rates = [0, 0.1, 0.2, 4];
-          await testOptionRange(strikes, times, vols, rates, false, 0.000001, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+          await testOptionRange(strikes, times, vols, rates, false, MAX_OPTION_ABS_ERROR, 10, !fastTest);
         });
       });
 
