@@ -5,6 +5,7 @@ import "../math/Math.sol";
 
 library DeFiMathOptions {
 
+    // constants
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
     uint256 internal constant SQRT_2PI = 2506628274631000502;
 

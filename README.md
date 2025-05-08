@@ -19,14 +19,16 @@ To use the library, you can call the functions provided by the library directly 
 
 ```solidity
 contract OptionsExchange {
-    function getCallOptionPrice(
+    function getQuote(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
-        uint64 volatility,
+        uint32 timeToExpiry,
+        uint64 vol,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return DeFiMathOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        uint256 callPrice = DeFiMathOptions.getCallOptionPrice(spot, strike, timeToExpiry, vol, rate);
+
+        // rest of your contract logic
     }
 }
 ```
