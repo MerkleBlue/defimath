@@ -1,19 +1,14 @@
 
-import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
-import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import { assertBothBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
 
-describe("DeFiMathFutures (SOL and JS)", function () {
-  let blackScholesJS;
+describe("DeFiMathFutures", function () {
 
   async function deploy() {
-    const [owner] = await ethers.getSigners();
-
     const FuturesWrapper = await ethers.getContractFactory("FuturesWrapper");
     const futures = await FuturesWrapper.deploy();
 
-    return { owner, futures };
+    return { futures };
   }
 
   function getFuturePrice(spot, timeToExpirySec, rate) {
@@ -22,11 +17,6 @@ describe("DeFiMathFutures (SOL and JS)", function () {
     const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
     return futurePrice;
   }
-
-  // before all tests, called once
-  before(async () => {
-    blackScholesJS = new BlackScholesNUMJS();
-  });
 
   describe("performance", function () {
     describe("future", function () {

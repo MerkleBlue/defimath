@@ -1,7 +1,6 @@
 
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
-import { BlackScholesNUMJS } from "../poc/blackscholes/BlackScholesNUMJS.mjs";
 import bs from "black-scholes";
 import greeks from "greeks";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
@@ -30,25 +29,18 @@ export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
   return Math.max(0, bs.blackScholes(spot, strike, time, vol, rate, callOrPut));
 }
 
-describe("DeFiMathOptions (SOL and JS)", function () {
-  let blackScholesJS;
+describe("DeFiMathOptions", function () {
   let testTimePoints;
   let testStrikePoints;
 
   async function deploy() {
-    const [owner] = await ethers.getSigners();
-
-    // deploy contract that uses BlackScholesNUM library, use it for all tests
     const OptionsWrapper = await ethers.getContractFactory("OptionsWrapper");
     const options = await OptionsWrapper.deploy();
 
-    return { owner, options };
+    return { options };
   }
 
   async function deployCompare() {
-    const [owner] = await ethers.getSigners();
-
-    // deploy contract that uses BlackScholesNUM library, use it for all tests
     const OptionsWrapper = await ethers.getContractFactory("OptionsWrapper");
     const options = await OptionsWrapper.deploy();
 
@@ -64,7 +56,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
     const AdapterDopex = await ethers.getContractFactory("AdapterDopex");
     const adapterDopex = await AdapterDopex.deploy();
 
-    return { owner, options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
+    return { options, adapterDerivexyz, adapterPremia, adapterParty, adapterDopex };
   }
 
   async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_OPTION_ABS_ERROR, multi = 10, log = true) {
@@ -145,8 +137,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
   before(async () => {
     testTimePoints = generateTestTimePoints();
     testStrikePoints = generateTestStrikePoints(5, 500);
-
-    blackScholesJS = new BlackScholesNUMJS();
   });
 
   describe("performance", function () {
@@ -294,8 +284,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
       it("single", async function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
-        const actualJS = blackScholesJS.getCallOptionPrice(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
-        assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
         const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
@@ -314,8 +302,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
-                const actualJS = blackScholesJS.getCallOptionPrice(1000, strike, time * SEC_IN_DAY, vol, rate);
-                assertAbsoluteBelow(actualJS, expected, MAX_OPTION_ABS_ERROR);
 
                 const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
@@ -335,8 +321,6 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
           await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, false);
         });
-
-        // todo: test with vol max only SOL
 
         it("expired ITM", async function () {
           const { options } = await loadFixture(deploy);
@@ -455,7 +439,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const { options } = await loadFixture(deploy);
 
           await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getCallOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+          await options.getCallOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
           await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
@@ -999,7 +983,7 @@ describe("DeFiMathOptions (SOL and JS)", function () {
           const { options } = await loadFixture(deploy);
 
           await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getVega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05)); // todo: check value when 2 years in another test
+          await options.getVega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
           await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 

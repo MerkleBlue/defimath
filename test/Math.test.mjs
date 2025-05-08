@@ -14,21 +14,16 @@ const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 6.4e-15;
 
-describe("DeFiMath (SOL and JS)", function () {
-  let blackScholesJS;
+describe("DeFiMath", function () {
 
   async function deploy() {
-    const [owner] = await ethers.getSigners();
-
     const MathWrapper = await ethers.getContractFactory("MathWrapper");
     const deFiMath = await MathWrapper.deploy();
 
-    return { owner, deFiMath };
+    return { deFiMath };
   }
 
   async function deployCompare() {
-    const [owner] = await ethers.getSigners();
-
     const MathWrapper = await ethers.getContractFactory("MathWrapper");
     const deFiMath = await MathWrapper.deploy();
 
@@ -44,12 +39,8 @@ describe("DeFiMath (SOL and JS)", function () {
     const AdapterSolStat = await ethers.getContractFactory("AdapterSolStat");
     const solStat = await AdapterSolStat.deploy();
 
-    return { owner, deFiMath, prbMath, abdkMath, solady, solStat };
+    return { deFiMath, prbMath, abdkMath, solady, solStat };
   }
-
-  before(async () => {
-    blackScholesJS = new BlackScholesNUMJS();
-  });
 
   describe("performance", function () {
     describe("exp", function () {
