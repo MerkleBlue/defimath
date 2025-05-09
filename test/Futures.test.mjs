@@ -97,7 +97,7 @@ describe("DeFiMathFutures", function () {
           const { futures } = await loadFixture(deploy);
 
           await assertRevertError(futures, futures.getFuturePrice(tokens(1000), 63072001, tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await futures.getFuturePrice(tokens(1000), 63072000, tokens(0.05)); // todo: check value when 2 years in another test
+          await futures.getFuturePrice(tokens(1000), 63072000, tokens(0.05));
           await assertRevertError(futures, futures.getFuturePrice(tokens(1000), 4294967295, tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
