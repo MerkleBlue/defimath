@@ -1,6 +1,8 @@
 
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
-import { assertBothBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
+import { assertAbsoluteBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
+
+const MAX_ABS_ERROR_FUTURE = 9.8e-10;
 
 describe("DeFiMathFutures", function () {
 
@@ -48,10 +50,10 @@ describe("DeFiMathFutures", function () {
 
         for (let timeSec = 0; timeSec < SEC_IN_YEAR; timeSec += SEC_IN_YEAR / 50) { 
           for (let rate = 0; rate < 4; rate += 0.1) { 
-            const expected = getFuturePrice(100, SEC_IN_YEAR, rate);
+            const expected = getFuturePrice(1000, SEC_IN_YEAR, rate);
 
-            const actualSOL = (await futures.getFuturePrice(tokens(100), SEC_IN_YEAR, tokens(rate))).toString() / 1e18;
-            assertBothBelow(actualSOL, expected, 0.00000006, 0.00000300); // todo: MAX_ERROR
+            const actualSOL = (await futures.getFuturePrice(tokens(1000), SEC_IN_YEAR, tokens(rate))).toString() / 1e18;
+            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_FUTURE);
           }
         }
       });
@@ -59,18 +61,18 @@ describe("DeFiMathFutures", function () {
       describe("limits", function () {
         it("single when expired", async function () {
           const { futures } = await loadFixture(deploy);
-          const expected = getFuturePrice(100, 0, 0.05);
+          const expected = getFuturePrice(1000, 0, 0.05);
 
-          const actualSOL = (await futures.getFuturePrice(tokens(100), 0, tokens(0.05))).toString() / 1e18;
-          assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
+          const actualSOL = (await futures.getFuturePrice(tokens(1000), 0, tokens(0.05))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
         it("single when rate 0%", async function () {
           const { futures } = await loadFixture(deploy);
-          const expected = getFuturePrice(100, SEC_IN_YEAR, 0);
+          const expected = getFuturePrice(1000, SEC_IN_YEAR, 0);
 
-          const actualSOL = (await futures.getFuturePrice(tokens(100), SEC_IN_YEAR, 0)).toString() / 1e18;
-          assertBothBelow(actualSOL, expected, MIN_ERROR, MIN_ERROR);
+          const actualSOL = (await futures.getFuturePrice(tokens(1000), SEC_IN_YEAR, 0)).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
       });
 
