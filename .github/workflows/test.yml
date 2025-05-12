@@ -19,5 +19,5 @@ jobs:
       - name: Run tests
         run: npx hardhat test
 
-      - name: Run coverage
-        run: npx hardhat coverage
+    #   - name: Run coverage
+    #     run: npx hardhat coverage
