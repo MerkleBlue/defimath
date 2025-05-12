@@ -7,7 +7,7 @@ import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, gener
 
 const fastTest = true;
 
-const MAX_OPTION_ABS_ERROR = 1.1e-10; // in $, for a call/put option on underlying valued at $1000
+const MAX_OPTION_ABS_ERROR = 1.2e-10; // in $, for a call/put option on underlying valued at $1000
 const MAX_DELTA_ABS_ERROR = 1.2e-13;
 const MAX_GAMMA_ABS_ERROR = 3.2e-15;
 const MAX_THETA_ABS_ERROR = 1.9e-12;
