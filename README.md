@@ -69,7 +69,7 @@ where σ is the volatility of the underlying asset. Learn more about [Black Scho
 
 ### Performance
 
-The maximum absolute error for call or put option pricing is approximately 1.1e-10 at a $1,000 spot price — offering near-perfect precision.
+The maximum absolute error for call or put option pricing is approximately 1.2e-10 at a $1,000 spot price — offering near-perfect precision.
 
 Option pricing computations cost roughly 3,200 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
