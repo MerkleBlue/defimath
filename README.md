@@ -21,12 +21,14 @@ DeFiMath is a high-performance, open-source Solidity library designed for Ethere
 
 ## Features
 
-- **DeFi primitives**: core building blocks tailored for advanced financial protocols like options, futures, and other derivatives.
-- **High-precision math**: accurate fixed-point and integer operations essential for financial calculations.
-- **Gas optimized**: carefully engineered for minimal gas usage without compromising precision.
-- **Test coverage**: fully tested with comprehensive unit tests to ensure correctness and reliability.
-- **Modular & extensible**: designed for flexibility—import only what you need or extend to suit your protocol.
-- **Open-source**: MIT-licensed, community-friendly, transparent, auditable, and free to use.
+| | |
+|---|---|
+| **DeFi Primitives** | Core building blocks for advanced financial protocols — options, futures, and other on-chain derivatives. |
+| **High-Precision Math** | Accurate fixed-point arithmetic essential for financial calculations, with sub-1e-10 absolute error. |
+| **Gas Optimized** | Option pricing at ~3,200 gas — orders of magnitude cheaper than comparable implementations. |
+| **Fully Tested** | Comprehensive unit tests with verified accuracy against trusted JavaScript reference implementations. |
+| **Modular & Extensible** | Import only what you need; extend seamlessly to fit your protocol's requirements. |
+| **Open Source** | MIT-licensed — transparent, auditable, and free to use or build upon. |
 
 ## Installation
 
