@@ -33,7 +33,7 @@ DeFiMath is a high-performance, open-source Solidity library designed for Ethere
 Install via npm:
 
 ```bash
-npm install defimath
+npm install defimath-lib
 ```
 
 Requires **Solidity `^0.8.30`**.
