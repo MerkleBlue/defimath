@@ -1,5 +1,5 @@
 {
-  "name": "defimath",
+  "name": "defimath-lib",
   "version": "1.0.0",
   "description": "High-performance, gas-efficient Solidity library for DeFi math and derivatives",
   "keywords": ["solidity", "defi", "math", "options", "black-scholes", "futures", "ethereum", "evm"],
