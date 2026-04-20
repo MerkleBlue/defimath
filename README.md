@@ -5,7 +5,7 @@
 
 ![Tests](https://github.com/MerkleBlue/defimath/actions/workflows/test.yml/badge.svg)
 
-DeFiMath is a high-performance, open-source Solidity library designed for Ethereum smart contracts. It provides optimized, gas-efficient implementations of core DeFi primitives and mathematical utilities—built with precision and performance in mind.
+DeFiMath is a high-performance, open-source Solidity library designed for Ethereum smart contracts. It provides optimized, gas-efficient implementations of core DeFi primitives and mathematical utilities—built with precision and performance in mind. Learn more at [DeFiMath website](https://defimath.com).
 
 ## Table of Contents
 
