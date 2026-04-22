@@ -24,7 +24,11 @@ contract MathWrapper {
     function log10(uint256 x) external pure returns (int256) {
         return DeFiMath.log10(x);
     }
-    
+
+    function pow(uint256 x, int256 a) external pure returns (uint256) {
+        return DeFiMath.pow(x, a);
+    }
+
     function sqrtTime(uint256 x) external pure returns (uint256) {
         return DeFiMath.sqrtTime(x);
     }
@@ -119,7 +123,18 @@ contract MathWrapper {
         startGas = gasleft();
         y = DeFiMath.log10(x);
         endGas = gasleft();
-        
+
+        return (y, startGas - endGas);
+    }
+
+    function powMG(uint256 x, int256 a) external view returns (uint256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = DeFiMath.pow(x, a);
+        endGas = gasleft();
+
         return (y, startGas - endGas);
     }
 

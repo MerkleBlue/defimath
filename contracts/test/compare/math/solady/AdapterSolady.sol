@@ -51,6 +51,17 @@ contract AdapterSolady {
     //     return (result.unwrap(), startGas - endGas);
     // }
 
+    function powMG(int256 x, int256 a) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        y = FixedPointMathLib.powWad(x, a);
+        endGas = gasleft();
+
+        return (y, startGas - endGas);
+    }
+
     function sqrtMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;

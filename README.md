@@ -148,7 +148,7 @@ import "defimath/derivatives/Futures.sol";
 
 ## Math
 
-DeFiMath includes a low-level math library (`DeFiMath`) with optimized fixed-point implementations of common mathematical functions. All inputs and outputs use 18-decimal fixed-point format (`1e18 = 1.0`). Available functions: `exp`, `ln`, `log2`, `log10`, `sqrt`, `stdNormCDF`, `erf`.
+DeFiMath includes a low-level math library (`DeFiMath`) with optimized fixed-point implementations of common mathematical functions. All inputs and outputs use 18-decimal fixed-point format (`1e18 = 1.0`). Available functions: `exp`, `ln`, `log2`, `log10`, `pow`, `sqrt`, `stdNormCDF`, `erf`.
 
 ```solidity
 import "defimath/math/Math.sol";
@@ -162,6 +162,7 @@ The following table compares **gas efficiency** of DeFiMath with other math libr
 | ln         |      608 |    6994 |    15843 |    536 |       - |
 | log2       |      681 |    6691 |    15191 |      - |       - |
 | log10      |      681 |    8570 |        - |      - |       - |
+| pow        |     1053 |    9694 |        - |   1223 |       - |
 | sqrt       |      383 |    961* |      731 |   415* |       - |
 | stdNormCDF |      799 |       - |        - |      - |    4884 |
 | erf        |      773 |       - |        - |      - |    4236 |
@@ -176,6 +177,7 @@ The table below compares the **maximum relative error** against a trusted JavaSc
 | ln         |  1.5e-12 |  1.3e-12 |  1.6e-12 |  1.6e-12 |       - |
 | log2       |  1.5e-12 |  1.3e-12 |  1.6e-12 |        - |       - |
 | log10      |  1.4e-12 |  1.3e-12 |        - |        - |       - |
+| pow        |  5.2e-12 |  6.1e-14 |        - |  6.1e-14 |       - |
 | sqrt       |  2.8e-14 |  2.8e-14 |  2.8e-14 |  2.8e-14 |       - |
 | stdNormCDF |  4.6e-13 |        - |        - |        - |  3.2e-6 |
 | erf        |  7.4e-13 |        - |        - |        - |  5.7e-6 |

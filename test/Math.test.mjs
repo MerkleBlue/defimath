@@ -13,6 +13,7 @@ const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 6.4e-15;
+const MAX_REL_ERROR_POW = 1e-11;
 
 describe("DeFiMath", function () {
 
@@ -207,6 +208,34 @@ describe("DeFiMath", function () {
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("pow", function () {
+      it("pow when x in [0.5, 10], a in [-3, 3]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        let totalGas = 0, count = 0;
+        for (let x = 0.5; x < 10; x += 0.5) {
+          for (let a = -3; a <= 3; a += 0.5) {
+            totalGas += parseInt((await deFiMath.powMG(tokens(x), tokens(a))).gasUsed);
+            count++;
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("pow when x in [1e-3, 1e3], a in [-1, 1]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        let totalGas = 0, count = 0;
+        for (let x = 1e-3; x < 1e3; x *= 1.5) {
+          for (let a = -1; a <= 1; a += 0.25) {
+            totalGas += parseInt((await deFiMath.powMG(tokens(x), tokens(a))).gasUsed);
+            count++;
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
 
@@ -858,6 +887,140 @@ describe("DeFiMath", function () {
       });
     });
 
+    describe("pow", function () {
+      it("pow when a = 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // anything^0 = 1, including 0^0 = 1 by convention
+        assert.equal((await deFiMath.pow(tokens(0), 0)).toString() / 1e18, 1);
+        assert.equal((await deFiMath.pow(tokens(1), 0)).toString() / 1e18, 1);
+        assert.equal((await deFiMath.pow(tokens(2), 0)).toString() / 1e18, 1);
+        assert.equal((await deFiMath.pow(tokens(1e6), 0)).toString() / 1e18, 1);
+      });
+
+      it("pow when x = 1", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // 1^a = 1 for any a
+        assert.equal((await deFiMath.pow(tokens(1), tokens(0.5))).toString() / 1e18, 1);
+        assert.equal((await deFiMath.pow(tokens(1), tokens(-10))).toString() / 1e18, 1);
+        assert.equal((await deFiMath.pow(tokens(1), tokens(100))).toString() / 1e18, 1);
+      });
+
+      it("pow when a = 1", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.1; x <= 10; x += 0.317) {
+          const expected = x;
+
+          const actualSOL = (await deFiMath.pow(tokens(x), tokens(1))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+        }
+      });
+
+      it("pow when a = 2 (square)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.1; x <= 10; x += 0.317) {
+          const expected = x * x;
+
+          const actualSOL = (await deFiMath.pow(tokens(x), tokens(2))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+        }
+      });
+
+      it("pow when a = 0.5 (sqrt)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.01; x <= 100; x += 3.333) {
+          const expected = Math.sqrt(x);
+
+          const actualSOL = (await deFiMath.pow(tokens(x), tokens(0.5))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+        }
+      });
+
+      it("pow when a = -1 (reciprocal)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.1; x <= 10; x += 0.317) {
+          const expected = 1 / x;
+
+          const actualSOL = (await deFiMath.pow(tokens(x), tokens(-1))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+        }
+      });
+
+      it("pow when x in [0.5, 10], a in [-2, 2]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.5; x <= 10; x += 0.713) {
+          for (let a = -2; a <= 2; a += 0.413) {
+            const expected = Math.pow(x, a);
+
+            const actualSOL = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          }
+        }
+      });
+
+      it("pow when x in [1e-3, 1e3], a in [-1, 1]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-3; x < 1e3; x *= 2.345) {
+          for (let a = -1; a <= 1; a += 0.237) {
+            const expected = Math.pow(x, a);
+
+            const actualSOL = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          }
+        }
+      });
+
+      it("pow when x in [1, 100], a fractional", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x <= 100; x += 5.137) {
+          for (const a of [0.1, 0.333, 0.5, 0.75, 1.5, 2.5, 3.1415]) {
+            const expected = Math.pow(x, a);
+
+            const actualSOL = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
+            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          }
+        }
+      });
+
+      it("pow underflow when exponent very negative", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // pow(2, -100) = 7.9e-31 → exp(-100 * ln(2)) = exp(-69.3) ≈ 7.9e-31
+        // still above underflow bound, so should match
+        const expected = Math.pow(2, -100);
+        const actualSOL = (await deFiMath.pow(tokens(2), tokens(-100))).toString() / 1e18;
+        assertAbsoluteBelow(actualSOL, expected, 1e-30);
+
+        // pow(2, -1000) → exp(-693) underflows to 0
+        const actualUnderflow = (await deFiMath.pow(tokens(2), tokens(-1000))).toString() / 1e18;
+        assert.equal(actualUnderflow, 0);
+      });
+
+      describe("failure", function () {
+        it("rejects when x = 0 and a != 0", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+
+          await assertRevertError(deFiMath, deFiMath.pow(tokens(0), tokens(1)), "LnLowerBoundError");
+          await assertRevertError(deFiMath, deFiMath.pow(tokens(0), tokens(-1)), "LnLowerBoundError");
+        });
+
+        it("rejects when result overflows exp upper bound", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+
+          // pow(10, 100) → exp(100 * ln(10)) = exp(~230), overflows exp upper bound ~135
+          await assertRevertError(deFiMath, deFiMath.pow(tokens(10), tokens(100)), "ExpUpperBoundError");
+        });
+      });
+    });
+
     describe("sqrt", function () {
       it("sqrt when x in [1, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -1300,6 +1463,46 @@ describe("DeFiMath", function () {
       console.log("Metric            DeFiMath   PRBMath  ABDKQuad");
       console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
       console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "     " + (avgGas2 / count).toFixed(0));
+    });
+
+    it("pow", async function () {
+      const { deFiMath, prbMath, solady } = await loadFixture(deployCompare);
+
+      let maxError1 = 0, maxError2 = 0, maxError4 = 0;
+      let avgGas1 = 0, avgGas2 = 0, avgGas4 = 0;
+      let count = 0;
+
+      for (let x = 0.5; x <= 10; x += 0.317) {
+        for (let a = -2; a <= 2; a += 0.413) {
+          const expected = Math.pow(x, a);
+
+          // DeFiMath
+          const result1 = await deFiMath.powMG(tokens(x), tokens(a));
+          const y1 = result1.y.toString() / 1e18;
+          avgGas1 += parseInt(result1.gasUsed);
+
+          // PRBMath
+          const result2 = await prbMath.powMG(tokens(x), tokens(a));
+          const y2 = result2.y.toString() / 1e18;
+          avgGas2 += parseInt(result2.gasUsed);
+
+          // Solady
+          const result4 = await solady.powMG(tokens(x), tokens(a));
+          const y4 = result4.y.toString() / 1e18;
+          avgGas4 += parseInt(result4.gasUsed);
+
+          count++;
+          const error1 = Math.abs((y1 - expected) / expected) * 100;
+          const error2 = Math.abs((y2 - expected) / expected) * 100;
+          const error4 = Math.abs((y4 - expected) / expected) * 100;
+          maxError1 = Math.max(maxError1, error1);
+          maxError2 = Math.max(maxError2, error2);
+          maxError4 = Math.max(maxError4, error4);
+        }
+      }
+      console.log("Metric            DeFiMath   PRBMath    Solady");
+      console.log("Max rel error (%) ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1) + "  ", (maxError4).toExponential(1));
+      console.log("Avg gas               ", (avgGas1 / count).toFixed(0), "    " + (avgGas2 / count).toFixed(0), "     " + (avgGas4 / count).toFixed(0));
     });
 
     it("sqrt", async function () {

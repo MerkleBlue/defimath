@@ -230,6 +230,18 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes x^a using the identity x^a = exp(a * ln(x))
+    /// @dev Composes ln() and exp(), with a fast path for a = 0
+    /// @param x Base in 18-decimal fixed-point format
+    /// @param a Exponent in 18-decimal fixed-point format (signed)
+    /// @return y Result in 18-decimal fixed-point format
+    function pow(uint256 x, int256 a) internal pure returns (uint256 y) {
+        unchecked {
+            if (a == 0) return 1e18;                    // x^0 = 1 (also covers 0^0 = 1 by convention)
+            y = exp(a * ln(x) / 1e18);
+        }
+    }
+
     /// @notice Computes sqrt(x) using Newton's method
     /// @dev Works for both x >= 1e18 and x < 1e18 via inversion trick
     /// @param x Input in 18-decimal fixed-point format

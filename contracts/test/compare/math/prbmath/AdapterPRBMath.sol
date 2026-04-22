@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { SD59x18, sd, exp, ln, log2, log10, sqrt } from "./lib/SD59x18.sol";
+import { SD59x18, sd, exp, ln, log2, log10, sqrt, pow } from "./lib/SD59x18.sol";
 
 contract AdapterPRBMath {
 
@@ -54,6 +54,20 @@ contract AdapterPRBMath {
         result = log10(sdX);
         endGas = gasleft();
         
+        return (result.unwrap(), startGas - endGas);
+    }
+
+    function powMG(int256 x, int256 a) external view returns (int256 y, uint256 gasUsed) {
+        SD59x18 result;
+        uint256 startGas;
+        uint256 endGas;
+        SD59x18 sdX = sd(x);
+        SD59x18 sdA = sd(a);
+
+        startGas = gasleft();
+        result = pow(sdX, sdA);
+        endGas = gasleft();
+
         return (result.unwrap(), startGas - endGas);
     }
 
