@@ -20,8 +20,8 @@
     "solidity-coverage": "^0.8.17"
   },
   "dependencies": {
-    "black-scholes": "^1.1.0",
+    "black-scholes": "1.1.0",
     "greeks": "1.0.0",
-    "math-erf": "^1.0.0"
+    "math-erf": "1.0.0"
   }
 }
