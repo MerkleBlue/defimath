@@ -4,7 +4,7 @@ require("solidity-coverage");
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.30",
+    version: "0.8.34",
     settings: {
       viaIR: false, // enable for coverage
       optimizer: {
