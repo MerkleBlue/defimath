@@ -1004,6 +1004,64 @@ describe("DeFiMath", function () {
         assert.equal(actualUnderflow, 0);
       });
 
+      it("pow near exp upper bound (a * ln(x) ≈ 135.3)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // max safe: a * ln(2) / 1e18 < 135.305999368893231589e18
+        // ln(2) ≈ 0.693147... → max a ≈ 195.245
+        const expected = Math.pow(2, 195);
+        const actualSOL = (await deFiMath.pow(tokens(2), tokens(195))).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+      });
+
+      it("pow near exp underflow bound (a * ln(x) ≈ -41.4)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // just above underflow: a * ln(2) / 1e18 > -41.446531673892822313e18
+        // ln(2) ≈ 0.693147... → a ≈ -59.78 keeps result nonzero
+        const expected = Math.pow(2, -59);
+        const actualSOL = (await deFiMath.pow(tokens(2), tokens(-59))).toString() / 1e18;
+        assertAbsoluteBelow(actualSOL, expected, 1e-17);
+
+        // crossing underflow: a = -60 gives -60 * 0.693 ≈ -41.58 → exp returns 0
+        const actualUnderflow = (await deFiMath.pow(tokens(2), tokens(-60))).toString() / 1e18;
+        assert.equal(actualUnderflow, 0);
+      });
+
+      it("pow when x = uint256 max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // ln(uint256 max) ≈ 135.99, so pow(uint256_max, a) overflows for a > 135.3/135.99 ≈ 0.995
+        // use a = 0.5 → sqrt of uint256 max ≈ 3.4e29
+        const uint256Max = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+        const xVal = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+
+        const expected = Math.sqrt(xVal);
+        const actualSOL = (await deFiMath.pow(uint256Max, tokens(0.5))).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+      });
+
+      it("pow when x = 1 wei (minimum fixed-point)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // ln(1e-18) ≈ -41.446, so pow(1 wei, 1) = exp(-41.446) → underflows to 0
+        const actualSOL = (await deFiMath.pow("1", tokens(1))).toString() / 1e18;
+        assert.equal(actualSOL, 0);
+
+        // pow(1 wei, 0.5) = exp(-20.72) ≈ 1e-9, should work
+        const expected = Math.sqrt(1e-18);
+        const actualHalf = (await deFiMath.pow("1", tokens(0.5))).toString() / 1e18;
+        assertAbsoluteBelow(actualHalf, expected, 1e-14);
+      });
+
+      it("pow when a = 1 wei (minimum positive exponent)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // pow(2, 1e-18) ≈ 1 + ln(2) * 1e-18 ≈ 1 (within fixed-point precision)
+        const actualSOL = (await deFiMath.pow(tokens(2), "1")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, 1, MAX_REL_ERROR_POW);
+      });
+
       describe("failure", function () {
         it("rejects when x = 0 and a != 0", async function () {
           const { deFiMath } = await loadFixture(deploy);
@@ -1017,6 +1075,21 @@ describe("DeFiMath", function () {
 
           // pow(10, 100) → exp(100 * ln(10)) = exp(~230), overflows exp upper bound ~135
           await assertRevertError(deFiMath, deFiMath.pow(tokens(10), tokens(100)), "ExpUpperBoundError");
+        });
+
+        it("rejects pow(2, 196) — just above exp upper bound", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+
+          // 196 * ln(2) ≈ 135.85e18, just over 135.305999...e18 upper bound
+          await assertRevertError(deFiMath, deFiMath.pow(tokens(2), tokens(196)), "ExpUpperBoundError");
+        });
+
+        it("rejects pow(uint256 max, 1)", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+
+          // ln(uint256 max) ≈ 135.99e18, exceeds exp upper bound
+          const uint256Max = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+          await assertRevertError(deFiMath, deFiMath.pow(uint256Max, tokens(1)), "ExpUpperBoundError");
         });
       });
     });
