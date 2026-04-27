@@ -11,7 +11,7 @@ export const E_TO_0_03125 = 1.031743407499103;          // e ^ 0.03125
 export const E = 2.7182818284590452354;                 // e
 export const E_TO_32 = 78962960182680.695160978022635;  // e ^ 32
 
-export class BlackScholesNUMJS {
+export class OptionsJS {
   
 
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
@@ -72,6 +72,30 @@ export class BlackScholesNUMJS {
     }
 
     return 0;
+  };
+
+  // Binary cash-or-nothing call
+  getBinaryCallPrice(spot, strike, timeSec, vol, rate, payout) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired binary call
+    if (timeSec == 0) {
+      if (spot > strike) {
+        return payout;
+      }
+      return 0;
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+    const discountedPayout = payout / this.exp(scaledRate);                    // Q * e^(-r*τ)
+
+    return discountedPayout * this.stdNormCDF(d2);                             // Q * e^(-r*τ) * Φ(d2)
   };
 
   getFuturePrice(spot, timeSec, rate) {
