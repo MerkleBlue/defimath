@@ -14,6 +14,7 @@
 - [Usage](#usage)
 - [Derivatives](#derivatives)
   - [Option Pricing (Black-Scholes)](#option-pricing-using-black-scholes)
+  - [Binary Options (Cash-or-Nothing)](#binary-options-cash-or-nothing)
   - [Futures](#futures)
 - [Math](#math)
 - [Credits](#credits)
@@ -138,6 +139,47 @@ The following limitations apply to all option functions. Inputs outside these ra
 - **Volatility**: up to 1800%.
 - **Risk-free rate**: up to 400%.
 
+### Binary Options (Cash-or-Nothing)
+
+DeFiMath includes a gas-efficient binary (digital) option pricing library. A binary cash-or-nothing call pays a fixed cash amount $Q$ if the underlying expires above the strike, and 0 otherwise; the put pays $Q$ if it expires below the strike.
+
+```solidity
+import "defimath/derivatives/Binary.sol";
+```
+
+The closed-form Black-Scholes prices for cash-or-nothing binary options are:
+
+```math
+C = Q \cdot e^{-rT} \cdot N(d_2)
+```
+```math
+P = Q \cdot e^{-rT} \cdot N(-d_2)
+```
+
+where $Q$ is the cash payout, and $d_2$ is the same as in the European Black-Scholes model. Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
+
+#### Performance
+
+Binary option pricing computations cost roughly 2,360 gas on average — over an order of magnitude cheaper than comparable on-chain implementations.
+
+The following table compares **gas efficiency** of DeFiMath with other implementations over a typical range of parameters.
+
+| Function | DeFiMath | Haptic |
+| :------- | -------: | -----: |
+| call     |     2356 |  32806 |
+| put      |     2361 |  32806 |
+
+The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
+
+| Function | DeFiMath | Haptic  |
+| :------- | -------: | ------: |
+| call     |  5.7e-15 | 1.3e-15 |
+| put      |  5.4e-15 | 1.2e-15 |
+
+#### Limits
+
+The same input limits apply as for European options (strike, time, volatility, rate). Inputs outside these ranges revert with descriptive errors.
+
 ### Futures
 
 DeFiMath includes a gas-efficient futures pricing library using continuous compounding:
@@ -193,6 +235,7 @@ The following libraries were used for comparison:
 - [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity)
 - [Solady](https://github.com/Vectorized/solady)
 - [SolStat](https://github.com/primitivefinance/solstat)
+- [Haptic](https://github.com/HapticFinance/binaries-pricing-model)
 
 ## License
 

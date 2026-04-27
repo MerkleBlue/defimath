@@ -36,6 +36,22 @@ describe.only("DeFiMathBinary", function () {
     return { binary };
   }
 
+  async function deployCompare() {
+    const BinaryWrapper = await ethers.getContractFactory("BinaryWrapper");
+    const binary = await BinaryWrapper.deploy();
+
+    // Haptic's BlackScholes has public functions, so it must be deployed and linked
+    const BlackScholes = await ethers.getContractFactory("contracts/test/compare/derivatives/binary/haptic/BlackScholes.sol:BlackScholes");
+    const blackScholes = await BlackScholes.deploy();
+
+    const AdapterHaptic = await ethers.getContractFactory("AdapterHaptic", {
+      libraries: { "contracts/test/compare/derivatives/binary/haptic/BlackScholes.sol:BlackScholes": await blackScholes.getAddress() },
+    });
+    const adapterHaptic = await AdapterHaptic.deploy();
+
+    return { binary, adapterHaptic };
+  }
+
   async function testBinaryRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_BINARY_ABS_ERROR, multi = 10, payout = 100, log = true) {
     const { binary } = await loadFixture(deploy);
     log && console.log("Max abs error: $" + maxAbsError);
@@ -534,6 +550,94 @@ describe.only("DeFiMathBinary", function () {
           await assertRevertError(binary, binary.getBinaryPutPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18), tokens(100)), "RateUpperBoundError");
         });
       });
+    });
+  });
+
+  describe("compare", function () {
+    it("call", async function () {
+      const { binary, adapterHaptic } = await loadFixture(deployCompare);
+
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+
+      let maxError1 = 0, maxError2 = 0;
+      let avgGas1 = 0, avgGas2 = 0;
+      let count = 0;
+
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              // payout = 1 for fair comparison (Haptic returns unit-payout price)
+              const expected = binaryCallWrapped(1000, strike, time * SEC_IN_DAY, vol, rate, 1);
+
+              // DeFiMath
+              const result1 = await binary.getBinaryCallPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate), tokens(1));
+              const price1 = result1.price.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+
+              // Haptic
+              const result2 = await adapterHaptic.callPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price2 = result2.price.toString() / 1e18;
+              avgGas2 += parseInt(result2.gasUsed);
+
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              const error2 = Math.abs(price2 - expected);
+              maxError1 = Math.max(maxError1, error1);
+              maxError2 = Math.max(maxError2, error2);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Haptic");
+      console.log("Max abs error  ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "    " + (avgGas2 / count).toFixed(0));
+    });
+
+    it("put", async function () {
+      const { binary, adapterHaptic } = await loadFixture(deployCompare);
+
+      const strikes = [800, 900, 1000.01, 1100, 1200];
+      const times = [7, 30, 60, 90, 180];
+      const vols = [0.4, 0.6, 0.8];
+      const rates = [0.05, 0.1, 0.2];
+
+      let maxError1 = 0, maxError2 = 0;
+      let avgGas1 = 0, avgGas2 = 0;
+      let count = 0;
+
+      for (const strike of strikes) {
+        for (const time of times) {
+          for (const vol of vols) {
+            for (const rate of rates) {
+              // payout = 1 for fair comparison (Haptic returns unit-payout price)
+              const expected = binaryPutWrapped(1000, strike, time * SEC_IN_DAY, vol, rate, 1);
+
+              // DeFiMath
+              const result1 = await binary.getBinaryPutPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate), tokens(1));
+              const price1 = result1.price.toString() / 1e18;
+              avgGas1 += parseInt(result1.gasUsed);
+
+              // Haptic
+              const result2 = await adapterHaptic.putPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+              const price2 = result2.price.toString() / 1e18;
+              avgGas2 += parseInt(result2.gasUsed);
+
+              count++;
+              const error1 = Math.abs(price1 - expected);
+              const error2 = Math.abs(price2 - expected);
+              maxError1 = Math.max(maxError1, error1);
+              maxError2 = Math.max(maxError2, error2);
+            }
+          }
+        }
+      }
+      console.log("Metric         DeFiMath  Haptic");
+      console.log("Max abs error  ", (maxError1).toExponential(1) + "  ", (maxError2).toExponential(1));
+      console.log("Avg gas           ", (avgGas1 / count).toFixed(0), "    " + (avgGas2 / count).toFixed(0));
     });
   });
 });
