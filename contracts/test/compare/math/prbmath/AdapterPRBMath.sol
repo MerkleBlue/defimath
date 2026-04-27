@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.34;
 
 import { SD59x18, sd, exp, ln, log2, log10, sqrt, pow } from "./lib/SD59x18.sol";
 
