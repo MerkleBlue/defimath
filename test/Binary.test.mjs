@@ -6,7 +6,7 @@ import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, gener
 
 const fastTest = true;
 
-const MAX_BINARY_ABS_ERROR = 1.2e-11; // for a binary option with $100 payout
+const MAX_BINARY_ABS_ERROR = 2.2e-12; // for a binary option with $100 payout
 
 // JS reference for binary call price
 function binaryCallWrapped(spot, strike, timeSec, vol, rate, payout) {
@@ -26,7 +26,7 @@ function binaryPutWrapped(spot, strike, timeSec, vol, rate, payout) {
   return new OptionsJS().getBinaryPutPrice(spot, strike, timeSec, vol, rate, payout);
 }
 
-describe.only("DeFiMathBinary", function () {
+describe("DeFiMathBinary", function () {
   let testTimePoints;
   let testStrikePoints;
 
