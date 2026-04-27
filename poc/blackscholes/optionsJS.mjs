@@ -98,6 +98,30 @@ export class OptionsJS {
     return discountedPayout * this.stdNormCDF(d2);                             // Q * e^(-r*τ) * Φ(d2)
   };
 
+  // Binary cash-or-nothing put
+  getBinaryPutPrice(spot, strike, timeSec, vol, rate, payout) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired binary put
+    if (timeSec == 0) {
+      if (strike > spot) {
+        return payout;
+      }
+      return 0;
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+    const discountedPayout = payout / this.exp(scaledRate);                    // Q * e^(-r*τ)
+
+    return discountedPayout * this.stdNormCDF(-d2);                            // Q * e^(-r*τ) * Φ(-d2)
+  };
+
   getFuturePrice(spot, timeSec, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
