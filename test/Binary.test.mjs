@@ -26,7 +26,7 @@ function binaryPutWrapped(spot, strike, timeSec, vol, rate, payout) {
   return new OptionsJS().getBinaryPutPrice(spot, strike, timeSec, vol, rate, payout);
 }
 
-describe("DeFiMathBinary", function () {
+describe.only("DeFiMathBinary", function () {
   let testTimePoints;
   let testStrikePoints;
 
