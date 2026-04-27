@@ -41,8 +41,7 @@ library DeFiMath {
                 absX *= 1e9;
                 uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
 
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     y := div(p, q)                              // assembly for gas savings
                 }
 
@@ -75,8 +74,7 @@ library DeFiMath {
                 absX *= 1e9;
                 uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
 
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     y := div(p, q)                              // assembly for gas savings
                 }
 
@@ -91,8 +89,7 @@ library DeFiMath {
                 y = y * y * y * y / 1e54;                       // y ** 256
                 y <<= k;                                        // multiply y by 2 ** k
 
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     y := div(1000000000000000000000000000000000000, y)
                 }
             }
@@ -252,8 +249,7 @@ library DeFiMath {
                 // check input
                 if (x >= 1.208925819614629e42) revert SqrtUpperBoundError(); // up to 2^80
 
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     // x to 1e36 base, and y to best guess
                     x := mul(x, 1000000000000000000) // convert to 1e36 base
                     y := 32000000000000000000 // starting point is 32
@@ -281,8 +277,7 @@ library DeFiMath {
             } else {
                 if (x == 0) return 0;
 
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     // x to 1e36 base, and y to best guess
                     x := div(1000000000000000000000000000000000000000000000000000000, x)
                     y := 32000000000000000000 // starting point is 32
@@ -427,8 +422,7 @@ library DeFiMath {
             x *= 1e9;
             uint256 p = (3e27 + x) * (3e27 + x) + 3e54;
 
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 y := div(p, q)                              // assembly for gas savings
             }
 
@@ -459,23 +453,20 @@ library DeFiMath {
                     uint256 divider;
                     (divider, multiplier) = getLnPrecompute(x);
                     x *= 1e18;
-                    /// @solidity memory-safe-assembly
-                    assembly {
+                    assembly ("memory-safe") {
                         x := div(x, divider)
                     }
                 }
 
                 uint256 t = (x - 1e18) * 1e18;
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     t := div(t, add(x, 1000000000000000000))
                 }
                 uint256 t2 = t * t / 1e18;
                 uint256 r = t * (1e18 + t2 / 3 + t2 * t2 / 5e18 + t2 * t2 * t2 / 7e36);
                 y = int256(r / 5e17 + multiplier * 86643397569993164);
             } else {
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     x := div(1000000000000000000000000000000000000, x)
                 }
                 uint256 multiplier;
@@ -485,15 +476,13 @@ library DeFiMath {
                     uint256 divider;
                     (divider, multiplier) = getLnPrecompute(x);
                     x *= 1e18;
-                    /// @solidity memory-safe-assembly
-                    assembly {
+                    assembly ("memory-safe") {
                         x := div(x, divider)
                     }
                 }
 
                 uint256 t = (x - 1e18) * 1e18;
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     t := div(t, add(x, 1000000000000000000))
                 }
                 uint256 t2 = t * t / 1e18;
