@@ -74,15 +74,15 @@ export class OptionsJS {
     return 0;
   };
 
-  // Binary cash-or-nothing call
-  getBinaryCallPrice(spot, strike, timeSec, vol, rate, payout) {
+  // Binary cash-or-nothing call (unit payout)
+  getBinaryCallPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
     // handle expired binary call
     if (timeSec == 0) {
       if (spot > strike) {
-        return payout;
+        return 1;
       }
       return 0;
     }
@@ -93,14 +93,14 @@ export class OptionsJS {
 
     const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
     const d2 = d1 - scaledVol;
-    const discountedPayout = payout / this.exp(scaledRate);                    // Q * e^(-r*τ)
+    const discount = 1 / this.exp(scaledRate);                                 // e^(-r*τ)
 
-    return discountedPayout * this.stdNormCDF(d2);                             // Q * e^(-r*τ) * Φ(d2)
+    return discount * this.stdNormCDF(d2);                                     // e^(-r*τ) * Φ(d2)
   };
 
-  // Binary cash-or-nothing delta
-  // ΔCall = Q · e^(-r·τ) · φ(d2) / (S·σ·√τ),  ΔPut = -ΔCall
-  getBinaryDelta(spot, strike, timeSec, vol, rate, payout) {
+  // Binary cash-or-nothing delta (unit payout)
+  // ΔCall = e^(-r·τ) · φ(d2) / (S·σ·√τ),  ΔPut = -ΔCall
+  getBinaryDelta(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -116,24 +116,24 @@ export class OptionsJS {
     const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
     const d2 = d1 - scaledVol;
 
-    const phi = Math.exp(-(d2 ** 2) / 2) / Math.sqrt(2 * Math.PI);    // φ(d2)
-    const discountedPayout = payout / this.exp(scaledRate);           // Q · e^(-r·τ)
+    const phi = Math.exp(-(d2 ** 2) / 2) / Math.sqrt(2 * Math.PI);             // φ(d2)
+    const discount = 1 / this.exp(scaledRate);                                 // e^(-r·τ)
 
-    const deltaCall = discountedPayout * phi / (spot * scaledVol);
+    const deltaCall = discount * phi / (spot * scaledVol);
     const deltaPut = -deltaCall;
 
     return { deltaCall, deltaPut };
   };
 
-  // Binary cash-or-nothing put
-  getBinaryPutPrice(spot, strike, timeSec, vol, rate, payout) {
+  // Binary cash-or-nothing put (unit payout)
+  getBinaryPutPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
     // handle expired binary put
     if (timeSec == 0) {
       if (strike > spot) {
-        return payout;
+        return 1;
       }
       return 0;
     }
@@ -144,9 +144,9 @@ export class OptionsJS {
 
     const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
     const d2 = d1 - scaledVol;
-    const discountedPayout = payout / this.exp(scaledRate);                    // Q * e^(-r*τ)
+    const discount = 1 / this.exp(scaledRate);                                 // e^(-r*τ)
 
-    return discountedPayout * this.stdNormCDF(-d2);                            // Q * e^(-r*τ) * Φ(-d2)
+    return discount * this.stdNormCDF(-d2);                                    // e^(-r*τ) * Φ(-d2)
   };
 
   getFuturePrice(spot, timeSec, rate) {

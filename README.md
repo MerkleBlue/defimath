@@ -141,33 +141,40 @@ The following limitations apply to all option functions. Inputs outside these ra
 
 ### Binary Options (Cash-or-Nothing)
 
-DeFiMath includes a gas-efficient binary (digital) option pricing library. A binary cash-or-nothing call pays a fixed cash amount $Q$ if the underlying expires above the strike, and 0 otherwise; the put pays $Q$ if it expires below the strike.
+DeFiMath includes a gas-efficient binary (digital) option pricing library. A binary cash-or-nothing call pays 1 unit if the underlying expires above the strike, and 0 otherwise; the put pays 1 unit if it expires below the strike. To price options with an arbitrary cash payout `Q`, simply multiply the result by `Q`.
 
 ```solidity
 import "defimath/derivatives/Binary.sol";
 ```
 
-The closed-form Black-Scholes prices for cash-or-nothing binary options are:
+The closed-form Black-Scholes prices for unit-payout cash-or-nothing binary options are:
 
 ```math
-C = Q \cdot e^{-rT} \cdot N(d_2)
+C = e^{-rT} \cdot N(d_2)
 ```
 ```math
-P = Q \cdot e^{-rT} \cdot N(-d_2)
+P = e^{-rT} \cdot N(-d_2)
 ```
 
-where $Q$ is the cash payout, and $d_2$ is the same as in the European Black-Scholes model. Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
+where $d_2$ is the same as in the European Black-Scholes model. The corresponding Delta is:
+
+```math
+\Delta_{call} = \frac{e^{-rT} \phi(d_2)}{S \sigma \sqrt{T}}, \quad \Delta_{put} = -\Delta_{call}
+```
+
+where $\phi$ is the standard normal probability density function. Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
 
 #### Performance
 
-Binary option pricing computations cost roughly 2,360 gas on average — over an order of magnitude cheaper than comparable on-chain implementations.
+Binary option pricing computations cost roughly 2,300 gas on average — over an order of magnitude cheaper than comparable on-chain implementations.
 
 The following table compares **gas efficiency** of DeFiMath with other implementations over a typical range of parameters.
 
 | Function | DeFiMath | Haptic |
 | :------- | -------: | -----: |
-| call     |     2356 |  32806 |
-| put      |     2361 |  32806 |
+| call     |     2305 |  32806 |
+| put      |     2310 |  32806 |
+| delta    |     2077 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -175,6 +182,7 @@ The table below compares the **maximum absolute error** against a trusted JavaSc
 | :------- | -------: | ------: |
 | call     |  5.7e-15 | 1.3e-15 |
 | put      |  5.4e-15 | 1.2e-15 |
+| delta    |  1.2e-16 |       - |
 
 #### Limits
 

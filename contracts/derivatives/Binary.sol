@@ -5,7 +5,7 @@ import "../math/Math.sol";
 
 /// @title DeFiMathBinary: Binary Options Pricing Library for Solidity
 /// @notice Computes binary (cash-or-nothing) option prices using the Black-Scholes model
-/// @dev All values are in 18-decimal fixed-point format unless otherwise stated
+/// @dev All values are in 18-decimal fixed-point format unless otherwise stated. Payout is fixed at 1.
 library DeFiMathBinary {
 
     // constants
@@ -52,21 +52,19 @@ library DeFiMathBinary {
 
 
     /// @notice Computes the price of a binary cash-or-nothing call option using the Black-Scholes model
-    /// @dev Formula: price = payout * e^(-r*τ) * Φ(d2)
+    /// @dev Formula: price = e^(-r*τ) * Φ(d2). Payout is fixed at 1; multiply externally for other payouts.
     /// @param spot Current spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
     /// @param timeToExpirySec Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @param payout Cash payout if option expires in-the-money (scaled by 1e18)
-    /// @return price Binary call option price (scaled by 1e18)
+    /// @return price Binary call option price for unit payout (scaled by 1e18)
     function getBinaryCallPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint64 rate,
-        uint128 payout
+        uint64 rate
     ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
@@ -80,7 +78,7 @@ library DeFiMathBinary {
             // handle expired binary call
             if (timeToExpirySec == 0) {
                 if (spot > strike) {
-                    return payout;
+                    return 1e18;
                 }
                 return 0;
             }
@@ -92,28 +90,24 @@ library DeFiMathBinary {
             int256 d1 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedPayout = uint256(payout) * 1e18 / DeFiMath.expPositive(scaledRate);   // payout * e^(-r*τ)
-
-            price = discountedPayout * DeFiMath.stdNormCDF(d2) / 1e18;                              // payout * e^(-r*τ) * Φ(d2)
+            price = DeFiMath.stdNormCDF(d2) * 1e18 / DeFiMath.expPositive(scaledRate);  // e^(-r*τ) * Φ(d2)
         }
     }
 
     /// @notice Computes the price of a binary cash-or-nothing put option using the Black-Scholes model
-    /// @dev Formula: price = payout * e^(-r*τ) * Φ(-d2)
+    /// @dev Formula: price = e^(-r*τ) * Φ(-d2). Payout is fixed at 1; multiply externally for other payouts.
     /// @param spot Current spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
     /// @param timeToExpirySec Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @param payout Cash payout if option expires in-the-money (scaled by 1e18)
-    /// @return price Binary put option price (scaled by 1e18)
+    /// @return price Binary put option price for unit payout (scaled by 1e18)
     function getBinaryPutPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint64 rate,
-        uint128 payout
+        uint64 rate
     ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
@@ -127,7 +121,7 @@ library DeFiMathBinary {
             // handle expired binary put
             if (timeToExpirySec == 0) {
                 if (strike > spot) {
-                    return payout;
+                    return 1e18;
                 }
                 return 0;
             }
@@ -139,29 +133,25 @@ library DeFiMathBinary {
             int256 d1 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedPayout = uint256(payout) * 1e18 / DeFiMath.expPositive(scaledRate);   // payout * e^(-r*τ)
-
-            price = discountedPayout * DeFiMath.stdNormCDF(-d2) / 1e18;                             // payout * e^(-r*τ) * Φ(-d2)
+            price = DeFiMath.stdNormCDF(-d2) * 1e18 / DeFiMath.expPositive(scaledRate); // e^(-r*τ) * Φ(-d2)
         }
     }
 
     /// @notice Computes Delta for binary cash-or-nothing call and put options
-    /// @dev Formula: ΔCall = payout * e^(-r*τ) * φ(d2) / (S*σ*√τ); ΔPut = -ΔCall
+    /// @dev Formula: ΔCall = e^(-r*τ) * φ(d2) / (S*σ*√τ); ΔPut = -ΔCall. Payout is fixed at 1.
     /// @param spot Spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
     /// @param timeToExpirySec Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @param payout Cash payout if option expires in-the-money (scaled by 1e18)
-    /// @return deltaCall Binary call option delta (scaled by 1e18)
-    /// @return deltaPut Binary put option delta (scaled by 1e18)
+    /// @return deltaCall Binary call option delta for unit payout (scaled by 1e18)
+    /// @return deltaPut Binary put option delta for unit payout (scaled by 1e18)
     function getBinaryDelta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
         uint64 volatility,
-        uint64 rate,
-        uint128 payout
+        uint64 rate
     ) internal pure returns (int128 deltaCall, int128 deltaPut) {
         unchecked {
             // check inputs
@@ -179,25 +169,13 @@ library DeFiMathBinary {
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
-            // delegate to helper to avoid stack-too-deep (6 input args + locals)
-            return _binaryDeltaCore(spot, strike, scaledVol, uint256(rate) * timeYear / 1e18, payout);
-        }
-    }
+            int256 d1 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d2 = d1 - int256(scaledVol);
 
-    /// @dev Core binary delta math, separated to keep stack shallow
-    function _binaryDeltaCore(
-        uint128 spot,
-        uint128 strike,
-        uint256 scaledVol,
-        uint256 scaledRate,
-        uint128 payout
-    ) private pure returns (int128 deltaCall, int128 deltaPut) {
-        unchecked {
-            int256 d2 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol) - int256(scaledVol);
-
-            // payout * e^(-r*τ) * φ(d2) / (S * σ * √τ)
-            uint256 absDelta = (uint256(payout) * 1e18 / DeFiMath.expPositive(scaledRate))
+            // e^(-r*τ) * φ(d2) / (S * σ * √τ)
+            uint256 absDelta = (1e36 / DeFiMath.expPositive(scaledRate))
                              * (DeFiMath.exp(-d2 * d2 / 2e18) * 1e18 / SQRT_2PI)
                              / (uint256(spot) * scaledVol / 1e18);
 
