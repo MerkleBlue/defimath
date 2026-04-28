@@ -12,6 +12,9 @@ library DeFiMathBinary {
     /// @notice Number of seconds in a year (365 days)
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
+    /// @notice Precomputed value of sqrt(2π) ≈ 2.5066e18
+    uint256 internal constant SQRT_2PI = 2506628274631000502;
+
     // limits
     /// @notice Minimum allowed spot price: 0.000001 USD
     uint256 internal constant MIN_SPOT = 1e12 - 1;
@@ -139,6 +142,67 @@ library DeFiMathBinary {
             uint256 discountedPayout = uint256(payout) * 1e18 / DeFiMath.expPositive(scaledRate);   // payout * e^(-r*τ)
 
             price = discountedPayout * DeFiMath.stdNormCDF(-d2) / 1e18;                             // payout * e^(-r*τ) * Φ(-d2)
+        }
+    }
+
+    /// @notice Computes Delta for binary cash-or-nothing call and put options
+    /// @dev Formula: ΔCall = payout * e^(-r*τ) * φ(d2) / (S*σ*√τ); ΔPut = -ΔCall
+    /// @param spot Spot price of the asset (scaled by 1e18)
+    /// @param strike Strike price of the option (scaled by 1e18)
+    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param volatility Annualized implied volatility (scaled by 1e18)
+    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
+    /// @param payout Cash payout if option expires in-the-money (scaled by 1e18)
+    /// @return deltaCall Binary call option delta (scaled by 1e18)
+    /// @return deltaPut Binary put option delta (scaled by 1e18)
+    function getBinaryDelta(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate,
+        uint128 payout
+    ) internal pure returns (int128 deltaCall, int128 deltaPut) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option
+            if (timeToExpirySec == 0) {
+                return (0, 0);
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+
+            // delegate to helper to avoid stack-too-deep (6 input args + locals)
+            return _binaryDeltaCore(spot, strike, scaledVol, uint256(rate) * timeYear / 1e18, payout);
+        }
+    }
+
+    /// @dev Core binary delta math, separated to keep stack shallow
+    function _binaryDeltaCore(
+        uint128 spot,
+        uint128 strike,
+        uint256 scaledVol,
+        uint256 scaledRate,
+        uint128 payout
+    ) private pure returns (int128 deltaCall, int128 deltaPut) {
+        unchecked {
+            int256 d2 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol) - int256(scaledVol);
+
+            // payout * e^(-r*τ) * φ(d2) / (S * σ * √τ)
+            uint256 absDelta = (uint256(payout) * 1e18 / DeFiMath.expPositive(scaledRate))
+                             * (DeFiMath.exp(-d2 * d2 / 2e18) * 1e18 / SQRT_2PI)
+                             / (uint256(spot) * scaledVol / 1e18);
+
+            deltaCall = int128(int256(absDelta));
+            deltaPut = -deltaCall;
         }
     }
 }

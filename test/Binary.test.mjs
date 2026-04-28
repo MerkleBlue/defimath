@@ -7,6 +7,7 @@ import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, gener
 const fastTest = true;
 
 const MAX_BINARY_ABS_ERROR = 2.2e-12; // for a binary option with $100 payout
+const MAX_BINARY_DELTA_ABS_ERROR = 1e-11; // for binary delta with $100 payout
 
 // JS reference for binary call price
 function binaryCallWrapped(spot, strike, timeSec, vol, rate, payout) {
@@ -24,6 +25,15 @@ function binaryPutWrapped(spot, strike, timeSec, vol, rate, payout) {
     return strike > spot ? payout : 0;
   }
   return new OptionsJS().getBinaryPutPrice(spot, strike, timeSec, vol, rate, payout);
+}
+
+// JS reference for binary delta
+function binaryDeltaWrapped(spot, strike, timeSec, vol, rate, payout) {
+  // handle expired option
+  if (timeSec <= 0) {
+    return { deltaCall: 0, deltaPut: 0 };
+  }
+  return new OptionsJS().getBinaryDelta(spot, strike, timeSec, vol, rate, payout);
 }
 
 describe.only("DeFiMathBinary", function () {
@@ -114,6 +124,50 @@ describe.only("DeFiMathBinary", function () {
     }
   }
 
+  async function testBinaryDeltaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_BINARY_DELTA_ABS_ERROR, multi = 10, payout = 100, log = true) {
+    const { binary } = await loadFixture(deploy);
+    log && console.log("Max abs error: " + maxAbsError);
+
+    let countTotal = 0, prunedCountSOL = 0;
+    let errorsSOL = [];
+    for (const strike of strikePoints) {
+      for (const exp of timePoints) {
+        for (const vol of volPoints) {
+          for (const rate of ratePoints) {
+            const expected = binaryDeltaWrapped(100 * multi, strike * multi, exp, vol, rate, payout);
+
+            const result = await binary.getBinaryDelta(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate), tokens(payout));
+            const actualCall = result.deltaCall.toString() / 1e18;
+            const actualPut = result.deltaPut.toString() / 1e18;
+
+            const absErrorCall = Math.abs(actualCall - expected.deltaCall);
+            const absErrorPut = Math.abs(actualPut - expected.deltaPut);
+            const absErrorSOL = Math.max(absErrorCall, absErrorPut);
+            const errorParamsSOL = { expiration: exp, strike: strike * multi, vol, rate, payout, actCall: actualCall, expCall: expected.deltaCall, actPut: actualPut, expPut: expected.deltaPut };
+            errorsSOL.push({ absErrorSOL, errorParamsSOL });
+
+            countTotal++;
+          }
+        }
+      }
+    }
+
+    const toDelete = errorsSOL.filter(e => e.absErrorSOL < maxAbsError);
+    prunedCountSOL += toDelete.length;
+    errorsSOL = errorsSOL.filter(e => e.absErrorSOL >= maxAbsError);
+
+    if (log) {
+      console.log();
+      console.log("REPORT SOL");
+      console.log("Errors Abs/Total: " + prunedCountSOL + "/" + countTotal, "(" + ((prunedCountSOL / countTotal) * 100).toFixed(2) + "%)");
+      if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
+    }
+
+    for (let i = 0; i < errorsSOL.length; i++) {
+      assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
+    }
+  }
+
   before(async () => {
     testTimePoints = generateTestTimePoints();
     testStrikePoints = generateTestStrikePoints(5, 500);
@@ -177,6 +231,39 @@ describe.only("DeFiMathBinary", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 totalGas += parseInt((await binary.getBinaryPutPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate), tokens(100))).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("binary delta", function () {
+      it("single", async function () {
+        const { binary } = await loadFixture(deploy);
+
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await binary.getBinaryDeltaMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05), tokens(100))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("multiple in typical range", async function () {
+        const { binary } = await loadFixture(deploy);
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt((await binary.getBinaryDeltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate), tokens(100))).gasUsed);
                 count++;
               }
             }
@@ -548,6 +635,183 @@ describe.only("DeFiMathBinary", function () {
           await assertRevertError(binary, binary.getBinaryPutPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15), tokens(100)), "RateUpperBoundError");
           await binary.getBinaryPutPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4), tokens(100));
           await assertRevertError(binary, binary.getBinaryPutPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18), tokens(100)), "RateUpperBoundError");
+        });
+      });
+    });
+
+    describe("binary delta", function () {
+      it("single", async function () {
+        const { binary } = await loadFixture(deploy);
+        const expected = binaryDeltaWrapped(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05, 100);
+
+        const result = await binary.getBinaryDelta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05), tokens(100));
+        const actualCall = result.deltaCall.toString() / 1e18;
+        const actualPut = result.deltaPut.toString() / 1e18;
+        console.log(actualCall)
+        console.log(actualPut)
+
+        assertAbsoluteBelow(actualCall, expected.deltaCall, MAX_BINARY_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(actualPut, expected.deltaPut, MAX_BINARY_DELTA_ABS_ERROR);
+      });
+
+      it("multiple in typical range", async function () {
+        const { binary } = await loadFixture(deploy);
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expected = binaryDeltaWrapped(1000, strike, time * SEC_IN_DAY, vol, rate, 100);
+
+                const result = await binary.getBinaryDelta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate), tokens(100));
+                const actualCall = result.deltaCall.toString() / 1e18;
+                const actualPut = result.deltaPut.toString() / 1e18;
+
+                assertAbsoluteBelow(actualCall, expected.deltaCall, MAX_BINARY_DELTA_ABS_ERROR);
+                assertAbsoluteBelow(actualPut, expected.deltaPut, MAX_BINARY_DELTA_ABS_ERROR);
+              }
+            }
+          }
+        }
+      });
+
+      describe("limits", function () {
+        it("limits and near limit values", async function () {
+          const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
+          const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
+          const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
+          const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
+          await testBinaryDeltaRange(strikes, times, vols, rates, MAX_BINARY_DELTA_ABS_ERROR, 10, 100, false);
+        });
+
+        it("expired ITM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryDelta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05), tokens(100));
+          assertAbsoluteBelow(result.deltaCall.toString() / 1e18, 0, MIN_ERROR);
+          assertAbsoluteBelow(result.deltaPut.toString() / 1e18, 0, MIN_ERROR);
+        });
+
+        it("expired ATM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryDelta(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05), tokens(100));
+          assertAbsoluteBelow(result.deltaCall.toString() / 1e18, 0, MIN_ERROR);
+          assertAbsoluteBelow(result.deltaPut.toString() / 1e18, 0, MIN_ERROR);
+        });
+
+        it("expired OTM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryDelta(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05), tokens(100));
+          assertAbsoluteBelow(result.deltaCall.toString() / 1e18, 0, MIN_ERROR);
+          assertAbsoluteBelow(result.deltaPut.toString() / 1e18, 0, MIN_ERROR);
+        });
+      });
+
+      describe("random", function () {
+        it("lower strikes", async function () {
+          const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
+          const rates = [0, 0.1, 0.2, 4];
+          await testBinaryDeltaRange(strikes, times, vols, rates, MAX_BINARY_DELTA_ABS_ERROR, 10, 100, !fastTest);
+        });
+
+        it("higher strikes", async function () {
+          const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
+          const rates = [0, 0.1, 0.2, 4];
+          await testBinaryDeltaRange(strikes, times, vols, rates, MAX_BINARY_DELTA_ABS_ERROR, 10, 100, !fastTest);
+        });
+      });
+
+      describe("regression", function () {
+        it("call delta = -put delta", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryDelta(tokens(1000), tokens(1100), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05), tokens(100));
+          const dCall = result.deltaCall.toString() / 1e18;
+          const dPut = result.deltaPut.toString() / 1e18;
+
+          assertAbsoluteBelow(dCall + dPut, 0, MIN_ERROR);
+        });
+
+        it("delta peaks near ATM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          // For ATM (spot ≈ strike), d2 is near 0 → φ(d2) is maximal → delta is largest
+          const dATM = ((await binary.getBinaryDelta(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05), tokens(100))).deltaCall.toString() / 1e18);
+          const dDeepITM = ((await binary.getBinaryDelta(tokens(1000), tokens(500), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05), tokens(100))).deltaCall.toString() / 1e18);
+          const dDeepOTM = ((await binary.getBinaryDelta(tokens(1000), tokens(2000), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05), tokens(100))).deltaCall.toString() / 1e18);
+
+          assert.isAbove(dATM, dDeepITM);
+          assert.isAbove(dATM, dDeepOTM);
+        });
+
+        it("handles when vol is 0, and time lowest", async function () {
+          const { binary } = await loadFixture(deploy);
+          const expected = binaryDeltaWrapped(1000, 1020, 1, 0, 0.05, 100);
+
+          const result = await binary.getBinaryDelta(tokens(1000), tokens(1020), 1, 0, tokens(0.05), tokens(100));
+          assertAbsoluteBelow(result.deltaCall.toString() / 1e18, expected.deltaCall, MAX_BINARY_DELTA_ABS_ERROR);
+          assertAbsoluteBelow(result.deltaPut.toString() / 1e18, expected.deltaPut, MAX_BINARY_DELTA_ABS_ERROR);
+        });
+      });
+
+      describe("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryDelta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05), tokens(100)), "SpotLowerBoundError");
+          await binary.getBinaryDelta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05), tokens(100));
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05), tokens(100)), "SpotLowerBoundError");
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryDelta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05), tokens(100)), "SpotUpperBoundError");
+          await binary.getBinaryDelta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05), tokens(100));
+          await assertRevertError(binary, binary.getBinaryDelta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05), tokens(100)), "SpotUpperBoundError");
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05), tokens(100)), "StrikeLowerBoundError");
+          await binary.getBinaryDelta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05), tokens(100));
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05), tokens(100)), "StrikeLowerBoundError");
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05), tokens(100)), "StrikeUpperBoundError");
+          await binary.getBinaryDelta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05), tokens(100));
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05), tokens(100)), "StrikeUpperBoundError");
+        });
+
+        it("rejects when time > max time", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05), tokens(100)), "TimeToExpiryUpperBoundError");
+          await binary.getBinaryDelta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05), tokens(100));
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05), tokens(100)), "TimeToExpiryUpperBoundError");
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15), tokens(100)), "RateUpperBoundError");
+          await binary.getBinaryDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4), tokens(100));
+          await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18), tokens(100)), "RateUpperBoundError");
         });
       });
     });

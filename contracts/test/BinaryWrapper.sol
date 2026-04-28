@@ -66,4 +66,34 @@ contract BinaryWrapper {
 
         return (result, startGas - endGas);
     }
+
+    function getBinaryDelta(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate,
+        uint128 payout
+    ) external pure returns (int128 deltaCall, int128 deltaPut) {
+        return DeFiMathBinary.getBinaryDelta(spot, strike, timeToExpirySec, volatility, rate, payout);
+    }
+
+    function getBinaryDeltaMG(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate,
+        uint128 payout
+    ) external view returns (int128 deltaCall, int128 deltaPut, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        (deltaCall, deltaPut) = DeFiMathBinary.getBinaryDelta(spot, strike, timeToExpirySec, volatility, rate, payout);
+
+        endGas = gasleft();
+
+        return (deltaCall, deltaPut, startGas - endGas);
+    }
 }

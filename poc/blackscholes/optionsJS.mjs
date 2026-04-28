@@ -98,6 +98,33 @@ export class OptionsJS {
     return discountedPayout * this.stdNormCDF(d2);                             // Q * e^(-r*τ) * Φ(d2)
   };
 
+  // Binary cash-or-nothing delta
+  // ΔCall = Q · e^(-r·τ) · φ(d2) / (S·σ·√τ),  ΔPut = -ΔCall
+  getBinaryDelta(spot, strike, timeSec, vol, rate, payout) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired binary
+    if (timeSec == 0) {
+      return { deltaCall: 0, deltaPut: 0 };
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+
+    const phi = Math.exp(-(d2 ** 2) / 2) / Math.sqrt(2 * Math.PI);    // φ(d2)
+    const discountedPayout = payout / this.exp(scaledRate);           // Q · e^(-r·τ)
+
+    const deltaCall = discountedPayout * phi / (spot * scaledVol);
+    const deltaPut = -deltaCall;
+
+    return { deltaCall, deltaPut };
+  };
+
   // Binary cash-or-nothing put
   getBinaryPutPrice(spot, strike, timeSec, vol, rate, payout) {
     // check inputs
