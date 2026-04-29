@@ -162,7 +162,13 @@ where $d_2$ is the same as in the European Black-Scholes model. The correspondin
 \Delta_{call} = \frac{e^{-rT} \phi(d_2)}{S \sigma \sqrt{T}}, \quad \Delta_{put} = -\Delta_{call}
 ```
 
-where $\phi$ is the standard normal probability density function. Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
+where $\phi$ is the standard normal probability density function. Gamma is:
+
+```math
+\Gamma_{call} = -\frac{e^{-rT} \phi(d_2) \cdot d_1}{S^2 \sigma^2 T}, \quad \Gamma_{put} = -\Gamma_{call}
+```
+
+Note that binary gamma is **signed**: it changes sign at ATM ($d_1 = 0$). Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
 
 #### Performance
 
@@ -175,6 +181,7 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 | call     |     2305 |  32806 |
 | put      |     2310 |  32806 |
 | delta    |     2077 |      - |
+| gamma    |     2194 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -183,6 +190,7 @@ The table below compares the **maximum absolute error** against a trusted JavaSc
 | call     |  5.7e-15 | 1.3e-15 |
 | put      |  5.4e-15 | 1.2e-15 |
 | delta    |  1.2e-16 |       - |
+| gamma    |  1.0e-15 |       - |
 
 #### Limits
 

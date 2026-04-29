@@ -183,4 +183,56 @@ library DeFiMathBinary {
             deltaPut = -deltaCall;
         }
     }
+
+    /// @notice Computes Gamma for binary cash-or-nothing call and put options
+    /// @dev Formula: ΓCall = -e^(-r*τ) * φ(d2) * d1 / (S² * σ²*τ); ΓPut = -ΓCall. Payout is fixed at 1.
+    /// @dev Note: binary gamma is signed and changes sign at ATM (d1 = 0)
+    /// @param spot Spot price of the asset (scaled by 1e18)
+    /// @param strike Strike price of the option (scaled by 1e18)
+    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param volatility Annualized implied volatility (scaled by 1e18)
+    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
+    /// @return gammaCall Binary call option gamma for unit payout (scaled by 1e18)
+    /// @return gammaPut Binary put option gamma for unit payout (scaled by 1e18)
+    function getBinaryGamma(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (int128 gammaCall, int128 gammaPut) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option
+            if (timeToExpirySec == 0) {
+                return (0, 0);
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
+
+            int256 d1 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d2 = d1 - int256(scaledVol);
+
+            // |γ| = e^(-r*τ) * φ(d2) * |d1| / (S * σ * √τ)²; sign of γ_call = -sign(d1)
+            uint256 svS = uint256(spot) * scaledVol / 1e18;                                            // (S * σ√τ) × 1e18
+
+            uint256 num = (1e36 / DeFiMath.expPositive(scaledRate))                                    // e^(-r*τ) × 1e18
+                        * (DeFiMath.exp(-d2 * d2 / 2e18) * 1e18 / SQRT_2PI) / 1e18                     // × φ(d2) → × 1e18
+                        * uint256(d1 >= 0 ? d1 : -d1);                                                 // × |d1| × 1e18 → × 1e36
+
+            uint256 absGamma = svS == 0 ? 0 : num * 1e18 / (svS * svS);                                // × 1e18 / ((S·σ√τ)² × 1e36) → × 1e18
+
+            gammaCall = int128(d1 >= 0 ? -int256(absGamma) : int256(absGamma));
+            gammaPut = -gammaCall;
+        }
+    }
 }

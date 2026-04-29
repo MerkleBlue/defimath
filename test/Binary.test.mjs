@@ -8,6 +8,7 @@ const fastTest = true;
 
 const MAX_BINARY_ABS_ERROR = 2.2e-14; // for a unit-payout binary option
 const MAX_BINARY_DELTA_ABS_ERROR = 1e-13; // for unit-payout binary delta
+const MAX_BINARY_GAMMA_ABS_ERROR = 1e-15; // for unit-payout binary gamma
 
 // JS reference for binary call price
 function binaryCallWrapped(spot, strike, timeSec, vol, rate) {
@@ -34,6 +35,15 @@ function binaryDeltaWrapped(spot, strike, timeSec, vol, rate) {
     return { deltaCall: 0, deltaPut: 0 };
   }
   return new OptionsJS().getBinaryDelta(spot, strike, timeSec, vol, rate);
+}
+
+// JS reference for binary gamma
+function binaryGammaWrapped(spot, strike, timeSec, vol, rate) {
+  // handle expired option
+  if (timeSec <= 0) {
+    return { gammaCall: 0, gammaPut: 0 };
+  }
+  return new OptionsJS().getBinaryGamma(spot, strike, timeSec, vol, rate);
 }
 
 describe.only("DeFiMathBinary", function () {
@@ -168,6 +178,50 @@ describe.only("DeFiMathBinary", function () {
     }
   }
 
+  async function testBinaryGammaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_BINARY_GAMMA_ABS_ERROR, multi = 10, log = true) {
+    const { binary } = await loadFixture(deploy);
+    log && console.log("Max abs error: " + maxAbsError);
+
+    let countTotal = 0, prunedCountSOL = 0;
+    let errorsSOL = [];
+    for (const strike of strikePoints) {
+      for (const exp of timePoints) {
+        for (const vol of volPoints) {
+          for (const rate of ratePoints) {
+            const expected = binaryGammaWrapped(100 * multi, strike * multi, exp, vol, rate);
+
+            const result = await binary.getBinaryGamma(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate));
+            const actualCall = result.gammaCall.toString() / 1e18;
+            const actualPut = result.gammaPut.toString() / 1e18;
+
+            const absErrorCall = Math.abs(actualCall - expected.gammaCall);
+            const absErrorPut = Math.abs(actualPut - expected.gammaPut);
+            const absErrorSOL = Math.max(absErrorCall, absErrorPut);
+            const errorParamsSOL = { expiration: exp, strike: strike * multi, vol, rate, actCall: actualCall, expCall: expected.gammaCall, actPut: actualPut, expPut: expected.gammaPut };
+            errorsSOL.push({ absErrorSOL, errorParamsSOL });
+
+            countTotal++;
+          }
+        }
+      }
+    }
+
+    const toDelete = errorsSOL.filter(e => e.absErrorSOL < maxAbsError);
+    prunedCountSOL += toDelete.length;
+    errorsSOL = errorsSOL.filter(e => e.absErrorSOL >= maxAbsError);
+
+    if (log) {
+      console.log();
+      console.log("REPORT SOL");
+      console.log("Errors Abs/Total: " + prunedCountSOL + "/" + countTotal, "(" + ((prunedCountSOL / countTotal) * 100).toFixed(2) + "%)");
+      if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
+    }
+
+    for (let i = 0; i < errorsSOL.length; i++) {
+      assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
+    }
+  }
+
   before(async () => {
     testTimePoints = generateTestTimePoints();
     testStrikePoints = generateTestStrikePoints(5, 500);
@@ -264,6 +318,39 @@ describe.only("DeFiMathBinary", function () {
             for (const vol of vols) {
               for (const rate of rates) {
                 totalGas += parseInt((await binary.getBinaryDeltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("binary gamma", function () {
+      it("single", async function () {
+        const { binary } = await loadFixture(deploy);
+
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await binary.getBinaryGammaMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("multiple in typical range", async function () {
+        const { binary } = await loadFixture(deploy);
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                totalGas += parseInt((await binary.getBinaryGammaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -801,6 +888,181 @@ describe.only("DeFiMathBinary", function () {
           await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
           await binary.getBinaryDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
           await assertRevertError(binary, binary.getBinaryDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+        });
+      });
+    });
+
+    describe("binary gamma", function () {
+      it("single", async function () {
+        const { binary } = await loadFixture(deploy);
+        const expected = binaryGammaWrapped(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
+
+        const result = await binary.getBinaryGamma(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const actualCall = result.gammaCall.toString() / 1e18;
+        const actualPut = result.gammaPut.toString() / 1e18;
+
+        assertAbsoluteBelow(actualCall, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
+        assertAbsoluteBelow(actualPut, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
+      });
+
+      it("multiple in typical range", async function () {
+        const { binary } = await loadFixture(deploy);
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const expected = binaryGammaWrapped(1000, strike, time * SEC_IN_DAY, vol, rate);
+
+                const result = await binary.getBinaryGamma(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const actualCall = result.gammaCall.toString() / 1e18;
+                const actualPut = result.gammaPut.toString() / 1e18;
+
+                assertAbsoluteBelow(actualCall, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
+                assertAbsoluteBelow(actualPut, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
+              }
+            }
+          }
+        }
+      });
+
+      describe("limits", function () {
+        it("limits and near limit values", async function () {
+          const strikes = [...testStrikePoints.slice(0, 3), ...testStrikePoints.slice(-3)];
+          const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
+          const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
+          const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
+          await testBinaryGammaRange(strikes, times, vols, rates, MAX_BINARY_GAMMA_ABS_ERROR, 10, false);
+        });
+
+        it("expired ITM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryGamma(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+          assertAbsoluteBelow(result.gammaCall.toString() / 1e18, 0, MIN_ERROR);
+          assertAbsoluteBelow(result.gammaPut.toString() / 1e18, 0, MIN_ERROR);
+        });
+
+        it("expired ATM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryGamma(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05));
+          assertAbsoluteBelow(result.gammaCall.toString() / 1e18, 0, MIN_ERROR);
+          assertAbsoluteBelow(result.gammaPut.toString() / 1e18, 0, MIN_ERROR);
+        });
+
+        it("expired OTM", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryGamma(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05));
+          assertAbsoluteBelow(result.gammaCall.toString() / 1e18, 0, MIN_ERROR);
+          assertAbsoluteBelow(result.gammaPut.toString() / 1e18, 0, MIN_ERROR);
+        });
+      });
+
+      describe("random", function () {
+        it("lower strikes", async function () {
+          const strikes = generateRandomTestPoints(20, 100, fastTest ? 10 : 30, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
+          const rates = [0, 0.1, 0.2, 4];
+          await testBinaryGammaRange(strikes, times, vols, rates, MAX_BINARY_GAMMA_ABS_ERROR, 10, !fastTest);
+        });
+
+        it("higher strikes", async function () {
+          const strikes = generateRandomTestPoints(100, 500, fastTest ? 10 : 30, false);
+          const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
+          const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
+          const rates = [0, 0.1, 0.2, 4];
+          await testBinaryGammaRange(strikes, times, vols, rates, MAX_BINARY_GAMMA_ABS_ERROR, 10, !fastTest);
+        });
+      });
+
+      describe("regression", function () {
+        it("call gamma = -put gamma", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          const result = await binary.getBinaryGamma(tokens(1000), tokens(1100), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05));
+          const gCall = result.gammaCall.toString() / 1e18;
+          const gPut = result.gammaPut.toString() / 1e18;
+
+          assertAbsoluteBelow(gCall + gPut, 0, MIN_ERROR);
+        });
+
+        it("gamma sign flips around ATM (γ_call < 0 for ITM, > 0 for OTM)", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          // For deep ITM call (spot >> strike, d1 > 0): γ_call < 0
+          // For deep OTM call (spot << strike, d1 < 0): γ_call > 0
+          const gITM = (await binary.getBinaryGamma(tokens(1000), tokens(800), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05))).gammaCall.toString() / 1e18;
+          const gOTM = (await binary.getBinaryGamma(tokens(1000), tokens(1200), 30 * SEC_IN_DAY, tokens(0.5), tokens(0.05))).gammaCall.toString() / 1e18;
+
+          assert.isBelow(gITM, 0);
+          assert.isAbove(gOTM, 0);
+        });
+
+        it("handles when vol is 0, and time lowest", async function () {
+          const { binary } = await loadFixture(deploy);
+          const expected = binaryGammaWrapped(1000, 1020, 1, 0, 0.05);
+
+          const result = await binary.getBinaryGamma(tokens(1000), tokens(1020), 1, 0, tokens(0.05));
+          assertAbsoluteBelow(result.gammaCall.toString() / 1e18, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
+          assertAbsoluteBelow(result.gammaPut.toString() / 1e18, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
+        });
+      });
+
+      describe("failure", function () {
+        it("rejects when spot < min spot", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryGamma("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await binary.getBinaryGamma("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+        });
+
+        it("rejects when spot > max spot", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryGamma("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await binary.getBinaryGamma("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(binary, binary.getBinaryGamma("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+        });
+
+        it("rejects when strike < spot / 5", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await binary.getBinaryGamma(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+        });
+
+        it("rejects when strike > spot * 5", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await binary.getBinaryGamma(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+        });
+
+        it("rejects when time > max time", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await binary.getBinaryGamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        });
+
+        it("rejects when rate > max rate", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await binary.getBinaryGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(binary, binary.getBinaryGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });

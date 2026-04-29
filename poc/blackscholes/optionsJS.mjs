@@ -125,6 +125,33 @@ export class OptionsJS {
     return { deltaCall, deltaPut };
   };
 
+  // Binary cash-or-nothing gamma (unit payout)
+  // ΓCall = -e^(-r·τ) · φ(d2) · d1 / (S² · σ²·τ),  ΓPut = -ΓCall
+  getBinaryGamma(spot, strike, timeSec, vol, rate) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired binary
+    if (timeSec == 0) {
+      return { gammaCall: 0, gammaPut: 0 };
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+
+    const phi = Math.exp(-(d2 ** 2) / 2) / Math.sqrt(2 * Math.PI);             // φ(d2)
+    const discount = 1 / this.exp(scaledRate);                                 // e^(-r·τ)
+
+    const gammaCall = -discount * phi * d1 / (spot * spot * scaledVol * scaledVol);
+    const gammaPut = -gammaCall;
+
+    return { gammaCall, gammaPut };
+  };
+
   // Binary cash-or-nothing put (unit payout)
   getBinaryPutPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
