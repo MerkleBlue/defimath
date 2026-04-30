@@ -152,6 +152,38 @@ export class OptionsJS {
     return { gammaCall, gammaPut };
   };
 
+  // Binary cash-or-nothing theta (unit payout, per day)
+  // Θ_call = (1/365) · [r·e^(-rτ)·Φ(d2) + e^(-rτ)·φ(d2)·(d1/(2τ) - r/(σ√τ))]
+  // Θ_put  = (1/365) · [r·e^(-rτ)·Φ(-d2) - e^(-rτ)·φ(d2)·(d1/(2τ) - r/(σ√τ))]
+  getBinaryTheta(spot, strike, timeSec, vol, rate) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired binary
+    if (timeSec == 0) {
+      return { thetaCall: 0, thetaPut: 0 };
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+
+    const phi = Math.exp(-(d2 ** 2) / 2) / Math.sqrt(2 * Math.PI);              // φ(d2)
+    const discount = 1 / this.exp(scaledRate);                                  // e^(-rτ)
+
+    const term = discount * phi * (d1 / (2 * timeYear) - rate / scaledVol);
+    const carryCall = rate * discount * this.stdNormCDF(d2);
+    const carryPut = rate * discount * this.stdNormCDF(-d2);
+
+    const thetaCall = (carryCall + term) / 365;
+    const thetaPut = (carryPut - term) / 365;
+
+    return { thetaCall, thetaPut };
+  };
+
   // Binary cash-or-nothing put (unit payout)
   getBinaryPutPrice(spot, strike, timeSec, vol, rate) {
     // check inputs

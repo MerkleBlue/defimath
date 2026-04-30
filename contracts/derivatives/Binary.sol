@@ -235,4 +235,74 @@ library DeFiMathBinary {
             gammaPut = -gammaCall;
         }
     }
+
+    /// @notice Computes Theta for binary cash-or-nothing call and put options (per day)
+    /// @dev Formula (per year):
+    ///      Θ_call = r·e^(-r*τ)·Φ(d2) + e^(-r*τ)·φ(d2)·(d1/(2τ) - r/(σ√τ))
+    ///      Θ_put  = r·e^(-r*τ)·Φ(-d2) - e^(-r*τ)·φ(d2)·(d1/(2τ) - r/(σ√τ))
+    ///      Returned values are per-day (divided by 365). Payout is fixed at 1.
+    /// @param spot Spot price of the asset (scaled by 1e18)
+    /// @param strike Strike price of the option (scaled by 1e18)
+    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param volatility Annualized implied volatility (scaled by 1e18)
+    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
+    /// @return thetaCall Binary call option theta per day for unit payout (scaled by 1e18)
+    /// @return thetaPut Binary put option theta per day for unit payout (scaled by 1e18)
+    function getBinaryTheta(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (int128 thetaCall, int128 thetaPut) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option
+            if (timeToExpirySec == 0) {
+                return (0, 0);
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+
+            return _binaryThetaCore(spot, strike, scaledVol, uint256(rate) * timeYear / 1e18, timeYear, rate);
+        }
+    }
+
+    /// @dev Core binary theta math, separated to keep stack shallow
+    function _binaryThetaCore(
+        uint128 spot,
+        uint128 strike,
+        uint256 scaledVol,
+        uint256 scaledRate,
+        uint256 timeYear,
+        uint64 rate
+    ) private pure returns (int128 thetaCall, int128 thetaPut) {
+        unchecked {
+            int256 d1 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d2 = d1 - int256(scaledVol);
+
+            uint256 discount = 1e36 / DeFiMath.expPositive(scaledRate);                                // e^(-r*τ) × 1e18
+            uint256 phi = DeFiMath.exp(-d2 * d2 / 2e18) * 1e18 / SQRT_2PI;                             // φ(d2) × 1e18
+
+            // term = e^(-r*τ) · φ(d2) · (d1/(2τ) - r/(σ√τ))
+            // d1/(2τ) - r/(σ√τ) in 18-dec: d1*1e18/(2*timeYear) - rate*1e18/scaledVol
+            int256 dDecay = d1 * 1e18 / int256(2 * timeYear) - int256(uint256(rate) * 1e18 / scaledVol);
+            int256 term = int256(discount * phi / 1e18) * dDecay / 1e18;                              // 18-dec, signed
+
+            // carry_call = r · e^(-r*τ) · Φ(d2);  carry_put uses Φ(-d2)
+            int256 carryCall = int256(uint256(rate) * discount / 1e18 * DeFiMath.stdNormCDF(d2) / 1e18);
+            int256 carryPut  = int256(uint256(rate) * discount / 1e18 * DeFiMath.stdNormCDF(-d2) / 1e18);
+
+            thetaCall = int128((carryCall + term) / 365);
+            thetaPut  = int128((carryPut  - term) / 365);
+        }
+    }
 }

@@ -168,7 +168,16 @@ where $\phi$ is the standard normal probability density function. Gamma is:
 \Gamma_{call} = -\frac{e^{-rT} \phi(d_2) \cdot d_1}{S^2 \sigma^2 T}, \quad \Gamma_{put} = -\Gamma_{call}
 ```
 
-Note that binary gamma is **signed**: it changes sign at ATM ($d_1 = 0$). Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
+Note that binary gamma is **signed**: it changes sign at ATM ($d_1 = 0$). Theta (per day) is:
+
+```math
+\Theta_{call} = \frac{1}{365}\left[r \cdot e^{-rT} N(d_2) + e^{-rT} \phi(d_2) \left(\frac{d_1}{2T} - \frac{r}{\sigma\sqrt{T}}\right)\right]
+```
+```math
+\Theta_{put} = \frac{1}{365}\left[r \cdot e^{-rT} N(-d_2) - e^{-rT} \phi(d_2) \left(\frac{d_1}{2T} - \frac{r}{\sigma\sqrt{T}}\right)\right]
+```
+
+Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
 
 #### Performance
 
@@ -182,6 +191,7 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 | put      |     2310 |  32806 |
 | delta    |     2077 |      - |
 | gamma    |     2194 |      - |
+| theta    |     3952 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -191,6 +201,7 @@ The table below compares the **maximum absolute error** against a trusted JavaSc
 | put      |  5.4e-15 | 1.2e-15 |
 | delta    |  1.2e-16 |       - |
 | gamma    |  1.0e-15 |       - |
+| theta    |  8.2e-16 |       - |
 
 #### Limits
 
