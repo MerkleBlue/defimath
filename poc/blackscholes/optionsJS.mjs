@@ -184,6 +184,33 @@ export class OptionsJS {
     return { thetaCall, thetaPut };
   };
 
+  // Binary cash-or-nothing vega (unit payout, per 1% vol move)
+  // ν_call = -(1/100) · e^(-rτ) · φ(d2) · d1/σ,  ν_put = -ν_call
+  getBinaryVega(spot, strike, timeSec, vol, rate) {
+    // check inputs
+    this.checkInputs(spot, strike, timeSec, rate);
+
+    // handle expired binary
+    if (timeSec == 0) {
+      return { vegaCall: 0, vegaPut: 0 };
+    }
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;
+    const scaledRate = rate * timeYear;
+
+    const d1 = this.getD1(spot, strike, timeYear, scaledVol, rate);
+    const d2 = d1 - scaledVol;
+
+    const phi = Math.exp(-(d2 ** 2) / 2) / Math.sqrt(2 * Math.PI);              // φ(d2)
+    const discount = 1 / this.exp(scaledRate);                                  // e^(-rτ)
+
+    const vegaCall = -discount * phi * d1 / vol / 100;
+    const vegaPut = -vegaCall;
+
+    return { vegaCall, vegaPut };
+  };
+
   // Binary cash-or-nothing put (unit payout)
   getBinaryPutPrice(spot, strike, timeSec, vol, rate) {
     // check inputs

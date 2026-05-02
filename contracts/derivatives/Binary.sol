@@ -305,4 +305,53 @@ library DeFiMathBinary {
             thetaPut  = int128((carryPut  - term) / 365);
         }
     }
+
+    /// @notice Computes Vega for binary cash-or-nothing call and put options (per 1% vol move)
+    /// @dev Formula: ν_call = -(1/100) · e^(-r*τ) · φ(d2) · d1/σ; ν_put = -ν_call. Payout is fixed at 1.
+    /// @dev Note: binary vega is signed and changes sign at d1 = 0 (around the strike)
+    /// @param spot Spot price of the asset (scaled by 1e18)
+    /// @param strike Strike price of the option (scaled by 1e18)
+    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param volatility Annualized implied volatility (scaled by 1e18)
+    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
+    /// @return vegaCall Binary call option vega per 1% vol for unit payout (scaled by 1e18)
+    /// @return vegaPut Binary put option vega per 1% vol for unit payout (scaled by 1e18)
+    function getBinaryVega(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 volatility,
+        uint64 rate
+    ) internal pure returns (int128 vegaCall, int128 vegaPut) {
+        unchecked {
+            // check inputs
+            if (spot <= MIN_SPOT) revert SpotLowerBoundError();
+            if (MAX_SPOT <= spot) revert SpotUpperBoundError();
+            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // handle expired option
+            if (timeToExpirySec == 0) {
+                return (0, 0);
+            }
+
+            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
+
+            int256 d1 = (DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d2 = d1 - int256(scaledVol);
+
+            // |ν| = e^(-r*τ) · φ(d2) · |d1| / σ / 100; sign of ν_call = -sign(d1)
+            uint256 absVega = (1e36 / DeFiMath.expPositive(scaledRate))                            // e^(-r*τ) × 1e18
+                            * (DeFiMath.exp(-d2 * d2 / 2e18) * 1e18 / SQRT_2PI) / 1e18             // × φ(d2) → × 1e18
+                            * uint256(d1 >= 0 ? d1 : -d1)                                          // × |d1| × 1e18 → × 1e36
+                            / volatility / 100;                                                     // ÷ σ × 1e18 → × 1e18, ÷ 100 for per-1%
+
+            vegaCall = int128(d1 >= 0 ? -int256(absVega) : int256(absVega));
+            vegaPut = -vegaCall;
+        }
+    }
 }

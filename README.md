@@ -177,6 +177,12 @@ Note that binary gamma is **signed**: it changes sign at ATM ($d_1 = 0$). Theta 
 \Theta_{put} = \frac{1}{365}\left[r \cdot e^{-rT} N(-d_2) - e^{-rT} \phi(d_2) \left(\frac{d_1}{2T} - \frac{r}{\sigma\sqrt{T}}\right)\right]
 ```
 
+Vega (per 1% vol move) is also signed and changes sign at the strike:
+
+```math
+\nu_{call} = -\frac{1}{100} \cdot \frac{e^{-rT} \phi(d_2) \cdot d_1}{\sigma}, \quad \nu_{put} = -\nu_{call}
+```
+
 Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
 
 #### Performance
@@ -192,6 +198,7 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 | delta    |     2077 |      - |
 | gamma    |     2194 |      - |
 | theta    |     3952 |      - |
+| vega     |     2135 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -202,6 +209,7 @@ The table below compares the **maximum absolute error** against a trusted JavaSc
 | delta    |  1.2e-16 |       - |
 | gamma    |  1.0e-15 |       - |
 | theta    |  8.2e-16 |       - |
+| vega     |  2.7e-16 |       - |
 
 #### Limits
 
