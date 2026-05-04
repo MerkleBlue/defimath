@@ -274,7 +274,66 @@ describe("DeFiMathOptions", function () {
             }
           }
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("impliedVolatility", function () {
+      it("single", async function () {
+        const { options } = await loadFixture(deploy);
+
+        const price = await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.05), price, true)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("multiple in typical range (call)", async function () {
+        const { options } = await loadFixture(deploy);
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const price = await options.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, true)).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("multiple in typical range (put)", async function () {
+        const { options } = await loadFixture(deploy);
+
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+
+        let totalGas = 0, count = 0;
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                const price = await options.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, false)).gasUsed);
+                count++;
+              }
+            }
+          }
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
@@ -993,6 +1052,92 @@ describe("DeFiMathOptions", function () {
           await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
           await options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
           await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+        });
+      });
+    });
+
+    describe("impliedVolatility", function () {
+      const MAX_IV_REL_ERROR = 1e-6;
+
+      async function roundTripIV(spot, strike, timeSec, vol, rate, isCall) {
+        const { options } = await loadFixture(deploy);
+        const price = await options[isCall ? "getCallOptionPrice" : "getPutOptionPrice"](tokens(spot), tokens(strike), timeSec, tokens(vol), tokens(rate));
+        const iv = (await options.getImpliedVolatility(tokens(spot), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
+        const relError = Math.abs(iv - vol) / vol;
+        assert.isBelow(relError, MAX_IV_REL_ERROR, `IV mismatch: expected ${vol}, got ${iv}`);
+      }
+
+      it("single round-trip ATM call", async function () {
+        await roundTripIV(1000, 1000, 30 * SEC_IN_DAY, 0.5, 0.05, true);
+      });
+
+      it("single round-trip ATM put", async function () {
+        await roundTripIV(1000, 1000, 30 * SEC_IN_DAY, 0.5, 0.05, false);
+      });
+
+      it("round-trip across strike/time/vol/rate matrix (call)", async function () {
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                await roundTripIV(1000, strike, time * SEC_IN_DAY, vol, rate, true);
+              }
+            }
+          }
+        }
+      });
+
+      it("round-trip across strike/time/vol/rate matrix (put)", async function () {
+        const strikes = [800, 900, 1000.01, 1100, 1200];
+        const times = [7, 30, 60, 90, 180];
+        const vols = [0.4, 0.6, 0.8];
+        const rates = [0.05, 0.1, 0.2];
+        for (const strike of strikes) {
+          for (const time of times) {
+            for (const vol of vols) {
+              for (const rate of rates) {
+                await roundTripIV(1000, strike, time * SEC_IN_DAY, vol, rate, false);
+              }
+            }
+          }
+        }
+      });
+
+      it("low vol round-trip", async function () {
+        await roundTripIV(1000, 1000, 30 * SEC_IN_DAY, 0.05, 0.05, true);
+        await roundTripIV(1000, 1000, 30 * SEC_IN_DAY, 0.10, 0.05, true);
+      });
+
+      it("high vol round-trip", async function () {
+        await roundTripIV(1000, 1000, 30 * SEC_IN_DAY, 2, 0.05, true);
+        await roundTripIV(1000, 1000, 30 * SEC_IN_DAY, 5, 0.05, true);
+      });
+
+      describe("failure", function () {
+        it("rejects when timeToExpirySec = 0", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryUpperBoundError");
+        });
+
+        it("rejects when call price below intrinsic", async function () {
+          const { options } = await loadFixture(deploy);
+          // ITM call: spot=1000, strike=900, intrinsic > 100·e^(-rτ); pricing 50 is below intrinsic
+          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(900), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "PriceOutOfBoundsError");
+        });
+
+        it("rejects when call price >= spot", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), true), "PriceOutOfBoundsError");
+        });
+
+        it("rejects when put price >= K·e^(-rT)", async function () {
+          const { options } = await loadFixture(deploy);
+          // For strike=1000, rate=0.05, t=30d: K·e^(-rτ) ≈ 995.89; rejecting 1000
+          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), false), "PriceOutOfBoundsError");
         });
       });
     });

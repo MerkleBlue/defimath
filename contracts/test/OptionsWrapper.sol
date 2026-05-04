@@ -167,7 +167,36 @@ contract OptionsWrapper {
         startGas = gasleft();
         vega = DeFiMathOptions.getVega(spot, strike, timeToExpirySec, volatility, rate);
         endGas = gasleft();
-        
+
         return (vega, startGas - endGas);
+    }
+
+    function getImpliedVolatility(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 rate,
+        uint128 optionPrice,
+        bool isCall
+    ) external pure returns (uint256 volatility) {
+        return DeFiMathOptions.getImpliedVolatility(spot, strike, timeToExpirySec, rate, optionPrice, isCall);
+    }
+
+    function getImpliedVolatilityMG(
+        uint128 spot,
+        uint128 strike,
+        uint32 timeToExpirySec,
+        uint64 rate,
+        uint128 optionPrice,
+        bool isCall
+    ) external view returns (uint256 volatility, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        volatility = DeFiMathOptions.getImpliedVolatility(spot, strike, timeToExpirySec, rate, optionPrice, isCall);
+        endGas = gasleft();
+
+        return (volatility, startGas - endGas);
     }
 }

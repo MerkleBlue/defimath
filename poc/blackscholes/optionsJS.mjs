@@ -14,6 +14,60 @@ export const E_TO_32 = 78962960182680.695160978022635;  // e ^ 32
 export class OptionsJS {
   
 
+  // Implied volatility via Newton-Raphson: find σ such that BS(σ) = optionPrice
+  getImpliedVolatility(spot, strike, timeSec, rate, optionPrice, isCall) {
+    this.checkInputs(spot, strike, timeSec, rate);
+    if (timeSec === 0) throw new Error("TimeToExpiryLowerBoundError");
+
+    const timeYear = timeSec / SECONDS_IN_YEAR;
+    const sqrtT = Math.sqrt(timeYear);
+    const discountedStrike = strike * Math.exp(-rate * timeYear);
+
+    // No-arbitrage bounds
+    const lower = isCall ? Math.max(spot - discountedStrike, 0) : Math.max(discountedStrike - spot, 0);
+    const upper = isCall ? spot : discountedStrike;
+    if (optionPrice <= lower || optionPrice >= upper) {
+      throw new Error("PriceOutOfBoundsError");
+    }
+
+    const lnSK = Math.log(spot / strike);
+
+    // Manaster-Koehler initial guess
+    let sigma = Math.sqrt(2 * Math.abs(lnSK + rate * timeYear) / timeYear);
+    if (!isFinite(sigma) || sigma < 0.0001) sigma = 0.5;
+    if (sigma > 18) sigma = 18;
+
+    const TOL = 1e-14;
+    const MAX_ITER = 30;
+    const MAX_STEP = 1; // ±100% vol move per iteration
+
+    for (let i = 0; i < MAX_ITER; i++) {
+      const price = isCall
+        ? this.getCallOptionPrice(spot, strike, timeSec, sigma, rate)
+        : this.getPutOptionPrice(spot, strike, timeSec, sigma, rate);
+
+      const diff = price - optionPrice;
+      if (Math.abs(diff) < TOL) return sigma;
+
+      // Recompute d1 and vega = S · φ(d1) · √T (per-unit-vol)
+      const scaledVol = sigma * sqrtT + 1e-16;
+      const d1 = (lnSK + (rate + sigma * sigma / 2) * timeYear) / scaledVol;
+      const phiD1 = Math.exp(-d1 * d1 / 2) / Math.sqrt(2 * Math.PI);
+      const vega = spot * phiD1 * sqrtT;
+
+      if (vega < 1e-30) throw new Error("NoConvergenceError");
+
+      let step = diff / vega;
+      if (step > MAX_STEP) step = MAX_STEP;
+      if (step < -MAX_STEP) step = -MAX_STEP;
+
+      sigma -= step;
+      if (sigma < 0.0001) sigma = 0.0001;
+      if (sigma > 18) sigma = 18;
+    }
+    throw new Error("NoConvergenceError");
+  };
+
   getCallOptionPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);

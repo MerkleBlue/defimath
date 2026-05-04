@@ -102,6 +102,16 @@ d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}},  d_2 = d_1 - \sigma 
 
 where $\sigma$ is the volatility of the underlying asset. Learn more about the [Black-Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
 
+#### Implied Volatility
+
+Given an observed market price, DeFiMath can solve for the implied volatility — the value of $\sigma$ that makes the Black-Scholes formula match the market price. Implementation uses Newton-Raphson iteration with vega as the derivative:
+
+```math
+\sigma_{n+1} = \sigma_n - \frac{BS(\sigma_n) - P_{market}}{\nu(\sigma_n)}
+```
+
+where $\nu$ is per-unit-vol vega ($S \cdot \phi(d_1) \cdot \sqrt{T}$). Typical convergence is 4–6 iterations. The market price must lie within the no-arbitrage band $[\max(S - Ke^{-rT}, 0), S]$ for calls (or the analogous put bounds), or the call reverts.
+
 #### Performance
 
 The maximum absolute error for call or put option pricing is approximately 1.2e-10 at a $1,000 spot price — offering near-perfect precision.
@@ -118,6 +128,7 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 | gamma    |     1707 |         - |      - |         - |      - |
 | theta    |     3823 |         - |      - |         - |      - |
 | vega     |     1680 |     16503 |      - |         - |      - |
+| IV       |    15992 |         - |      - |         - |      - |
 
 The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
 

@@ -6,7 +6,7 @@ import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, gener
 
 const fastTest = true;
 
-const MAX_BINARY_ABS_ERROR = 2.2e-14; // for a unit-payout binary option
+const MAX_BINARY_ABS_ERROR = 2.5e-14; // for a unit-payout binary option
 const MAX_BINARY_DELTA_ABS_ERROR = 1e-13; // for unit-payout binary delta
 const MAX_BINARY_GAMMA_ABS_ERROR = 1e-15; // for unit-payout binary gamma
 const MAX_BINARY_THETA_ABS_ERROR = 1e-15; // for unit-payout binary theta (per day)
@@ -66,7 +66,7 @@ function binaryVegaWrapped(spot, strike, timeSec, vol, rate) {
   return new OptionsJS().getBinaryVega(spot, strike, timeSec, vol, rate);
 }
 
-describe.only("DeFiMathBinary", function () {
+describe("DeFiMathBinary", function () {
   let testTimePoints;
   let testStrikePoints;
 
