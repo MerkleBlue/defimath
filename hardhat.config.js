@@ -6,10 +6,10 @@ module.exports = {
   solidity: {
     version: "0.8.34",
     settings: {
-      viaIR: false, // enable for coverage
+      viaIR: true, // enable for coverage
       optimizer: {
         enabled: true,
-        runs: 9999,
+        runs: 10_000_000,
       },
     },
   },

@@ -279,7 +279,7 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("impliedVolatility", function () {
-      it.only("single", async function () {
+      it("single", async function () {
         const { options } = await loadFixture(deploy);
 
         const price = await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(2.11), tokens(0.05));
@@ -290,7 +290,7 @@ describe("DeFiMathOptions", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it.only("multiple in typical range (call)", async function () {
+      it("multiple in typical range (call)", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -313,7 +313,7 @@ describe("DeFiMathOptions", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it.only("multiple in typical range (put)", async function () {
+      it("multiple in typical range (put)", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1120,7 +1120,7 @@ describe("DeFiMathOptions", function () {
       describe("failure", function () {
         it("rejects when timeToExpirySec = 0", async function () {
           const { options } = await loadFixture(deploy);
-          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryLowerBoundError");
         });
 
         it("rejects when call price below intrinsic", async function () {

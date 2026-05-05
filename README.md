@@ -116,19 +116,19 @@ where $\nu$ is per-unit-vol vega ($S \cdot \phi(d_1) \cdot \sqrt{T}$). Typical c
 
 The maximum absolute error for call or put option pricing is approximately 1.2e-10 at a $1,000 spot price — offering near-perfect precision.
 
-Option pricing computations cost roughly 3,200 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
+Option pricing computations cost roughly 2,900 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
 
 The following table compares **gas efficiency** of DeFiMath with other implementations over a typical range of parameters.
 
 | Function | DeFiMath | Derivexyz | Premia | Party1983 |  Dopex |
 | :------- | -------: | --------: | -----: | --------: | -----: |
-| call     |     3203 |     30220 |  20635 |     39974 |  95447 |
-| put      |     3229 |     30220 |  20827 |     40137 |  94808 |
-| delta    |     2033 |     19574 |      - |     26853 |      - |
-| gamma    |     1707 |         - |      - |         - |      - |
-| theta    |     3823 |         - |      - |         - |      - |
-| vega     |     1680 |     16503 |      - |         - |      - |
-| IV       |    15547 |         - |      - |         - |      - |
+| call     |     2927 |     13404 |  20831 |     36243 |  89728 |
+| put      |     2941 |     13407 |  22117 |     36424 |  89051 |
+| delta    |     1846 |      8671 |      - |     25172 |      - |
+| gamma    |     1551 |         - |      - |         - |      - |
+| theta    |     3499 |         - |      - |         - |      - |
+| vega     |     1491 |      7526 |      - |         - |      - |
+| IV       |    13282 |         - |      - |         - |      - |
 
 The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
 

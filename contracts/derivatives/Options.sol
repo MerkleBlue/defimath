@@ -49,6 +49,9 @@ library DeFiMathOptions {
     /// @notice Reverts when time to expiration exceeds 2 years
     error TimeToExpiryUpperBoundError();
 
+    /// @notice Reverts when time to expiration is 0 (used in IV calculation)
+    error TimeToExpiryLowerBoundError();
+
     /// @notice Reverts when risk-free rate exceeds 400%
     error RateUpperBoundError();
 
@@ -84,10 +87,7 @@ library DeFiMathOptions {
 
             // handle expired call 
             if (timeToExpirySec == 0) {
-                if (spot > strike) {
-                    return spot - strike;
-                }
-                return 0;
+                return spot > strike ? spot - strike : 0;
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
@@ -102,9 +102,7 @@ library DeFiMathOptions {
             uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(d1);              // spot * N(d1)
             uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(d2);         // strike * N(d2)
 
-            if (spotNd1 > strikeNd2) {
-                price = (spotNd1 - strikeNd2) / 1e18;
-            }
+            price = spotNd1 >= strikeNd2 ? (spotNd1 - strikeNd2) / 1e18 : 0;
         }
     }
 
@@ -133,10 +131,7 @@ library DeFiMathOptions {
 
             // handle expired put 
             if (timeToExpirySec == 0) {
-                if (strike > spot) {
-                    return strike - spot;
-                }
-                return 0;
+                return strike > spot ? strike - spot : 0;
             }
 
             uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
@@ -151,9 +146,7 @@ library DeFiMathOptions {
             uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(-d1);             // spot * N(-d1)
             uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(-d2);        // strike * N(-d2)
 
-            if (strikeNd2 > spotNd1) {
-                price = (strikeNd2 - spotNd1) / 1e18;
-            }
+            price = strikeNd2 >= spotNd1 ? (strikeNd2 - spotNd1) / 1e18 : 0;
         }
     }
 
@@ -379,7 +372,7 @@ library DeFiMathOptions {
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
-            if (timeToExpirySec == 0) revert TimeToExpiryUpperBoundError();
+            if (timeToExpirySec == 0) revert TimeToExpiryLowerBoundError();
 
             IVState memory s;
             s.spot = spot;
@@ -394,28 +387,35 @@ library DeFiMathOptions {
             s.lnSK = DeFiMath.ln16(uint256(spot) * 1e18 / uint256(strike));
             s.vegaBase = uint256(spot) * s.sqrtTimeYear / 1e18;
 
-            // No-arbitrage bound check
-            uint256 lower = isCall
-                ? (spot > s.discountedStrike ? spot - s.discountedStrike : 0)
-                : (s.discountedStrike > spot ? s.discountedStrike - spot : 0);
-            uint256 upper = isCall ? uint256(spot) : s.discountedStrike;
-            if (optionPrice <= lower || optionPrice >= upper) revert PriceOutOfBoundsError();
+            if (isCall) {
+                // No-arbitrage bound check
+                uint256 lower = spot > s.discountedStrike ? spot - s.discountedStrike : 0;
+                uint256 upper = uint256(spot);
+                if (optionPrice <= lower || optionPrice >= upper) revert PriceOutOfBoundsError();
 
-            return _ivIterate(s);
+                return _ivCallIterate(s);
+            } else {
+                // No-arbitrage bound check
+                uint256 lower = s.discountedStrike > spot ? s.discountedStrike - spot : 0;
+                uint256 upper = s.discountedStrike;
+                if (optionPrice <= lower || optionPrice >= upper) revert PriceOutOfBoundsError();
+
+                return _ivPutIterate(s);
+            }
         }
     }
 
     /// @dev Newton-Raphson iteration loop
-    function _ivIterate(IVState memory s) private pure returns (uint256 sigma) {
+    function _ivCallIterate(IVState memory s) private pure returns (uint256 sigma) {
         unchecked {
             // Manaster-Koehler initial guess: σ₀ = √(2·|ln(S/K) + rτ| / τ)
             // Approximated here as a fixed 0.55 (55%) for simplicity — converges in 5–10 iterations across the typical range.
             sigma = 55e16;
-            //console.log("option price", s.optionPrice);
+            // console.log("call price", s.optionPrice);
 
             for (uint256 i = 0; i < IV_MAX_ITER; i++) {
                 
-                (uint256 price, uint256 vega) = _bsPriceAndVega(s, sigma);
+                (uint256 price, uint256 vega) = _callPriceAndVega(s, sigma);
                 // console.log("Iteration", i + 1);
                 // console.log("vol", sigma);
                 // console.log("price", price);
@@ -440,8 +440,43 @@ library DeFiMathOptions {
         }
     }
 
-    /// @dev Computes BS price and per-unit-vol vega at given σ. Reuses precomputed state.
-    function _bsPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vega) {
+    /// @dev Newton-Raphson iteration loop
+    function _ivPutIterate(IVState memory s) private pure returns (uint256 sigma) {
+        unchecked {
+            // Manaster-Koehler initial guess: σ₀ = √(2·|ln(S/K) + rτ| / τ)
+            // Approximated here as a fixed 0.55 (55%) for simplicity — converges in 5–10 iterations across the typical range.
+            sigma = 55e16;
+            // console.log("put price", s.optionPrice);
+
+            for (uint256 i = 0; i < IV_MAX_ITER; i++) {
+                
+                (uint256 price, uint256 vega) = _putPriceAndVega(s, sigma);
+                // console.log("Iteration", i + 1);
+                // console.log("vol", sigma);
+                // console.log("price", price);
+                // console.log("vega", vega);
+
+                // diff = price - optionPrice
+                int256 diff = int256(price) - int256(s.optionPrice);
+                uint256 absDiff = diff >= 0 ? uint256(diff) : uint256(-diff);
+                if (absDiff <= IV_TOLERANCE) return sigma;
+
+                if (vega < 1e6) revert NoConvergenceError();   // vega too small to invert
+
+                // step = diff / vega (signed, in 18-dec)
+                int256 step = diff * 1e18 / int256(vega);
+
+                int256 newSigma = int256(sigma) - step;
+                if (newSigma < int256(MIN_VOL_IV)) newSigma = int256(MIN_VOL_IV);
+                if (newSigma > int256(MAX_VOL_IV)) newSigma = int256(MAX_VOL_IV);
+                sigma = uint256(newSigma);
+            }
+            revert NoConvergenceError();
+        }
+    }
+
+    /// @dev Computes call option price and per-unit-vol vega at given σ. Reuses precomputed state.
+    function _callPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vega) {
         unchecked {
             uint256 scaledVol = sigma * s.sqrtTimeYear / 1e18 + 1;
             int256 d1 = (s.lnSK + int256(s.scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -452,15 +487,27 @@ library DeFiMathOptions {
             vega = s.vegaBase * phiD1 / 1e18;
 
             // price
-            if (s.isCall) {
-                uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(d1);
-                uint256 strikeNd2 = s.discountedStrike * DeFiMath.stdNormCDF(d2);
-                price = spotNd1 > strikeNd2 ? (spotNd1 - strikeNd2) / 1e18 : 0;
-            } else {
-                uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(-d1);
-                uint256 strikeNd2 = s.discountedStrike * DeFiMath.stdNormCDF(-d2);
-                price = strikeNd2 > spotNd1 ? (strikeNd2 - spotNd1) / 1e18 : 0;
-            }
+            uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(d1);
+            uint256 strikeNd2 = s.discountedStrike * DeFiMath.stdNormCDF(d2);
+            price = spotNd1 > strikeNd2 ? (spotNd1 - strikeNd2) / 1e18 : 0;
+        }
+    }
+
+    /// @dev Computes put option price and per-unit-vol vega at given σ. Reuses precomputed state.
+    function _putPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vega) {
+        unchecked {
+            uint256 scaledVol = sigma * s.sqrtTimeYear / 1e18 + 1;
+            int256 d1 = (s.lnSK + int256(s.scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d2 = d1 - int256(scaledVol);
+
+            // vega per unit vol = S · sqrt(T) · φ(d1) = vegaBase · φ(d1)
+            uint256 phiD1 = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
+            vega = s.vegaBase * phiD1 / 1e18;
+
+            // price
+            uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(-d1);
+            uint256 strikeNd2 = s.discountedStrike * DeFiMath.stdNormCDF(-d2);
+            price = strikeNd2 > spotNd1 ? (strikeNd2 - spotNd1) / 1e18 : 0;
         }
     }
 }
