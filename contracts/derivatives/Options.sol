@@ -337,7 +337,7 @@ library DeFiMathOptions {
     uint256 internal constant MAX_VOL_IV = 18e18;
 
     /// @notice Convergence tolerance (price diff in 18-decimal)
-    uint256 internal constant IV_TOLERANCE = 1e6;
+    uint256 internal constant IV_TOLERANCE = 1e6 - 1;
 
     /// @notice Maximum Newton-Raphson iterations
     uint256 internal constant IV_MAX_ITER = 30;
@@ -424,7 +424,7 @@ library DeFiMathOptions {
                 // diff = price - optionPrice
                 int256 diff = int256(price) - int256(s.optionPrice);
                 uint256 absDiff = diff >= 0 ? uint256(diff) : uint256(-diff);
-                if (absDiff < IV_TOLERANCE) return sigma;
+                if (absDiff <= IV_TOLERANCE) return sigma;
 
                 if (vega < 1e6) revert NoConvergenceError();   // vega too small to invert
 
