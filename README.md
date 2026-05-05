@@ -198,18 +198,18 @@ Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Bin
 
 #### Performance
 
-Binary option pricing computations cost roughly 2,300 gas on average — over an order of magnitude cheaper than comparable on-chain implementations.
+Binary option pricing computations cost roughly 2,100 gas on average — over an order of magnitude cheaper than comparable on-chain implementations.
 
 The following table compares **gas efficiency** of DeFiMath with other implementations over a typical range of parameters.
 
 | Function | DeFiMath | Haptic |
 | :------- | -------: | -----: |
-| call     |     2305 |  32806 |
-| put      |     2310 |  32806 |
-| delta    |     2077 |      - |
-| gamma    |     2194 |      - |
-| theta    |     3952 |      - |
-| vega     |     2135 |      - |
+| call     |     2142 |  16272 |
+| put      |     2147 |  16275 |
+| delta    |     1878 |      - |
+| gamma    |     2022 |      - |
+| theta    |     3556 |      - |
+| vega     |     1970 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -246,14 +246,14 @@ The following table compares **gas efficiency** of DeFiMath with other math libr
 
 | Function   | DeFiMath | PRBMath | ABDKQuad | Solady | SolStat |
 | :--------- | -------: | ------: | -------: | -----: | ------: |
-| exp        |      359 |    2748 |     5371 |    420 |       - |
-| ln         |      608 |    6994 |    15843 |    536 |       - |
-| log2       |      681 |    6691 |    15191 |      - |       - |
-| log10      |      681 |    8570 |        - |      - |       - |
-| pow        |     1053 |    9694 |        - |   1223 |       - |
-| sqrt       |      383 |    961* |      731 |   415* |       - |
-| stdNormCDF |      799 |       - |        - |      - |    4884 |
-| erf        |      773 |       - |        - |      - |    4236 |
+| exp        |      335 |    2822 |     5857 |    372 |       - |
+| ln         |      508 |    6962 |    12717 |    519 |       - |
+| log2       |      524 |    6889 |    12276 |      - |       - |
+| log10      |      524 |    8688 |        - |      - |       - |
+| pow        |      885 |    9857 |        - |    978 |       - |
+| sqrt       |      344 |    960* |      810 |   341* |       - |
+| stdNormCDF |      732 |       - |        - |      - |    2799 |
+| erf        |      686 |       - |        - |      - |    1735 |
 
 \* not a fixed-point function
 
