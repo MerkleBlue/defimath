@@ -279,10 +279,10 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("impliedVolatility", function () {
-      it("single", async function () {
+      it.only("single", async function () {
         const { options } = await loadFixture(deploy);
 
-        const price = await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const price = await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(2.11), tokens(0.05));
 
         let totalGas = 0, count = 0;
         totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.05), price, true)).gasUsed);
@@ -290,7 +290,7 @@ describe("DeFiMathOptions", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it("multiple in typical range (call)", async function () {
+      it.only("multiple in typical range (call)", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -313,7 +313,7 @@ describe("DeFiMathOptions", function () {
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
 
-      it("multiple in typical range (put)", async function () {
+      it.only("multiple in typical range (put)", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];

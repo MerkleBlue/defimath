@@ -3,6 +3,8 @@ pragma solidity ^0.8.34;
 
 import "../math/Math.sol";
 
+import "hardhat/console.sol";
+
 /// @title DeFiMathOptions: Options Pricing and Greeks Library for Solidity
 /// @notice Computes Black-Scholes option prices and Greeks (Delta, Gamma, Theta, Vega)
 /// @dev All values are in 18-decimal fixed-point format unless otherwise stated
@@ -407,11 +409,17 @@ library DeFiMathOptions {
     function _ivIterate(IVState memory s) private pure returns (uint256 sigma) {
         unchecked {
             // Manaster-Koehler initial guess: σ₀ = √(2·|ln(S/K) + rτ| / τ)
-            // Approximated here as a fixed 0.5 (50%) for simplicity — converges in 5–10 iterations across the typical range.
-            sigma = 5e17;
+            // Approximated here as a fixed 0.55 (55%) for simplicity — converges in 5–10 iterations across the typical range.
+            sigma = 55e16;
+            //console.log("option price", s.optionPrice);
 
             for (uint256 i = 0; i < IV_MAX_ITER; i++) {
+                
                 (uint256 price, uint256 vega) = _bsPriceAndVega(s, sigma);
+                // console.log("Iteration", i + 1);
+                // console.log("vol", sigma);
+                // console.log("price", price);
+                // console.log("vega", vega);
 
                 // diff = price - optionPrice
                 int256 diff = int256(price) - int256(s.optionPrice);
@@ -422,10 +430,6 @@ library DeFiMathOptions {
 
                 // step = diff / vega (signed, in 18-dec)
                 int256 step = diff * 1e18 / int256(vega);
-
-                // clamp step to ±1e18 (max ±100% vol move per iteration)
-                if (step > 1e18) step = 1e18;
-                if (step < -1e18) step = -1e18;
 
                 int256 newSigma = int256(sigma) - step;
                 if (newSigma < int256(MIN_VOL_IV)) newSigma = int256(MIN_VOL_IV);

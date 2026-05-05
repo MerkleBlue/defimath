@@ -128,7 +128,7 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 | gamma    |     1707 |         - |      - |         - |      - |
 | theta    |     3823 |         - |      - |         - |      - |
 | vega     |     1680 |     16503 |      - |         - |      - |
-| IV       |    15992 |         - |      - |         - |      - |
+| IV       |    15547 |         - |      - |         - |      - |
 
 The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
 
