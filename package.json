@@ -1,8 +1,8 @@
 {
   "name": "defimath-lib",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "High-performance, gas-efficient Solidity library for DeFi math and derivatives",
-  "keywords": ["solidity", "defi", "math", "options", "black-scholes", "futures", "ethereum", "evm"],
+  "keywords": ["solidity", "defi", "math", "options", "binary-options", "implied-volatility", "black-scholes", "futures", "ethereum", "evm"],
   "repository": {
     "type": "git",
     "url": "https://github.com/MerkleBlue/defimath"
