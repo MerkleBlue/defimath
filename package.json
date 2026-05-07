@@ -1,6 +1,6 @@
 {
   "name": "defimath-lib",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "High-performance, gas-efficient Solidity library for DeFi math and derivatives",
   "keywords": ["solidity", "defi", "math", "options", "binary-options", "implied-volatility", "black-scholes", "futures", "ethereum", "evm"],
   "repository": {
@@ -17,9 +17,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.2",
     "hardhat": "^2.28.6",
-    "solidity-coverage": "^0.8.17"
-  },
-  "dependencies": {
+    "solidity-coverage": "^0.8.17",
     "black-scholes": "1.1.0",
     "greeks": "1.0.0",
     "math-erf": "1.0.0"
