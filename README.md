@@ -26,7 +26,7 @@
 |---|---|
 | **DeFi Primitives** | Core building blocks for advanced financial protocols — options, futures, and other on-chain derivatives. |
 | **High-Precision Math** | Accurate fixed-point arithmetic essential for financial calculations, with sub-1e-10 absolute error. |
-| **Gas Optimized** | Option pricing at ~3,200 gas — orders of magnitude cheaper than comparable implementations. |
+| **Gas Optimized** | Option pricing at ~2,900 gas — orders of magnitude cheaper than comparable implementations. |
 | **Fully Tested** | Comprehensive unit tests with verified accuracy against trusted JavaScript reference implementations. |
 | **Modular & Extensible** | Import only what you need; extend seamlessly to fit your protocol's requirements. |
 | **Open Source** | MIT-licensed — transparent, auditable, and free to use or build upon. |
