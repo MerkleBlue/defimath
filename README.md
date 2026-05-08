@@ -17,7 +17,7 @@
   - [Binary Options (Cash-or-Nothing)](#binary-options-cash-or-nothing)
   - [Futures](#futures)
 - [Math](#math)
-- [Credits](#credits)
+- [Benchmarks](#benchmarks)
 - [License](#license)
 
 ## Features
@@ -270,18 +270,9 @@ The table below compares the **maximum relative error** against a trusted JavaSc
 | stdNormCDF |  4.6e-13 |        - |        - |        - |  3.2e-6 |
 | erf        |  7.4e-13 |        - |        - |        - |  5.7e-6 |
 
-## Credits
+## Benchmarks
 
-The following libraries were used for comparison:
-- [Derivexyz](https://github.com/derivexyz/v1-core/blob/master/contracts/libraries/BlackScholes.sol)
-- [Premia](https://github.com/Premian-Labs/premia-contracts/blob/master/contracts/libraries/OptionMath.sol)
-- [Party1983](https://github.com/partylikeits1983/black_scholes_solidity/blob/main/contracts/libraries/BlackScholesModel.sol)
-- [Dopex](https://github.com/code-423n4/2023-08-dopex/blob/main/contracts/libraries/BlackScholes.sol)
-- [PRBMath](https://github.com/PaulRBerg/prb-math)
-- [ABDK](https://github.com/abdk-consulting/abdk-libraries-solidity)
-- [Solady](https://github.com/Vectorized/solady)
-- [SolStat](https://github.com/primitivefinance/solstat)
-- [Haptic](https://github.com/HapticFinance/binaries-pricing-model)
+Gas and precision benchmarks against other Solidity math and options libraries are maintained in a separate repository: [defimath-compare](https://github.com/MerkleBlue/defimath-compare).
 
 ## License
 
