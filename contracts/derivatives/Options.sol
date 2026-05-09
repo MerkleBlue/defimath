@@ -3,8 +3,6 @@ pragma solidity ^0.8.34;
 
 import "../math/Math.sol";
 
-import "hardhat/console.sol";
-
 /// @title DeFiMathOptions: Options Pricing and Greeks Library for Solidity
 /// @author DeFiMath (https://defimath.com)
 /// @notice Computes Black-Scholes option prices and Greeks (Delta, Gamma, Theta, Vega)
@@ -412,15 +410,10 @@ library DeFiMathOptions {
             // Manaster-Koehler initial guess: σ₀ = √(2·|ln(S/K) + rτ| / τ)
             // Approximated here as a fixed 0.55 (55%) for simplicity — converges in 5–10 iterations across the typical range.
             sigma = 55e16;
-            // console.log("call price", s.optionPrice);
 
             for (uint256 i = 0; i < IV_MAX_ITER; i++) {
                 
                 (uint256 price, uint256 vega) = _callPriceAndVega(s, sigma);
-                // console.log("Iteration", i + 1);
-                // console.log("vol", sigma);
-                // console.log("price", price);
-                // console.log("vega", vega);
 
                 // diff = price - optionPrice
                 int256 diff = int256(price) - int256(s.optionPrice);
@@ -447,15 +440,10 @@ library DeFiMathOptions {
             // Manaster-Koehler initial guess: σ₀ = √(2·|ln(S/K) + rτ| / τ)
             // Approximated here as a fixed 0.55 (55%) for simplicity — converges in 5–10 iterations across the typical range.
             sigma = 55e16;
-            // console.log("put price", s.optionPrice);
 
             for (uint256 i = 0; i < IV_MAX_ITER; i++) {
                 
                 (uint256 price, uint256 vega) = _putPriceAndVega(s, sigma);
-                // console.log("Iteration", i + 1);
-                // console.log("vol", sigma);
-                // console.log("price", price);
-                // console.log("vega", vega);
 
                 // diff = price - optionPrice
                 int256 diff = int256(price) - int256(s.optionPrice);
