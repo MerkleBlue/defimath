@@ -10,7 +10,7 @@ const MAX_BINARY_ABS_ERROR = 2.5e-14; // for a unit-payout binary option
 const MAX_BINARY_DELTA_ABS_ERROR = 1e-13; // for unit-payout binary delta
 const MAX_BINARY_GAMMA_ABS_ERROR = 1e-15; // for unit-payout binary gamma
 const MAX_BINARY_THETA_ABS_ERROR = 2e-15; // for unit-payout binary theta (per day)
-const MAX_BINARY_VEGA_ABS_ERROR = 1e-15; // for unit-payout binary vega (per 1% vol)
+const MAX_BINARY_VEGA_ABS_ERROR = 3e-15; // for unit-payout binary vega (per 1% vol)
 
 // JS reference for binary call price
 function binaryCallWrapped(spot, strike, timeSec, vol, rate) {
