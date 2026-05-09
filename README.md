@@ -42,7 +42,7 @@ Install via npm:
 npm install defimath-lib
 ```
 
-Requires **Solidity `^0.8.30`**.
+Requires **Solidity `^0.8.34`**.
 
 ## Usage
 
@@ -50,7 +50,7 @@ Import only the modules you need:
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.34;
 
 import "defimath/derivatives/Options.sol";
 ```
