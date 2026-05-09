@@ -4,6 +4,9 @@
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
 
 ![Tests](https://github.com/MerkleBlue/defimath/actions/workflows/test.yml/badge.svg)
+[![npm version](https://img.shields.io/npm/v/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
+[![npm downloads](https://img.shields.io/npm/dm/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.34-blue.svg)](https://soliditylang.org)
 
 [DeFiMath](https://defimath.com) is a high-performance, open-source Solidity library designed for Ethereum smart contracts. It provides optimized, gas-efficient implementations of core DeFi primitives and mathematical utilities—built with precision and performance in mind.
 
