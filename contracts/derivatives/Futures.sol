@@ -4,6 +4,7 @@ pragma solidity ^0.8.34;
 import "../math/Math.sol";
 
 /// @title DeFiMathFutures: Futures Pricing Library for Solidity
+/// @author DeFiMath (https://defimath.com)
 /// @notice Provides a gas-efficient method for calculating futures contract prices using continuous compounding
 /// @dev All values are in 18-decimal fixed-point format unless otherwise noted
 library DeFiMathFutures {

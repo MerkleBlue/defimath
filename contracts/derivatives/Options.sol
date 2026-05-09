@@ -6,6 +6,7 @@ import "../math/Math.sol";
 import "hardhat/console.sol";
 
 /// @title DeFiMathOptions: Options Pricing and Greeks Library for Solidity
+/// @author DeFiMath (https://defimath.com)
 /// @notice Computes Black-Scholes option prices and Greeks (Delta, Gamma, Theta, Vega)
 /// @dev All values are in 18-decimal fixed-point format unless otherwise stated
 library DeFiMathOptions {
