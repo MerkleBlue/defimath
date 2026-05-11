@@ -125,13 +125,13 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 
 | Function | DeFiMath | Derivexyz | Premia | Party1983 |  Dopex |
 | :------- | -------: | --------: | -----: | --------: | -----: |
-| call     |     2923 |     13360 |  20623 |     35963 |  88969 |
-| put      |     2934 |     13363 |  20791 |     36140 |  88301 |
-| delta    |     1843 |      8621 |      - |     24960 |      - |
-| gamma    |     1545 |         - |      - |         - |      - |
-| theta    |     3487 |         - |      - |         - |      - |
-| vega     |     1485 |      7490 |      - |         - |      - |
-| IV       |    13147 |         - |      - |         - |      - |
+| call     |     2867 |     13360 |  20623 |     35963 |  88969 |
+| put      |     2878 |     13363 |  20791 |     36140 |  88301 |
+| delta    |     1787 |      8621 |      - |     24960 |      - |
+| gamma    |     1489 |         - |      - |         - |      - |
+| theta    |     3431 |         - |      - |         - |      - |
+| vega     |     1429 |      7490 |      - |         - |      - |
+| IV       |    13091 |         - |      - |         - |      - |
 
 The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
 
@@ -207,12 +207,12 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 
 | Function | DeFiMath | Haptic |
 | :------- | -------: | -----: |
-| call     |     2138 |  16218 |
-| put      |     2143 |  16221 |
-| delta    |     1871 |      - |
-| gamma    |     2013 |      - |
-| theta    |     3547 |      - |
-| vega     |     1960 |      - |
+| call     |     2082 |  16218 |
+| put      |     2087 |  16221 |
+| delta    |     1815 |      - |
+| gamma    |     1957 |      - |
+| theta    |     3491 |      - |
+| vega     |     1904 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -250,11 +250,11 @@ The following table compares **gas efficiency** of DeFiMath with other math libr
 | Function   | DeFiMath | PRBMath | ABDKQuad | Solady | SolStat |
 | :--------- | -------: | ------: | -------: | -----: | ------: |
 | exp        |      333 |    2820 |     5840 |    372 |       - |
-| ln         |      508 |    6901 |    12695 |    518 |       - |
-| log2       |      524 |    6828 |    12271 |      - |       - |
-| log10      |      524 |    8626 |        - |      - |       - |
-| pow        |      883 |    9792 |        - |    976 |       - |
-| sqrt       |      344 |    959* |      808 |   341* |       - |
+| ln         |      375 |    6901 |    12695 |    518 |       - |
+| log2       |      391 |    6828 |    12271 |      - |       - |
+| log10      |      391 |    8626 |        - |      - |       - |
+| pow        |      750 |    9792 |        - |    976 |       - |
+| sqrt       |      245 |    959* |      808 |   341* |       - |
 | stdNormCDF |      731 |       - |        - |      - |    2794 |
 | erf        |      685 |       - |        - |      - |    1732 |
 
