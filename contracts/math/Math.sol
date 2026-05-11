@@ -463,14 +463,11 @@ library DeFiMath {
     function sqrtTime(uint256 x) internal pure returns (uint256 z) {
         assembly {
             x := mul(x, 1000000000000000000) // convert to 1e36 base
-            z := 1424579477600000 // starting point
 
-            z := shl(mul(7, gt(x, 519469812544000000000000000000000)), z) // up to 8 years
+            // CLZ-derived initial guess: z = 2^ceil(bits/2), within factor √2 of sqrt(x)
+            z := shl(shr(1, sub(256, clz(x))), 1)
 
-            // 8x Newton method
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
+            // 5x Newton method
             z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))
