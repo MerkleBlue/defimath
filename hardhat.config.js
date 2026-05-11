@@ -6,6 +6,7 @@ module.exports = {
   solidity: {
     version: "0.8.34",
     settings: {
+      evmVersion: "osaka",
       viaIR: true, // enable for coverage
       optimizer: {
         enabled: true,

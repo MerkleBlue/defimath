@@ -42,7 +42,7 @@ Install via npm:
 npm install defimath-lib
 ```
 
-Requires **Solidity `^0.8.34`**.
+Requires **Solidity `^0.8.34`** and a **Fusaka-compatible EVM** (`evmVersion: "osaka"` or later).
 
 ## Usage
 
@@ -125,13 +125,13 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 
 | Function | DeFiMath | Derivexyz | Premia | Party1983 |  Dopex |
 | :------- | -------: | --------: | -----: | --------: | -----: |
-| call     |     2927 |     13404 |  20831 |     36243 |  89728 |
-| put      |     2941 |     13407 |  22117 |     36424 |  89051 |
-| delta    |     1846 |      8671 |      - |     25172 |      - |
-| gamma    |     1551 |         - |      - |         - |      - |
-| theta    |     3499 |         - |      - |         - |      - |
-| vega     |     1491 |      7526 |      - |         - |      - |
-| IV       |    13282 |         - |      - |         - |      - |
+| call     |     2923 |     13360 |  20623 |     35963 |  88969 |
+| put      |     2934 |     13363 |  20791 |     36140 |  88301 |
+| delta    |     1843 |      8621 |      - |     24960 |      - |
+| gamma    |     1545 |         - |      - |         - |      - |
+| theta    |     3487 |         - |      - |         - |      - |
+| vega     |     1485 |      7490 |      - |         - |      - |
+| IV       |    13147 |         - |      - |         - |      - |
 
 The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
 
@@ -207,12 +207,12 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 
 | Function | DeFiMath | Haptic |
 | :------- | -------: | -----: |
-| call     |     2142 |  16272 |
-| put      |     2147 |  16275 |
-| delta    |     1878 |      - |
-| gamma    |     2022 |      - |
-| theta    |     3556 |      - |
-| vega     |     1970 |      - |
+| call     |     2138 |  16218 |
+| put      |     2143 |  16221 |
+| delta    |     1871 |      - |
+| gamma    |     2013 |      - |
+| theta    |     3547 |      - |
+| vega     |     1960 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
@@ -249,14 +249,14 @@ The following table compares **gas efficiency** of DeFiMath with other math libr
 
 | Function   | DeFiMath | PRBMath | ABDKQuad | Solady | SolStat |
 | :--------- | -------: | ------: | -------: | -----: | ------: |
-| exp        |      335 |    2822 |     5857 |    372 |       - |
-| ln         |      508 |    6962 |    12717 |    519 |       - |
-| log2       |      524 |    6889 |    12276 |      - |       - |
-| log10      |      524 |    8688 |        - |      - |       - |
-| pow        |      885 |    9857 |        - |    978 |       - |
-| sqrt       |      344 |    960* |      810 |   341* |       - |
-| stdNormCDF |      732 |       - |        - |      - |    2799 |
-| erf        |      686 |       - |        - |      - |    1735 |
+| exp        |      333 |    2820 |     5840 |    372 |       - |
+| ln         |      508 |    6901 |    12695 |    518 |       - |
+| log2       |      524 |    6828 |    12271 |      - |       - |
+| log10      |      524 |    8626 |        - |      - |       - |
+| pow        |      883 |    9792 |        - |    976 |       - |
+| sqrt       |      344 |    959* |      808 |   341* |       - |
+| stdNormCDF |      731 |       - |        - |      - |    2794 |
+| erf        |      685 |       - |        - |      - |    1732 |
 
 \* not a fixed-point function
 
