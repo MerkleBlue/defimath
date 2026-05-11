@@ -105,16 +105,7 @@ library DeFiMath {
             if (x >= 1e18) {
                 assembly {
                     let xRound := div(x, 1000000000000000000) // convert to 1e0 base
-
-                    let a := shl(7, lt(0xffffffffffffffffffffffffffffffff, xRound))
-                    a := or(a, shl(6, lt(0xffffffffffffffff, shr(a, xRound))))
-                    a := or(a, shl(5, lt(0xffffffff, shr(a, xRound))))
-                    a := or(a, shl(4, lt(0xffff, shr(a, xRound))))
-                    a := or(a, shl(3, lt(0xff, shr(a, xRound))))
-                    a := xor(a, byte(and(0x1f, shr(shr(a, xRound), 0x8421084210842108cc6318c6db6d54be)),
-                        0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))    
-
-                    let bits := sub(255, a)
+                    let bits := sub(255, clz(xRound))         // floor(log2(xRound))
 
                     x := shr(bits, x) // reduce range of x to [1, 2]
 
@@ -159,14 +150,8 @@ library DeFiMath {
                     x := div(1000000000000000000000000000000000000, x)
 
                     let xRound := div(x, 1000000000000000000) // convert to 1e0 base
+                    let bits := sub(255, clz(xRound))         // floor(log2(xRound))
 
-                    let a := shl(5, lt(0xffffffff, xRound))
-                    a := or(a, shl(4, lt(0xffff, shr(a, xRound))))
-                    a := or(a, shl(3, lt(0xff, shr(a, xRound))))
-                    a := xor(a, byte(and(0x1f, shr(shr(a, xRound), 0x8421084210842108cc6318c6db6d54be)),
-                        0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff))    
-
-                    let bits := sub(255, a)
                     x := shr(bits, x) // reduce range of x to [1, 2]
 
                     // reduce range of x to [1, 1.414]
