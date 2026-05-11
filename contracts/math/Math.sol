@@ -467,7 +467,8 @@ library DeFiMath {
             // CLZ-derived initial guess: z = 2^ceil(bits/2), within factor √2 of sqrt(x)
             z := shl(shr(1, sub(256, clz(x))), 1)
 
-            // 5x Newton method
+            // 6x Newton method
+            z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))

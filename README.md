@@ -125,13 +125,13 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 
 | Function | DeFiMath | Derivexyz | Premia | Party1983 |  Dopex |
 | :------- | -------: | --------: | -----: | --------: | -----: |
-| call     |     2867 |     13360 |  20623 |     35963 |  88969 |
-| put      |     2878 |     13363 |  20791 |     36140 |  88301 |
-| delta    |     1787 |      8621 |      - |     24960 |      - |
-| gamma    |     1489 |         - |      - |         - |      - |
-| theta    |     3431 |         - |      - |         - |      - |
-| vega     |     1429 |      7490 |      - |         - |      - |
-| IV       |    13091 |         - |      - |         - |      - |
+| call     |     2887 |     13360 |  20623 |     35963 |  88969 |
+| put      |     2898 |     13363 |  20791 |     36140 |  88301 |
+| delta    |     1807 |      8621 |      - |     24960 |      - |
+| gamma    |     1509 |         - |      - |         - |      - |
+| theta    |     3451 |         - |      - |         - |      - |
+| vega     |     1449 |      7490 |      - |         - |      - |
+| IV       |    13111 |         - |      - |         - |      - |
 
 The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
 
@@ -207,12 +207,12 @@ The following table compares **gas efficiency** of DeFiMath with other implement
 
 | Function | DeFiMath | Haptic |
 | :------- | -------: | -----: |
-| call     |     2082 |  16218 |
-| put      |     2087 |  16221 |
-| delta    |     1815 |      - |
-| gamma    |     1957 |      - |
-| theta    |     3491 |      - |
-| vega     |     1904 |      - |
+| call     |     2102 |  16218 |
+| put      |     2107 |  16221 |
+| delta    |     1835 |      - |
+| gamma    |     1977 |      - |
+| theta    |     3511 |      - |
+| vega     |     1924 |      - |
 
 The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
 
