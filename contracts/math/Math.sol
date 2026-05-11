@@ -235,23 +235,12 @@ library DeFiMath {
                 if (x >= 1.208925819614629e42) revert SqrtUpperBoundError(); // up to 2^80
 
                 assembly ("memory-safe") {
-                    // x to 1e36 base, and y to best guess
                     x := mul(x, 1000000000000000000) // convert to 1e36 base
-                    y := 32000000000000000000 // starting point is 32
 
-                    // we want to keep y = sqrt(x) at max 32 times from actual sqrt(x)
-                    let multi := div(x, 1048576000000000000000000000000000000000000)
-                    multi := add(iszero(multi), multi)  // multi is min 1
-                    y := mul(y, multi)                      // up to 2^40  // add 64 - handles when x is 0
-                    y := add(y, 64)
+                    // CLZ-derived initial guess: y = 2^ceil(bits/2), within factor √2 of sqrt(x)
+                    y := shl(shr(1, sub(256, clz(x))), 1)
 
-                    y := shr(mul(10, gt(multi, 1048576)), y)             // up to 2^60
-                    y := shr(mul(10, gt(multi, 1099511627776)), y)       // up to 2^80
-
-                    // 9x Newton method
-                    y := shr(1, add(y, div(x, y))) // after this step, we know y > sqrt(x)
-                    y := shr(2, add(y, div(x, y))) // so we divide by 4 to speed up convergence (sometimes slow down)
-                    y := shr(1, add(y, div(x, y)))
+                    // 6x Newton method (sufficient for bit-exact from factor-√2 start)
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
@@ -263,22 +252,12 @@ library DeFiMath {
                 if (x == 0) return 0;
 
                 assembly ("memory-safe") {
-                    // x to 1e36 base, and y to best guess
                     x := div(1000000000000000000000000000000000000000000000000000000, x)
-                    y := 32000000000000000000 // starting point is 32
 
-                    // we want to keep y = sqrt(x) at max 32 times from actual sqrt(x)
-                    let multi := div(x, 1048576000000000000000000000000000000000000)
-                    multi := add(iszero(multi), multi)  // multi is min 1
-                    y := mul(y, multi)                      // up to 2^40  // add 64 - handles when x is 0
-                    y := add(y, 64)
+                    // CLZ-derived initial guess: y = 2^ceil(bits/2), within factor √2 of sqrt(x)
+                    y := shl(shr(1, sub(256, clz(x))), 1)
 
-                    y := shr(mul(10, gt(multi, 1048576)), y)             // up to 2^60
-
-                    // 9x Newton method
-                    y := shr(1, add(y, div(x, y))) // after this step, we know y > sqrt(x)
-                    y := shr(2, add(y, div(x, y))) // so we divide by 4 to speed up convergence (sometimes slow down)
-                    y := shr(1, add(y, div(x, y)))
+                    // 6x Newton method
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
