@@ -53,6 +53,14 @@ contract MathWrapper {
         return DeFiMath.erfPositiveHalf(x);
     }
 
+    function expm1(int256 x) external pure returns (int256) {
+        return DeFiMath.expm1(x);
+    }
+
+    function log1p(int256 x) external pure returns (int256) {
+        return DeFiMath.log1p(x);
+    }
+
     // measure gas
 
     function expMG(int256 x) external view returns (uint256 y, uint256 gasUsed) {
@@ -180,7 +188,19 @@ contract MathWrapper {
         y = DeFiMath.erf(x);
 
         endGas = gasleft();
-        
+
         return (y, startGas - endGas);
+    }
+
+    function expm1MG(int256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        y = DeFiMath.expm1(x);
+        return (y, startGas - gasleft());
+    }
+
+    function log1pMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        y = DeFiMath.log1p(x);
+        return (y, startGas - gasleft());
     }
 }

@@ -51,8 +51,30 @@ describe("DeFiMath", function () {
         const { deFiMath } = await loadFixture(deploy);
 
         let totalGas = 0, count = 0;
-        for (let x = 0.05; x <= 40; x += 0.1 ) { 
+        for (let x = 0.05; x <= 40; x += 0.1 ) {
           totalGas += parseInt((await deFiMath.expMG(tokens(-x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("expm1", function () {
+      it("expm1 when x in [-0.01, 0.01] (Taylor branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        let totalGas = 0, count = 0;
+        for (let x = -0.01; x <= 0.01; x += 0.0001012) {
+          totalGas += parseInt((await deFiMath.expm1MG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("expm1 when x in [0.01, 135] (naive branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        let totalGas = 0, count = 0;
+        for (let x = 0.01; x < 135; x += 1.0123) {
+          totalGas += parseInt((await deFiMath.expm1MG(tokens(x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -87,11 +109,37 @@ describe("DeFiMath", function () {
         const { deFiMath } = await loadFixture(deploy);
 
         let totalGas = 0, count = 0;
-        for (let x = 1e-6; x < 1; x += 1e-2 / 4) { 
+        for (let x = 1e-6; x < 1; x += 1e-2 / 4) {
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("log1p", function () {
+      it("log1p when x in [-0.01, 0.01] (Taylor branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        let totalGas = 0, count = 0;
+        for (let x = -0.01; x <= 0.01; x += 0.0001012) {
+          totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("log1p when x in [0.01, 1e6] (naive branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        let totalGas = 0, count = 0;
+        for (let x = 0.01; x < 16; x += 0.1) {
+          totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 16; x < 1000; x += 10) {
+          totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
 
@@ -416,6 +464,69 @@ describe("DeFiMath", function () {
       });
     });
 
+    describe("expm1", function () {
+      it("expm1 when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actual = (await deFiMath.expm1(0)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("expm1 when |x| < 0.01 (Taylor branch, precision-critical for small x)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = -0.01; x <= 0.01; x += 0.0001012) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          // small inputs require absolute tolerance, not relative (since true value can be tiny)
+          assertAbsoluteBelow(actual, expected, 1e-15);
+        }
+      });
+
+      it("expm1 when very small x (sub-ULP regime)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // for x at single-ULP scale, expm1(x) ≈ x and should be exact
+        const actualA = (await deFiMath.expm1("1")).toString() / 1e18;
+        assert.equal(actualA, 1e-18);
+        const actualB = (await deFiMath.expm1("1000")).toString() / 1e18;
+        assert.equal(actualB, 1e-15);
+      });
+
+      it("expm1 when x in [0.01, 1) (naive branch transition)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // naive branch inherits exp's rel error; absolute error stays small even when (exp-1) is small
+        for (let x = 0.01; x < 1; x += 0.0101) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, 1e-13);
+        }
+      });
+
+      it("expm1 when x in [1, 135) (large positive)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 1; x < 135; x += 1.0123) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, 1e-13);
+        }
+      });
+
+      it("expm1 when x is very negative (approaches -1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = -1; x >= -41; x -= 0.5) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, 1e-14);
+        }
+      });
+
+      describe("failure", function () {
+        it("rejects when x >= exp upper bound", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          await assertRevertError(deFiMath, deFiMath.expm1("135305999368893231589"), "ExpUpperBoundError");
+          await deFiMath.expm1("135305999368893231588");
+        });
+      });
+    });
+
     describe("ln", function () {
       it("ln when x in [1, 2]", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -544,6 +655,78 @@ describe("DeFiMath", function () {
 
           await assertRevertError(deFiMath, deFiMath.ln("0"), "LnLowerBoundError");
           await deFiMath.ln("1");
+        });
+      });
+    });
+
+    describe("log1p", function () {
+      it("log1p when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actual = (await deFiMath.log1p(0)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("log1p when |x| < 0.01 (Taylor branch, precision-critical for small x)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = -0.01; x <= 0.01; x += 0.0001012) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, 1e-17);
+        }
+      });
+
+      it("log1p when very small x (sub-ULP regime)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // for x at single-ULP scale, log1p(x) ≈ x and should be exact
+        const actualA = (await deFiMath.log1p("1")).toString() / 1e18;
+        assert.equal(actualA, 1e-18);
+        const actualB = (await deFiMath.log1p("1000")).toString() / 1e18;
+        assert.equal(actualB, 1e-15);
+      });
+
+      it("log1p when x in [0.01, 1) (naive branch transition)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 0.01; x < 1; x += 0.0101) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      it("log1p when x in [-0.99, -0.01]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = -0.99; x <= -0.01; x += 0.01) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      it("log1p when x in [1, 1e6] (large positive)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 1; x < 16; x += 0.1) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+        for (let x = 1000; x <= 1e6; x *= 10) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
+
+      describe("failure", function () {
+        it("rejects when x = -1", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          await assertRevertError(deFiMath, deFiMath.log1p("-1000000000000000000"), "Log1pLowerBoundError");
+          // just above -1 should work
+          await deFiMath.log1p("-999999999999999999");
+        });
+
+        it("rejects when x < -1", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          await assertRevertError(deFiMath, deFiMath.log1p("-2000000000000000000"), "Log1pLowerBoundError");
         });
       });
     });

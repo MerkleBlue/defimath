@@ -14,6 +14,9 @@ library DeFiMath {
     /// @notice Thrown when input to ln() is zero
     error LnLowerBoundError();
 
+    /// @notice Thrown when input to log1p() is at or below -1 (i.e., 1+x ≤ 0)
+    error Log1pLowerBoundError();
+
     /// @notice Thrown when input to sqrt() exceeds the upper bound (~2^80)
     error SqrtUpperBoundError();
 
@@ -93,6 +96,31 @@ library DeFiMath {
                     y := div(1000000000000000000000000000000000000, y)
                 }
             }
+        }
+    }
+
+    /// @notice Computes exp(x) - 1 with high precision for small |x|
+    /// @dev Uses a Taylor series for |x| < 0.01 to avoid precision loss when subtracting two near-equal numbers
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Result in 18-decimal fixed-point format (signed)
+    function expm1(int256 x) internal pure returns (int256 y) {
+        unchecked {
+            // For |x| >= 0.01, naive exp(x) - 1 has sufficient precision
+            if (x >= 0.01e18 || x <= -0.01e18) {
+                return int256(exp(x)) - 1e18;
+            }
+            // Taylor series x + x²/2! + ... + x¹⁰/10! gives ~1e-29 truncation at |x|=0.01
+            int256 x2 = x * x / 1e18;
+            int256 x3 = x2 * x / 1e18;
+            int256 x4 = x3 * x / 1e18;
+            int256 x5 = x4 * x / 1e18;
+            int256 x6 = x5 * x / 1e18;
+            int256 x7 = x6 * x / 1e18;
+            int256 x8 = x7 * x / 1e18;
+            int256 x9 = x8 * x / 1e18;
+            int256 x10 = x9 * x / 1e18;
+            y = x + x2 / 2 + x3 / 6 + x4 / 24 + x5 / 120
+                + x6 / 720 + x7 / 5040 + x8 / 40320 + x9 / 362880 + x10 / 3628800;
         }
     }
 
@@ -188,7 +216,33 @@ library DeFiMath {
 
                     y := sub(sub(0, y), mul(multiplier, 346573590279972655))
                 }
-            }   
+            }
+        }
+    }
+
+    /// @notice Computes ln(1 + x) with high precision for small |x|
+    /// @dev Uses a Taylor series for |x| < 0.01 to avoid precision loss when forming 1 + x for tiny x
+    /// @param x Input in 18-decimal fixed-point format. Must satisfy x > -1e18 (i.e., 1+x > 0)
+    /// @return y Result in 18-decimal fixed-point format (signed)
+    function log1p(int256 x) internal pure returns (int256 y) {
+        if (x <= -1e18) revert Log1pLowerBoundError();
+        unchecked {
+            // For |x| >= 0.01, naive ln(1 + x) has sufficient precision
+            if (x >= 0.01e18 || x <= -0.01e18) {
+                return ln(uint256(int256(1e18) + x));
+            }
+            // Taylor series x - x²/2 + x³/3 - ... + x¹⁰/10 (alternating) gives ~1e-21 truncation at |x|=0.01
+            int256 x2 = x * x / 1e18;
+            int256 x3 = x2 * x / 1e18;
+            int256 x4 = x3 * x / 1e18;
+            int256 x5 = x4 * x / 1e18;
+            int256 x6 = x5 * x / 1e18;
+            int256 x7 = x6 * x / 1e18;
+            int256 x8 = x7 * x / 1e18;
+            int256 x9 = x8 * x / 1e18;
+            int256 x10 = x9 * x / 1e18;
+            y = x - x2 / 2 + x3 / 3 - x4 / 4 + x5 / 5
+                - x6 / 6 + x7 / 7 - x8 / 8 + x9 / 9 - x10 / 10;
         }
     }
 
