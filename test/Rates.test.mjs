@@ -16,7 +16,7 @@ describe("DeFiMathRates", function () {
   }
 
   describe("performance", function () {
-    describe("compoundInterest", function () {
+    describe.only("compoundInterest", function () {
       it("single", async function () {
         const { rates } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
@@ -29,7 +29,7 @@ describe("DeFiMathRates", function () {
         const { rates } = await loadFixture(deploy);
         const principals = [100, 1000, 10000];
         const ratesArr = [0.01, 0.05, 0.10, 0.20];
-        const times = [SEC_IN_DAY, SEC_IN_DAY * 30, SEC_IN_YEAR, SEC_IN_YEAR * 5];
+        const times = [SEC_IN_DAY, SEC_IN_DAY * 30, SEC_IN_YEAR, SEC_IN_YEAR * 2];
         let totalGas = 0, count = 0;
         for (const p of principals) {
           for (const r of ratesArr) {

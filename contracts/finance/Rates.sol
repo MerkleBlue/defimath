@@ -12,11 +12,22 @@ library DeFiMathRates {
     /// @notice Number of seconds in a year (365 days)
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
 
+    // limits
+    /// @notice Minimum allowed principal / future value: 0.000001 USD
+    uint256 internal constant MIN_PRINCIPAL = 1e12 - 1;
+
     /// @notice Maximum allowed principal / future value: 1 quadrillion (1e15) in 18-decimal base
     uint256 internal constant MAX_PRINCIPAL = 1e33 + 1;
 
+    /// @notice Maximum allowed time interval: 2 years in seconds
+    uint256 internal constant MAX_TIME_INTERVAL = 63072000 + 1;
+
     /// @notice Maximum allowed annualized rate (400%)
     uint256 internal constant MAX_RATE = 4e18 + 1;
+
+    // errors
+    /// @notice Reverts when principal or future value is below the allowed minimum
+    error PrincipalLowerBoundError();
 
     /// @notice Reverts when principal or future value exceeds the allowed maximum
     error PrincipalUpperBoundError();
@@ -24,24 +35,31 @@ library DeFiMathRates {
     /// @notice Reverts when annualized rate exceeds the allowed maximum
     error RateUpperBoundError();
 
+    /// @notice Reverts when time interval exceeds 2 years
+    error TimeIntervalUpperBoundError();
+
     /// @notice Reverts when price input is zero (cannot compute log of zero)
     error PriceLowerBoundError();
 
-    /// @notice Future value under continuous compounding: P · e^(r·t)
+    /// @notice Future value under continuous compounding: P · e^(r·t). Same as futurePrice().
     /// @param principal Initial value (scaled by 1e18)
     /// @param rate Annualized continuous rate (scaled by 1e18, e.g. 0.05e18 = 5% APR)
-    /// @param timeSec Duration in seconds
+    /// @param timeInterval Duration in seconds
     /// @return amount Compounded value (scaled by 1e18)
-    function compoundInterest(uint128 principal, uint64 rate, uint32 timeSec) internal pure returns (uint256 amount) {
-        if (MAX_PRINCIPAL <= principal) revert PrincipalUpperBoundError();
-        if (MAX_RATE <= rate) revert RateUpperBoundError();
-
-        if (principal == 0 || rate == 0 || timeSec == 0) {
-            return uint256(principal);
-        }
-
+    function compoundInterest(uint128 principal, uint64 rate, uint32 timeInterval) internal pure returns (uint256 amount) {
         unchecked {
-            uint256 timeYear = uint256(timeSec) * 1e18 / SECONDS_IN_YEAR;
+            // check inputs
+            if (principal <= MIN_PRINCIPAL) revert PrincipalLowerBoundError();
+            if (MAX_PRINCIPAL <= principal) revert PrincipalUpperBoundError();
+            if (MAX_TIME_INTERVAL <= timeInterval) revert TimeIntervalUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            // // handle rate or time 0
+            // if (uint256(rate) * timeSec == 0) {
+            //     return uint256(principal);
+            // }
+
+            uint256 timeYear = uint256(timeInterval) * 1e18 / SECONDS_IN_YEAR;
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;
             amount = uint256(principal) * DeFiMath.expPositive(scaledRate) / 1e18;
         }
