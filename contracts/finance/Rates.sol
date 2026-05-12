@@ -38,8 +38,11 @@ library DeFiMathRates {
     /// @notice Reverts when time interval exceeds 2 years
     error TimeIntervalUpperBoundError();
 
-    /// @notice Reverts when price input is zero (cannot compute log of zero)
+    /// @notice Reverts when price input is below the allowed minimum
     error PriceLowerBoundError();
+
+    /// @notice Reverts when price input exceeds the allowed maximum
+    error PriceUpperBoundError();
 
     /// @notice Future value under continuous compounding: P · e^(r·t). Same as futurePrice().
     /// @param principal Initial value (scaled by 1e18)
@@ -63,30 +66,34 @@ library DeFiMathRates {
     /// @notice Present value under continuous discounting: FV · e^(-r·t)
     /// @param futureValue Future value (scaled by 1e18)
     /// @param rate Annualized continuous rate (scaled by 1e18)
-    /// @param timeSec Duration in seconds
+    /// @param timeInterval Duration in seconds
     /// @return amount Discounted value (scaled by 1e18)
-    function presentValue(uint128 futureValue, uint64 rate, uint32 timeSec) internal pure returns (uint256 amount) {
-        if (MAX_PRINCIPAL <= futureValue) revert PrincipalUpperBoundError();
-        if (MAX_RATE <= rate) revert RateUpperBoundError();
-
-        if (futureValue == 0 || rate == 0 || timeSec == 0) {
-            return uint256(futureValue);
-        }
-
+    function presentValue(uint128 futureValue, uint64 rate, uint32 timeInterval) internal pure returns (uint256 amount) {
         unchecked {
-            uint256 timeYear = uint256(timeSec) * 1e18 / SECONDS_IN_YEAR;
+            // check inputs
+            if (futureValue <= MIN_PRINCIPAL) revert PrincipalLowerBoundError();
+            if (MAX_PRINCIPAL <= futureValue) revert PrincipalUpperBoundError();
+            if (MAX_TIME_INTERVAL <= timeInterval) revert TimeIntervalUpperBoundError();
+            if (MAX_RATE <= rate) revert RateUpperBoundError();
+
+            uint256 timeYear = uint256(timeInterval) * 1e18 / SECONDS_IN_YEAR;
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;
             amount = uint256(futureValue) * 1e18 / DeFiMath.expPositive(scaledRate);
         }
     }
 
     /// @notice Continuously-compounded return: ln(newPrice / oldPrice)
-    /// @param newPrice Current price (scaled by 1e18, must be > 0)
-    /// @param oldPrice Reference price (scaled by 1e18, must be > 0)
+    /// @param newPrice Current price (scaled by 1e18)
+    /// @param oldPrice Reference price (scaled by 1e18)
     /// @return Signed log return (scaled by 1e18)
     function logReturn(uint128 newPrice, uint128 oldPrice) internal pure returns (int256) {
-        if (newPrice == 0 || oldPrice == 0) revert PriceLowerBoundError();
         unchecked {
+            // check inputs
+            if (newPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
+            if (MAX_PRINCIPAL <= newPrice) revert PriceUpperBoundError();
+            if (oldPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
+            if (MAX_PRINCIPAL <= oldPrice) revert PriceUpperBoundError();
+
             return DeFiMath.ln(uint256(newPrice) * 1e18 / uint256(oldPrice));
         }
     }
@@ -96,7 +103,9 @@ library DeFiMathRates {
     /// @param r Continuous rate (signed, scaled by 1e18)
     /// @return Discrete equivalent (signed, scaled by 1e18)
     function continuousToDiscrete(int256 r) internal pure returns (int256) {
-        return DeFiMath.expm1(r);
+        unchecked {
+            return DeFiMath.expm1(r);
+        }
     }
 
     /// @notice Convert discrete (per-period) rate to continuous rate: ln(1 + r)
@@ -104,6 +113,8 @@ library DeFiMathRates {
     /// @param r Discrete rate (signed, scaled by 1e18, must satisfy r > -1)
     /// @return Continuous equivalent (signed, scaled by 1e18)
     function discreteToContinuous(int256 r) internal pure returns (int256) {
-        return DeFiMath.log1p(r);
+        unchecked {
+            return DeFiMath.log1p(r);
+        }
     }
 }
