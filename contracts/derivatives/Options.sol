@@ -68,7 +68,7 @@ library DeFiMathOptions {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Call option price (scaled by 1e18)
-    function getCallOptionPrice(
+    function callOptionPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -112,7 +112,7 @@ library DeFiMathOptions {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Put option price (scaled by 1e18)
-    function getPutOptionPrice(
+    function putOptionPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -157,7 +157,7 @@ library DeFiMathOptions {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return deltaCall Call option delta (scaled by 1e18)
     /// @return deltaPut Put option delta (scaled by 1e18)
-    function getDelta(
+    function delta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -199,7 +199,7 @@ library DeFiMathOptions {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return gamma Option Gamma (scaled by 1e18)
-    function getGamma(
+    function gamma(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -238,7 +238,7 @@ library DeFiMathOptions {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return thetaCall Call option theta per day (scaled by 1e18)
     /// @return thetaPut Put option theta per day (scaled by 1e18)
-    function getTheta(
+    function theta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -289,7 +289,7 @@ library DeFiMathOptions {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return vega Option Vega (scaled by 1e18)
-    function getVega(
+    function vega(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -355,7 +355,7 @@ library DeFiMathOptions {
     /// @param optionPrice Observed market price of the option (scaled by 1e18)
     /// @param isCall True for call option, false for put
     /// @return volatility Implied volatility (scaled by 1e18)
-    function getImpliedVolatility(
+    function impliedVolatility(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,

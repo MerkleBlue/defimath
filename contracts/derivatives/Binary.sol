@@ -60,7 +60,7 @@ library DeFiMathBinary {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Binary call option price for unit payout (scaled by 1e18)
-    function getBinaryCallPrice(
+    function binaryCallPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -103,7 +103,7 @@ library DeFiMathBinary {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Binary put option price for unit payout (scaled by 1e18)
-    function getBinaryPutPrice(
+    function binaryPutPrice(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -147,7 +147,7 @@ library DeFiMathBinary {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return deltaCall Binary call option delta for unit payout (scaled by 1e18)
     /// @return deltaPut Binary put option delta for unit payout (scaled by 1e18)
-    function getBinaryDelta(
+    function binaryDelta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -195,7 +195,7 @@ library DeFiMathBinary {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return gammaCall Binary call option gamma for unit payout (scaled by 1e18)
     /// @return gammaPut Binary put option gamma for unit payout (scaled by 1e18)
-    function getBinaryGamma(
+    function binaryGamma(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -249,7 +249,7 @@ library DeFiMathBinary {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return thetaCall Binary call option theta per day for unit payout (scaled by 1e18)
     /// @return thetaPut Binary put option theta per day for unit payout (scaled by 1e18)
-    function getBinaryTheta(
+    function binaryTheta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,
@@ -317,7 +317,7 @@ library DeFiMathBinary {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return vegaCall Binary call option vega per 1% vol for unit payout (scaled by 1e18)
     /// @return vegaPut Binary put option vega per 1% vol for unit payout (scaled by 1e18)
-    function getBinaryVega(
+    function binaryVega(
         uint128 spot,
         uint128 strike,
         uint32 timeToExpirySec,

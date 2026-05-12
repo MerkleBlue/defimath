@@ -76,8 +76,8 @@ contract OptionsExchange {
         uint64 volatility,      // e.g. 0.8e18 for 80% IV
         uint64 rate             // e.g. 0.05e18 for 5% risk-free rate
     ) external pure returns (uint256 callPrice, uint256 putPrice) {
-        callPrice = DeFiMathOptions.getCallOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
-        putPrice  = DeFiMathOptions.getPutOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        callPrice = DeFiMathOptions.callOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        putPrice  = DeFiMathOptions.putOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
     }
 }
 ```

@@ -15,7 +15,7 @@ export class OptionsJS {
   
 
   // Implied volatility via Newton-Raphson: find σ such that BS(σ) = optionPrice
-  getImpliedVolatility(spot, strike, timeSec, rate, optionPrice, isCall) {
+  impliedVolatility(spot, strike, timeSec, rate, optionPrice, isCall) {
     this.checkInputs(spot, strike, timeSec, rate);
     if (timeSec === 0) throw new Error("TimeToExpiryLowerBoundError");
 
@@ -43,8 +43,8 @@ export class OptionsJS {
 
     for (let i = 0; i < MAX_ITER; i++) {
       const price = isCall
-        ? this.getCallOptionPrice(spot, strike, timeSec, sigma, rate)
-        : this.getPutOptionPrice(spot, strike, timeSec, sigma, rate);
+        ? this.callOptionPrice(spot, strike, timeSec, sigma, rate)
+        : this.putOptionPrice(spot, strike, timeSec, sigma, rate);
 
       const diff = price - optionPrice;
       if (Math.abs(diff) < TOL) return sigma;
@@ -68,7 +68,7 @@ export class OptionsJS {
     throw new Error("NoConvergenceError");
   };
 
-  getCallOptionPrice(spot, strike, timeSec, vol, rate) {
+  callOptionPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -98,7 +98,7 @@ export class OptionsJS {
     return 0;
   };
 
-  getPutOptionPrice(spot, strike, timeSec, vol, rate) {
+  putOptionPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -129,7 +129,7 @@ export class OptionsJS {
   };
 
   // Binary cash-or-nothing call (unit payout)
-  getBinaryCallPrice(spot, strike, timeSec, vol, rate) {
+  binaryCallPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -154,7 +154,7 @@ export class OptionsJS {
 
   // Binary cash-or-nothing delta (unit payout)
   // ΔCall = e^(-r·τ) · φ(d2) / (S·σ·√τ),  ΔPut = -ΔCall
-  getBinaryDelta(spot, strike, timeSec, vol, rate) {
+  binaryDelta(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -181,7 +181,7 @@ export class OptionsJS {
 
   // Binary cash-or-nothing gamma (unit payout)
   // ΓCall = -e^(-r·τ) · φ(d2) · d1 / (S² · σ²·τ),  ΓPut = -ΓCall
-  getBinaryGamma(spot, strike, timeSec, vol, rate) {
+  binaryGamma(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -209,7 +209,7 @@ export class OptionsJS {
   // Binary cash-or-nothing theta (unit payout, per day)
   // Θ_call = (1/365) · [r·e^(-rτ)·Φ(d2) + e^(-rτ)·φ(d2)·(d1/(2τ) - r/(σ√τ))]
   // Θ_put  = (1/365) · [r·e^(-rτ)·Φ(-d2) - e^(-rτ)·φ(d2)·(d1/(2τ) - r/(σ√τ))]
-  getBinaryTheta(spot, strike, timeSec, vol, rate) {
+  binaryTheta(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -240,7 +240,7 @@ export class OptionsJS {
 
   // Binary cash-or-nothing vega (unit payout, per 1% vol move)
   // ν_call = -(1/100) · e^(-rτ) · φ(d2) · d1/σ,  ν_put = -ν_call
-  getBinaryVega(spot, strike, timeSec, vol, rate) {
+  binaryVega(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -266,7 +266,7 @@ export class OptionsJS {
   };
 
   // Binary cash-or-nothing put (unit payout)
-  getBinaryPutPrice(spot, strike, timeSec, vol, rate) {
+  binaryPutPrice(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -289,7 +289,7 @@ export class OptionsJS {
     return discount * this.stdNormCDF(-d2);                                    // e^(-r*τ) * Φ(-d2)
   };
 
-  getFuturePrice(spot, timeSec, rate) {
+  futurePrice(spot, timeSec, rate) {
     if (spot < MIN_SPOT) throw new Error("SpotLowerBoundError");
     if (spot > MAX_SPOT) throw new Error("SpotUpperBoundError");
     if (timeSec > MAX_EXPIRATION) throw new Error("TimeToExpiryUpperBoundError");
@@ -306,7 +306,7 @@ export class OptionsJS {
     return spot * this.exp(scaledRate);
   };
 
-  getDelta(spot, strike, timeSec, vol, rate) {
+  delta(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -329,7 +329,7 @@ export class OptionsJS {
     return { deltaCall, deltaPut };
   };
 
-  getGamma(spot, strike, timeSec, vol, rate) {
+  gamma(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -347,7 +347,7 @@ export class OptionsJS {
     return phi / (spot * scaledVol);                                  // N'(d1) / (spot * scaledVol)
   };
 
-  getTheta(spot, strike, timeSec, vol, rate) {
+  theta(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 
@@ -373,7 +373,7 @@ export class OptionsJS {
     return { thetaCall, thetaPut };
   };
 
-  getVega(spot, strike, timeSec, vol, rate) {
+  vega(spot, strike, timeSec, vol, rate) {
     // check inputs
     this.checkInputs(spot, strike, timeSec, rate);
 

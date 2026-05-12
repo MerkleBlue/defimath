@@ -44,7 +44,7 @@ library DeFiMathFutures {
     /// @param timeToExpirySec Time to contract expiration in seconds
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Futures price (scaled by 1e18)
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) internal pure returns (uint256) {
+    function futurePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) internal pure returns (uint256) {
         unchecked {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();

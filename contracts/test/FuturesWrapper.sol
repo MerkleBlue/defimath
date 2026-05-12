@@ -5,11 +5,11 @@ import "../derivatives/Futures.sol";
 
 contract FuturesWrapper {
 
-    function getFuturePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) external pure returns (uint256) {
-        return DeFiMathFutures.getFuturePrice(spot, timeToExpirySec, rate);
+    function futurePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) external pure returns (uint256) {
+        return DeFiMathFutures.futurePrice(spot, timeToExpirySec, rate);
     }
 
-    function getFuturePriceMG(
+    function futurePriceMG(
         uint128 spot,
         uint32 timeToExpirySec,
         uint64 rate
@@ -19,7 +19,7 @@ contract FuturesWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = DeFiMathFutures.getFuturePrice(spot, timeToExpirySec, rate);
+        result = DeFiMathFutures.futurePrice(spot, timeToExpirySec, rate);
 
         endGas = gasleft();
         

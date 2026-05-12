@@ -57,9 +57,9 @@ describe("DeFiMathOptions", function () {
             // SOL
             let actualSOL = 0;
             if (isCall) {
-              actualSOL = (await options.getCallOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
+              actualSOL = (await options.callOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
             } else {
-              actualSOL = (await options.getPutOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
+              actualSOL = (await options.putOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
             }
 
             const absErrorSOL = Math.abs(actualSOL - expected);
@@ -126,7 +126,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt((await options.getCallOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
+        totalGas += parseInt((await options.callOptionPriceMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
@@ -144,7 +144,7 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.getCallOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.callOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -159,7 +159,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt((await options.getPutOptionPriceMG(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
+        totalGas += parseInt((await options.putOptionPriceMG(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
       });
@@ -177,7 +177,7 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.getPutOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.putOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -201,7 +201,7 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.getDeltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.deltaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -225,7 +225,7 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.getGammaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.gammaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -249,7 +249,7 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.getThetaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.thetaMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -263,10 +263,10 @@ describe("DeFiMathOptions", function () {
       it("single", async function () {
         const { options } = await loadFixture(deploy);
 
-        const price = await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(2.11), tokens(0.05));
+        const price = await options.callOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(2.11), tokens(0.05));
 
         let totalGas = 0, count = 0;
-        totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.05), price, true)).gasUsed);
+        totalGas += parseInt((await options.impliedVolatilityMG(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.05), price, true)).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
@@ -284,8 +284,8 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                const price = await options.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, true)).gasUsed);
+                const price = await options.callOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                totalGas += parseInt((await options.impliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, true)).gasUsed);
                 count++;
               }
             }
@@ -307,8 +307,8 @@ describe("DeFiMathOptions", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                const price = await options.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                totalGas += parseInt((await options.getImpliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, false)).gasUsed);
+                const price = await options.putOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                totalGas += parseInt((await options.impliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, false)).gasUsed);
                 count++;
               }
             }
@@ -325,7 +325,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
-        const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
       });
 
@@ -343,7 +343,7 @@ describe("DeFiMathOptions", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
 
-                const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
               }
             }
@@ -366,7 +366,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
   
-          const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
@@ -374,7 +374,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
   
-          const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
@@ -382,7 +382,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
 
-          const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
@@ -398,7 +398,7 @@ describe("DeFiMathOptions", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
         
-                const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
               }
             }
@@ -429,7 +429,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 1200, 1 / 365, 0.40, 0.05, "call");
 
-          const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
         });
 
@@ -437,7 +437,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
   
-          const actualSOL = (await options.getCallOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
         });
       });
@@ -446,49 +446,49 @@ describe("DeFiMathOptions", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getCallOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-          await options.getCallOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getCallOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await assertRevertError(options, options.callOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await options.callOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.callOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
         });
 
         it("rejects when spot > max spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getCallOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-          await options.getCallOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getCallOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await assertRevertError(options, options.callOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await options.callOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.callOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
         });
 
         it("rejects when strike < spot / 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-          await options.getCallOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await options.callOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
         });
 
         it("rejects when strike > spot * 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-          await options.getCallOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await options.callOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
         });
 
         it("rejects when time > max time", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getCallOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await options.callOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
         it("rejects when rate > max rate", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-          await options.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-          await assertRevertError(options, options.getCallOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await options.callOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });
@@ -498,7 +498,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
 
-        const actualSOL = (await options.getPutOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
       });
 
@@ -516,7 +516,7 @@ describe("DeFiMathOptions", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
 
-                const actualSOL = (await options.getPutOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
               }
             }
@@ -539,7 +539,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "put");
   
-          const actualSOL = (await options.getPutOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
@@ -547,7 +547,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "put");
   
-          const actualSOL = (await options.getPutOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
@@ -555,7 +555,7 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "put");
   
-          const actualSOL = (await options.getPutOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+          const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
         });
 
@@ -571,7 +571,7 @@ describe("DeFiMathOptions", function () {
               for (let rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
         
-                const actualSOL = (await options.getPutOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
               }
             }
@@ -604,49 +604,49 @@ describe("DeFiMathOptions", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getPutOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-          await options.getPutOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getPutOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await assertRevertError(options, options.putOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await options.putOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.putOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
         });
 
         it("rejects when spot > max spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getPutOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-          await options.getPutOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getPutOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await assertRevertError(options, options.putOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await options.putOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.putOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
         });
 
         it("rejects when strike < spot / 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-          await options.getPutOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await options.putOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
         });
 
         it("rejects when strike > spot * 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-          await options.getPutOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await options.putOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
         });
 
         it("rejects when time > max time", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getPutOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await options.putOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
         it("rejects when rate > max rate", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-          await options.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-          await assertRevertError(options, options.getPutOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await options.putOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });
@@ -657,7 +657,7 @@ describe("DeFiMathOptions", function () {
         const expectedCall = greeks.getDelta(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const expectedPut = greeks.getDelta(1000, 980, 60 / 365, 0.60, 0.05, "put");
         
-        const actualSOL = await options.getDelta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const actualSOL = await options.delta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
         assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
         assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
       });
@@ -677,7 +677,7 @@ describe("DeFiMathOptions", function () {
                 const expectedCall = greeks.getDelta(1000, strike, time / 365, vol, rate, "call");
                 const expectedPut = greeks.getDelta(1000, strike, time / 365, vol, rate, "put");
 
-                const actualSOL = await options.getDelta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const actualSOL = await options.delta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
                 assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
                 assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
               }
@@ -690,7 +690,7 @@ describe("DeFiMathOptions", function () {
         it("expired ITM call", async function () {
           const { options } = await loadFixture(deploy);
   
-          const actualSOL = await options.getDelta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+          const actualSOL = await options.delta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
           assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 1, MAX_DELTA_ABS_ERROR);
           assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 0, MAX_DELTA_ABS_ERROR);
         });
@@ -698,7 +698,7 @@ describe("DeFiMathOptions", function () {
         it("expired ITM put", async function () {
           const { options } = await loadFixture(deploy);
   
-          const actualSOL = await options.getDelta(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05));
+          const actualSOL = await options.delta(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05));
           assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 0, MAX_DELTA_ABS_ERROR);
           assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 1, MAX_DELTA_ABS_ERROR);
         });
@@ -708,49 +708,49 @@ describe("DeFiMathOptions", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getDelta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-          await options.getDelta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getDelta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await assertRevertError(options, options.delta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await options.delta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.delta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
         });
 
         it("rejects when spot > max spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getDelta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-          await options.getDelta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getDelta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await assertRevertError(options, options.delta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await options.delta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.delta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
         });
 
         it("rejects when strike < spot / 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getDelta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-          await options.getDelta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-          await assertRevertError(options, options.getDelta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await assertRevertError(options, options.delta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await options.delta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+          await assertRevertError(options, options.delta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
         });
 
         it("rejects when strike > spot * 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getDelta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-          await options.getDelta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getDelta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await assertRevertError(options, options.delta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await options.delta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.delta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
         });
 
         it("rejects when time > max time", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getDelta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
-          await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.delta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await options.delta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(options, options.delta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
         it("rejects when rate > max rate", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-          await options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-          await assertRevertError(options, options.getDelta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          await assertRevertError(options, options.delta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await options.delta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(options, options.delta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });
@@ -760,7 +760,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
         const expected = greeks.getGamma(1000, 980, 60 / 365, 0.60, 0.05);
         
-        const actualSOL = (await options.getGamma(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.gamma(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_GAMMA_ABS_ERROR);
       });
 
@@ -778,7 +778,7 @@ describe("DeFiMathOptions", function () {
               for (const rate of rates) {
                 const expected = greeks.getGamma(1000, strike, time / 365, vol, rate, "call");
 
-                const actualSOL = (await options.getGamma(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.gamma(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_GAMMA_ABS_ERROR);
               }
             }
@@ -792,7 +792,7 @@ describe("DeFiMathOptions", function () {
         it("expired option", async function () {
           const { options } = await loadFixture(deploy);
   
-          const actualSOL = await options.getGamma(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+          const actualSOL = await options.gamma(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
           assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_GAMMA_ABS_ERROR);
         });
       });
@@ -802,49 +802,49 @@ describe("DeFiMathOptions", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getGamma("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-          await options.getGamma("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getGamma(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await assertRevertError(options, options.gamma("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await options.gamma("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.gamma(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
         });
 
         it("rejects when spot > max spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getGamma("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-          await options.getGamma("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getGamma("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await assertRevertError(options, options.gamma("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await options.gamma("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.gamma("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
         });
 
         it("rejects when strike < spot / 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getGamma(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-          await options.getGamma(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-          await assertRevertError(options, options.getGamma(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await assertRevertError(options, options.gamma(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await options.gamma(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+          await assertRevertError(options, options.gamma(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
         });
 
         it("rejects when strike > spot * 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getGamma(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-          await options.getGamma(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getGamma(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await assertRevertError(options, options.gamma(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await options.gamma(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.gamma(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
         });
 
         it("rejects when time > max time", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getGamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
-          await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await options.gamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
         it("rejects when rate > max rate", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-          await options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-          await assertRevertError(options, options.getGamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await options.gamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });
@@ -855,7 +855,7 @@ describe("DeFiMathOptions", function () {
         const expectedCall = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "call");
         const expectedPut = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "put");
         
-        const actualSOL = await options.getTheta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
+        const actualSOL = await options.theta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
         assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
         assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
       });
@@ -875,7 +875,7 @@ describe("DeFiMathOptions", function () {
                 const expectedCall = greeks.getTheta(1000, strike, time / 365, vol, rate, "call");
                 const expectedPut = greeks.getTheta(1000, strike, time / 365, vol, rate, "put");
 
-                const actualSOL = await options.getTheta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                const actualSOL = await options.theta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
                 assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
                 assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
               }
@@ -888,7 +888,7 @@ describe("DeFiMathOptions", function () {
         it("expired option", async function () {
           const { options } = await loadFixture(deploy);
   
-          const actualSOL = await options.getTheta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+          const actualSOL = await options.theta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
           assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, 0, MAX_THETA_ABS_ERROR);
           assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, 0, MAX_THETA_ABS_ERROR);
         });
@@ -898,49 +898,49 @@ describe("DeFiMathOptions", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getTheta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-          await options.getTheta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getTheta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await assertRevertError(options, options.theta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await options.theta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.theta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
         });
 
         it("rejects when spot > max spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getTheta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-          await options.getTheta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getTheta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await assertRevertError(options, options.theta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await options.theta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.theta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
         });
 
         it("rejects when strike < spot / 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getTheta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-          await options.getTheta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-          await assertRevertError(options, options.getTheta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await assertRevertError(options, options.theta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await options.theta(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+          await assertRevertError(options, options.theta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
         });
 
         it("rejects when strike > spot * 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getTheta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-          await options.getTheta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getTheta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await assertRevertError(options, options.theta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await options.theta(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.theta(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
         });
 
         it("rejects when time > max time", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getTheta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
-          await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.theta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await options.theta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(options, options.theta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
         it("rejects when rate > max rate", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-          await options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-          await assertRevertError(options, options.getTheta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          await assertRevertError(options, options.theta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await options.theta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(options, options.theta(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });
@@ -950,7 +950,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
         const expected = greeks.getVega(1000, 980, 60 / 365, 0.60, 0.05);
         
-        const actualSOL = (await options.getVega(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.vega(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_VEGA_ABS_ERROR);
       });
 
@@ -968,7 +968,7 @@ describe("DeFiMathOptions", function () {
               for (const rate of rates) {
                 const expected = greeks.getVega(1000, strike, time / 365, vol, rate, "call");
 
-                const actualSOL = (await options.getVega(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.vega(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_VEGA_ABS_ERROR);
               }
             }
@@ -981,7 +981,7 @@ describe("DeFiMathOptions", function () {
         it("expired option", async function () {
           const { options } = await loadFixture(deploy);
   
-          const actualSOL = await options.getVega(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
+          const actualSOL = await options.vega(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
           assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_VEGA_ABS_ERROR);
         });
       });
@@ -990,49 +990,49 @@ describe("DeFiMathOptions", function () {
         it("rejects when spot < min spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getVega("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-          await options.getVega("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getVega(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await assertRevertError(options, options.vega("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+          await options.vega("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.vega(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
         });
 
         it("rejects when spot > max spot", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getVega("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-          await options.getVega("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getVega("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await assertRevertError(options, options.vega("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+          await options.vega("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.vega("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
         });
 
         it("rejects when strike < spot / 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getVega(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-          await options.getVega(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-          await assertRevertError(options, options.getVega(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await assertRevertError(options, options.vega(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+          await options.vega(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+          await assertRevertError(options, options.vega(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
         });
 
         it("rejects when strike > spot * 5", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getVega(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-          await options.getVega(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-          await assertRevertError(options, options.getVega(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await assertRevertError(options, options.vega(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+          await options.vega(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+          await assertRevertError(options, options.vega(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
         });
 
         it("rejects when time > max time", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-          await options.getVega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
-          await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await assertRevertError(options, options.vega(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+          await options.vega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+          await assertRevertError(options, options.vega(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
         });
 
         it("rejects when rate > max rate", async function () {
           const { options } = await loadFixture(deploy);
 
-          await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-          await options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-          await assertRevertError(options, options.getVega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+          await assertRevertError(options, options.vega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+          await options.vega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+          await assertRevertError(options, options.vega(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
         });
       });
     });
@@ -1042,8 +1042,8 @@ describe("DeFiMathOptions", function () {
 
       async function roundTripIV(spot, strike, timeSec, vol, rate, isCall) {
         const { options } = await loadFixture(deploy);
-        const price = await options[isCall ? "getCallOptionPrice" : "getPutOptionPrice"](tokens(spot), tokens(strike), timeSec, tokens(vol), tokens(rate));
-        const iv = (await options.getImpliedVolatility(tokens(spot), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
+        const price = await options[isCall ? "callOptionPrice" : "putOptionPrice"](tokens(spot), tokens(strike), timeSec, tokens(vol), tokens(rate));
+        const iv = (await options.impliedVolatility(tokens(spot), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
         const relError = Math.abs(iv - vol) / vol;
         assert.isBelow(relError, MAX_IV_REL_ERROR, `IV mismatch: expected ${vol}, got ${iv}`);
       }
@@ -1101,24 +1101,24 @@ describe("DeFiMathOptions", function () {
       describe("failure", function () {
         it("rejects when timeToExpirySec = 0", async function () {
           const { options } = await loadFixture(deploy);
-          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryLowerBoundError");
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryLowerBoundError");
         });
 
         it("rejects when call price below intrinsic", async function () {
           const { options } = await loadFixture(deploy);
           // ITM call: spot=1000, strike=900, intrinsic > 100·e^(-rτ); pricing 50 is below intrinsic
-          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(900), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "PriceOutOfBoundsError");
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(900), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "PriceOutOfBoundsError");
         });
 
         it("rejects when call price >= spot", async function () {
           const { options } = await loadFixture(deploy);
-          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), true), "PriceOutOfBoundsError");
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), true), "PriceOutOfBoundsError");
         });
 
         it("rejects when put price >= K·e^(-rT)", async function () {
           const { options } = await loadFixture(deploy);
           // For strike=1000, rate=0.05, t=30d: K·e^(-rτ) ≈ 995.89; rejecting 1000
-          await assertRevertError(options, options.getImpliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), false), "PriceOutOfBoundsError");
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), false), "PriceOutOfBoundsError");
         });
       });
     });
