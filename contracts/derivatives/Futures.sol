@@ -41,23 +41,23 @@ library DeFiMathFutures {
 
     /// @notice Computes the fair price of a futures contract using continuous compounding
     /// @param spot Current spot price of the underlying asset (scaled by 1e18)
-    /// @param timeToExpirySec Time to contract expiration in seconds
+    /// @param timeToExp Time to contract expiration in seconds
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Futures price (scaled by 1e18)
-    function futurePrice(uint128 spot, uint32 timeToExpirySec, uint64 rate) internal pure returns (uint256) {
+    function futurePrice(uint128 spot, uint32 timeToExp, uint64 rate) internal pure returns (uint256) {
         unchecked {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired future 
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 return spot;
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
             return uint256(spot) * DeFiMath.expPositive(scaledRate) / 1e18;
         }

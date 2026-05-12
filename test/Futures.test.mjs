@@ -13,9 +13,9 @@ describe("DeFiMathFutures", function () {
     return { futures };
   }
 
-  function futurePrice(spot, timeToExpirySec, rate) {
+  function futurePrice(spot, timeToExp, rate) {
     // future = spot * e^(rT)
-    const timeToExpiryYears = timeToExpirySec / (365 * 24 * 60 * 60);
+    const timeToExpiryYears = timeToExp / (365 * 24 * 60 * 60);
     const futurePrice = spot * Math.exp(rate * timeToExpiryYears);
     return futurePrice;
   }

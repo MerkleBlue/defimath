@@ -61,7 +61,7 @@ All values use **18-decimal fixed-point format** (`1e18 = 1.0`):
 | :--------------- | :-------- | :------------- | :------------------------ |
 | `spot`           | `uint128` | price × 1e18   | `1000e18` = $1,000        |
 | `strike`         | `uint128` | price × 1e18   | `1100e18` = $1,100        |
-| `timeToExpirySec`| `uint32`  | seconds        | `2592000` = 30 days       |
+| `timeToExp`| `uint32`  | seconds        | `2592000` = 30 days       |
 | `volatility`     | `uint64`  | ratio × 1e18   | `0.8e18` = 80% IV         |
 | `rate`           | `uint64`  | ratio × 1e18   | `0.05e18` = 5% risk-free  |
 
@@ -72,12 +72,12 @@ contract OptionsExchange {
     function getQuote(
         uint128 spot,           // e.g. 1000e18 for $1,000
         uint128 strike,         // e.g. 1100e18 for $1,100
-        uint32 timeToExpirySec, // e.g. 2592000 for 30 days
+        uint32 timeToExp, // e.g. 2592000 for 30 days
         uint64 volatility,      // e.g. 0.8e18 for 80% IV
         uint64 rate             // e.g. 0.05e18 for 5% risk-free rate
     ) external pure returns (uint256 callPrice, uint256 putPrice) {
-        callPrice = DeFiMathOptions.callOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
-        putPrice  = DeFiMathOptions.putOptionPrice(spot, strike, timeToExpirySec, volatility, rate);
+        callPrice = DeFiMathOptions.callOptionPrice(spot, strike, timeToExp, volatility, rate);
+        putPrice  = DeFiMathOptions.putOptionPrice(spot, strike, timeToExp, volatility, rate);
     }
 }
 ```

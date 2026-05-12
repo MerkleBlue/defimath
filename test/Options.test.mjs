@@ -1099,7 +1099,7 @@ describe("DeFiMathOptions", function () {
       });
 
       describe("failure", function () {
-        it("rejects when timeToExpirySec = 0", async function () {
+        it("rejects when timeToExp = 0", async function () {
           const { options } = await loadFixture(deploy);
           await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryLowerBoundError");
         });

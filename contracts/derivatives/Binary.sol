@@ -56,14 +56,14 @@ library DeFiMathBinary {
     /// @dev Formula: price = e^(-r*τ) * Φ(d2). Payout is fixed at 1; multiply externally for other payouts.
     /// @param spot Current spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Binary call option price for unit payout (scaled by 1e18)
     function binaryCallPrice(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
+        uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) internal pure returns (uint256 price) {
@@ -73,18 +73,18 @@ library DeFiMathBinary {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired binary call
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 if (spot > strike) {
                     return 1e18;
                 }
                 return 0;
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
@@ -99,14 +99,14 @@ library DeFiMathBinary {
     /// @dev Formula: price = e^(-r*τ) * Φ(-d2). Payout is fixed at 1; multiply externally for other payouts.
     /// @param spot Current spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Binary put option price for unit payout (scaled by 1e18)
     function binaryPutPrice(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
+        uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) internal pure returns (uint256 price) {
@@ -116,18 +116,18 @@ library DeFiMathBinary {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired binary put
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 if (strike > spot) {
                     return 1e18;
                 }
                 return 0;
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
@@ -142,7 +142,7 @@ library DeFiMathBinary {
     /// @dev Formula: ΔCall = e^(-r*τ) * φ(d2) / (S*σ*√τ); ΔPut = -ΔCall. Payout is fixed at 1.
     /// @param spot Spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return deltaCall Binary call option delta for unit payout (scaled by 1e18)
@@ -150,7 +150,7 @@ library DeFiMathBinary {
     function binaryDelta(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
+        uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) internal pure returns (int128 deltaCall, int128 deltaPut) {
@@ -160,15 +160,15 @@ library DeFiMathBinary {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 return (0, 0);
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
@@ -190,7 +190,7 @@ library DeFiMathBinary {
     /// @dev Note: binary gamma is signed and changes sign at ATM (d1 = 0)
     /// @param spot Spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return gammaCall Binary call option gamma for unit payout (scaled by 1e18)
@@ -198,7 +198,7 @@ library DeFiMathBinary {
     function binaryGamma(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
+        uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) internal pure returns (int128 gammaCall, int128 gammaPut) {
@@ -208,15 +208,15 @@ library DeFiMathBinary {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 return (0, 0);
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
@@ -244,7 +244,7 @@ library DeFiMathBinary {
     ///      Returned values are per-day (divided by 365). Payout is fixed at 1.
     /// @param spot Spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return thetaCall Binary call option theta per day for unit payout (scaled by 1e18)
@@ -252,7 +252,7 @@ library DeFiMathBinary {
     function binaryTheta(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
+        uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) internal pure returns (int128 thetaCall, int128 thetaPut) {
@@ -262,15 +262,15 @@ library DeFiMathBinary {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 return (0, 0);
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
 
             return _binaryThetaCore(spot, strike, scaledVol, uint256(rate) * timeYear / 1e18, timeYear, rate);
@@ -312,7 +312,7 @@ library DeFiMathBinary {
     /// @dev Note: binary vega is signed and changes sign at d1 = 0 (around the strike)
     /// @param spot Spot price of the asset (scaled by 1e18)
     /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExpirySec Time to expiration in seconds
+    /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return vegaCall Binary call option vega per 1% vol for unit payout (scaled by 1e18)
@@ -320,7 +320,7 @@ library DeFiMathBinary {
     function binaryVega(
         uint128 spot,
         uint128 strike,
-        uint32 timeToExpirySec,
+        uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) internal pure returns (int128 vegaCall, int128 vegaPut) {
@@ -330,15 +330,15 @@ library DeFiMathBinary {
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
             if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
             if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
-            if (MAX_EXPIRATION <= timeToExpirySec) revert TimeToExpiryUpperBoundError();
+            if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option
-            if (timeToExpirySec == 0) {
+            if (timeToExp == 0) {
                 return (0, 0);
             }
 
-            uint256 timeYear = uint256(timeToExpirySec) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
+            uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
