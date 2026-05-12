@@ -54,11 +54,6 @@ library DeFiMathRates {
             if (MAX_TIME_INTERVAL <= timeInterval) revert TimeIntervalUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // // handle rate or time 0
-            // if (uint256(rate) * timeSec == 0) {
-            //     return uint256(principal);
-            // }
-
             uint256 timeYear = uint256(timeInterval) * 1e18 / SECONDS_IN_YEAR;
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;
             amount = uint256(principal) * DeFiMath.expPositive(scaledRate) / 1e18;

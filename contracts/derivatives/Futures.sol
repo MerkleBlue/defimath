@@ -52,11 +52,6 @@ library DeFiMathFutures {
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired future 
-            if (timeToExp == 0) {
-                return spot;
-            }
-
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
             return uint256(spot) * DeFiMath.expPositive(scaledRate) / 1e18;

@@ -16,7 +16,7 @@ describe("DeFiMathRates", function () {
   }
 
   describe("performance", function () {
-    describe.only("compoundInterest", function () {
+    describe("compoundInterest", function () {
       it("single", async function () {
         const { rates } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
@@ -125,7 +125,7 @@ describe("DeFiMathRates", function () {
         const { rates } = await loadFixture(deploy);
         const principals = [1, 100, 1000, 1e6];
         const ratesArr = [0.001, 0.01, 0.05, 0.10, 0.20, 0.50];
-        const times = [SEC_IN_DAY, SEC_IN_DAY * 30, SEC_IN_YEAR, SEC_IN_YEAR * 5];
+        const times = [SEC_IN_DAY, SEC_IN_DAY * 30, SEC_IN_YEAR, SEC_IN_YEAR * 2];
         for (const p of principals) {
           for (const r of ratesArr) {
             for (const t of times) {
@@ -150,12 +150,6 @@ describe("DeFiMathRates", function () {
           assert.equal(actual, 1000);
         });
 
-        it("returns 0 when principal is 0", async function () {
-          const { rates } = await loadFixture(deploy);
-          const actual = (await rates.compoundInterest(0, tokens(0.05), SEC_IN_YEAR)).toString() / 1e18;
-          assert.equal(actual, 0);
-        });
-
         it("handles high rate over short period", async function () {
           const { rates } = await loadFixture(deploy);
           // r = 100% APR over 1 day
@@ -164,20 +158,37 @@ describe("DeFiMathRates", function () {
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_COMPOUND);
         });
 
-        it("handles low rate over long period", async function () {
+        it("handles low rate over max period (2 years)", async function () {
           const { rates } = await loadFixture(deploy);
-          // r = 0.1% APR over 10 years
-          const expected = 1000 * Math.exp(0.001 * 10);
-          const actual = (await rates.compoundInterest(tokens(1000), tokens(0.001), SEC_IN_YEAR * 10)).toString() / 1e18;
+          // r = 0.1% APR over 2 years (the upper time bound)
+          const expected = 1000 * Math.exp(0.001 * 2);
+          const actual = (await rates.compoundInterest(tokens(1000), tokens(0.001), SEC_IN_YEAR * 2)).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_COMPOUND);
         });
       });
 
       describe("failure", function () {
+        it("rejects when principal is below min", async function () {
+          const { rates } = await loadFixture(deploy);
+          // MIN_PRINCIPAL = 1e12 - 1; principal must be strictly greater
+          await assertRevertError(rates, rates.compoundInterest(0, tokens(0.05), SEC_IN_YEAR), "PrincipalLowerBoundError");
+          await assertRevertError(rates, rates.compoundInterest("999999999999", tokens(0.05), SEC_IN_YEAR), "PrincipalLowerBoundError");
+          // just above the bound should succeed
+          await rates.compoundInterest("1000000000000", tokens(0.05), SEC_IN_YEAR);
+        });
+
         it("rejects when principal exceeds max", async function () {
           const { rates } = await loadFixture(deploy);
           // MAX_PRINCIPAL = 1e33 + 1; principal must be strictly less
           await assertRevertError(rates, rates.compoundInterest("1000000000000000000000000000000001", tokens(0.05), SEC_IN_YEAR), "PrincipalUpperBoundError");
+        });
+
+        it("rejects when time exceeds max", async function () {
+          const { rates } = await loadFixture(deploy);
+          // MAX_TIME_INTERVAL = 63072000 + 1 (2 years + 1 second)
+          await assertRevertError(rates, rates.compoundInterest(tokens(1000), tokens(0.05), 63072001), "TimeIntervalUpperBoundError");
+          // exactly 2 years should succeed
+          await rates.compoundInterest(tokens(1000), tokens(0.05), 63072000);
         });
 
         it("rejects when rate exceeds max", async function () {
