@@ -35,6 +35,9 @@ library DeFiMathRates {
     /// @notice Reverts when annualized rate exceeds the allowed maximum
     error RateUpperBoundError();
 
+    /// @notice Reverts when rate is below the allowed minimum (for signed-rate conversions)
+    error RateLowerBoundError();
+
     /// @notice Reverts when time interval exceeds 2 years
     error TimeIntervalUpperBoundError();
 
@@ -82,39 +85,50 @@ library DeFiMathRates {
         }
     }
 
-    /// @notice Continuously-compounded return: ln(newPrice / oldPrice)
-    /// @param newPrice Current price (scaled by 1e18)
-    /// @param oldPrice Reference price (scaled by 1e18)
-    /// @return Signed log return (scaled by 1e18)
-    function logReturn(uint128 newPrice, uint128 oldPrice) internal pure returns (int256) {
+    /// @notice Continuously-compounded log return: ln(currentPrice / previousPrice)
+    /// @dev `rate` is NOT annualized — it is the continuous rate over the implicit period
+    ///      between the two prices. Callers wanting an annualized figure should scale by
+    ///      (SECONDS_IN_YEAR / periodSec) themselves.
+    /// @param currentPrice Latest price observation (scaled by 1e18)
+    /// @param previousPrice Earlier reference price (scaled by 1e18)
+    /// @return rate Signed continuous rate over the unspecified period (scaled by 1e18)
+    function logReturn(uint128 currentPrice, uint128 previousPrice) internal pure returns (int256 rate) {
         unchecked {
             // check inputs
-            if (newPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
-            if (MAX_PRINCIPAL <= newPrice) revert PriceUpperBoundError();
-            if (oldPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
-            if (MAX_PRINCIPAL <= oldPrice) revert PriceUpperBoundError();
+            if (currentPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
+            if (MAX_PRINCIPAL <= currentPrice) revert PriceUpperBoundError();
+            if (previousPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
+            if (MAX_PRINCIPAL <= previousPrice) revert PriceUpperBoundError();
 
-            return DeFiMath.ln(uint256(newPrice) * 1e18 / uint256(oldPrice));
+            rate = DeFiMath.ln(uint256(currentPrice) * 1e18 / uint256(previousPrice));
         }
     }
 
-    /// @notice Convert continuous rate to discrete (per-period) rate: e^r − 1
-    /// @dev Uses expm1 for precision when r is small; matches `Math.expm1` semantics
-    /// @param r Continuous rate (signed, scaled by 1e18)
-    /// @return Discrete equivalent (signed, scaled by 1e18)
-    function continuousToDiscrete(int256 r) internal pure returns (int256) {
+    /// @notice Convert continuous APR to effective APY: e^APR − 1
+    /// @dev Uses expm1 for precision when apr is small; matches `Math.expm1` semantics
+    /// @param apr Continuous annual rate (signed, scaled by 1e18, e.g. 0.05e18 = 5% APR)
+    /// @return apy Effective annual yield (signed, scaled by 1e18)
+    function continuousToDiscrete(int256 apr) internal pure returns (int256 apy) {
         unchecked {
-            return DeFiMath.expm1(r);
+            // check inputs
+            if (apr >= int256(MAX_RATE)) revert RateUpperBoundError();
+            if (apr <= -int256(MAX_RATE)) revert RateLowerBoundError();
+
+            apy = DeFiMath.expm1(apr);
         }
     }
 
-    /// @notice Convert discrete (per-period) rate to continuous rate: ln(1 + r)
-    /// @dev Uses log1p for precision when r is small; matches `Math.log1p` semantics
-    /// @param r Discrete rate (signed, scaled by 1e18, must satisfy r > -1)
-    /// @return Continuous equivalent (signed, scaled by 1e18)
-    function discreteToContinuous(int256 r) internal pure returns (int256) {
+    /// @notice Convert effective APY to continuous APR: ln(1 + APY)
+    /// @dev Uses log1p for precision when apy is small; matches `Math.log1p` semantics
+    /// @param apy Effective annual yield (signed, scaled by 1e18, must satisfy apy > -1)
+    /// @return apr Continuous annual rate (signed, scaled by 1e18)
+    function discreteToContinuous(int256 apy) internal pure returns (int256 apr) {
         unchecked {
-            return DeFiMath.log1p(r);
+            // check inputs
+            if (apy >= int256(MAX_RATE)) revert RateUpperBoundError();
+            if (apy <= -1e18) revert RateLowerBoundError();
+
+            apr = DeFiMath.log1p(apy);
         }
     }
 }

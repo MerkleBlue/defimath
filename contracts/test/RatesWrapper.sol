@@ -13,16 +13,16 @@ contract RatesWrapper {
         return DeFiMathRates.presentValue(futureValue, rate, timeSec);
     }
 
-    function logReturn(uint128 newPrice, uint128 oldPrice) external pure returns (int256) {
-        return DeFiMathRates.logReturn(newPrice, oldPrice);
+    function logReturn(uint128 currentPrice, uint128 previousPrice) external pure returns (int256) {
+        return DeFiMathRates.logReturn(currentPrice, previousPrice);
     }
 
-    function continuousToDiscrete(int256 r) external pure returns (int256) {
-        return DeFiMathRates.continuousToDiscrete(r);
+    function continuousToDiscrete(int256 apr) external pure returns (int256) {
+        return DeFiMathRates.continuousToDiscrete(apr);
     }
 
-    function discreteToContinuous(int256 r) external pure returns (int256) {
-        return DeFiMathRates.discreteToContinuous(r);
+    function discreteToContinuous(int256 apy) external pure returns (int256) {
+        return DeFiMathRates.discreteToContinuous(apy);
     }
 
     // measure gas
@@ -39,21 +39,21 @@ contract RatesWrapper {
         return (amount, startGas - gasleft());
     }
 
-    function logReturnMG(uint128 newPrice, uint128 oldPrice) external view returns (int256 y, uint256 gasUsed) {
+    function logReturnMG(uint128 currentPrice, uint128 previousPrice) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        y = DeFiMathRates.logReturn(newPrice, oldPrice);
+        y = DeFiMathRates.logReturn(currentPrice, previousPrice);
         return (y, startGas - gasleft());
     }
 
-    function continuousToDiscreteMG(int256 r) external view returns (int256 y, uint256 gasUsed) {
+    function continuousToDiscreteMG(int256 apr) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        y = DeFiMathRates.continuousToDiscrete(r);
+        y = DeFiMathRates.continuousToDiscrete(apr);
         return (y, startGas - gasleft());
     }
 
-    function discreteToContinuousMG(int256 r) external view returns (int256 y, uint256 gasUsed) {
+    function discreteToContinuousMG(int256 apy) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        y = DeFiMathRates.discreteToContinuous(r);
+        y = DeFiMathRates.discreteToContinuous(apy);
         return (y, startGas - gasleft());
     }
 }

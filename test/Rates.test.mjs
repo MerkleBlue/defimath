@@ -367,6 +367,23 @@ describe("DeFiMathRates", function () {
           assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_RATE_CONV);
         }
       });
+
+      describe("failure", function () {
+        it("rejects when r exceeds max", async function () {
+          const { rates } = await loadFixture(deploy);
+          // MAX_RATE = 4e18 + 1
+          await assertRevertError(rates, rates.continuousToDiscrete("4000000000000000001"), "RateUpperBoundError");
+          // just below the bound should succeed
+          await rates.continuousToDiscrete("4000000000000000000");
+        });
+
+        it("rejects when r is below -max", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.continuousToDiscrete("-4000000000000000001"), "RateLowerBoundError");
+          // just above the bound should succeed
+          await rates.continuousToDiscrete("-4000000000000000000");
+        });
+      });
     });
 
     describe("discreteToContinuous", function () {
@@ -395,9 +412,20 @@ describe("DeFiMathRates", function () {
       });
 
       describe("failure", function () {
-        it("rejects when r = -1", async function () {
+        it("rejects when r exceeds max", async function () {
           const { rates } = await loadFixture(deploy);
-          await assertRevertError(rates, rates.discreteToContinuous("-1000000000000000000"), "Log1pLowerBoundError");
+          // MAX_RATE = 4e18 + 1
+          await assertRevertError(rates, rates.discreteToContinuous("4000000000000000001"), "RateUpperBoundError");
+          // just below the bound should succeed
+          await rates.discreteToContinuous("4000000000000000000");
+        });
+
+        it("rejects when r <= -1 (log domain boundary)", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.discreteToContinuous("-1000000000000000000"), "RateLowerBoundError");
+          await assertRevertError(rates, rates.discreteToContinuous("-2000000000000000000"), "RateLowerBoundError");
+          // just above -1 should succeed
+          await rates.discreteToContinuous("-999999999999999999");
         });
       });
     });
