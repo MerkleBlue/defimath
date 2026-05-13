@@ -23,6 +23,33 @@ function jsWeightedAverage(values, weights) {
   }
   return sumProducts / sumWeights;
 }
+function jsHistoricalVolatility(prices, intervalSec) {
+  const SEC_PER_YEAR = 31536000;
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) {
+    returns.push(Math.log(prices[i] / prices[i - 1]));
+  }
+  const n = returns.length;
+  const mean = returns.reduce((a, b) => a + b, 0) / n;
+  const variance = returns.reduce((acc, r) => acc + (r - mean) ** 2, 0) / (n - 1);
+  const periodStdDev = Math.sqrt(variance);
+  return periodStdDev * Math.sqrt(SEC_PER_YEAR / intervalSec);
+}
+function jsSharpeRatio(prices, intervalSec, rfAnnual) {
+  const SEC_PER_YEAR = 31536000;
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) {
+    returns.push(Math.log(prices[i] / prices[i - 1]));
+  }
+  const n = returns.length;
+  const periodMean = returns.reduce((a, b) => a + b, 0) / n;
+  const variance = returns.reduce((acc, r) => acc + (r - periodMean) ** 2, 0) / (n - 1);
+  const periodStdDev = Math.sqrt(variance);
+  const factor = SEC_PER_YEAR / intervalSec;
+  const meanAnnual = periodMean * factor;
+  const stdDevAnnual = periodStdDev * Math.sqrt(factor);
+  return (meanAnnual - rfAnnual) / stdDevAnnual;
+}
 
 describe("DeFiMathStats", function () {
 
@@ -111,6 +138,54 @@ describe("DeFiMathStats", function () {
         const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
         let totalGas = 0, count = 0;
         totalGas += parseInt((await stats.stdDevMG(values)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("historicalVolatility", function () {
+      it("30 daily prices", async function () {
+        const { stats } = await loadFixture(deploy);
+        // simulate 30 daily prices with small random walks around 100
+        const prices = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
+                        103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
+                        107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
+                       .map(p => tokens(p));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("100 daily prices", async function () {
+        const { stats } = await loadFixture(deploy);
+        // generate 100 prices via simple cosine pattern around 100
+        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("sharpeRatio", function () {
+      it("30 daily prices, 5% rf", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
+                        103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
+                        107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
+                       .map(p => tokens(p));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("100 daily prices, 5% rf", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
@@ -343,6 +418,204 @@ describe("DeFiMathStats", function () {
         it("rejects when a value exceeds max", async function () {
           const { stats } = await loadFixture(deploy);
           await assertRevertError(stats, stats.stdDev(["1000000000000000000000000000000001", tokens(1)]), "ValueUpperBoundError");
+        });
+      });
+    });
+
+    describe("historicalVolatility", function () {
+      const SEC_PER_DAY = 86400;
+      const SEC_PER_YEAR_LOCAL = 31536000;
+
+      it("constant prices return 0 volatility", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 100, 100, 100, 100].map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("minimum sample size (3 prices, 2 returns)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 105, 102];
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("daily prices, 1-day interval, against JS reference", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 30 daily price observations with realistic-ish returns
+        const pricesJS = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
+                          103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
+                          107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5];
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("hourly prices, 3600-sec interval", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 50 hourly observations
+        const pricesJS = Array.from({ length: 50 }, (_, i) => 100 + 2 * Math.sin(i * 0.4));
+        const expected = jsHistoricalVolatility(pricesJS, 3600);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, 3600)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("yearly prices: factor = 1, annualizedVol == periodStdDev", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 110, 105, 120, 115];
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_YEAR_LOCAL);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_YEAR_LOCAL)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("declining-price series (negative log returns)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 95, 92, 88, 85, 80];
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("100-element array against JS reference", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 100 }, (_, i) => 100 + 5 * Math.cos(i * 0.3));
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      describe("failure", function () {
+        it("rejects when prices array has fewer than 3 entries", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.historicalVolatility([], 86400), "ArrayLengthLowerBoundError");
+          await assertRevertError(stats, stats.historicalVolatility([tokens(100)], 86400), "ArrayLengthLowerBoundError");
+          await assertRevertError(stats, stats.historicalVolatility([tokens(100), tokens(101)], 86400), "ArrayLengthLowerBoundError");
+        });
+
+        it("rejects when array length exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          const big = Array.from({ length: 1025 }, () => tokens(100));
+          await assertRevertError(stats, stats.historicalVolatility(big, 86400), "ArrayLengthUpperBoundError");
+        });
+
+        it("rejects when intervalSec is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          const prices = [100, 105, 102].map(p => tokens(p));
+          await assertRevertError(stats, stats.historicalVolatility(prices, 0), "IntervalLowerBoundError");
+        });
+
+        it("rejects when any price is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.historicalVolatility([0, tokens(100), tokens(101)], 86400), "PriceLowerBoundError");
+          await assertRevertError(stats, stats.historicalVolatility([tokens(100), 0, tokens(101)], 86400), "PriceLowerBoundError");
+          await assertRevertError(stats, stats.historicalVolatility([tokens(100), tokens(101), 0], 86400), "PriceLowerBoundError");
+        });
+
+        it("rejects when a price exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.historicalVolatility(["1000000000000000000000000000000001", tokens(100), tokens(101)], 86400), "ValueUpperBoundError");
+        });
+      });
+    });
+
+    describe("sharpeRatio", function () {
+      const SEC_PER_DAY = 86400;
+      const SEC_PER_YEAR_LOCAL = 31536000;
+
+      it("positive Sharpe for upward trend with low rf", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 30 prices trending upward + some noise
+        const pricesJS = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
+                          103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
+                          107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5];
+        const rfAnnual = 0.05;
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assert.isAbove(actual, 0, "Sharpe should be positive for upward trend");
+      });
+
+      it("negative Sharpe for downward trend", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [110, 105, 102, 98, 95, 90, 88, 85, 82, 80];
+        const rfAnnual = 0.05;
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assert.isBelow(actual, 0, "Sharpe should be negative for downward trend");
+      });
+
+      it("zero rf produces same sign as mean return", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 102, 101, 103, 102, 104, 103, 105];
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, 0);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, 0)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("hourly prices, 3600-sec interval", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 50 }, (_, i) => 100 + 2 * Math.sin(i * 0.4) + i * 0.05);
+        const rfAnnual = 0.03;
+        const expected = jsSharpeRatio(pricesJS, 3600, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, 3600, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("100-element array against JS reference", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 100 }, (_, i) => 100 + 5 * Math.cos(i * 0.3) + i * 0.1);
+        const rfAnnual = 0.04;
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      describe("failure", function () {
+        it("rejects when prices array has fewer than 3 entries", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.sharpeRatio([tokens(100), tokens(101)], 86400, tokens(0.05)), "ArrayLengthLowerBoundError");
+        });
+
+        it("rejects when array length exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          const big = Array.from({ length: 1025 }, () => tokens(100));
+          await assertRevertError(stats, stats.sharpeRatio(big, 86400, tokens(0.05)), "ArrayLengthUpperBoundError");
+        });
+
+        it("rejects when intervalSec is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          const prices = [100, 105, 102].map(p => tokens(p));
+          await assertRevertError(stats, stats.sharpeRatio(prices, 0, tokens(0.05)), "IntervalLowerBoundError");
+        });
+
+        it("rejects when rf exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          const prices = [100, 105, 102].map(p => tokens(p));
+          await assertRevertError(stats, stats.sharpeRatio(prices, SEC_PER_DAY, "4000000000000000001"), "RateUpperBoundError");
+        });
+
+        it("rejects when stdDev = 0 (constant prices)", async function () {
+          const { stats } = await loadFixture(deploy);
+          const prices = [100, 100, 100, 100].map(p => tokens(p));
+          await assertRevertError(stats, stats.sharpeRatio(prices, SEC_PER_DAY, tokens(0.05)), "VolatilityZeroError");
+        });
+
+        it("rejects when any price is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.sharpeRatio([0, tokens(100), tokens(101)], 86400, tokens(0.05)), "PriceLowerBoundError");
         });
       });
     });
