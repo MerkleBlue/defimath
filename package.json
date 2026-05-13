@@ -2,7 +2,7 @@
   "name": "defimath-lib",
   "version": "2.0.1",
   "description": "High-performance, gas-efficient Solidity library for DeFi math and derivatives",
-  "keywords": ["solidity", "defi", "math", "options", "binary-options", "implied-volatility", "black-scholes", "futures", "ethereum", "evm"],
+  "keywords": ["ethereum", "solidity", "smart-contract", "defi", "finance", "options", "binary-options", "futures", "implied-volatility", "black-scholes", "sharpe-ratio"],
   "homepage": "https://defimath.com",
   "repository": {
     "type": "git",
