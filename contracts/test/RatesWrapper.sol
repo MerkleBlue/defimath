@@ -25,6 +25,14 @@ contract RatesWrapper {
         return DeFiMathRates.discreteToContinuous(apy);
     }
 
+    function yieldToMaturity(uint128 price, uint128 faceValue, uint32 timeToMaturity) external pure returns (int256) {
+        return DeFiMathRates.yieldToMaturity(price, faceValue, timeToMaturity);
+    }
+
+    function internalRateOfReturn(int256[] calldata cashflows, uint32[] calldata times, int256 guess) external pure returns (int256) {
+        return DeFiMathRates.internalRateOfReturn(cashflows, times, guess);
+    }
+
     // measure gas
 
     function compoundInterestMG(uint128 principal, uint64 rate, uint32 timeSec) external view returns (uint256 amount, uint256 gasUsed) {
@@ -54,6 +62,18 @@ contract RatesWrapper {
     function discreteToContinuousMG(int256 apy) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas = gasleft();
         y = DeFiMathRates.discreteToContinuous(apy);
+        return (y, startGas - gasleft());
+    }
+
+    function yieldToMaturityMG(uint128 price, uint128 faceValue, uint32 timeToMaturity) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        y = DeFiMathRates.yieldToMaturity(price, faceValue, timeToMaturity);
+        return (y, startGas - gasleft());
+    }
+
+    function internalRateOfReturnMG(int256[] calldata cashflows, uint32[] calldata times, int256 guess) external view returns (int256 y, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        y = DeFiMathRates.internalRateOfReturn(cashflows, times, guess);
         return (y, startGas - gasleft());
     }
 }

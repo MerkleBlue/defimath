@@ -25,6 +25,15 @@ library DeFiMathRates {
     /// @notice Maximum allowed annualized rate (400%)
     uint256 internal constant MAX_RATE = 4e18 + 1;
 
+    /// @notice Maximum number of cashflows in an IRR calculation (gas-bomb guard)
+    uint256 internal constant MAX_CASHFLOWS = 1024 + 1;
+
+    /// @notice Maximum Newton-Raphson iterations for IRR convergence
+    uint256 internal constant IRR_MAX_ITER = 50;
+
+    /// @notice IRR convergence tolerance: |Σ Cᵢ · e^(-r·tᵢ)| < 1e10 (≈ 1e-8 in 1e18 base)
+    uint256 internal constant IRR_TOLERANCE = 1e10;
+
     // errors
     /// @notice Reverts when principal or future value is below the allowed minimum
     error PrincipalLowerBoundError();
@@ -46,6 +55,18 @@ library DeFiMathRates {
 
     /// @notice Reverts when price input exceeds the allowed maximum
     error PriceUpperBoundError();
+
+    /// @notice Reverts when cashflows and times arrays have different lengths
+    error ArrayLengthMismatchError();
+
+    /// @notice Reverts when cashflows array is too short or too long
+    error ArrayLengthOutOfBoundsError();
+
+    /// @notice Reverts when Newton-Raphson IRR solver fails to converge
+    error NoConvergenceError();
+
+    /// @notice Reverts when YTM input price is not below face value (no positive yield)
+    error InvalidBondPriceError();
 
     /// @notice Future value under continuous compounding: P · e^(r·t). Same as futurePrice().
     /// @param principal Initial value (scaled by 1e18)
@@ -129,6 +150,84 @@ library DeFiMathRates {
             if (apy <= -1e18) revert RateLowerBoundError();
 
             apr = DeFiMath.log1p(apy);
+        }
+    }
+
+    /// @notice Yield to Maturity for a zero-coupon bond (closed form, no iteration)
+    /// @dev YTM = ln(faceValue / price) / timeYear. Continuous compounding.
+    ///      For coupon bonds, express the cashflows and use `internalRateOfReturn()` instead.
+    /// @param price Current bond price (scaled by 1e18, must be < faceValue)
+    /// @param faceValue Face value paid at maturity (scaled by 1e18)
+    /// @param timeToMaturity Seconds until maturity (must be > 0)
+    /// @return ytm Annualized continuous YTM (scaled by 1e18)
+    function yieldToMaturity(uint128 price, uint128 faceValue, uint32 timeToMaturity) internal pure returns (int256 ytm) {
+        unchecked {
+            // check inputs
+            if (price <= MIN_PRINCIPAL) revert PriceLowerBoundError();
+            if (MAX_PRINCIPAL <= price) revert PriceUpperBoundError();
+            if (faceValue <= MIN_PRINCIPAL) revert PrincipalLowerBoundError();
+            if (MAX_PRINCIPAL <= faceValue) revert PrincipalUpperBoundError();
+            if (price >= faceValue) revert InvalidBondPriceError();
+            if (timeToMaturity == 0) revert TimeIntervalUpperBoundError();
+            if (MAX_TIME_INTERVAL <= timeToMaturity) revert TimeIntervalUpperBoundError();
+
+            // ln(F/P) returns signed; for F > P, this is positive
+            int256 lnRatio = DeFiMath.ln(uint256(faceValue) * 1e18 / uint256(price));
+            // timeYear in 1e18 base
+            uint256 timeYear = uint256(timeToMaturity) * 1e18 / SECONDS_IN_YEAR;
+            // ytm = lnRatio / timeYear, both 1e18-base → multiply by 1e18 to preserve scale
+            ytm = lnRatio * 1e18 / int256(timeYear);
+        }
+    }
+
+    /// @notice Internal Rate of Return for arbitrary cashflows at arbitrary times (continuous compounding)
+    /// @dev Solves Σ Cᵢ · e^(-r·tᵢ) = 0 for r via Newton-Raphson. Initial guess matters for convergence;
+    ///      typical: pass 0.05e18 (5% APR) for standard fixed-income use cases.
+    ///      Times are in seconds from origin. Cashflows are signed (outflows negative, inflows positive).
+    ///      Reverts with `NoConvergenceError` if iteration doesn't converge in `IRR_MAX_ITER` steps.
+    /// @param cashflows Signed cashflows (scaled by 1e18, any signs allowed)
+    /// @param times Seconds from origin for each cashflow (same length as cashflows)
+    /// @param guess Initial rate guess (signed, scaled by 1e18, e.g. 0.05e18 = 5%)
+    /// @return r Internal rate of return as continuous annual rate (signed, scaled by 1e18)
+    function internalRateOfReturn(int256[] calldata cashflows, uint32[] calldata times, int256 guess) internal pure returns (int256 r) {
+        unchecked {
+            uint256 n = cashflows.length;
+            if (n < 2 || MAX_CASHFLOWS <= n) revert ArrayLengthOutOfBoundsError();
+            if (n != times.length) revert ArrayLengthMismatchError();
+            if (guess >= int256(MAX_RATE) || guess <= -int256(MAX_RATE)) revert RateUpperBoundError();
+
+            r = guess;
+
+            for (uint256 iter = 0; iter < IRR_MAX_ITER; iter++) {
+                int256 f;          // Σ Cᵢ · e^(-r·tᵢ)
+                int256 fPrime;     // -Σ Cᵢ · tᵢ · e^(-r·tᵢ)
+
+                for (uint256 i = 0; i < n; i++) {
+                    // timeYear in 1e18 base
+                    uint256 timeYear = uint256(times[i]) * 1e18 / SECONDS_IN_YEAR;
+                    // exponent = -r · timeYear in 1e18 base (signed)
+                    int256 exponent = -r * int256(timeYear) / 1e18;
+                    // exp(-r·t); DeFiMath.exp handles signed input and reverts on overflow
+                    int256 expValue = int256(DeFiMath.exp(exponent));
+                    // f += Cᵢ · exp(-r·tᵢ); keep 1e18-scaled
+                    f += cashflows[i] * expValue / 1e18;
+                    // fPrime -= Cᵢ · tᵢ · exp(-r·tᵢ); using timeYear in 1e18 base
+                    fPrime -= cashflows[i] * int256(timeYear) / 1e18 * expValue / 1e18;
+                }
+
+                int256 absF = f >= 0 ? f : -f;
+                if (uint256(absF) < IRR_TOLERANCE) return r;
+                if (fPrime == 0) revert NoConvergenceError();
+
+                // Newton step: r ← r − f/f'
+                int256 step = f * 1e18 / fPrime;
+                r -= step;
+
+                // clamp r to valid range to keep exp from overflowing
+                if (r >= int256(MAX_RATE)) r = int256(MAX_RATE) - 1;
+                if (r <= -int256(MAX_RATE)) r = -int256(MAX_RATE) + 1;
+            }
+            revert NoConvergenceError();
         }
     }
 }

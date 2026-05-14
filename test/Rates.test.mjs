@@ -6,6 +6,31 @@ import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, SEC_IN_DAY
 const MAX_REL_ERROR_COMPOUND = 5.4e-14;     // inherits exp's relative error
 const MAX_REL_ERROR_LOG_RETURN = 1.6e-15;   // inherits ln's relative error
 const MAX_ABS_ERROR_RATE_CONV = 1e-15;      // Taylor branch precision for rate conversions
+const MAX_REL_ERROR_IRR = 1e-9;             // Newton-Raphson convergence tolerance
+
+// JS reference: continuous-compounding YTM for zero-coupon bond
+function jsYieldToMaturity(price, faceValue, timeToMaturity) {
+  return Math.log(faceValue / price) / (timeToMaturity / SEC_IN_YEAR);
+}
+
+// JS reference: continuous-compounding IRR via Newton-Raphson
+// Mirrors the Solidity implementation: solves Σ Cᵢ · e^(-r·tᵢ) = 0
+function jsInternalRateOfReturn(cashflows, times, guess) {
+  let r = guess;
+  for (let iter = 0; iter < 50; iter++) {
+    let f = 0, fp = 0;
+    for (let i = 0; i < cashflows.length; i++) {
+      const tYear = times[i] / SEC_IN_YEAR;
+      const e = Math.exp(-r * tYear);
+      f += cashflows[i] * e;
+      fp -= cashflows[i] * tYear * e;
+    }
+    if (Math.abs(f) < 1e-8) return r;
+    if (fp === 0) throw new Error("Zero derivative");
+    r -= f / fp;
+  }
+  throw new Error("No convergence");
+}
 
 describe("DeFiMathRates", function () {
 
@@ -106,6 +131,39 @@ describe("DeFiMathRates", function () {
           totalGas += parseInt((await rates.discreteToContinuousMG(tokens(r))).gasUsed);
           count++;
         }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("yieldToMaturity", function () {
+      it("single (zero-coupon)", async function () {
+        const { rates } = await loadFixture(deploy);
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await rates.yieldToMaturityMG(tokens(95), tokens(100), SEC_IN_YEAR)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("internalRateOfReturn", function () {
+      it("4-cashflow series", async function () {
+        const { rates } = await loadFixture(deploy);
+        // Invest 1000, receive 300 at each of years 1, 2, 3, 4
+        const cashflows = [-1000, 300, 300, 300, 300].map(c => tokens(c));
+        const times = [0, SEC_IN_YEAR, 2 * SEC_IN_YEAR, 3 * SEC_IN_YEAR, 4 * SEC_IN_YEAR];
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await rates.internalRateOfReturnMG(cashflows, times, tokens(0.05))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("12-cashflow series", async function () {
+        const { rates } = await loadFixture(deploy);
+        const cashflows = [-10000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000].map(c => tokens(c));
+        const times = Array.from({length: 12}, (_, i) => i === 0 ? 0 : (i * SEC_IN_DAY * 30));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await rates.internalRateOfReturnMG(cashflows, times, tokens(0.05))).gasUsed);
+        count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
@@ -438,6 +496,119 @@ describe("DeFiMathRates", function () {
           const back = (await rates.discreteToContinuous(tokens(discrete))).toString() / 1e18;
           assertAbsoluteBelow(back, r, 1e-13);
         }
+      });
+    });
+
+    describe("yieldToMaturity", function () {
+      it("zero-coupon: price < face → positive YTM (matches JS)", async function () {
+        const { rates } = await loadFixture(deploy);
+        const expected = jsYieldToMaturity(95, 100, SEC_IN_YEAR);
+        const actual = (await rates.yieldToMaturity(tokens(95), tokens(100), SEC_IN_YEAR)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_COMPOUND);
+      });
+
+      it("deep discount (50% of face over 2 years)", async function () {
+        const { rates } = await loadFixture(deploy);
+        const expected = jsYieldToMaturity(50, 100, 2 * SEC_IN_YEAR);  // = ln(2)/2 ≈ 0.3466
+        const actual = (await rates.yieldToMaturity(tokens(50), tokens(100), 2 * SEC_IN_YEAR)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_COMPOUND);
+      });
+
+      it("short maturity (30 days)", async function () {
+        const { rates } = await loadFixture(deploy);
+        const expected = jsYieldToMaturity(99.5, 100, 30 * SEC_IN_DAY);
+        const actual = (await rates.yieldToMaturity(tokens(99.5), tokens(100), 30 * SEC_IN_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_COMPOUND);
+      });
+
+      describe("failure", function () {
+        it("rejects when price >= face", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.yieldToMaturity(tokens(100), tokens(100), SEC_IN_YEAR), "InvalidBondPriceError");
+          await assertRevertError(rates, rates.yieldToMaturity(tokens(101), tokens(100), SEC_IN_YEAR), "InvalidBondPriceError");
+        });
+
+        it("rejects when timeToMaturity is 0", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.yieldToMaturity(tokens(95), tokens(100), 0), "TimeIntervalUpperBoundError");
+        });
+
+        it("rejects when timeToMaturity > 2 years", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.yieldToMaturity(tokens(95), tokens(100), 63072001), "TimeIntervalUpperBoundError");
+        });
+
+        it("rejects when price below min", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.yieldToMaturity(0, tokens(100), SEC_IN_YEAR), "PriceLowerBoundError");
+        });
+      });
+    });
+
+    describe("internalRateOfReturn", function () {
+      it("simple annuity: -1000 then four 300s", async function () {
+        const { rates } = await loadFixture(deploy);
+        const cashflowsJS = [-1000, 300, 300, 300, 300];
+        const timesJS = [0, SEC_IN_YEAR, 2 * SEC_IN_YEAR, 3 * SEC_IN_YEAR, 4 * SEC_IN_YEAR];
+        const expected = jsInternalRateOfReturn(cashflowsJS, timesJS, 0.05);
+        const cashflows = cashflowsJS.map(c => tokens(c));
+        const actual = (await rates.internalRateOfReturn(cashflows, timesJS, tokens(0.05))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_IRR);
+      });
+
+      it("monthly coupons: bond-like cashflows", async function () {
+        const { rates } = await loadFixture(deploy);
+        const cashflowsJS = [-10000];
+        const timesJS = [0];
+        for (let i = 1; i <= 12; i++) {
+          cashflowsJS.push(i === 12 ? 10100 : 50); // principal returned at maturity
+          timesJS.push(i * 30 * SEC_IN_DAY);
+        }
+        const expected = jsInternalRateOfReturn(cashflowsJS, timesJS, 0.05);
+        const cashflows = cashflowsJS.map(c => tokens(c));
+        const actual = (await rates.internalRateOfReturn(cashflows, timesJS, tokens(0.05))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_IRR);
+      });
+
+      it("negative IRR for loss-making investment", async function () {
+        const { rates } = await loadFixture(deploy);
+        // pay 1000, get back only 900 after 1 year — negative IRR
+        const cashflowsJS = [-1000, 900];
+        const timesJS = [0, SEC_IN_YEAR];
+        const expected = jsInternalRateOfReturn(cashflowsJS, timesJS, -0.05);
+        const cashflows = cashflowsJS.map(c => tokens(c));
+        const actual = (await rates.internalRateOfReturn(cashflows, timesJS, "-50000000000000000")).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_IRR);
+        assert.isBelow(actual, 0, "IRR should be negative for loss");
+      });
+
+      it("matches IRR for trivial 2-cashflow case (closed form)", async function () {
+        const { rates } = await loadFixture(deploy);
+        // for [-P, F] at [0, T], IRR = ln(F/P) / T (same as zero-coupon YTM)
+        const closedForm = Math.log(110 / 100) / 1;  // = 0.0953...
+        const cashflows = [-100, 110].map(c => tokens(c));
+        const times = [0, SEC_IN_YEAR];
+        const actual = (await rates.internalRateOfReturn(cashflows, times, tokens(0.05))).toString() / 1e18;
+        assertRelativeBelow(actual, closedForm, MAX_REL_ERROR_IRR);
+      });
+
+      describe("failure", function () {
+        it("rejects when arrays empty or single", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.internalRateOfReturn([], [], tokens(0.05)), "ArrayLengthOutOfBoundsError");
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1000)], [0], tokens(0.05)), "ArrayLengthOutOfBoundsError");
+        });
+
+        it("rejects when arrays mismatched", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1), tokens(2)], [0], tokens(0.05)), "ArrayLengthMismatchError");
+        });
+
+        it("rejects when guess exceeds MAX_RATE", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1), tokens(2)], [0, SEC_IN_YEAR], "4000000000000000001"), "RateUpperBoundError");
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1), tokens(2)], [0, SEC_IN_YEAR], "-4000000000000000001"), "RateUpperBoundError");
+        });
       });
     });
   });
