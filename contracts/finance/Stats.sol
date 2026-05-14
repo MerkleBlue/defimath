@@ -51,6 +51,9 @@ library DeFiMathStats {
     /// @notice Reverts when sample standard deviation is zero (Sharpe undefined)
     error VolatilityZeroError();
 
+    /// @notice Reverts when confidence level is outside (0, 1) exclusive
+    error ConfidenceOutOfRangeError();
+
     /// @notice Geometric mean of two values: sqrt(a · b)
     /// @param a First value (scaled by 1e18)
     /// @param b Second value (scaled by 1e18)
@@ -197,6 +200,150 @@ library DeFiMathStats {
             // Sharpe = (mean_annual − rf_annual) / stdDev_annual, both 1e18-base → ×1e18 to preserve scale
             int256 excess = meanAnnual - int256(uint256(riskFreeRateAnnual));
             sharpe = excess * 1e18 / int256(stdDevAnnual);
+        }
+    }
+
+    /// @notice Maximum drawdown of an equity curve: largest peak-to-trough decline as a fraction
+    /// @dev Single-pass algorithm tracking running peak. Returns a non-negative ratio.
+    /// @param equity Array of equity / NAV / cumulative-value observations (each scaled by 1e18, must be > 0)
+    /// @return mdd Maximum drawdown as a positive fraction (scaled by 1e18, e.g. 0.30e18 = 30% drawdown)
+    function maxDrawdown(uint256[] calldata equity) internal pure returns (uint256 mdd) {
+        unchecked {
+            uint256 n = equity.length;
+
+            // check inputs
+            if (n < 2) revert ArrayLengthLowerBoundError();
+            if (MAX_ARRAY_LENGTH <= n) revert ArrayLengthUpperBoundError();
+            if (equity[0] == 0) revert PriceLowerBoundError();
+            if (MAX_VALUE <= equity[0]) revert ValueUpperBoundError();
+
+            uint256 peak = equity[0];
+            for (uint256 i = 1; i < n; i++) {
+                if (equity[i] == 0) revert PriceLowerBoundError();
+                if (MAX_VALUE <= equity[i]) revert ValueUpperBoundError();
+
+                if (equity[i] > peak) {
+                    peak = equity[i];
+                } else {
+                    // drawdown = (peak − current) / peak, scaled to 1e18
+                    uint256 dd = (peak - equity[i]) * 1e18 / peak;
+                    if (dd > mdd) mdd = dd;
+                }
+            }
+        }
+    }
+
+    /// @notice Historical Value at Risk: the return threshold below which losses fall with probability 1-α
+    /// @dev Uses linear interpolation matching NumPy's `method='linear'` (also `simple-statistics.quantile`):
+    ///      idx = (1-α)·(n-1) where n is the number of log returns. With k = floor(idx) and f = idx − k:
+    ///      VaR = sorted[k] + f · (sorted[k+1] − sorted[k]). Output is signed (typically negative).
+    /// @param prices Array of equally-spaced price observations (each scaled by 1e18, must be > 0)
+    /// @param confidence Confidence level (scaled by 1e18, strictly between 0 and 1, e.g. 0.95e18 = 95%)
+    /// @return varOut Signed VaR threshold return (scaled by 1e18)
+    function valueAtRisk(uint256[] calldata prices, uint64 confidence) internal pure returns (int256 varOut) {
+        unchecked {
+            if (confidence == 0 || confidence >= 1e18) revert ConfidenceOutOfRangeError();
+
+            uint256 n = prices.length - 1;
+            // NumPy linear: idx = (1-α) · (n-1)
+            uint256 idxTimes1e18 = (1e18 - uint256(confidence)) * (n - 1);
+            uint256 k = idxTimes1e18 / 1e18;
+            uint256 fraction1e18 = idxTimes1e18 - k * 1e18;
+
+            // boundary: idx ∈ [0, n-1], so k ∈ [0, n-1]; only k == n-1 needs no-interp clamp
+            if (k >= n - 1) {
+                k = n - 1;
+                fraction1e18 = 0;
+            }
+
+            // pass K = k+1 so buffer holds both sorted[k] (secondLargest) and sorted[k+1] (largest)
+            uint256 K = (k == n - 1) ? n - 1 : k + 1;
+            (int256 largest, int256 secondLargest, ) = _kSmallestLogReturns(prices, K);
+
+            // interpolate; when K == k (boundary), largest == secondLargest, so (upper-lower) = 0
+            int256 lower = (K == k + 1) ? secondLargest : largest;
+            int256 upper = largest;
+            varOut = lower + (upper - lower) * int256(fraction1e18) / 1e18;
+        }
+    }
+
+    /// @notice Conditional Value at Risk (Expected Shortfall): mean return in the left tail beyond VaR
+    /// @dev Average of all returns at and below the VaR threshold. More tail-sensitive than VaR.
+    /// @param prices Array of equally-spaced price observations (each scaled by 1e18, must be > 0)
+    /// @param confidence Confidence level (scaled by 1e18, strictly between 0 and 1, e.g. 0.95e18 = 95%)
+    /// @return cvarOut Signed CVaR (scaled by 1e18, typically more negative than VaR)
+    function conditionalValueAtRisk(uint256[] calldata prices, uint64 confidence) internal pure returns (int256 cvarOut) {
+        unchecked {
+            if (confidence == 0 || confidence >= 1e18) revert ConfidenceOutOfRangeError();
+
+            uint256 n = prices.length - 1;
+            // Same index convention as valueAtRisk: k = floor((1-α)·(n-1))
+            uint256 k = (1e18 - uint256(confidence)) * (n - 1) / 1e18;
+            if (k >= n) k = n - 1;
+
+            (, , int256 sumK) = _kSmallestLogReturns(prices, k);
+            // CVaR = average of the k+1 smallest log returns (the left tail)
+            cvarOut = sumK / int256(k + 1);
+        }
+    }
+
+    /// @dev Internal helper: returns the k-th smallest log return, the (k-1)-th smallest (for VaR
+    ///      linear interpolation), and the sum of the k+1 smallest (for CVaR).
+    ///      Uses a partial-sort buffer of size k+1 — O(n·k) instead of O(n²) full sort.
+    ///      For typical risk metrics (k = 1-5% of n), this is dramatically faster than full sorting.
+    function _kSmallestLogReturns(uint256[] calldata prices, uint256 k) private pure returns (int256 largest, int256 secondLargest, int256 sumK) {
+        unchecked {
+            uint256 nPrices = prices.length;
+
+            // check inputs
+            if (nPrices < 2) revert ArrayLengthLowerBoundError();
+            if (MAX_ARRAY_LENGTH <= nPrices) revert ArrayLengthUpperBoundError();
+            if (prices[0] == 0) revert PriceLowerBoundError();
+            if (MAX_VALUE <= prices[0]) revert ValueUpperBoundError();
+
+            // partial-sort buffer of k+1 smallest log returns, kept ascending
+            int256[] memory buf = new int256[](k + 1);
+
+            // seed the buffer with the first k+1 log returns
+            for (uint256 i = 0; i <= k; i++) {
+                if (prices[i + 1] == 0) revert PriceLowerBoundError();
+                if (MAX_VALUE <= prices[i + 1]) revert ValueUpperBoundError();
+                buf[i] = DeFiMath.ln(uint256(prices[i + 1]) * 1e18 / uint256(prices[i]));
+            }
+
+            // insertion-sort the seed (one-time cost O(k²))
+            for (uint256 i = 1; i <= k; i++) {
+                int256 key = buf[i];
+                uint256 j = i;
+                while (j > 0 && buf[j - 1] > key) {
+                    buf[j] = buf[j - 1];
+                    j--;
+                }
+                buf[j] = key;
+            }
+
+            // scan remaining returns; insert any that beat the current buf[k]
+            uint256 nReturns = nPrices - 1;
+            for (uint256 i = k + 1; i < nReturns; i++) {
+                if (prices[i + 1] == 0) revert PriceLowerBoundError();
+                if (MAX_VALUE <= prices[i + 1]) revert ValueUpperBoundError();
+                int256 candidate = DeFiMath.ln(uint256(prices[i + 1]) * 1e18 / uint256(prices[i]));
+                if (candidate < buf[k]) {
+                    // insert into sorted buf, displacing buf[k]
+                    uint256 j = k;
+                    while (j > 0 && buf[j - 1] > candidate) {
+                        buf[j] = buf[j - 1];
+                        j--;
+                    }
+                    buf[j] = candidate;
+                }
+            }
+
+            largest = buf[k];
+            secondLargest = (k > 0) ? buf[k - 1] : largest;
+            for (uint256 i = 0; i <= k; i++) {
+                sumK += buf[i];
+            }
         }
     }
 

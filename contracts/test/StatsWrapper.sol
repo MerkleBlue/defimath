@@ -29,6 +29,18 @@ contract StatsWrapper {
         return DeFiMathStats.sharpeRatio(prices, intervalSec, riskFreeRateAnnual);
     }
 
+    function maxDrawdown(uint256[] calldata equity) external pure returns (uint256) {
+        return DeFiMathStats.maxDrawdown(equity);
+    }
+
+    function valueAtRisk(uint256[] calldata prices, uint64 confidence) external pure returns (int256) {
+        return DeFiMathStats.valueAtRisk(prices, confidence);
+    }
+
+    function conditionalValueAtRisk(uint256[] calldata prices, uint64 confidence) external pure returns (int256) {
+        return DeFiMathStats.conditionalValueAtRisk(prices, confidence);
+    }
+
     // measure gas
 
     function geometricMeanMG(uint256 a, uint256 b) external view returns (uint256 result, uint256 gasUsed) {
@@ -64,6 +76,24 @@ contract StatsWrapper {
     function sharpeRatioMG(uint256[] calldata prices, uint32 intervalSec, uint64 riskFreeRateAnnual) external view returns (int256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
         result = DeFiMathStats.sharpeRatio(prices, intervalSec, riskFreeRateAnnual);
+        return (result, startGas - gasleft());
+    }
+
+    function maxDrawdownMG(uint256[] calldata equity) external view returns (uint256 result, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        result = DeFiMathStats.maxDrawdown(equity);
+        return (result, startGas - gasleft());
+    }
+
+    function valueAtRiskMG(uint256[] calldata prices, uint64 confidence) external view returns (int256 result, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        result = DeFiMathStats.valueAtRisk(prices, confidence);
+        return (result, startGas - gasleft());
+    }
+
+    function conditionalValueAtRiskMG(uint256[] calldata prices, uint64 confidence) external view returns (int256 result, uint256 gasUsed) {
+        uint256 startGas = gasleft();
+        result = DeFiMathStats.conditionalValueAtRisk(prices, confidence);
         return (result, startGas - gasleft());
     }
 }

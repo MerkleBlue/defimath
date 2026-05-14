@@ -1,6 +1,7 @@
 
 import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
+import * as ss from "simple-statistics";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
 
 const MAX_REL_ERROR_SQRT = 2.2e-14;   // inherits sqrt's relative error
@@ -34,6 +35,38 @@ function jsHistoricalVolatility(prices, intervalSec) {
   const variance = returns.reduce((acc, r) => acc + (r - mean) ** 2, 0) / (n - 1);
   const periodStdDev = Math.sqrt(variance);
   return periodStdDev * Math.sqrt(SEC_PER_YEAR / intervalSec);
+}
+function jsMaxDrawdown(equity) {
+  let peak = equity[0];
+  let maxDD = 0;
+  for (let i = 1; i < equity.length; i++) {
+    if (equity[i] > peak) peak = equity[i];
+    else {
+      const dd = (peak - equity[i]) / peak;
+      if (dd > maxDD) maxDD = dd;
+    }
+  }
+  return maxDD;
+}
+function jsLogReturns(prices) {
+  const r = [];
+  for (let i = 1; i < prices.length; i++) r.push(Math.log(prices[i] / prices[i - 1]));
+  return r;
+}
+function jsValueAtRisk(prices, confidence) {
+  // Reference: simple-statistics.quantile (NumPy method='linear' convention)
+  // idx = (1 - α) · (n - 1) with linear interpolation between sorted neighbors
+  return ss.quantile(jsLogReturns(prices), 1 - confidence);
+}
+function jsConditionalValueAtRisk(prices, confidence) {
+  // Floor-based tail mean: average of the k+1 smallest, where k = floor((1-α)·(n-1))
+  const sorted = jsLogReturns(prices).slice().sort((a, b) => a - b);
+  const n = sorted.length;
+  let k = Math.floor((1 - confidence) * (n - 1));
+  if (k >= n) k = n - 1;
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += sorted[i];
+  return sum / (k + 1);
 }
 function jsSharpeRatio(prices, intervalSec, rfAnnual) {
   const SEC_PER_YEAR = 31536000;
@@ -186,6 +219,66 @@ describe("DeFiMathStats", function () {
         const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
         let totalGas = 0, count = 0;
         totalGas += parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("maxDrawdown", function () {
+      it("30 prices", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equity = Array.from({ length: 30 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.maxDrawdownMG(equity)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("100 prices", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equity = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.maxDrawdownMG(equity)).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("valueAtRisk", function () {
+      it("30 daily prices, 95% confidence", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = Array.from({ length: 30 }, (_, i) => tokens(100 + 2 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.valueAtRiskMG(prices, tokens(0.95))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("100 daily prices, 95% confidence", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.valueAtRiskMG(prices, tokens(0.95))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("conditionalValueAtRisk", function () {
+      it("30 daily prices, 95% confidence", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = Array.from({ length: 30 }, (_, i) => tokens(100 + 2 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.conditionalValueAtRiskMG(prices, tokens(0.95))).gasUsed);
+        count++;
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("100 daily prices, 95% confidence", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+        let totalGas = 0, count = 0;
+        totalGas += parseInt((await stats.conditionalValueAtRiskMG(prices, tokens(0.95))).gasUsed);
         count++;
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
@@ -616,6 +709,180 @@ describe("DeFiMathStats", function () {
         it("rejects when any price is 0", async function () {
           const { stats } = await loadFixture(deploy);
           await assertRevertError(stats, stats.sharpeRatio([0, tokens(100), tokens(101)], 86400, tokens(0.05)), "PriceLowerBoundError");
+        });
+      });
+    });
+
+    describe("maxDrawdown", function () {
+      it("monotonically increasing equity → 0 drawdown", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equity = [100, 101, 102, 103, 105, 110].map(v => tokens(v));
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("known case: 100 → 50 → 80 → drawdown = 50%", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equity = [100, 50, 80].map(v => tokens(v));
+        const expected = 0.5;
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
+      });
+
+      it("two drawdowns: takes the deeper one", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 100 → 90 → 110 → 60 (the 110→60 is deeper, 50/110 ≈ 0.4545)
+        const equity = [100, 90, 110, 60].map(v => tokens(v));
+        const expected = jsMaxDrawdown([100, 90, 110, 60]);
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
+      });
+
+      it("declining series: drawdown = (first - last) / first", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equityJS = [100, 80, 60, 40, 20];
+        const expected = jsMaxDrawdown(equityJS);  // 0.8
+        const equity = equityJS.map(v => tokens(v));
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
+      });
+
+      it("100-element noisy series against JS reference", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equityJS = Array.from({ length: 100 }, (_, i) => 100 + 10 * Math.cos(i * 0.2) + i * 0.3);
+        const expected = jsMaxDrawdown(equityJS);
+        const equity = equityJS.map(v => tokens(v));
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
+      });
+
+      describe("failure", function () {
+        it("rejects when array has fewer than 2 entries", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.maxDrawdown([]), "ArrayLengthLowerBoundError");
+          await assertRevertError(stats, stats.maxDrawdown([tokens(100)]), "ArrayLengthLowerBoundError");
+        });
+
+        it("rejects when array exceeds max length", async function () {
+          const { stats } = await loadFixture(deploy);
+          const big = Array.from({ length: 1025 }, () => tokens(100));
+          await assertRevertError(stats, stats.maxDrawdown(big), "ArrayLengthUpperBoundError");
+        });
+
+        it("rejects when any equity is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.maxDrawdown([0, tokens(100)]), "PriceLowerBoundError");
+          await assertRevertError(stats, stats.maxDrawdown([tokens(100), 0]), "PriceLowerBoundError");
+        });
+
+        it("rejects when equity exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.maxDrawdown(["1000000000000000000000000000000001", tokens(100)]), "ValueUpperBoundError");
+        });
+      });
+    });
+
+    describe("valueAtRisk", function () {
+      it("95% VaR on known series matches JS", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100,
+                          102, 98, 105, 97, 100, 103, 96, 105, 99, 102];
+        const expected = jsValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("99% VaR is lower (more negative) than 95% VaR", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 50 }, (_, i) => 100 + 5 * Math.cos(i * 0.5) - i * 0.1);
+        const prices = pricesJS.map(p => tokens(p));
+        const var95 = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        const var99 = (await stats.valueAtRisk(prices, tokens(0.99))).toString() / 1e18;
+        assert.isAtMost(var99, var95, "99% VaR should be ≤ 95% VaR (more conservative)");
+      });
+
+      it("matches JS reference on 100-price series", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 100 }, (_, i) => 100 + 5 * Math.cos(i * 0.3) + Math.sin(i));
+        const expected = jsValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      describe("failure", function () {
+        it("rejects when confidence is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], 0), "ConfidenceOutOfRangeError");
+        });
+
+        it("rejects when confidence >= 1", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], tokens(1)), "ConfidenceOutOfRangeError");
+          await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], "1000000000000000001"), "ConfidenceOutOfRangeError");
+        });
+
+        it("rejects when array has fewer than 2 prices", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.valueAtRisk([tokens(100)], tokens(0.95)), "ArrayLengthLowerBoundError");
+        });
+
+        it("rejects when any price is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.valueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
+        });
+      });
+    });
+
+    describe("conditionalValueAtRisk", function () {
+      it("matches JS reference on known series", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100,
+                          102, 98, 105, 97, 100, 103, 96, 105, 99, 102];
+        const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("CVaR is ≤ VaR (more conservative)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 50 }, (_, i) => 100 + 5 * Math.cos(i * 0.5) - i * 0.1);
+        const prices = pricesJS.map(p => tokens(p));
+        const v = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        const c = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assert.isAtMost(c, v, "CVaR should be ≤ VaR (CVaR averages tail returns ≤ VaR)");
+      });
+
+      it("matches JS reference on 100-price series", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 100 }, (_, i) => 100 + 5 * Math.cos(i * 0.3) + Math.sin(i));
+        const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      describe("failure", function () {
+        it("rejects when confidence is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(101)], 0), "ConfidenceOutOfRangeError");
+        });
+
+        it("rejects when confidence >= 1", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(101)], tokens(1)), "ConfidenceOutOfRangeError");
+        });
+
+        it("rejects when array has fewer than 2 prices", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100)], tokens(0.95)), "ArrayLengthLowerBoundError");
+        });
+
+        it("rejects when any price is 0", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.conditionalValueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
         });
       });
     });
