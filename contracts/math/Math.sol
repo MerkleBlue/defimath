@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.34;
+pragma solidity ^0.8.31;
 
 /// @title DeFiMath: High-precision Math Library for Solidity
 /// @author DeFiMath (https://defimath.com)
