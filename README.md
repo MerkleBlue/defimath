@@ -77,8 +77,8 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `log10`      | 391  | 1.4e-12 | Base-10 logarithm |
 | `pow`        | 750  | 5.2e-12 | Power function `x^a` |
 | `sqrt`       | 245  | 2.8e-14 | Square root |
-| `expm1`      | ~300 | ≤ 1e-14 | `e^x − 1` (precision-preserving for small x) |
-| `log1p`      | ~350 | ≤ 1e-14 | `ln(1 + x)` (precision-preserving for small x) |
+| `expm1`      | 439  | 9.9e-12 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | 500  | 7.0e-13 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 731  | 4.6e-13 | Standard normal CDF Φ(x) |
 | `erf`        | 685  | 7.4e-13 | Error function |
 
