@@ -6,277 +6,139 @@
 ![Tests](https://github.com/MerkleBlue/defimath/actions/workflows/test.yml/badge.svg)
 [![npm version](https://img.shields.io/npm/v/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
 [![npm downloads](https://img.shields.io/npm/dm/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.34-blue.svg)](https://soliditylang.org)
+[![Solidity](https://img.shields.io/badge/Solidity-%5E0.8.31-blue.svg)](https://soliditylang.org)
 
-[DeFiMath](https://defimath.com) is a high-performance, open-source Solidity library designed for Ethereum smart contracts. It provides optimized, gas-efficient implementations of core DeFi primitives and mathematical utilities—built with precision and performance in mind.
+> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,887 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
 
-## Table of Contents
+[DeFiMath](https://defimath.com) is a pure-Solidity library of DeFi math primitives. 40+ functions across four modules: low-level math, derivatives, interest rates, and statistics. No external runtime dependencies. MIT-licensed.
 
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Derivatives](#derivatives)
-  - [Option Pricing (Black-Scholes)](#option-pricing-using-black-scholes)
-  - [Binary Options (Cash-or-Nothing)](#binary-options-cash-or-nothing)
-  - [Futures](#futures)
-- [Math](#math)
-- [Benchmarks](#benchmarks)
-- [License](#license)
+## Why DeFiMath
 
-## Features
+- **Unlocks new use cases.** Gas-efficient enough to make real-time options pricing, on-chain IV solving on every quote, and risk-adjusted vault fees economically viable. Use cases that were previously off-chain workarounds now fit in a single transaction.
+- **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
+- **Pure Solidity.** ~16KB published, zero runtime dependencies, easy to audit.
+- **Validated precision.** Sub-1e-10 absolute error on options pricing; sub-1e-12 on math primitives. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
 
-| | |
-|---|---|
-| **DeFi Primitives** | Core building blocks for advanced financial protocols — options, futures, and other on-chain derivatives. |
-| **High-Precision Math** | Accurate fixed-point arithmetic essential for financial calculations, with sub-1e-10 absolute error. |
-| **Gas Optimized** | Option pricing at ~2,900 gas — orders of magnitude cheaper than comparable implementations. |
-| **Fully Tested** | Comprehensive unit tests with verified accuracy against trusted JavaScript reference implementations. |
-| **Modular & Extensible** | Import only what you need; extend seamlessly to fit your protocol's requirements. |
-| **Open Source** | MIT-licensed — transparent, auditable, and free to use or build upon. |
+## Benchmarks
 
-## Installation
+Every function is benchmarked against existing on-chain implementations. A representative comparison:
 
-Install via npm:
+| Function | DeFiMath | Next best | Multiple |
+| :------- | -------: | --------: | -------: |
+| `callOptionPrice` | **2,887** | 13,360 (Derivexyz) | **4.6×** |
+| `putOptionPrice`  | **2,898** | 13,363 (Derivexyz) | **4.6×** |
+| `binaryCallPrice` | **2,102** | 16,218 (Haptic)    | **7.7×** |
+| `delta`           | **1,807** | 8,621 (Derivexyz)  | **4.8×** |
+| `vega`            | **1,449** | 7,490 (Derivexyz)  | **5.2×** |
+| `ln`              | **375**   | 518 (Solady)       | 1.4× |
+| `sqrt`            | **245**   | 341 (Solady)       | 1.4× |
+| `stdNormCDF`      | **731**   | 2,794 (SolStat)    | **3.8×** |
+
+Full per-function tables in the [defimath-compare README](https://github.com/MerkleBlue/defimath-compare#readme).
+
+## Install
 
 ```bash
 npm install defimath-lib
 ```
 
-Requires **Solidity `^0.8.34`** and a **Fusaka-compatible EVM** (`evmVersion: "osaka"` or later).
+Requires **Solidity `^0.8.31`** and **`evmVersion: "osaka"`** (Fusaka). The library uses the `clz` Yul builtin (added in Solidity 0.8.31) which emits the `CLZ` opcode introduced in Osaka — both the compiler version and EVM target are hard requirements.
 
 ## Usage
 
-Import only the modules you need:
-
 ```solidity
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.34;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.31;
 
 import "defimath/derivatives/Options.sol";
-```
 
-All values use **18-decimal fixed-point format** (`1e18 = 1.0`):
-
-| Parameter        | Type      | Unit           | Example                   |
-| :--------------- | :-------- | :------------- | :------------------------ |
-| `spot`           | `uint128` | price × 1e18   | `1000e18` = $1,000        |
-| `strike`         | `uint128` | price × 1e18   | `1100e18` = $1,100        |
-| `timeToExp`| `uint32`  | seconds        | `2592000` = 30 days       |
-| `volatility`     | `uint64`  | ratio × 1e18   | `0.8e18` = 80% IV         |
-| `rate`           | `uint64`  | ratio × 1e18   | `0.05e18` = 5% risk-free  |
-
-Inputs outside the supported ranges revert with descriptive errors (e.g., `StrikeUpperBoundError`, `TimeToExpiryUpperBoundError`).
-
-```solidity
 contract OptionsExchange {
-    function getQuote(
-        uint128 spot,           // e.g. 1000e18 for $1,000
-        uint128 strike,         // e.g. 1100e18 for $1,100
-        uint32 timeToExp, // e.g. 2592000 for 30 days
-        uint64 volatility,      // e.g. 0.8e18 for 80% IV
-        uint64 rate             // e.g. 0.05e18 for 5% risk-free rate
-    ) external pure returns (uint256 callPrice, uint256 putPrice) {
-        callPrice = DeFiMathOptions.callOptionPrice(spot, strike, timeToExp, volatility, rate);
-        putPrice  = DeFiMathOptions.putOptionPrice(spot, strike, timeToExp, volatility, rate);
+    function quote(
+        uint128 spot, uint128 strike, uint32 timeToExp,
+        uint64 vol, uint64 rate
+    ) external pure returns (uint256 callPx, uint256 putPx) {
+        callPx = DeFiMathOptions.callOptionPrice(spot, strike, timeToExp, vol, rate);
+        putPx  = DeFiMathOptions.putOptionPrice(spot, strike, timeToExp, vol, rate);
     }
 }
 ```
 
-## Derivatives
+All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See module docs for full parameter conventions.
 
-### Option Pricing using Black-Scholes
+## Functions
 
-The implementation is based on the original Black-Scholes formula, which is a mathematical model used to calculate the theoretical price of options. The formula is widely used in the financial industry for pricing European-style options.
+### Math primitives — `DeFiMath` (Math.sol)
 
-The Black-Scholes formula is given by:
+| Function | Gas | Precision | Description |
+| :------- | --: | --------: | :---------- |
+| `exp`        | 333  | 5.1e-12 | Exponential function `e^x` |
+| `ln`         | 375  | 1.5e-12 | Natural logarithm |
+| `log2`       | 391  | 1.5e-12 | Base-2 logarithm |
+| `log10`      | 391  | 1.4e-12 | Base-10 logarithm |
+| `pow`        | 750  | 5.2e-12 | Power function `x^a` |
+| `sqrt`       | 245  | 2.8e-14 | Square root |
+| `expm1`      | ~300 | ≤ 1e-14 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | ~350 | ≤ 1e-14 | `ln(1 + x)` (precision-preserving for small x) |
+| `stdNormCDF` | 731  | 4.6e-13 | Standard normal CDF Φ(x) |
+| `erf`        | 685  | 7.4e-13 | Error function |
 
-```math
-C = S N(d_1) - K e^{-rT} N(d_2)
-```
-```math
-P = K e^{-rT} N(-d_2) - S N(-d_1)
-```
+*Precision is max relative error vs. JS reference implementation.*
 
-where $C$ is the call option price, $P$ is the put option price, $S$ is the current asset price, $K$ is the strike price, $T$ is the time to expiration (in years), $r$ is the annualized risk-free interest rate, $N(d)$ is the cumulative distribution function of the standard normal distribution, and $d_1$ and $d_2$ are given by:
+### Derivatives — `DeFiMathOptions`, `DeFiMathBinary`, `DeFiMathFutures`
 
-```math
-d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}},  d_2 = d_1 - \sigma \sqrt{T}
-```
+| Function | Gas | Precision | Description |
+| :------- | --: | --------: | :---------- |
+| `callOptionPrice`     | 2,887  | 5.6e-12 | European call (Black-Scholes) |
+| `putOptionPrice`      | 2,898  | 5.4e-12 | European put (Black-Scholes) |
+| `delta`               | 1,807  | 6.9e-15 | First derivative w.r.t. spot |
+| `gamma`               | 1,509  | 9.1e-17 | Second derivative w.r.t. spot |
+| `theta`               | 3,451  | 3.7e-14 | Time decay (per day) |
+| `vega`                | 1,449  | 4.8e-14 | Sensitivity to volatility |
+| `impliedVolatility`   | 13,111 | ≤ 1e-6  | IV via Newton-Raphson |
+| `binaryCallPrice`     | 2,102  | 5.7e-15 | Cash-or-nothing call |
+| `binaryPutPrice`      | 2,107  | 5.4e-15 | Cash-or-nothing put |
+| `binaryDelta`         | 1,835  | 1.2e-16 | Binary delta (signed) |
+| `binaryGamma`         | 1,977  | 1.0e-15 | Binary gamma (signed) |
+| `binaryTheta`         | 3,511  | 8.2e-16 | Binary theta (per day) |
+| `binaryVega`          | 1,924  | 2.7e-16 | Binary vega (signed) |
+| `futurePrice`         | ~400   | ≤ 5e-14 | `spot · e^(rt)` |
 
-where $\sigma$ is the volatility of the underlying asset. Learn more about the [Black-Scholes model on Wikipedia](https://en.wikipedia.org/wiki/Black%E2%80%93Scholes_model).
+*Precision is max absolute error vs. JS reference (at $1,000 spot for European, unit-payout for binary). `impliedVolatility` uses round-trip relative error.*
 
-#### Implied Volatility
+### Interest & rates — `DeFiMathRates` (Rates.sol)
 
-Given an observed market price, DeFiMath can solve for the implied volatility — the value of $\sigma$ that makes the Black-Scholes formula match the market price. Implementation uses Newton-Raphson iteration with vega as the derivative:
+| Function | Gas | Precision | Description |
+| :------- | --: | --------: | :---------- |
+| `compoundInterest`       | 467     | 2.9e-14 | Continuous compounding: `P · e^(rt)` |
+| `presentValue`           | 519     | 2.8e-14 | Discounting: `FV · e^(−rt)` |
+| `logReturn`              | 600     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
+| `continuousToDiscrete`   | 508     | 2.6e-14 | `e^apr − 1` (APR → APY) |
+| `discreteToContinuous`   | 589     | 7.0e-15 | `ln(1 + apy)` (APY → APR) |
+| `yieldToMaturity`        | 736     | 2.7e-14 | Zero-coupon YTM (closed form) |
+| `internalRateOfReturn`   | 17k–49k | 3.7e-15 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
-```math
-\sigma_{n+1} = \sigma_n - \frac{BS(\sigma_n) - P_{market}}{\nu(\sigma_n)}
-```
+*Precision is max relative error vs. JS reference; inherits the underlying `exp`/`ln`/`expm1`/`log1p` primitives. `internalRateOfReturn` is worst-case bounded by the Newton-Raphson convergence tolerance (1e-8); the listed number is post-convergence agreement with the JS reference.*
 
-where $\nu$ is per-unit-vol vega ($S \cdot \phi(d_1) \cdot \sqrt{T}$). Typical convergence is 4–6 iterations. The market price must lie within the no-arbitrage band $[\max(S - Ke^{-rT}, 0), S]$ for calls (or the analogous put bounds), or the call reverts.
+### Statistics — `DeFiMathStats` (Stats.sol)
 
-#### Performance
+| Function | Gas | Precision | Description |
+| :------- | --: | --------: | :---------- |
+| `geometricMean`            | 330             | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
+| `mean`                     | ~230/elem       | 2.0e-16 | Arithmetic mean |
+| `stdDev`                   | ~460/elem       | 4.1e-16 | Sample std. dev. (Bessel-corrected) |
+| `weightedAverage`          | ~470/elem       | 4.3e-16 | Σ(v·w) / Σ(w) |
+| `historicalVolatility`     | 25k @ 30 prices | 1.6e-14 | Annualized vol from log returns |
+| `sharpeRatio`              | 26k @ 30 prices | 2.2e-14 | Risk-adjusted return |
+| `maxDrawdown`              | 15k @ 30 prices | 9.9e-16 | Peak-to-trough decline |
+| `valueAtRisk`              | 32k @ 30 prices | 2.1e-14 | NumPy-compatible linear interpolation |
+| `conditionalValueAtRisk`   | 32k @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
 
-The maximum absolute error for call or put option pricing is approximately 1.2e-10 at a $1,000 spot price — offering near-perfect precision.
+*Precision is max relative error vs. JS reference (`simple-statistics` for `valueAtRisk`). Sub-1e-15 values are at IEEE 754 machine-epsilon precision (arithmetic-only operations).*
 
-Option pricing computations cost roughly 2,900 gas on average — orders of magnitude cheaper than a typical Uniswap V3 swap (~110,000 gas).
+## Precision
 
-The following table compares **gas efficiency** of DeFiMath with other implementations over a typical range of parameters.
-
-| Function | DeFiMath | Derivexyz | Premia | Party1983 |  Dopex |
-| :------- | -------: | --------: | -----: | --------: | -----: |
-| call     |     2887 |     13360 |  20623 |     35963 |  88969 |
-| put      |     2898 |     13363 |  20791 |     36140 |  88301 |
-| delta    |     1807 |      8621 |      - |     24960 |      - |
-| gamma    |     1509 |         - |      - |         - |      - |
-| theta    |     3451 |         - |      - |         - |      - |
-| vega     |     1449 |      7490 |      - |         - |      - |
-| IV       |    13111 |         - |      - |         - |      - |
-
-The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
-
-| Function | DeFiMath | Derivexyz | Premia | Party1983 | Dopex |
-| :------- | -------: | --------: | -----: | --------: | ----: |
-| call     |  5.6e-12 |  6.8e-13  | 1.7e-1 |   3.8e+1  |     - |
-| put      |  5.4e-12 |  6.5e-13  | 1.7e-1 |   9.9e+1  |     - |
-| delta    |  6.9e-15 |  6.7e-16  |      - |   9.2e-1  |     - |
-| gamma    |  9.1e-17 |         - |      - |         - |     - |
-| theta    |  3.7e-14 |         - |      - |         - |     - |
-| vega     |  4.8e-14 |  1.1e-15  |      - |         - |     - |
-
-#### Limits
-
-The following limitations apply to all option functions. Inputs outside these ranges revert with a descriptive error.
-
-- **Strike price**: 0.2x to 5x the spot price (e.g., $200–$5,000 for a $1,000 spot).
-- **Time to expiration**: up to 2 years.
-- **Volatility**: up to 1800%.
-- **Risk-free rate**: up to 400%.
-
-### Binary Options (Cash-or-Nothing)
-
-DeFiMath includes a gas-efficient binary (digital) option pricing library. A binary cash-or-nothing call pays 1 unit if the underlying expires above the strike, and 0 otherwise; the put pays 1 unit if it expires below the strike. To price options with an arbitrary cash payout `Q`, simply multiply the result by `Q`.
-
-```solidity
-import "defimath/derivatives/Binary.sol";
-```
-
-The closed-form Black-Scholes prices for unit-payout cash-or-nothing binary options are:
-
-```math
-C = e^{-rT} \cdot N(d_2)
-```
-```math
-P = e^{-rT} \cdot N(-d_2)
-```
-
-where $d_2$ is the same as in the European Black-Scholes model. The corresponding Delta is:
-
-```math
-\Delta_{call} = \frac{e^{-rT} \phi(d_2)}{S \sigma \sqrt{T}}, \quad \Delta_{put} = -\Delta_{call}
-```
-
-where $\phi$ is the standard normal probability density function. Gamma is:
-
-```math
-\Gamma_{call} = -\frac{e^{-rT} \phi(d_2) \cdot d_1}{S^2 \sigma^2 T}, \quad \Gamma_{put} = -\Gamma_{call}
-```
-
-Note that binary gamma is **signed**: it changes sign at ATM ($d_1 = 0$). Theta (per day) is:
-
-```math
-\Theta_{call} = \frac{1}{365}\left[r \cdot e^{-rT} N(d_2) + e^{-rT} \phi(d_2) \left(\frac{d_1}{2T} - \frac{r}{\sigma\sqrt{T}}\right)\right]
-```
-```math
-\Theta_{put} = \frac{1}{365}\left[r \cdot e^{-rT} N(-d_2) - e^{-rT} \phi(d_2) \left(\frac{d_1}{2T} - \frac{r}{\sigma\sqrt{T}}\right)\right]
-```
-
-Vega (per 1% vol move) is also signed and changes sign at the strike:
-
-```math
-\nu_{call} = -\frac{1}{100} \cdot \frac{e^{-rT} \phi(d_2) \cdot d_1}{\sigma}, \quad \nu_{put} = -\nu_{call}
-```
-
-Learn more about [binary options on Wikipedia](https://en.wikipedia.org/wiki/Binary_option).
-
-#### Performance
-
-Binary option pricing computations cost roughly 2,100 gas on average — over an order of magnitude cheaper than comparable on-chain implementations.
-
-The following table compares **gas efficiency** of DeFiMath with other implementations over a typical range of parameters.
-
-| Function | DeFiMath | Haptic |
-| :------- | -------: | -----: |
-| call     |     2102 |  16218 |
-| put      |     2107 |  16221 |
-| delta    |     1835 |      - |
-| gamma    |     1977 |      - |
-| theta    |     3511 |      - |
-| vega     |     1924 |      - |
-
-The table below compares the **maximum absolute error** against a trusted JavaScript reference implementation.
-
-| Function | DeFiMath | Haptic  |
-| :------- | -------: | ------: |
-| call     |  5.7e-15 | 1.3e-15 |
-| put      |  5.4e-15 | 1.2e-15 |
-| delta    |  1.2e-16 |       - |
-| gamma    |  1.0e-15 |       - |
-| theta    |  8.2e-16 |       - |
-| vega     |  2.7e-16 |       - |
-
-#### Limits
-
-The same input limits apply as for European options (strike, time, volatility, rate). Inputs outside these ranges revert with descriptive errors.
-
-### Futures
-
-DeFiMath includes a gas-efficient futures pricing library using continuous compounding:
-
-```solidity
-import "defimath/derivatives/Futures.sol";
-```
-
-## Math
-
-DeFiMath includes a low-level math library (`DeFiMath`) with optimized fixed-point implementations of common mathematical functions. All inputs and outputs use 18-decimal fixed-point format (`1e18 = 1.0`). Available functions: `exp`, `ln`, `log2`, `log10`, `pow`, `sqrt`, `stdNormCDF`, `erf`.
-
-```solidity
-import "defimath/math/Math.sol";
-```
-
-The following table compares **gas efficiency** of DeFiMath with other math libraries over a typical range of parameters.
-
-| Function   | DeFiMath | PRBMath | ABDKQuad | Solady | SolStat |
-| :--------- | -------: | ------: | -------: | -----: | ------: |
-| exp        |      333 |    2820 |     5840 |    372 |       - |
-| ln         |      375 |    6901 |    12695 |    518 |       - |
-| log2       |      391 |    6828 |    12271 |      - |       - |
-| log10      |      391 |    8626 |        - |      - |       - |
-| pow        |      750 |    9792 |        - |    976 |       - |
-| sqrt       |      245 |    959* |      808 |   341* |       - |
-| stdNormCDF |      731 |       - |        - |      - |    2794 |
-| erf        |      685 |       - |        - |      - |    1732 |
-
-\* not a fixed-point function
-
-The table below compares the **maximum relative error** against a trusted JavaScript reference implementation.
-
-| Function   | DeFiMath | PRBMath  | ABDKQuad | Solady   | SolStat |
-| :--------- | -------: | -------: | -------: | -------: | ------: |
-| exp        |  5.1e-12 |  1.9e-12 |  1.9e-12 |  1.9e-12 |       - |
-| ln         |  1.5e-12 |  1.3e-12 |  1.6e-12 |  1.6e-12 |       - |
-| log2       |  1.5e-12 |  1.3e-12 |  1.6e-12 |        - |       - |
-| log10      |  1.4e-12 |  1.3e-12 |        - |        - |       - |
-| pow        |  5.2e-12 |  6.1e-14 |        - |  6.1e-14 |       - |
-| sqrt       |  2.8e-14 |  2.8e-14 |  2.8e-14 |  2.8e-14 |       - |
-| stdNormCDF |  4.6e-13 |        - |        - |        - |  3.2e-6 |
-| erf        |  7.4e-13 |        - |        - |        - |  5.7e-6 |
-
-## Benchmarks
-
-Gas and precision benchmarks against other Solidity math and options libraries are maintained in a separate repository: [defimath-compare](https://github.com/MerkleBlue/defimath-compare).
+Every function is validated against trusted JavaScript reference implementations: `black-scholes`, `greeks`, `math-erf`, and `simple-statistics`. Per-function error figures appear in the tables above; the full benchmark suite — including head-to-head precision vs. competing libraries — lives in [defimath-compare](https://github.com/MerkleBlue/defimath-compare).
 
 ## License
 
-This project is released under the MIT License.
+MIT.
