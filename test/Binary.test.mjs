@@ -1,16 +1,52 @@
 
 import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
-import { OptionsJS } from "../poc/blackscholes/optionsJS.mjs";
+import erf from "math-erf";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
 
 const fastTest = true;
 
-const MAX_BINARY_ABS_ERROR = 2.6e-14; // for a unit-payout binary option
+const MAX_BINARY_ABS_ERROR = 2e-12; // unit-payout binary price, vs true-math reference (worst case ~9.5e-13: deep-OTM under 400% rate / 1844% vol, where true normCDF underflows to 0 but Solidity stdNormCDF leaves a tiny residual)
 const MAX_BINARY_DELTA_ABS_ERROR = 1e-13; // for unit-payout binary delta
 const MAX_BINARY_GAMMA_ABS_ERROR = 1e-15; // for unit-payout binary gamma
 const MAX_BINARY_THETA_ABS_ERROR = 1e-14; // for unit-payout binary theta (per day)
 const MAX_BINARY_VEGA_ABS_ERROR = 1e-14; // for unit-payout binary vega (per 1% vol)
+
+// True-math binary (cash-or-nothing) Black-Scholes reference.
+//
+// Independent of DeFiMath's algorithms: uses Math.log / Math.exp / Math.sqrt and
+// the math-erf package. There is no npm package for binary options, so this is a
+// direct implementation of the cash-or-nothing closed-form Black-Scholes formulas.
+// Conventions match DeFiMath: unit payout, theta per day, vega per 1% vol move.
+const SECONDS_IN_YEAR = 31536000;
+const normCDF = (x) => 0.5 * (1 + erf(x / Math.SQRT2));
+const normPDF = (x) => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+
+function binaryRef(spot, strike, timeSec, vol, rate) {
+  const timeYear = timeSec / SECONDS_IN_YEAR;
+  const scaledVol = vol * Math.sqrt(timeYear) + 1e-16;   // + 1e-16 to avoid division by zero
+  const scaledRate = rate * timeYear;
+
+  const d1 = (scaledRate + scaledVol * scaledVol / 2 - Math.log(strike / spot)) / scaledVol;
+  const d2 = d1 - scaledVol;
+  const discount = Math.exp(-scaledRate);                // e^(-r·τ)
+  const phi = normPDF(d2);                               // φ(d2)
+
+  const deltaCall = discount * phi / (spot * scaledVol);
+  const gammaCall = -discount * phi * d1 / (spot * spot * scaledVol * scaledVol);
+  const term = discount * phi * (d1 / (2 * timeYear) - rate / scaledVol);
+  const vegaCall = -discount * phi * d1 / vol / 100;
+
+  return {
+    callPrice: discount * normCDF(d2),
+    putPrice: discount * normCDF(-d2),
+    deltaCall, deltaPut: -deltaCall,
+    gammaCall, gammaPut: -gammaCall,
+    thetaCall: (rate * discount * normCDF(d2) + term) / 365,
+    thetaPut: (rate * discount * normCDF(-d2) - term) / 365,
+    vegaCall, vegaPut: -vegaCall,
+  };
+}
 
 // JS reference for binary call price
 function binaryCallWrapped(spot, strike, timeSec, vol, rate) {
@@ -18,7 +54,7 @@ function binaryCallWrapped(spot, strike, timeSec, vol, rate) {
   if (timeSec <= 0) {
     return spot > strike ? 1 : 0;
   }
-  return new OptionsJS().binaryCallPrice(spot, strike, timeSec, vol, rate);
+  return binaryRef(spot, strike, timeSec, vol, rate).callPrice;
 }
 
 // JS reference for binary put price
@@ -27,7 +63,7 @@ function binaryPutWrapped(spot, strike, timeSec, vol, rate) {
   if (timeSec <= 0) {
     return strike > spot ? 1 : 0;
   }
-  return new OptionsJS().binaryPutPrice(spot, strike, timeSec, vol, rate);
+  return binaryRef(spot, strike, timeSec, vol, rate).putPrice;
 }
 
 // JS reference for binary delta
@@ -36,7 +72,8 @@ function binaryDeltaWrapped(spot, strike, timeSec, vol, rate) {
   if (timeSec <= 0) {
     return { deltaCall: 0, deltaPut: 0 };
   }
-  return new OptionsJS().binaryDelta(spot, strike, timeSec, vol, rate);
+  const r = binaryRef(spot, strike, timeSec, vol, rate);
+  return { deltaCall: r.deltaCall, deltaPut: r.deltaPut };
 }
 
 // JS reference for binary gamma
@@ -45,7 +82,8 @@ function binaryGammaWrapped(spot, strike, timeSec, vol, rate) {
   if (timeSec <= 0) {
     return { gammaCall: 0, gammaPut: 0 };
   }
-  return new OptionsJS().binaryGamma(spot, strike, timeSec, vol, rate);
+  const r = binaryRef(spot, strike, timeSec, vol, rate);
+  return { gammaCall: r.gammaCall, gammaPut: r.gammaPut };
 }
 
 // JS reference for binary theta
@@ -54,7 +92,8 @@ function binaryThetaWrapped(spot, strike, timeSec, vol, rate) {
   if (timeSec <= 0) {
     return { thetaCall: 0, thetaPut: 0 };
   }
-  return new OptionsJS().binaryTheta(spot, strike, timeSec, vol, rate);
+  const r = binaryRef(spot, strike, timeSec, vol, rate);
+  return { thetaCall: r.thetaCall, thetaPut: r.thetaPut };
 }
 
 // JS reference for binary vega
@@ -63,12 +102,29 @@ function binaryVegaWrapped(spot, strike, timeSec, vol, rate) {
   if (timeSec <= 0) {
     return { vegaCall: 0, vegaPut: 0 };
   }
-  return new OptionsJS().binaryVega(spot, strike, timeSec, vol, rate);
+  const r = binaryRef(spot, strike, timeSec, vol, rate);
+  return { vegaCall: r.vegaCall, vegaPut: r.vegaPut };
+}
+
+// Seeded PRNG (mulberry32) — makes the random-sweep tests reproducible.
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
 }
 
 describe("DeFiMathBinary", function () {
   let testTimePoints;
   let testStrikePoints;
+
+  // Seed Math.random for the duration of this suite so the extreme random
+  // strike/time/vol sweeps are deterministic and precision thresholds are stable.
+  let _realRandom;
+  before(() => { _realRandom = Math.random; Math.random = mulberry32(0x1A2B3C4D); });
+  after(() => { Math.random = _realRandom; });
 
   async function deploy() {
     const BinaryWrapper = await ethers.getContractFactory("BinaryWrapper");
@@ -133,6 +189,8 @@ describe("DeFiMathBinary", function () {
       if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
     }
 
+    // sort descending so the assertion reports the true worst case, not the first over-threshold point
+    errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
     for (let i = 0; i < errorsSOL.length; i++) {
       assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
     }
@@ -177,6 +235,8 @@ describe("DeFiMathBinary", function () {
       if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
     }
 
+    // sort descending so the assertion reports the true worst case, not the first over-threshold point
+    errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
     for (let i = 0; i < errorsSOL.length; i++) {
       assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
     }
@@ -221,6 +281,8 @@ describe("DeFiMathBinary", function () {
       if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
     }
 
+    // sort descending so the assertion reports the true worst case, not the first over-threshold point
+    errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
     for (let i = 0; i < errorsSOL.length; i++) {
       assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
     }
@@ -265,6 +327,8 @@ describe("DeFiMathBinary", function () {
       if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
     }
 
+    // sort descending so the assertion reports the true worst case, not the first over-threshold point
+    errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
     for (let i = 0; i < errorsSOL.length; i++) {
       assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
     }
@@ -309,6 +373,8 @@ describe("DeFiMathBinary", function () {
       if (errorsSOL[0]) console.log("Max abs error params SOL: ", errorsSOL[0]);
     }
 
+    // sort descending so the assertion reports the true worst case, not the first over-threshold point
+    errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
     for (let i = 0; i < errorsSOL.length; i++) {
       assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
     }
