@@ -44,7 +44,7 @@ library DeFiMathFutures {
     /// @param timeToExp Time to contract expiration in seconds
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Futures price (scaled by 1e18)
-    function futurePrice(uint128 spot, uint32 timeToExp, uint64 rate) internal pure returns (uint256) {
+    function futurePrice(uint128 spot, uint32 timeToExp, uint64 rate) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
@@ -54,7 +54,7 @@ library DeFiMathFutures {
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
-            return uint256(spot) * DeFiMath.expPositive(scaledRate) / 1e18;
+            price = uint256(spot) * DeFiMath.expPositive(scaledRate) / 1e18;
         }
     }
 }
