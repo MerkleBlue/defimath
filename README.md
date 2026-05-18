@@ -71,16 +71,16 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `exp`        | 333  | 5.1e-12 | Exponential function `e^x` |
-| `ln`         | 375  | 1.5e-12 | Natural logarithm |
-| `log2`       | 391  | 1.5e-12 | Base-2 logarithm |
-| `log10`      | 391  | 1.4e-12 | Base-10 logarithm |
-| `pow`        | 750  | 5.2e-12 | Power function `x^a` |
-| `sqrt`       | 245  | 2.8e-14 | Square root |
-| `expm1`      | 439  | 9.9e-12 | `e^x − 1` (precision-preserving for small x) |
-| `log1p`      | 500  | 7.0e-13 | `ln(1 + x)` (precision-preserving for small x) |
-| `stdNormCDF` | 731  | 4.6e-13 | Standard normal CDF Φ(x) |
-| `erf`        | 685  | 7.4e-13 | Error function |
+| `exp`        | 333  | 5.1e-14 | Exponential function `e^x` |
+| `ln`         | 375  | 1.5e-14 | Natural logarithm |
+| `log2`       | 391  | 1.5e-14 | Base-2 logarithm |
+| `log10`      | 391  | 1.4e-14 | Base-10 logarithm |
+| `pow`        | 750  | 5.2e-14 | Power function `x^a` |
+| `sqrt`       | 245  | 2.8e-16 | Square root |
+| `expm1`      | 439  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | 500  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
+| `stdNormCDF` | 731  | 4.7e-15 | Standard normal CDF Φ(x) |
+| `erf`        | 685  | 7.4e-15 | Error function |
 
 *Precision is max relative error vs. JS reference implementation.*
 
@@ -95,12 +95,12 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `theta`               | 3,451  | 3.7e-14 | Time decay (per day) |
 | `vega`                | 1,449  | 4.8e-14 | Sensitivity to volatility |
 | `impliedVolatility`   | 13,111 | ≤ 1e-6  | IV via Newton-Raphson |
-| `binaryCallPrice`     | 2,102  | 5.7e-15 | Cash-or-nothing call |
-| `binaryPutPrice`      | 2,107  | 5.4e-15 | Cash-or-nothing put |
-| `binaryDelta`         | 1,835  | 1.2e-16 | Binary delta (signed) |
-| `binaryGamma`         | 1,977  | 1.0e-15 | Binary gamma (signed) |
-| `binaryTheta`         | 3,511  | 8.2e-16 | Binary theta (per day) |
-| `binaryVega`          | 1,924  | 2.7e-16 | Binary vega (signed) |
+| `binaryCallPrice`     | 2,102  | 6.2e-15 | Cash-or-nothing call |
+| `binaryPutPrice`      | 2,107  | 5.9e-15 | Cash-or-nothing put |
+| `binaryDelta`         | 1,835  | 1.3e-16 | Binary delta (signed) |
+| `binaryGamma`         | 1,977  | 1.5e-18 | Binary gamma (signed) |
+| `binaryTheta`         | 3,511  | 8.3e-16 | Binary theta (per day) |
+| `binaryVega`          | 1,924  | 2.9e-16 | Binary vega (signed) |
 | `futurePrice`         | ~400   | ≤ 5e-14 | `spot · e^(rt)` |
 
 *Precision is max absolute error vs. JS reference (at $1,000 spot for European, unit-payout for binary). `impliedVolatility` uses round-trip relative error.*
@@ -109,11 +109,11 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `compoundInterest`       | 467     | 2.9e-14 | Continuous compounding: `P · e^(rt)` |
+| `compoundInterest`       | 467     | 2.8e-14 | Continuous compounding: `P · e^(rt)` |
 | `presentValue`           | 519     | 2.8e-14 | Discounting: `FV · e^(−rt)` |
-| `logReturn`              | 600     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
-| `continuousToDiscrete`   | 508     | 2.6e-14 | `e^apr − 1` (APR → APY) |
-| `discreteToContinuous`   | 589     | 7.0e-15 | `ln(1 + apy)` (APY → APR) |
+| `logReturn`              | 591     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
+| `continuousToDiscrete`   | 509     | 2.4e-14 | `e^apr − 1` (APR → APY) |
+| `discreteToContinuous`   | 590     | 5.1e-16 | `ln(1 + apy)` (APY → APR) |
 | `yieldToMaturity`        | 736     | 2.7e-14 | Zero-coupon YTM (closed form) |
 | `internalRateOfReturn`   | 17k–49k | 3.7e-15 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
@@ -123,15 +123,15 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `geometricMean`            | 330             | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
-| `mean`                     | ~230/elem       | 2.0e-16 | Arithmetic mean |
-| `stdDev`                   | ~460/elem       | 4.1e-16 | Sample std. dev. (Bessel-corrected) |
-| `weightedAverage`          | ~470/elem       | 4.3e-16 | Σ(v·w) / Σ(w) |
-| `historicalVolatility`     | 25k @ 30 prices | 1.6e-14 | Annualized vol from log returns |
-| `sharpeRatio`              | 26k @ 30 prices | 2.2e-14 | Risk-adjusted return |
-| `maxDrawdown`              | 15k @ 30 prices | 9.9e-16 | Peak-to-trough decline |
-| `valueAtRisk`              | 32k @ 30 prices | 2.1e-14 | NumPy-compatible linear interpolation |
-| `conditionalValueAtRisk`   | 32k @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
+| `geometricMean`            | 330                | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
+| `mean`                     | 6,980 @ 30 elem    | 1.7e-16 | Arithmetic mean |
+| `stdDev`                   | 15,298 @ 30 elem   | 4.2e-16 | Sample std. dev. (Bessel-corrected) |
+| `weightedAverage`          | 15,687 @ 30 elem   | 2.8e-16 | Σ(v·w) / Σ(w) |
+| `historicalVolatility`     | 26,135 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
+| `sharpeRatio`              | 26,273 @ 30 prices | 2.2e-14 | Risk-adjusted return |
+| `maxDrawdown`              | 15,191 @ 30 prices | 9.9e-16 | Peak-to-trough decline |
+| `valueAtRisk`              | 36,752 @ 30 prices | 1.9e-14 | NumPy-compatible linear interpolation |
+| `conditionalValueAtRisk`   | 32,917 @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
 
 *Precision is max relative error vs. JS reference (`simple-statistics` for `valueAtRisk`). Sub-1e-15 values are at IEEE 754 machine-epsilon precision (arithmetic-only operations).*
 
