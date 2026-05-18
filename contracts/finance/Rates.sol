@@ -181,51 +181,51 @@ library DeFiMathRates {
     }
 
     /// @notice Internal Rate of Return for arbitrary cashflows at arbitrary times (continuous compounding)
-    /// @dev Solves Σ Cᵢ · e^(-r·tᵢ) = 0 for r via Newton-Raphson. Initial guess matters for convergence;
+    /// @dev Solves Σ Cᵢ · e^(-irr·tᵢ) = 0 for irr via Newton-Raphson. Initial guess matters for convergence;
     ///      typical: pass 0.05e18 (5% APR) for standard fixed-income use cases.
     ///      Times are in seconds from origin. Cashflows are signed (outflows negative, inflows positive).
     ///      Reverts with `NoConvergenceError` if iteration doesn't converge in `IRR_MAX_ITER` steps.
     /// @param cashflows Signed cashflows (scaled by 1e18, any signs allowed)
     /// @param times Seconds from origin for each cashflow (same length as cashflows)
     /// @param guess Initial rate guess (signed, scaled by 1e18, e.g. 0.05e18 = 5%)
-    /// @return r Internal rate of return as continuous annual rate (signed, scaled by 1e18)
-    function internalRateOfReturn(int256[] calldata cashflows, uint32[] calldata times, int256 guess) internal pure returns (int256 r) {
+    /// @return irr Internal rate of return as continuous annual rate (signed, scaled by 1e18)
+    function internalRateOfReturn(int256[] calldata cashflows, uint32[] calldata times, int256 guess) internal pure returns (int256 irr) {
         unchecked {
             uint256 n = cashflows.length;
             if (n < 2 || MAX_CASHFLOWS <= n) revert ArrayLengthOutOfBoundsError();
             if (n != times.length) revert ArrayLengthMismatchError();
             if (guess >= int256(MAX_RATE) || guess <= -int256(MAX_RATE)) revert RateUpperBoundError();
 
-            r = guess;
+            irr = guess;
 
             for (uint256 iter = 0; iter < IRR_MAX_ITER; iter++) {
-                int256 f;          // Σ Cᵢ · e^(-r·tᵢ)
-                int256 fPrime;     // -Σ Cᵢ · tᵢ · e^(-r·tᵢ)
+                int256 f;          // Σ Cᵢ · e^(-irr·tᵢ)
+                int256 fPrime;     // -Σ Cᵢ · tᵢ · e^(-irr·tᵢ)
 
                 for (uint256 i = 0; i < n; i++) {
                     // timeYear in 1e18 base
                     uint256 timeYear = uint256(times[i]) * 1e18 / SECONDS_IN_YEAR;
-                    // exponent = -r · timeYear in 1e18 base (signed)
-                    int256 exponent = -r * int256(timeYear) / 1e18;
-                    // exp(-r·t); DeFiMath.exp handles signed input and reverts on overflow
+                    // exponent = -irr · timeYear in 1e18 base (signed)
+                    int256 exponent = -irr * int256(timeYear) / 1e18;
+                    // exp(-irr·t); DeFiMath.exp handles signed input and reverts on overflow
                     int256 expValue = int256(DeFiMath.exp(exponent));
-                    // f += Cᵢ · exp(-r·tᵢ); keep 1e18-scaled
+                    // f += Cᵢ · exp(-irr·tᵢ); keep 1e18-scaled
                     f += cashflows[i] * expValue / 1e18;
-                    // fPrime -= Cᵢ · tᵢ · exp(-r·tᵢ); using timeYear in 1e18 base
+                    // fPrime -= Cᵢ · tᵢ · exp(-irr·tᵢ); using timeYear in 1e18 base
                     fPrime -= cashflows[i] * int256(timeYear) / 1e18 * expValue / 1e18;
                 }
 
                 int256 absF = f >= 0 ? f : -f;
-                if (uint256(absF) < IRR_TOLERANCE) return r;
+                if (uint256(absF) < IRR_TOLERANCE) return irr;
                 if (fPrime == 0) revert NoConvergenceError();
 
-                // Newton step: r ← r − f/f'
+                // Newton step: irr ← irr − f/f'
                 int256 step = f * 1e18 / fPrime;
-                r -= step;
+                irr -= step;
 
-                // clamp r to valid range to keep exp from overflowing
-                if (r >= int256(MAX_RATE)) r = int256(MAX_RATE) - 1;
-                if (r <= -int256(MAX_RATE)) r = -int256(MAX_RATE) + 1;
+                // clamp irr to valid range to keep exp from overflowing
+                if (irr >= int256(MAX_RATE)) irr = int256(MAX_RATE) - 1;
+                if (irr <= -int256(MAX_RATE)) irr = -int256(MAX_RATE) + 1;
             }
             revert NoConvergenceError();
         }
