@@ -7,7 +7,6 @@ import { assert } from "chai";
 
 const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_LN = 1.6e-15;
-const MAX_REL_ERROR_LN16 = 1.4e-12;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
@@ -140,30 +139,6 @@ describe("DeFiMath", function () {
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("ln16", function () {
-      it("ln16 when x in [1, 16]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1; x < 16; x += 0.16 / 4) { 
-          totalGas += parseInt((await deFiMath.ln16MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("ln16 when x in [0.0625, 1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 0.0625; x < 1; x += 0.0625 / 24) { 
-          totalGas += parseInt((await deFiMath.ln16MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
       });
     });
 
@@ -731,45 +706,15 @@ describe("DeFiMath", function () {
       });
     });
 
-    describe("ln16", function () {
-      it("ln16 when x in [1, 2]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1; x <= 2.005; x += 0.01) { 
-          const expected = Math.log(x);
-          
-          const actualSOL = (await deFiMath.ln16(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
-        }
-      });
-
-      it("ln16 when x in [2, 16]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2; x <= 2 ** 4; x += 0.2505638) { 
-          const expected = Math.log(x);
-          
-          const actualSOL = (await deFiMath.ln16(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
-        }
-      });
-
-      it("ln16 when x is 1", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const x = 1;
-        const actualSOL = (await deFiMath.ln16(tokens(x))).toString() / 1e18;
-        assert.equal(actualSOL, 0);
-      });
-
+    describe("ln — [1/16, 16] range", function () {
       it("ln when x is 16", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
         const x = 16;
         const expected = Math.log(x);
-        
+
         const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
       });
 
       // todo: add random tests
@@ -777,11 +722,11 @@ describe("DeFiMath", function () {
       it("ln when x in [0.0625, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 1; x <= 16.08; x += 0.16) { 
+        for (let x = 1; x <= 16.08; x += 0.16) {
           const expected = Math.log(1 / x);
 
           const actualSOL = (await deFiMath.ln(tokens(1 / x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN16);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
     });
