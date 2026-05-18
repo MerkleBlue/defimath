@@ -41,7 +41,7 @@ contract OptionsWrapper {
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
-    ) external pure returns (uint256 gamma) {
+    ) external pure returns (uint256 gammaOut) {
         return DeFiMathOptions.gamma(spot, strike, timeToExp, volatility, rate);
     }
 
@@ -61,7 +61,7 @@ contract OptionsWrapper {
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
-    ) external pure returns (uint256 vega) {
+    ) external pure returns (uint256 vegaOut) {
         return DeFiMathOptions.vega(spot, strike, timeToExp, volatility, rate);
     }
 
@@ -126,15 +126,15 @@ contract OptionsWrapper {
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
-    ) external view returns (uint256 gamma, uint256 gasUsed) {
+    ) external view returns (uint256 gammaOut, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
 
         startGas = gasleft();
-        gamma = DeFiMathOptions.gamma(spot, strike, timeToExp, volatility, rate);
+        gammaOut = DeFiMathOptions.gamma(spot, strike, timeToExp, volatility, rate);
         endGas = gasleft();
-        
-        return (gamma, startGas - endGas);
+
+        return (gammaOut, startGas - endGas);
     }
 
     function thetaMG(
@@ -160,15 +160,15 @@ contract OptionsWrapper {
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
-    ) external view returns (uint256 vega, uint256 gasUsed) {
+    ) external view returns (uint256 vegaOut, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
 
         startGas = gasleft();
-        vega = DeFiMathOptions.vega(spot, strike, timeToExp, volatility, rate);
+        vegaOut = DeFiMathOptions.vega(spot, strike, timeToExp, volatility, rate);
         endGas = gasleft();
 
-        return (vega, startGas - endGas);
+        return (vegaOut, startGas - endGas);
     }
 
     function impliedVolatility(

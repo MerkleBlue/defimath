@@ -198,14 +198,14 @@ library DeFiMathOptions {
     /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return gamma Option Gamma (scaled by 1e18)
+    /// @return gammaOut Option Gamma (scaled by 1e18)
     function gamma(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
-    ) internal pure returns (uint256 gamma) {
+    ) internal pure returns (uint256 gammaOut) {
         unchecked {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
@@ -226,7 +226,7 @@ library DeFiMathOptions {
 
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
-            gamma = phi * 1e18 / (spot * scaledVol / 1e18);                                         // N'(d1) / (spot * scaledVol)
+            gammaOut = phi * 1e18 / (spot * scaledVol / 1e18);                                       // N'(d1) / (spot * scaledVol)
         }
     }
 
@@ -288,14 +288,14 @@ library DeFiMathOptions {
     /// @param timeToExp Time to expiration in seconds
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return vega Option Vega (scaled by 1e18)
+    /// @return vegaOut Option Vega (scaled by 1e18)
     function vega(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
-    ) internal pure returns (uint256 vega) {
+    ) internal pure returns (uint256 vegaOut) {
         unchecked {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
@@ -318,7 +318,7 @@ library DeFiMathOptions {
             int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
 
             uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
-            vega = spot * sqrtTimeYear * phi / 100e36;                              // N'(d1) * spot * sqrt(T) / 100
+            vegaOut = spot * sqrtTimeYear * phi / 100e36;                           // N'(d1) * spot * sqrt(T) / 100
         }
     }
 
@@ -413,17 +413,17 @@ library DeFiMathOptions {
 
             for (uint256 i = 0; i < IV_MAX_ITER; i++) {
                 
-                (uint256 price, uint256 vega) = _callPriceAndVega(s, sigma);
+                (uint256 price, uint256 vegaOut) = _callPriceAndVega(s, sigma);
 
                 // diff = price - optionPrice
                 int256 diff = int256(price) - int256(s.optionPrice);
                 uint256 absDiff = diff >= 0 ? uint256(diff) : uint256(-diff);
                 if (absDiff <= IV_TOLERANCE) return sigma;
 
-                if (vega < 1e6) revert NoConvergenceError();   // vega too small to invert
+                if (vegaOut < 1e6) revert NoConvergenceError();   // vega too small to invert
 
                 // step = diff / vega (signed, in 18-dec)
-                int256 step = diff * 1e18 / int256(vega);
+                int256 step = diff * 1e18 / int256(vegaOut);
 
                 int256 newSigma = int256(sigma) - step;
                 if (newSigma < int256(MIN_VOL_IV)) newSigma = int256(MIN_VOL_IV);
@@ -443,17 +443,17 @@ library DeFiMathOptions {
 
             for (uint256 i = 0; i < IV_MAX_ITER; i++) {
                 
-                (uint256 price, uint256 vega) = _putPriceAndVega(s, sigma);
+                (uint256 price, uint256 vegaOut) = _putPriceAndVega(s, sigma);
 
                 // diff = price - optionPrice
                 int256 diff = int256(price) - int256(s.optionPrice);
                 uint256 absDiff = diff >= 0 ? uint256(diff) : uint256(-diff);
                 if (absDiff <= IV_TOLERANCE) return sigma;
 
-                if (vega < 1e6) revert NoConvergenceError();   // vega too small to invert
+                if (vegaOut < 1e6) revert NoConvergenceError();   // vega too small to invert
 
                 // step = diff / vega (signed, in 18-dec)
-                int256 step = diff * 1e18 / int256(vega);
+                int256 step = diff * 1e18 / int256(vegaOut);
 
                 int256 newSigma = int256(sigma) - step;
                 if (newSigma < int256(MIN_VOL_IV)) newSigma = int256(MIN_VOL_IV);
@@ -465,7 +465,7 @@ library DeFiMathOptions {
     }
 
     /// @dev Computes call option price and per-unit-vol vega at given σ. Reuses precomputed state.
-    function _callPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vega) {
+    function _callPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vegaOut) {
         unchecked {
             uint256 scaledVol = sigma * s.sqrtTimeYear / 1e18 + 1;
             int256 d1 = (s.lnSK + int256(s.scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -473,7 +473,7 @@ library DeFiMathOptions {
 
             // vega per unit vol = S · sqrt(T) · φ(d1) = vegaBase · φ(d1)
             uint256 phiD1 = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
-            vega = s.vegaBase * phiD1 / 1e18;
+            vegaOut = s.vegaBase * phiD1 / 1e18;
 
             // price
             uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(d1);
@@ -483,7 +483,7 @@ library DeFiMathOptions {
     }
 
     /// @dev Computes put option price and per-unit-vol vega at given σ. Reuses precomputed state.
-    function _putPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vega) {
+    function _putPriceAndVega(IVState memory s, uint256 sigma) private pure returns (uint256 price, uint256 vegaOut) {
         unchecked {
             uint256 scaledVol = sigma * s.sqrtTimeYear / 1e18 + 1;
             int256 d1 = (s.lnSK + int256(s.scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
@@ -491,7 +491,7 @@ library DeFiMathOptions {
 
             // vega per unit vol = S · sqrt(T) · φ(d1) = vegaBase · φ(d1)
             uint256 phiD1 = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
-            vega = s.vegaBase * phiD1 / 1e18;
+            vegaOut = s.vegaBase * phiD1 / 1e18;
 
             // price
             uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(-d1);
