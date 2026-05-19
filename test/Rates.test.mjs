@@ -542,6 +542,23 @@ describe("DeFiMathRates", function () {
           const { rates } = await loadFixture(deploy);
           await assertRevertError(rates, rates.yieldToMaturity(0, tokens(100), SEC_IN_YEAR), "PriceLowerBoundError");
         });
+
+        it("rejects when price above max", async function () {
+          const { rates } = await loadFixture(deploy);
+          // MAX_PRINCIPAL = 1e33 + 1
+          await assertRevertError(rates, rates.yieldToMaturity("1000000000000000000000000000000001", tokens(100), SEC_IN_YEAR), "PriceUpperBoundError");
+        });
+
+        it("rejects when faceValue below min", async function () {
+          const { rates } = await loadFixture(deploy);
+          // MIN_PRINCIPAL = 1e12 - 1
+          await assertRevertError(rates, rates.yieldToMaturity(tokens(1), "999999999999", SEC_IN_YEAR), "PrincipalLowerBoundError");
+        });
+
+        it("rejects when faceValue above max", async function () {
+          const { rates } = await loadFixture(deploy);
+          await assertRevertError(rates, rates.yieldToMaturity(tokens(100), "1000000000000000000000000000000001", SEC_IN_YEAR), "PrincipalUpperBoundError");
+        });
       });
     });
 
@@ -608,6 +625,27 @@ describe("DeFiMathRates", function () {
           const { rates } = await loadFixture(deploy);
           await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1), tokens(2)], [0, SEC_IN_YEAR], "4000000000000000001"), "RateUpperBoundError");
           await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1), tokens(2)], [0, SEC_IN_YEAR], "-4000000000000000001"), "RateUpperBoundError");
+        });
+
+        it("rejects when cashflow count reaches max", async function () {
+          const { rates } = await loadFixture(deploy);
+          const n = 1025; // MAX_CASHFLOWS = 1024 + 1
+          const cashflows = Array.from({ length: n }, () => tokens(1));
+          const times = Array.from({ length: n }, () => 0);
+          await assertRevertError(rates, rates.internalRateOfReturn(cashflows, times, tokens(0.05)), "ArrayLengthOutOfBoundsError");
+        });
+
+        it("rejects when the derivative is zero (all times equal)", async function () {
+          const { rates } = await loadFixture(deploy);
+          // all times = 0 → every tᵢ term vanishes → fPrime == 0 while f ≠ 0
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-100), tokens(150)], [0, 0], tokens(0.05)), "NoConvergenceError");
+        });
+
+        it("rejects when IRR diverges past the rate bounds", async function () {
+          const { rates } = await loadFixture(deploy);
+          // true IRR ≈ ±ln(1000) ≈ ±6.9, outside ±MAX_RATE — Newton clamps every iteration and never converges
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1), tokens(1000)], [0, SEC_IN_YEAR], tokens(0.05)), "NoConvergenceError");
+          await assertRevertError(rates, rates.internalRateOfReturn([tokens(-1000), tokens(1)], [0, SEC_IN_YEAR], tokens(0.05)), "NoConvergenceError");
         });
       });
     });

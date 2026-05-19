@@ -598,6 +598,13 @@ describe("DeFiMathOptions", function () {
       });
 
       describe("regression", function () {
+        it("clamps a deep-OTM put to 0 when discounted-strike·N(-d2) rounds below spot·N(-d1)", async function () {
+          const { options } = await loadFixture(deploy);
+          // Deep-OTM put (spot $1000, strike $700): the true value is sub-wei, so
+          // integer rounding tips strikeNd2 below spotNd1 — exercises the `: 0` clamp.
+          const actualSOL = await options.putOptionPrice(tokens(1000), tokens(700), 7 * SEC_IN_DAY, tokens(0.3), tokens(0.05));
+          assert.equal(actualSOL.toString(), "0");
+        });
       });
 
       describe("failure", function () {
@@ -1099,6 +1106,28 @@ describe("DeFiMathOptions", function () {
       });
 
       describe("failure", function () {
+        it("rejects when spot is out of bounds", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.impliedVolatility("999999999999", tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "SpotLowerBoundError");
+          await assertRevertError(options, options.impliedVolatility("1000000000000000000000000000000001", "1000000000000000000000000000000000", 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "SpotUpperBoundError");
+        });
+
+        it("rejects when strike is out of bounds", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), "5000000000000000000001", 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "StrikeUpperBoundError");
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), "199999999999999999999", 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "StrikeLowerBoundError");
+        });
+
+        it("rejects when expiration exceeds max", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 63072001, tokens(0.05), tokens(50), true), "TimeToExpiryUpperBoundError");
+        });
+
+        it("rejects when rate exceeds max", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(18), tokens(50), true), "RateUpperBoundError");
+        });
+
         it("rejects when timeToExp = 0", async function () {
           const { options } = await loadFixture(deploy);
           await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 0, tokens(0.05), tokens(50), true), "TimeToExpiryLowerBoundError");
@@ -1119,6 +1148,35 @@ describe("DeFiMathOptions", function () {
           const { options } = await loadFixture(deploy);
           // For strike=1000, rate=0.05, t=30d: K·e^(-rτ) ≈ 995.89; rejecting 1000
           await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), false), "PriceOutOfBoundsError");
+        });
+
+        it("rejects when put price below intrinsic", async function () {
+          const { options } = await loadFixture(deploy);
+          // ITM put: spot=1000, strike=1100, lower no-arb bound K·e^(-rτ)-S ≈ 95.5; pricing 50 is below it
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1100), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), false), "PriceOutOfBoundsError");
+        });
+
+        it("rejects an unsolvable call below the min-volatility price", async function () {
+          const { options } = await loadFixture(deploy);
+          // Deep-OTM 2y call priced above what any σ ≥ MIN_VOL_IV produces: the solver
+          // floors σ at MIN_VOL_IV, where vega vanishes, and gives up.
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(4000), 730 * SEC_IN_DAY, tokens(0.05), tokens(800), true), "NoConvergenceError");
+        });
+
+        it("rejects an unsolvable call near the upper no-arb bound", async function () {
+          const { options } = await loadFixture(deploy);
+          // Price just shy of spot demands σ above MAX_VOL_IV: the solver caps σ and exhausts its iterations.
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(999.9), true), "NoConvergenceError");
+        });
+
+        it("rejects an unsolvable put below the min-volatility price", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(250), 730 * SEC_IN_DAY, tokens(0.05), tokens(150), false), "NoConvergenceError");
+        });
+
+        it("rejects an unsolvable put near the upper no-arb bound", async function () {
+          const { options } = await loadFixture(deploy);
+          await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(995), false), "NoConvergenceError");
         });
       });
     });

@@ -1236,6 +1236,16 @@ describe("DeFiMathBinary", function () {
           assertAbsoluteBelow(result.gammaCall.toString() / 1e18, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
           assertAbsoluteBelow(result.gammaPut.toString() / 1e18, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
         });
+
+        it("returns 0 gamma when S·σ√τ underflows to 0 (sub-$1 spot, zero vol)", async function () {
+          const { binary } = await loadFixture(deploy);
+
+          // spot = 1e12 (the minimum), volatility = 0 ⇒ scaledVol = 1, so
+          // svS = spot·scaledVol/1e18 = 1e12/1e18 floors to 0 — exercises the svS == 0 guard.
+          const result = await binary.binaryGamma(tokens(0.000001), tokens(0.000001), 50000, 0, tokens(0.05));
+          assert.equal(result.gammaCall.toString(), "0");
+          assert.equal(result.gammaPut.toString(), "0");
+        });
       });
 
       describe("failure", function () {

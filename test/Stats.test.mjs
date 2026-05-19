@@ -404,6 +404,11 @@ describe("DeFiMathStats", function () {
           const { stats } = await loadFixture(deploy);
           await assertRevertError(stats, stats.weightedAverage(["1000000000000000000000000000000001"], [tokens(1)]), "ValueUpperBoundError");
         });
+
+        it("rejects when a weight exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          await assertRevertError(stats, stats.weightedAverage([tokens(1)], ["1000000000000000000000000000000001"]), "ValueUpperBoundError");
+        });
       });
     });
 
@@ -614,6 +619,8 @@ describe("DeFiMathStats", function () {
         it("rejects when a price exceeds max", async function () {
           const { stats } = await loadFixture(deploy);
           await assertRevertError(stats, stats.historicalVolatility(["1000000000000000000000000000000001", tokens(100), tokens(101)], 86400), "ValueUpperBoundError");
+          // non-first price over max — exercises the in-loop check
+          await assertRevertError(stats, stats.historicalVolatility([tokens(100), "1000000000000000000000000000000001", tokens(101)], 86400), "ValueUpperBoundError");
         });
       });
     });
@@ -778,6 +785,8 @@ describe("DeFiMathStats", function () {
         it("rejects when equity exceeds max", async function () {
           const { stats } = await loadFixture(deploy);
           await assertRevertError(stats, stats.maxDrawdown(["1000000000000000000000000000000001", tokens(100)]), "ValueUpperBoundError");
+          // non-first equity over max — exercises the in-loop check
+          await assertRevertError(stats, stats.maxDrawdown([tokens(100), "1000000000000000000000000000000001"]), "ValueUpperBoundError");
         });
       });
     });
@@ -809,6 +818,13 @@ describe("DeFiMathStats", function () {
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("handles the minimum 2-price series", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 2 prices → 1 log return; k clamps to n-1=0, K=0 ≠ k+1 → exercises the boundary (no-interp) path
+        const actual = (await stats.valueAtRisk([tokens(100), tokens(90)], tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, Math.log(90 / 100), MAX_REL_ERROR_SQRT);
       });
 
       describe("failure", function () {
@@ -883,6 +899,24 @@ describe("DeFiMathStats", function () {
         it("rejects when any price is 0", async function () {
           const { stats } = await loadFixture(deploy);
           await assertRevertError(stats, stats.conditionalValueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
+          // zero price inside the seed buffer (index 1) and inside the scan loop (index 2)
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), 0, tokens(100)], tokens(0.95)), "PriceLowerBoundError");
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(100), 0, tokens(100)], tokens(0.95)), "PriceLowerBoundError");
+        });
+
+        it("rejects when array length exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          const big = Array.from({ length: 1025 }, () => tokens(100));
+          await assertRevertError(stats, stats.conditionalValueAtRisk(big, tokens(0.95)), "ArrayLengthUpperBoundError");
+        });
+
+        it("rejects when a price exceeds max", async function () {
+          const { stats } = await loadFixture(deploy);
+          const BIG = "1000000000000000000000000000000001";
+          await assertRevertError(stats, stats.conditionalValueAtRisk([BIG, tokens(100), tokens(100)], tokens(0.95)), "ValueUpperBoundError");
+          // over-max price inside the seed buffer (index 1) and inside the scan loop (index 2)
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), BIG, tokens(100)], tokens(0.95)), "ValueUpperBoundError");
+          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(100), BIG, tokens(100)], tokens(0.95)), "ValueUpperBoundError");
         });
       });
     });
