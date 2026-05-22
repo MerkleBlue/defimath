@@ -50,7 +50,7 @@ Requires **Solidity `^0.8.31`** and **`evmVersion: "osaka"`** (Fusaka). The libr
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.31;
 
-import "defimath/derivatives/Options.sol";
+import "defimath-lib/contracts/derivatives/Options.sol";
 
 contract OptionsExchange {
     function quote(
