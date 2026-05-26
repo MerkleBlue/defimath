@@ -24,7 +24,7 @@ library DeFiMathBinary {
     uint256 internal constant MAX_SPOT = 1e33 + 1;
 
     /// @notice Maximum strike/spot ratio (5x and 1/5x range)
-    uint256 internal constant MAX_SS_RATIO = 5;
+    uint256 internal constant MAX_STSP_RATIO = 5;
 
     /// @notice Maximum allowed time to expiration: 2 years in seconds
     uint256 internal constant MAX_EXPIRATION = 63072000 + 1;
@@ -71,8 +71,8 @@ library DeFiMathBinary {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -114,8 +114,8 @@ library DeFiMathBinary {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -158,8 +158,8 @@ library DeFiMathBinary {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -206,8 +206,8 @@ library DeFiMathBinary {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -260,8 +260,8 @@ library DeFiMathBinary {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -328,8 +328,8 @@ library DeFiMathBinary {
             // check inputs
             if (spot <= MIN_SPOT) revert SpotLowerBoundError();
             if (MAX_SPOT <= spot) revert SpotUpperBoundError();
-            if (spot * MAX_SS_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_SS_RATIO < spot) revert StrikeLowerBoundError();
+            if (spot * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < spot) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
