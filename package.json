@@ -1,6 +1,6 @@
 {
   "name": "defimath-lib",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "Gas-optimized Solidity library for DeFi math: options pricing, Greeks, interest rates, and statistics",
   "keywords": [
     "ethereum",
