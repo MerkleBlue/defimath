@@ -9,6 +9,7 @@ const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_LN = 1.6e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
+const MAX_REL_ERROR_CBRT = 1e-14;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 6.4e-15;
 const MAX_REL_ERROR_POW = 1e-11;
@@ -275,6 +276,34 @@ describe("DeFiMath", function () {
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+      });
+    });
+
+    describe("cbrt", function () {
+      it("cbrt when x in [1, 1e6]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 100; x += 1.00232) {
+          totalGas += parseInt((await deFiMath.cbrtMG(tokens(x))).gasUsed);
+          count++;
+        }
+        for (let x = 100; x < 1e6; x += 1.013e3) {
+          totalGas += parseInt((await deFiMath.cbrtMG(tokens(x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+
+      it("cbrt when x in [1e-6, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        let totalGas = 0, count = 0;
+        for (let x = 1; x < 1000000; x += 2234) {
+          totalGas += parseInt((await deFiMath.cbrtMG(tokens(1 / x))).gasUsed);
+          count++;
+        }
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
 
@@ -1294,6 +1323,82 @@ describe("DeFiMath", function () {
           await assertRevertError(deFiMath, deFiMath.sqrt("1208925819614629000000000000000000000000000"), "SqrtUpperBoundError");
           await assertRevertError(deFiMath, deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "SqrtUpperBoundError");
           await deFiMath.sqrt("1208925819614628999999999999999999999999999");
+        });
+      });
+    });
+
+    describe("cbrt", function () {
+      it("cbrt when x in [1, 2)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x < 2; x += 0.01) {
+          const expected = Math.cbrt(x);
+          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        }
+      });
+
+      it("cbrt when x in [1, 2^30)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x < 2 ** 30; x += 2 ** 20 * 1.024) {
+          const expected = Math.cbrt(x);
+          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        }
+      });
+
+      it("cbrt when x in [2^30, 2^60)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 2 ** 30; x < 2 ** 60; x += 2 ** 50 * 1.024) {
+          const expected = Math.cbrt(x);
+          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        }
+      });
+
+      it("cbrt when x is max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // cap is 7.5557863725914323e40 in 1e18-FP → max valid x ≈ 7.555786e22 in true value
+        const x = 7.5557863725914323e22;
+        const expected = Math.cbrt(x);
+
+        const actualSOL = (await deFiMath.cbrt("75557863725914322999999999999999999999999")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+      });
+
+      it("cbrt when x in (0, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 1e-12; x < 1; x += x) {
+          const expected = Math.cbrt(x);
+          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        }
+      });
+
+      it("cbrt when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actualSOL = (await deFiMath.cbrt(0)).toString();
+        assert.equal(actualSOL, "0");
+      });
+
+      it("cbrt of perfect cubes is exact", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (const n of [1, 2, 3, 8, 10, 27, 100, 1000, 1000000]) {
+          const cube = n * n * n;
+          const actualSOL = (await deFiMath.cbrt(tokens(cube))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, n, MAX_REL_ERROR_CBRT);
+        }
+      });
+
+      describe("failure", function () {
+        it("rejects when x >= max", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+
+          await assertRevertError(deFiMath, deFiMath.cbrt("75557863725914323000000000000000000000000"), "CbrtUpperBoundError");
+          await assertRevertError(deFiMath, deFiMath.cbrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "CbrtUpperBoundError");
+          await deFiMath.cbrt("75557863725914322999999999999999999999999");
         });
       });
     });

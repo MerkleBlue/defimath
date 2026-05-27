@@ -32,6 +32,7 @@ Every function is benchmarked against existing on-chain implementations. A repre
 | `vega`            | **1,439** | 7,490 (Derivexyz)  | **5.2×** |
 | `ln`              | **375**   | 518 (Solady)       | 1.4× |
 | `sqrt`            | **245**   | 341 (Solady)       | 1.4× |
+| `cbrt`            | **368**   | 550 (Solady)       | 1.5× |
 | `stdNormCDF`      | **731**   | 2,794 (SolStat)    | **3.8×** |
 
 Full per-function tables in the [defimath-compare README](https://github.com/MerkleBlue/defimath-compare#readme).
@@ -77,6 +78,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `log10`      | 391  | 1.4e-14 | Base-10 logarithm |
 | `pow`        | 750  | 5.2e-14 | Power function `x^a` |
 | `sqrt`       | 245  | 2.8e-16 | Square root |
+| `cbrt`       | 368  | 2.2e-16 | Cube root |
 | `expm1`      | 439  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
 | `log1p`      | 500  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 731  | 4.7e-15 | Standard normal CDF Φ(x) |

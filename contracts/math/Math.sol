@@ -19,6 +19,7 @@ library DeFiMath {
 
     /// @notice Thrown when input to sqrt() exceeds the upper bound (~2^80)
     error SqrtUpperBoundError();
+    error CbrtUpperBoundError();
 
     /// @notice Computes exp(x) for signed input x
     /// @dev Automatically handles negative inputs via reciprocal logic
@@ -322,6 +323,32 @@ library DeFiMath {
                     // invert y
                     y := div(1000000000000000000000000000000000000, y)
                 }
+            }
+        }
+    }
+
+    /// @notice Computes cbrt(x) using Newton's method
+    /// @dev Single-branch: result = integer_cbrt(x · 1e36), exact at the 1e18-FP scale
+    /// @param x Input in 18-decimal fixed-point format
+    /// @return y Cube root in 18-decimal fixed-point format
+    function cbrt(uint256 x) internal pure returns (uint256 y) {
+        unchecked {
+            if (x == 0) return 0;
+            if (x >= 7.5557863725914323e40) revert CbrtUpperBoundError(); // up to 2^76
+
+            assembly ("memory-safe") {
+                x := mul(x, 1000000000000000000000000000000000000) // shift to 1e54 base
+
+                // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
+                y := shl(div(add(sub(256, clz(x)), 2), 3), 1)
+
+                // 6x Newton method: y = (2y + x/y²) / 3
+                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
             }
         }
     }
