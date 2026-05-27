@@ -78,10 +78,7 @@ library DeFiMathBinary {
 
             // handle expired binary call
             if (timeToExp == 0) {
-                if (spot > strike) {
-                    return 1e18;
-                }
-                return 0;
+                return spot > strike ? 1e18 : 0;
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
@@ -121,10 +118,7 @@ library DeFiMathBinary {
 
             // handle expired binary put
             if (timeToExp == 0) {
-                if (strike > spot) {
-                    return 1e18;
-                }
-                return 0;
+                return strike > spot ? 1e18 : 0;
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
@@ -163,7 +157,7 @@ library DeFiMathBinary {
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option
+            // handle expired binary
             if (timeToExp == 0) {
                 return (0, 0);
             }
@@ -211,7 +205,7 @@ library DeFiMathBinary {
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option
+            // handle expired binary
             if (timeToExp == 0) {
                 return (0, 0);
             }
@@ -265,7 +259,7 @@ library DeFiMathBinary {
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option
+            // handle expired binary
             if (timeToExp == 0) {
                 return (0, 0);
             }
@@ -333,7 +327,7 @@ library DeFiMathBinary {
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option
+            // handle expired binary
             if (timeToExp == 0) {
                 return (0, 0);
             }
