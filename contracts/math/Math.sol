@@ -25,6 +25,8 @@ library DeFiMath {
     error MulDivByZeroError();
     /// @notice Thrown when mulDiv() result would overflow uint256
     error MulDivOverflowError();
+    /// @notice Thrown when mul() result would overflow uint256
+    error MulOverflowError();
 
     /// @notice Computes exp(x) for signed input x
     /// @dev Automatically handles negative inputs via reciprocal logic
@@ -408,6 +410,45 @@ library DeFiMath {
                 inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^64
                 inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^128
                 z := mul(p0, mul(inv, sub(2, mul(d, inv))))    // mod 2^256
+            }
+        }
+    }
+
+    /// @notice Fixed-point multiply (a · b) / 1e18 with full 512-bit intermediate precision (rounds toward zero)
+    /// @dev Specialization of mulDiv with denominator hardcoded to 1e18. All denominator-dependent
+    ///      constants are precomputed:
+    ///        - 1e18 = 2^18 · 5^18, so the trailing factor of 2 is exactly 2^18 (right-shift by 18)
+    ///        - reduced denominator = 5^18 = 3814697265625 (odd)
+    ///        - precomputed modular inverse of 5^18 mod 2^256 = 0xaccb18165bd6fe31ae1cf318dc5b51eee0e1ba569b88cd74c1773b91fac10669
+    ///      Reverts on overflow (a · b / 1e18 ≥ 2^256). Never reverts on a == 0 or b == 0.
+    /// @param a First multiplicand (18-decimal fixed-point)
+    /// @param b Second multiplicand (18-decimal fixed-point)
+    /// @return z (a · b) / 1e18 (18-decimal fixed-point)
+    function mul(uint256 a, uint256 b) internal pure returns (uint256 z) {
+        unchecked {
+            uint256 p0;
+            uint256 p1;
+            assembly ("memory-safe") {
+                let mm := mulmod(a, b, not(0))
+                p0 := mul(a, b)
+                p1 := sub(sub(mm, p0), lt(mm, p0))
+            }
+
+            // Fast path: a · b fits in uint256.
+            if (p1 == 0) return p0 / 1e18;
+
+            // Quotient overflow check: 1e18 must be > p1.
+            if (p1 >= 1e18) revert MulOverflowError();
+
+            // 512-by-256 division with d = 1e18 baked in.
+            assembly ("memory-safe") {
+                let r := mulmod(a, b, 1000000000000000000)
+                p1 := sub(p1, gt(r, p0))
+                p0 := sub(p0, r)
+                p0 := shr(18, p0)                                                // divide low word by 2^18
+                p0 := or(p0, shl(238, p1))                                       // stitch high word in
+                // Multiply by precomputed inverse of 5^18 mod 2^256.
+                z := mul(p0, 0xaccb18165bd6fe31ae1cf318dc5b51eee0e1ba569b88cd74c1773b91fac10669)
             }
         }
     }

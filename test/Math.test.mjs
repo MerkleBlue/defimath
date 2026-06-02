@@ -352,6 +352,32 @@ describe("DeFiMath", function () {
       });
     });
 
+    describe("mul vs mulDiv (1e18 denominator)", function () {
+      it("mul is faster than mulDiv(_, _, 1e18) — side-by-side gas", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const D = 10n ** 18n;
+        // Same input mix used for mulDiv perf, all routed through 1e18 as the denominator.
+        const samples = [
+          [tokens(1.5), tokens(2)],                       // fast path
+          [tokens(1234.5678), tokens(0.000789)],          // fast path, mixed magnitudes
+          [(1n << 100n), (1n << 80n)],                    // fast path, sub-2^256 product
+          [(1n << 200n), (1n << 50n)],                    // slow path (product > 2^256)
+          [(1n << 250n) + 1n, 13n],                       // slow path
+          [(1n << 256n) - 1n, 1n],                        // boundary
+        ];
+
+        let gMulDiv = 0, gMul = 0;
+        for (const [a, b] of samples) {
+          gMulDiv += parseInt((await deFiMath.mulDivMG(a, b, D)).gasUsed);
+          gMul    += parseInt((await deFiMath.mulMG(a, b)).gasUsed);
+        }
+        const n = samples.length;
+        console.log("                 mulDiv(_, _, 1e18)    mul(_, _)");
+        console.log("Avg gas       ", (gMulDiv / n).toFixed(0).padStart(20), (gMul / n).toFixed(0).padStart(11));
+      });
+    });
+
     describe("abs", function () {
       it("abs across positive/negative magnitudes and bounds", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -1655,6 +1681,81 @@ describe("DeFiMath", function () {
           await assertRevertError(deFiMath, deFiMath.mulDiv(1n << 128n, 1n << 128n, 1n), "MulDivOverflowError");
           // (2^256 - 1) * (2^256 - 1) / 1 → way over
           await assertRevertError(deFiMath, deFiMath.mulDiv(MAX, MAX, 1n), "MulDivOverflowError");
+        });
+      });
+    });
+
+    describe("mul", function () {
+      const D = 10n ** 18n;
+      const UMAX = (1n << 256n) - 1n;
+
+      it("fast-path identities", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        assert.equal((await deFiMath.mul(0n, 0n)).toString(), "0");
+        assert.equal((await deFiMath.mul(0n, tokens(1234))).toString(), "0");
+        // 1 · 1 in 1e18 FP = 1 · 1 = 1 → quotient is 1e18 / 1e18 = 1
+        assert.equal((await deFiMath.mul(D, D)).toString(), D.toString());
+        // 2 · 3 = 6, in 1e18 FP
+        assert.equal((await deFiMath.mul(tokens(2), tokens(3))).toString(), tokens(6).toString());
+        // truncates toward zero: 1 · 1 with one wei extra
+        assert.equal((await deFiMath.mul(D + 1n, D + 1n)).toString(), (D + 2n).toString());
+      });
+
+      it("slow-path matches BigInt reference (a · b > 2^256)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [(1n << 200n), (1n << 50n)],
+          [(1n << 250n) + 1n, 13n],
+          [(1n << 200n) - 1n, (1n << 100n) + 7n],
+        ];
+        for (const [a, b] of cases) {
+          const expected = (a * b) / D;
+          assert.equal((await deFiMath.mul(a, b)).toString(), expected.toString(), `mul(${a}, ${b})`);
+        }
+      });
+
+      it("matches mulDiv(a, b, 1e18) across mixed inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [tokens(1.5), tokens(2)],
+          [tokens(1234.5678), tokens(0.000789)],
+          [(1n << 100n), (1n << 80n)],
+          [(1n << 200n), (1n << 50n)],
+          [(1n << 256n) - 1n, 1n],
+        ];
+        for (const [a, b] of cases) {
+          const viaMul = (await deFiMath.mul(a, b)).toString();
+          const viaMulDiv = (await deFiMath.mulDiv(a, b, D)).toString();
+          assert.equal(viaMul, viaMulDiv, `mul(${a}, ${b}) should match mulDiv(_, _, 1e18)`);
+        }
+      });
+
+      describe("random", function () {
+        it("matches BigInt reference on 500 random inputs", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            let a, b, p1;
+            // Reject overflow cases — explicitly tested in failure block.
+            do {
+              a = randomUint256();
+              b = randomUint256();
+              p1 = (a * b) >> 256n;
+            } while (p1 >= D);
+            const expected = (a * b) / D;
+            const actual = await deFiMath.mul(a, b);
+            assert.equal(actual.toString(), expected.toString(), `mul(${a}, ${b})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("rejects when quotient overflows uint256", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // a · b / 1e18 ≥ 2^256 ⇒ a · b ≥ 1e18 · 2^256.
+          // (2^256 - 1) · (2^256 - 1) is well over that.
+          await assertRevertError(deFiMath, deFiMath.mul(UMAX, UMAX), "MulOverflowError");
+          // 2^240 · 2^240 has p1 ≈ 2^224 which is >> 1e18 (~2^60)
+          await assertRevertError(deFiMath, deFiMath.mul(1n << 240n, 1n << 240n), "MulOverflowError");
         });
       });
     });

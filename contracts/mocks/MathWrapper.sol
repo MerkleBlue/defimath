@@ -41,6 +41,10 @@ contract MathWrapper {
         return DeFiMath.mulDiv(a, b, d);
     }
 
+    function mul(uint256 a, uint256 b) external pure returns (uint256) {
+        return DeFiMath.mul(a, b);
+    }
+
     function abs(int256 x) external pure returns (uint256) {
         return DeFiMath.abs(x);
     }
@@ -188,6 +192,17 @@ contract MathWrapper {
 
         startGas = gasleft();
         z = DeFiMath.mulDiv(a, b, d);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
+    }
+
+    function mulMG(uint256 a, uint256 b) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.mul(a, b);
         endGas = gasleft();
 
         return (z, startGas - endGas);
