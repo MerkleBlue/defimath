@@ -330,51 +330,68 @@ describe("DeFiMath", function () {
       });
     });
 
-    describe("mulDiv", function () {
-      it("mulDiv across mixed-magnitude inputs", async function () {
+    // Realistic-input perf tests for mulDiv and mul.
+    //
+    // What "realistic" means here: typical DeFi arithmetic — token amounts in the
+    // 1e6..1e30 wei range (covers stablecoins, ETH, and large-cap caps in 1e18 FP),
+    // multiplied by rates/prices in the 1e15..1e22 range (10% to a few thousand).
+    // Almost every product fits in uint256, so the fast path dominates; this matches
+    // what users actually pay in production contracts.
+    //
+    // Magnitudes sampled log-uniformly so each decade of token amount is hit roughly
+    // equally — avoids the bias toward the chosen extremes that a small hand-picked
+    // grid produces.
+    function realisticAmount() {
+      // Log-uniform across roughly 1e6 .. 1e30 (~20..100 bits)
+      const bits = 20 + Math.floor(Math.random() * 81);
+      let n = 0n;
+      let remaining = bits;
+      while (remaining > 0) {
+        const chunk = Math.min(remaining, 30);
+        n = (n << BigInt(chunk)) | BigInt(Math.floor(Math.random() * (1 << chunk)));
+        remaining -= chunk;
+      }
+      return n === 0n ? 1n : n;
+    }
+    const REALISTIC_DENOMS = [
+      10n ** 6n,     // USDC / 6-decimal stables
+      10n ** 8n,     // BTC sats, Chainlink price feeds
+      10n ** 18n,    // ETH and standard 1e18 fixed-point
+      10n ** 27n,    // Aave's RAY precision
+    ];
+
+    describe("mulDiv (realistic inputs)", function () {
+      it("realistic distribution — 500 random DeFi-style triples", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        // Mix of small, large, and overflow-zone inputs (a · b > 2^256 forces the slow path).
-        const samples = [
-          [1n, 1n, 1n],
-          [1000n, 2000n, 7n],
-          [tokens(1.5), tokens(2), tokens(1)],
-          [2n ** 200n, 2n ** 50n, 2n ** 200n],          // ratio fits, product overflows
-          [2n ** 255n, 2n, 4n],
-          [(2n ** 256n - 1n), 1n, 1n],                 // max single-word product
-        ];
-
-        let totalGas = 0;
-        for (const [a, b, d] of samples) {
+        const N = 500;
+        let totalGas = 0, fastPath = 0;
+        for (let i = 0; i < N; i++) {
+          const a = realisticAmount();
+          const b = realisticAmount();
+          const d = REALISTIC_DENOMS[Math.floor(Math.random() * REALISTIC_DENOMS.length)];
+          if ((a * b) < (1n << 256n)) fastPath++;
           totalGas += parseInt((await deFiMath.mulDivMG(a, b, d)).gasUsed);
         }
-        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+        console.log("Avg gas: ", Math.round(totalGas / N), " tests: ", N, " fast-path: ", fastPath, "/", N);
       });
     });
 
-    describe("mul vs mulDiv (1e18 denominator)", function () {
-      it("mul is faster than mulDiv(_, _, 1e18) — side-by-side gas", async function () {
+    describe("mul vs mulDiv (1e18 denominator, realistic inputs)", function () {
+      it("side-by-side on 500 random pairs", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         const D = 10n ** 18n;
-        // Same input mix used for mulDiv perf, all routed through 1e18 as the denominator.
-        const samples = [
-          [tokens(1.5), tokens(2)],                       // fast path
-          [tokens(1234.5678), tokens(0.000789)],          // fast path, mixed magnitudes
-          [(1n << 100n), (1n << 80n)],                    // fast path, sub-2^256 product
-          [(1n << 200n), (1n << 50n)],                    // slow path (product > 2^256)
-          [(1n << 250n) + 1n, 13n],                       // slow path
-          [(1n << 256n) - 1n, 1n],                        // boundary
-        ];
-
-        let gMulDiv = 0, gMul = 0;
-        for (const [a, b] of samples) {
+        const N = 500;
+        let gMulDiv = 0, gMul = 0, fastPath = 0;
+        for (let i = 0; i < N; i++) {
+          const a = realisticAmount();
+          const b = realisticAmount();
+          if ((a * b) < (1n << 256n)) fastPath++;
           gMulDiv += parseInt((await deFiMath.mulDivMG(a, b, D)).gasUsed);
           gMul    += parseInt((await deFiMath.mulMG(a, b)).gasUsed);
         }
-        const n = samples.length;
         console.log("                 mulDiv(_, _, 1e18)    mul(_, _)");
-        console.log("Avg gas       ", (gMulDiv / n).toFixed(0).padStart(20), (gMul / n).toFixed(0).padStart(11));
+        console.log("Avg gas       ", (gMulDiv / N).toFixed(0).padStart(20), (gMul / N).toFixed(0).padStart(11));
+        console.log("Fast-path:   ", fastPath, "/", N);
       });
     });
 
@@ -400,45 +417,42 @@ describe("DeFiMath", function () {
       });
     });
 
+    // Batch-minus-baseline gas measurement for tiny inlined functions.
+    //
+    // Single-call wrappers under-report these because the Solidity optimizer
+    // can hoist pure computations OUT of the gasleft() window. The chained-call
+    // pattern (acc = f(acc, xs[i])) makes each call data-dependent on the
+    // previous, defeating reordering. To isolate the function's marginal cost
+    // from loop overhead, we subtract a baseline (same loop with XOR instead).
+    async function measureBatch(deFiMath, batchFn, N) {
+      const xs = Array.from({ length: N }, () => "0x" + Math.floor(Math.random() * 1e16).toString(16).padStart(64, "0"));
+      // Use a mix of magnitudes so the optimizer can't pre-compute anything
+      for (let i = 0; i < N; i++) {
+        const bits = 20 + Math.floor(Math.random() * 200);
+        let v = 0n;
+        let r = bits;
+        while (r > 0) { const c = Math.min(r, 30); v = (v << BigInt(c)) | BigInt(Math.floor(Math.random() * (1 << c))); r -= c; }
+        xs[i] = v;
+      }
+      const baseline = parseInt((await deFiMath.noopBatchMG(xs)).totalGas);
+      const total = parseInt((await deFiMath[batchFn](xs)).totalGas);
+      // (N - 1) operations per loop (xs[0] seeds acc)
+      return Math.round((total - baseline) / (N - 1));
+    }
+
     describe("min", function () {
-      it("min across mixed-magnitude pairs (including equal, swap of args)", async function () {
+      it("min per-call gas (batch minus baseline, N=200)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        const samples = [
-          [0n, 0n],
-          [0n, 1n], [1n, 0n],
-          [tokens(1), tokens(2)], [tokens(2), tokens(1)],
-          [(1n << 200n), (1n << 100n)],
-          [(1n << 256n) - 1n, 1n],
-          [(1n << 256n) - 1n, (1n << 256n) - 1n],
-        ];
-
-        let totalGas = 0;
-        for (const [a, b] of samples) {
-          totalGas += parseInt((await deFiMath.minMG(a, b)).gasUsed);
-        }
-        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+        const perCall = await measureBatch(deFiMath, "minBatchMG", 200);
+        console.log("Avg gas per min call:", perCall);
       });
     });
 
     describe("max", function () {
-      it("max across mixed-magnitude pairs (including equal, swap of args)", async function () {
+      it("max per-call gas (batch minus baseline, N=200)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        const samples = [
-          [0n, 0n],
-          [0n, 1n], [1n, 0n],
-          [tokens(1), tokens(2)], [tokens(2), tokens(1)],
-          [(1n << 200n), (1n << 100n)],
-          [(1n << 256n) - 1n, 1n],
-          [(1n << 256n) - 1n, (1n << 256n) - 1n],
-        ];
-
-        let totalGas = 0;
-        for (const [a, b] of samples) {
-          totalGas += parseInt((await deFiMath.maxMG(a, b)).gasUsed);
-        }
-        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+        const perCall = await measureBatch(deFiMath, "maxBatchMG", 200);
+        console.log("Avg gas per max call:", perCall);
       });
     });
 
@@ -466,24 +480,10 @@ describe("DeFiMath", function () {
     });
 
     describe("avg", function () {
-      it("avg across small / mixed / overflow-zone pairs", async function () {
+      it("avg per-call gas (batch minus baseline, N=200)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        const samples = [
-          [0n, 0n],
-          [1n, 1n],
-          [10n, 6n], [5n, 3n],          // tests carry from low bit
-          [tokens(1), tokens(2)],
-          [(1n << 200n), (1n << 100n)],
-          [(1n << 256n) - 1n, 1n],      // (sum would overflow without bit-trick)
-          [(1n << 256n) - 1n, (1n << 256n) - 1n],
-        ];
-
-        let totalGas = 0;
-        for (const [a, b] of samples) {
-          totalGas += parseInt((await deFiMath.avgMG(a, b)).gasUsed);
-        }
-        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+        const perCall = await measureBatch(deFiMath, "avgBatchMG", 200);
+        console.log("Avg gas per avg call:", perCall);
       });
     });
 

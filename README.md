@@ -83,8 +83,15 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `log1p`      | 500  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 731  | 4.7e-15 | Standard normal CDF Φ(x) |
 | `erf`        | 685  | 7.4e-15 | Error function |
+| `mulDiv`     | 155  | exact   | `(a · b) / d` with full 512-bit intermediate precision |
+| `mul`        | 130  | exact   | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
+| `abs`        | 17   | exact   | Branchless `\|int256\|` (handles `int256.min` cleanly) |
+| `min`        | 23   | exact   | Branchless minimum of two `uint256` |
+| `max`        | 23   | exact   | Branchless maximum of two `uint256` |
+| `clamp`      | 78   | exact   | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
+| `avg`        | 21   | exact   | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
 
-*Precision is max relative error vs. JS reference implementation.*
+*Precision is max relative error vs. JS reference implementation. `exact` denotes integer-arithmetic functions with no approximation error.*
 
 ### Derivatives — `DeFiMathOptions`, `DeFiMathBinary`, `DeFiMathFutures`
 

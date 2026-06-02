@@ -263,6 +263,68 @@ contract MathWrapper {
         return (z, startGas - endGas);
     }
 
+    // -----------------------------------------------------------------------
+    // Batch gas measurement.
+    //
+    // For tiny inlined functions like min/max/avg, a single-call wrapper
+    // mis-measures because the Solidity optimizer hoists the pure computation
+    // out of the gasleft() window. The chained-call pattern below forces each
+    // iteration to depend on the previous result, so the optimizer cannot
+    // reorder calls out of the measurement region.
+    //
+    // To isolate the function's marginal cost from loop overhead, callers
+    // measure each functionBatchMG against noopBatchMG (same loop shape, no
+    // function call) and subtract: per_call_cost = (batch_gas - noop_gas) / N.
+    // -----------------------------------------------------------------------
+
+    function noopBatchMG(uint256[] calldata xs) external view returns (uint256 acc, uint256 totalGas) {
+        uint256 startGas = gasleft();
+        acc = xs[0];
+        unchecked {
+            for (uint256 i = 1; i < xs.length; i++) {
+                acc = acc ^ xs[i];
+            }
+        }
+        uint256 endGas = gasleft();
+        return (acc, startGas - endGas);
+    }
+
+    function minBatchMG(uint256[] calldata xs) external view returns (uint256 acc, uint256 totalGas) {
+        uint256 startGas = gasleft();
+        acc = xs[0];
+        unchecked {
+            for (uint256 i = 1; i < xs.length; i++) {
+                acc = DeFiMath.min(acc, xs[i]);
+            }
+        }
+        uint256 endGas = gasleft();
+        return (acc, startGas - endGas);
+    }
+
+    function maxBatchMG(uint256[] calldata xs) external view returns (uint256 acc, uint256 totalGas) {
+        uint256 startGas = gasleft();
+        acc = xs[0];
+        unchecked {
+            for (uint256 i = 1; i < xs.length; i++) {
+                acc = DeFiMath.max(acc, xs[i]);
+            }
+        }
+        uint256 endGas = gasleft();
+        return (acc, startGas - endGas);
+    }
+
+    function avgBatchMG(uint256[] calldata xs) external view returns (uint256 acc, uint256 totalGas) {
+        uint256 startGas = gasleft();
+        acc = xs[0];
+        unchecked {
+            for (uint256 i = 1; i < xs.length; i++) {
+                acc = DeFiMath.avg(acc, xs[i]);
+            }
+        }
+        uint256 endGas = gasleft();
+        return (acc, startGas - endGas);
+    }
+
     function sqrtTimeMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
         uint256 startGas;
         uint256 endGas;
