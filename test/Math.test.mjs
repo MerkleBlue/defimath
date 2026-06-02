@@ -8,6 +8,29 @@ import { assert } from "chai";
 const MAX_REL_ERROR_EXP_POS = 5.4e-14;
 const MAX_REL_ERROR_LN = 1.6e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
+
+// Random helpers for the bit-level math functions (mulDiv, abs, min, max, clamp, avg).
+// Each call picks a random bit-length in [0, 256] then fills that many random bits,
+// so magnitudes are sampled logarithmically across the full uint256 / int256 range.
+function randomUint256() {
+  const bits = Math.floor(Math.random() * 257);
+  if (bits === 0) return 0n;
+  let n = 0n;
+  let remaining = bits;
+  while (remaining > 0) {
+    const chunkBits = Math.min(remaining, 30);
+    const chunk = BigInt(Math.floor(Math.random() * (1 << chunkBits)));
+    n = (n << BigInt(chunkBits)) | chunk;
+    remaining -= chunkBits;
+  }
+  return n;
+}
+function randomInt256() {
+  const u = randomUint256();
+  const INT_MAX = (1n << 255n) - 1n;
+  // Treat the high bit as the sign — wraps a uniform uint256 into a signed value
+  return u > INT_MAX ? u - (1n << 256n) : u;
+}
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
 const MAX_REL_ERROR_CBRT = 1e-14;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
@@ -304,6 +327,137 @@ describe("DeFiMath", function () {
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
+      });
+    });
+
+    describe("mulDiv", function () {
+      it("mulDiv across mixed-magnitude inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // Mix of small, large, and overflow-zone inputs (a · b > 2^256 forces the slow path).
+        const samples = [
+          [1n, 1n, 1n],
+          [1000n, 2000n, 7n],
+          [tokens(1.5), tokens(2), tokens(1)],
+          [2n ** 200n, 2n ** 50n, 2n ** 200n],          // ratio fits, product overflows
+          [2n ** 255n, 2n, 4n],
+          [(2n ** 256n - 1n), 1n, 1n],                 // max single-word product
+        ];
+
+        let totalGas = 0;
+        for (const [a, b, d] of samples) {
+          totalGas += parseInt((await deFiMath.mulDivMG(a, b, d)).gasUsed);
+        }
+        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+      });
+    });
+
+    describe("abs", function () {
+      it("abs across positive/negative magnitudes and bounds", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const samples = [
+          0n,
+          1n, -1n,
+          12345n, -12345n,
+          tokens(1), `-${tokens(1)}`,
+          (1n << 200n), -(1n << 200n),
+          (1n << 255n) - 1n,              // int256 max
+          -(1n << 255n),                  // int256 min (handled cleanly: returns 2^255)
+        ];
+
+        let totalGas = 0;
+        for (const x of samples) {
+          totalGas += parseInt((await deFiMath.absMG(x)).gasUsed);
+        }
+        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+      });
+    });
+
+    describe("min", function () {
+      it("min across mixed-magnitude pairs (including equal, swap of args)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const samples = [
+          [0n, 0n],
+          [0n, 1n], [1n, 0n],
+          [tokens(1), tokens(2)], [tokens(2), tokens(1)],
+          [(1n << 200n), (1n << 100n)],
+          [(1n << 256n) - 1n, 1n],
+          [(1n << 256n) - 1n, (1n << 256n) - 1n],
+        ];
+
+        let totalGas = 0;
+        for (const [a, b] of samples) {
+          totalGas += parseInt((await deFiMath.minMG(a, b)).gasUsed);
+        }
+        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+      });
+    });
+
+    describe("max", function () {
+      it("max across mixed-magnitude pairs (including equal, swap of args)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const samples = [
+          [0n, 0n],
+          [0n, 1n], [1n, 0n],
+          [tokens(1), tokens(2)], [tokens(2), tokens(1)],
+          [(1n << 200n), (1n << 100n)],
+          [(1n << 256n) - 1n, 1n],
+          [(1n << 256n) - 1n, (1n << 256n) - 1n],
+        ];
+
+        let totalGas = 0;
+        for (const [a, b] of samples) {
+          totalGas += parseInt((await deFiMath.maxMG(a, b)).gasUsed);
+        }
+        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+      });
+    });
+
+    describe("clamp", function () {
+      it("clamp across in-range / below-lo / above-hi triples", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const samples = [
+          [50n, 10n, 100n],         // in range
+          [5n, 10n, 100n],          // below lo
+          [500n, 10n, 100n],        // above hi
+          [10n, 10n, 100n],         // at lo boundary
+          [100n, 10n, 100n],        // at hi boundary
+          [42n, 42n, 42n],          // lo == hi
+          [tokens(1.5), tokens(1), tokens(2)],
+          [(1n << 256n) - 1n, 0n, (1n << 256n) - 1n],
+        ];
+
+        let totalGas = 0;
+        for (const [x, lo, hi] of samples) {
+          totalGas += parseInt((await deFiMath.clampMG(x, lo, hi)).gasUsed);
+        }
+        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+      });
+    });
+
+    describe("avg", function () {
+      it("avg across small / mixed / overflow-zone pairs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const samples = [
+          [0n, 0n],
+          [1n, 1n],
+          [10n, 6n], [5n, 3n],          // tests carry from low bit
+          [tokens(1), tokens(2)],
+          [(1n << 200n), (1n << 100n)],
+          [(1n << 256n) - 1n, 1n],      // (sum would overflow without bit-trick)
+          [(1n << 256n) - 1n, (1n << 256n) - 1n],
+        ];
+
+        let totalGas = 0;
+        for (const [a, b] of samples) {
+          totalGas += parseInt((await deFiMath.avgMG(a, b)).gasUsed);
+        }
+        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
       });
     });
 
@@ -1399,6 +1553,402 @@ describe("DeFiMath", function () {
           await assertRevertError(deFiMath, deFiMath.cbrt("75557863725914323000000000000000000000000"), "CbrtUpperBoundError");
           await assertRevertError(deFiMath, deFiMath.cbrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "CbrtUpperBoundError");
           await deFiMath.cbrt("75557863725914322999999999999999999999999");
+        });
+      });
+    });
+
+    describe("mulDiv", function () {
+      const MAX = (1n << 256n) - 1n;
+
+      it("handles small inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        assert.equal((await deFiMath.mulDiv(0n, 0n, 1n)).toString(), "0");
+        assert.equal((await deFiMath.mulDiv(0n, 12345n, 7n)).toString(), "0");
+        assert.equal((await deFiMath.mulDiv(1n, 1n, 1n)).toString(), "1");
+        assert.equal((await deFiMath.mulDiv(6n, 7n, 3n)).toString(), "14");           // 42 / 3
+        assert.equal((await deFiMath.mulDiv(3n, 4n, 5n)).toString(), "2");            // 12 / 5 → 2 (rounds toward zero)
+        assert.equal((await deFiMath.mulDiv(7n, 3n, 2n)).toString(), "10");           // 21 / 2 → 10
+      });
+
+      it("handles d = 1 (identity divide)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // a * b fits in uint256 → fast path returns a * b
+        assert.equal((await deFiMath.mulDiv(2n ** 200n, 1n, 1n)).toString(), (2n ** 200n).toString());
+        // (2^256 - 1) * 1 = 2^256 - 1 (max single-word)
+        assert.equal((await deFiMath.mulDiv(MAX, 1n, 1n)).toString(), MAX.toString());
+        // 1 * (2^256 - 1) = same
+        assert.equal((await deFiMath.mulDiv(1n, MAX, 1n)).toString(), MAX.toString());
+      });
+
+      it("handles full 512-bit intermediate products", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // 2^200 * 2^200 = 2^400 (overflows uint256), divided by 2^200 = 2^200 (fits)
+        assert.equal(
+          (await deFiMath.mulDiv(2n ** 200n, 2n ** 200n, 2n ** 200n)).toString(),
+          (2n ** 200n).toString()
+        );
+        // 2^255 * 2 = 2^256 (just overflows), / 4 = 2^254
+        assert.equal(
+          (await deFiMath.mulDiv(2n ** 255n, 2n, 4n)).toString(),
+          (2n ** 254n).toString()
+        );
+        // (2^256 - 1)^2 / (2^256 - 1) = 2^256 - 1 — extreme stress case
+        assert.equal((await deFiMath.mulDiv(MAX, MAX, MAX)).toString(), MAX.toString());
+      });
+
+      it("matches BigInt reference across random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // Pseudo-random sweep across magnitudes; deterministic so failures reproduce.
+        const cases = [
+          [12345678901234567890n, 98765432109876543210n, 1000000n],
+          [1n << 128n, 1n << 128n, 1n << 200n],
+          [(1n << 200n) - 1n, (1n << 100n) + 7n, (1n << 150n) + 3n],
+          [tokens(1234.5678), tokens(0.000789), tokens(1)],
+          [(1n << 250n) + 1n, 13n, (1n << 100n) + 1n],
+        ];
+        for (const [a, b, d] of cases) {
+          const expected = (a * b) / d;
+          const actual = await deFiMath.mulDiv(a, b, d);
+          assert.equal(actual.toString(), expected.toString(), `mulDiv(${a}, ${b}, ${d})`);
+        }
+      });
+
+      describe("random", function () {
+        it("matches BigInt reference on 500 random inputs", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            let a, b, d, p1;
+            // Reject (d == 0) and (d <= p1) cases — those are tested explicitly in failure.
+            do {
+              a = randomUint256();
+              b = randomUint256();
+              d = randomUint256();
+              p1 = (a * b) >> 256n;
+            } while (d === 0n || d <= p1);
+            const expected = (a * b) / d;
+            const actual = await deFiMath.mulDiv(a, b, d);
+            assert.equal(actual.toString(), expected.toString(), `mulDiv(${a}, ${b}, ${d})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("rejects when d == 0 (fast path)", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // 2 * 3 = 6 fits in uint256 → fast path checks d == 0
+          await assertRevertError(deFiMath, deFiMath.mulDiv(2n, 3n, 0n), "MulDivByZeroError");
+        });
+
+        it("rejects when d == 0 (slow path)", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // 2^200 * 2^200 overflows uint256 → slow path checks d == 0
+          await assertRevertError(deFiMath, deFiMath.mulDiv(2n ** 200n, 2n ** 200n, 0n), "MulDivByZeroError");
+        });
+
+        it("rejects when quotient overflows uint256", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // 2^128 * 2^128 / 1 = 2^256 → doesn't fit in uint256
+          await assertRevertError(deFiMath, deFiMath.mulDiv(1n << 128n, 1n << 128n, 1n), "MulDivOverflowError");
+          // (2^256 - 1) * (2^256 - 1) / 1 → way over
+          await assertRevertError(deFiMath, deFiMath.mulDiv(MAX, MAX, 1n), "MulDivOverflowError");
+        });
+      });
+    });
+
+    describe("abs", function () {
+      const INT_MAX = (1n << 255n) - 1n;
+      const INT_MIN = -(1n << 255n);
+
+      it("zero returns zero", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        assert.equal((await deFiMath.abs(0n)).toString(), "0");
+      });
+
+      it("matches BigInt abs on positives and negatives", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          1n, -1n,
+          12345n, -12345n,
+          tokens(0.001), `-${tokens(0.001)}`,
+          tokens(1234.5678), `-${tokens(1234.5678)}`,
+          (1n << 100n), -(1n << 100n),
+          (1n << 200n), -(1n << 200n),
+        ];
+        for (const x of cases) {
+          const xBig = BigInt(x);
+          const expected = xBig < 0n ? -xBig : xBig;
+          assert.equal((await deFiMath.abs(x)).toString(), expected.toString(), `abs(${x})`);
+        }
+      });
+
+      it("handles int256 boundary values", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // int256 max: 2^255 - 1
+        assert.equal((await deFiMath.abs(INT_MAX)).toString(), INT_MAX.toString());
+
+        // int256 min: -2^255. No positive int256 represents +2^255, but the unsigned
+        // result is 2^255 (the wrap-around in two's complement is the correct answer).
+        assert.equal((await deFiMath.abs(INT_MIN)).toString(), (1n << 255n).toString());
+      });
+
+      describe("random", function () {
+        it("matches BigInt reference on 500 random inputs", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            const x = randomInt256();
+            const expected = x < 0n ? -x : x;
+            const actual = await deFiMath.abs(x);
+            assert.equal(actual.toString(), expected.toString(), `abs(${x})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("never reverts — domain is all of int256", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // No int256 input causes a revert. The branchless implementation has no
+          // conditional path, so even `int256.min` (the input that overflows naive `-x`)
+          // is handled cleanly via two's-complement wrap.
+          await deFiMath.abs(0n);
+          await deFiMath.abs(1n);
+          await deFiMath.abs(-1n);
+          await deFiMath.abs(INT_MAX);
+          await deFiMath.abs(INT_MIN);
+        });
+      });
+    });
+
+    describe("min", function () {
+      const UMAX = (1n << 256n) - 1n;
+
+      it("matches BigInt min across mixed pairs (commutative, equal, bounds)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [0n, 0n],
+          [0n, 1n], [1n, 0n],
+          [5n, 7n], [7n, 5n],
+          [tokens(1.5), tokens(2)],
+          [(1n << 200n), (1n << 100n)],
+          [UMAX, 0n], [0n, UMAX],
+          [UMAX, UMAX],
+        ];
+        for (const [a, b] of cases) {
+          const expected = a < b ? a : b;
+          assert.equal((await deFiMath.min(a, b)).toString(), expected.toString(), `min(${a}, ${b})`);
+        }
+      });
+
+      describe("random", function () {
+        it("matches BigInt reference on 500 random inputs", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            const a = randomUint256();
+            const b = randomUint256();
+            const expected = a < b ? a : b;
+            const actual = await deFiMath.min(a, b);
+            assert.equal(actual.toString(), expected.toString(), `min(${a}, ${b})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("never reverts — domain is the full uint256 × uint256 grid", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // 3 opcodes, no jumps — no reverting path exists.
+          await deFiMath.min(0n, 0n);
+          await deFiMath.min(0n, UMAX);
+          await deFiMath.min(UMAX, 0n);
+          await deFiMath.min(UMAX, UMAX);
+        });
+      });
+    });
+
+    describe("max", function () {
+      const UMAX = (1n << 256n) - 1n;
+
+      it("matches BigInt max across mixed pairs (commutative, equal, bounds)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [0n, 0n],
+          [0n, 1n], [1n, 0n],
+          [5n, 7n], [7n, 5n],
+          [tokens(1.5), tokens(2)],
+          [(1n << 200n), (1n << 100n)],
+          [UMAX, 0n], [0n, UMAX],
+          [UMAX, UMAX],
+        ];
+        for (const [a, b] of cases) {
+          const expected = a > b ? a : b;
+          assert.equal((await deFiMath.max(a, b)).toString(), expected.toString(), `max(${a}, ${b})`);
+        }
+      });
+
+      describe("random", function () {
+        it("matches BigInt reference on 500 random inputs", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            const a = randomUint256();
+            const b = randomUint256();
+            const expected = a > b ? a : b;
+            const actual = await deFiMath.max(a, b);
+            assert.equal(actual.toString(), expected.toString(), `max(${a}, ${b})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("never reverts — domain is the full uint256 × uint256 grid", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // 3 opcodes, no jumps — no reverting path exists.
+          await deFiMath.max(0n, 0n);
+          await deFiMath.max(0n, UMAX);
+          await deFiMath.max(UMAX, 0n);
+          await deFiMath.max(UMAX, UMAX);
+        });
+      });
+    });
+
+    describe("clamp", function () {
+      const UMAX = (1n << 256n) - 1n;
+
+      it("passes through values in range", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const lo = 10n, hi = 100n;
+        for (const x of [10n, 11n, 42n, 99n, 100n]) {
+          assert.equal((await deFiMath.clamp(x, lo, hi)).toString(), x.toString(), `clamp(${x}, ${lo}, ${hi})`);
+        }
+      });
+
+      it("clamps below lo and above hi", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const lo = 10n, hi = 100n;
+        assert.equal((await deFiMath.clamp(0n, lo, hi)).toString(), lo.toString());
+        assert.equal((await deFiMath.clamp(9n, lo, hi)).toString(), lo.toString());
+        assert.equal((await deFiMath.clamp(101n, lo, hi)).toString(), hi.toString());
+        assert.equal((await deFiMath.clamp(UMAX, lo, hi)).toString(), hi.toString());
+      });
+
+      it("lo == hi collapses to that single value", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (const x of [0n, 41n, 42n, 43n, UMAX]) {
+          assert.equal((await deFiMath.clamp(x, 42n, 42n)).toString(), "42");
+        }
+      });
+
+      it("handles full-range bounds", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // lo = 0, hi = UMAX → never clamps
+        for (const x of [0n, 1n, tokens(1), UMAX]) {
+          assert.equal((await deFiMath.clamp(x, 0n, UMAX)).toString(), x.toString(), `clamp(${x}, 0, UMAX)`);
+        }
+      });
+
+      it("inverted range (lo > hi) always returns hi", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Documented behavior: function does not validate lo ≤ hi; the second min step
+        // squashes the result to hi regardless of x. Caller's responsibility.
+        for (const x of [0n, 50n, 200n, UMAX]) {
+          assert.equal((await deFiMath.clamp(x, 100n, 10n)).toString(), "10", `clamp(${x}, 100, 10)`);
+        }
+      });
+
+      describe("random", function () {
+        it("matches reference on 500 random valid triples (lo ≤ hi)", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            const x = randomUint256();
+            let lo = randomUint256();
+            let hi = randomUint256();
+            if (lo > hi) [lo, hi] = [hi, lo];   // ensure valid range
+            const expected = x < lo ? lo : (x > hi ? hi : x);
+            const actual = await deFiMath.clamp(x, lo, hi);
+            assert.equal(actual.toString(), expected.toString(), `clamp(${x}, ${lo}, ${hi})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("never reverts — even on inverted ranges and bounds at the uint256 ceiling", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // Domain is the full uint256³ — no input combination causes a revert.
+          await deFiMath.clamp(0n, 0n, 0n);
+          await deFiMath.clamp(UMAX, 0n, UMAX);
+          await deFiMath.clamp(0n, UMAX, UMAX);
+          await deFiMath.clamp(42n, 100n, 10n);        // inverted range — returns hi (= 10)
+          await deFiMath.clamp(UMAX, UMAX, 0n);        // inverted, both extremes
+        });
+      });
+    });
+
+    describe("avg", function () {
+      const UMAX = (1n << 256n) - 1n;
+
+      it("matches BigInt avg on small values", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [0n, 0n], [0n, 1n], [1n, 0n],
+          [1n, 1n], [2n, 2n],
+          [5n, 3n],            // (5+3)/2 = 4
+          [10n, 6n],           // (10+6)/2 = 8
+          [7n, 4n],            // (7+4)/2 = 5 (rounds toward zero, floor(11/2))
+          [99n, 100n],         // floor(199/2) = 99
+          [tokens(1.5), tokens(2.5)],
+        ];
+        for (const [a, b] of cases) {
+          const aBig = BigInt(a), bBig = BigInt(b);
+          const expected = (aBig + bBig) / 2n;
+          assert.equal((await deFiMath.avg(a, b)).toString(), expected.toString(), `avg(${a}, ${b})`);
+        }
+      });
+
+      it("does not overflow at the uint256 ceiling", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sum (2^256 - 1) + (2^256 - 1) would wrap a naive (a+b)/2 to ~0; bit-trick handles it.
+        assert.equal((await deFiMath.avg(UMAX, UMAX)).toString(), UMAX.toString());
+        // (UMAX + 1) / 2 = 2^255
+        assert.equal((await deFiMath.avg(UMAX, 1n)).toString(), (1n << 255n).toString());
+        // (2^255 + 2^255) / 2 = 2^255
+        assert.equal((await deFiMath.avg(1n << 255n, 1n << 255n)).toString(), (1n << 255n).toString());
+      });
+
+      it("is commutative", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const pairs = [[5n, 7n], [UMAX, 0n], [(1n << 200n), (1n << 100n)]];
+        for (const [a, b] of pairs) {
+          const ab = (await deFiMath.avg(a, b)).toString();
+          const ba = (await deFiMath.avg(b, a)).toString();
+          assert.equal(ab, ba, `avg should be commutative for (${a}, ${b})`);
+        }
+      });
+
+      describe("random", function () {
+        it("matches BigInt reference on 500 random inputs", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          for (let i = 0; i < 500; i++) {
+            const a = randomUint256();
+            const b = randomUint256();
+            const expected = (a + b) / 2n;   // BigInt sum is unbounded, no overflow
+            const actual = await deFiMath.avg(a, b);
+            assert.equal(actual.toString(), expected.toString(), `avg(${a}, ${b})`);
+          }
+        });
+      });
+
+      describe("failure", function () {
+        it("never reverts — bit-trick handles the full uint256 ceiling cleanly", async function () {
+          const { deFiMath } = await loadFixture(deploy);
+          // A naive (a+b)/2 reverts (Panic 0x11) on a sum that overflows uint256.
+          // The bit-trick `(a & b) + ((a ^ b) >> 1)` never overflows.
+          await deFiMath.avg(0n, 0n);
+          await deFiMath.avg(UMAX, 0n);
+          await deFiMath.avg(0n, UMAX);
+          await deFiMath.avg(UMAX, UMAX);             // sum would be 2·UMAX, well over 2^256
+          await deFiMath.avg(1n << 255n, 1n << 255n); // sum = 2^256
         });
       });
     });

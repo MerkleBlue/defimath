@@ -21,6 +21,11 @@ library DeFiMath {
     error SqrtUpperBoundError();
     error CbrtUpperBoundError();
 
+    /// @notice Thrown when mulDiv() is called with denominator == 0
+    error MulDivByZeroError();
+    /// @notice Thrown when mulDiv() result would overflow uint256
+    error MulDivOverflowError();
+
     /// @notice Computes exp(x) for signed input x
     /// @dev Automatically handles negative inputs via reciprocal logic
     /// @param x Signed input in 18-decimal fixed-point format
@@ -353,6 +358,122 @@ library DeFiMath {
         }
     }
 
+    /// @notice Computes a · b / d with full 512-bit intermediate precision (rounds toward zero)
+    /// @dev Splits the 512-bit product into [p1, p0] via mulmod trick (Remco Bloemen / Uniswap V3),
+    ///      then performs a 512-by-256 division. Reverts on d == 0 or when the quotient overflows uint256.
+    /// @param a First multiplicand (raw uint256, no fixed-point scaling assumed)
+    /// @param b Second multiplicand
+    /// @param d Divisor; must be non-zero and strictly greater than the high 256 bits of (a · b)
+    /// @return z Quotient (a · b) / d
+    function mulDiv(uint256 a, uint256 b, uint256 d) internal pure returns (uint256 z) {
+        unchecked {
+            // 512-bit multiply [p1 p0] = a * b.
+            //   p0 = (a * b) mod 2^256          (truncating mul)
+            //   p1 = ((a * b) - p0) >> 256      (high word, via mulmod trick)
+            uint256 p0;
+            uint256 p1;
+            assembly ("memory-safe") {
+                let mm := mulmod(a, b, not(0))   // (a*b) mod (2^256 - 1)
+                p0 := mul(a, b)
+                p1 := sub(sub(mm, p0), lt(mm, p0))
+            }
+
+            // Fast path: a * b fits in uint256.
+            if (p1 == 0) {
+                if (d == 0) revert MulDivByZeroError();
+                return p0 / d;
+            }
+
+            // Reject d == 0 (caught implicitly below) and quotient overflow.
+            if (d <= p1) {
+                if (d == 0) revert MulDivByZeroError();
+                revert MulDivOverflowError();
+            }
+
+            // 512-by-256 division (Remco Bloemen): subtract remainder to make the
+            // dividend an exact multiple of d, factor out powers of two, then
+            // multiply by d's modular inverse (Newton-Raphson, 6 doublings for 2^256).
+            assembly ("memory-safe") {
+                let r := mulmod(a, b, d)
+                p1 := sub(p1, gt(r, p0))
+                p0 := sub(p0, r)
+                let twos := and(sub(0, d), d)
+                d := div(d, twos)
+                p0 := div(p0, twos)
+                p0 := or(p0, mul(p1, add(div(sub(0, twos), twos), 1)))
+                let inv := xor(2, mul(3, d))                   // mod 2^4
+                inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^8
+                inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^16
+                inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^32
+                inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^64
+                inv := mul(inv, sub(2, mul(d, inv)))           // mod 2^128
+                z := mul(p0, mul(inv, sub(2, mul(d, inv))))    // mod 2^256
+            }
+        }
+    }
+
+    /// @notice Returns the smaller of two unsigned values
+    /// @dev Branchless: `x XOR ((x XOR y) · lt(y, x))` — 3 opcodes, no jumps.
+    /// @param x First value
+    /// @param y Second value
+    /// @return z min(x, y)
+    function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        assembly ("memory-safe") {
+            z := xor(x, mul(xor(x, y), lt(y, x)))
+        }
+    }
+
+    /// @notice Returns the larger of two unsigned values
+    /// @dev Branchless: `x XOR ((x XOR y) · gt(y, x))` — 3 opcodes, no jumps.
+    /// @param x First value
+    /// @param y Second value
+    /// @return z max(x, y)
+    function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        assembly ("memory-safe") {
+            z := xor(x, mul(xor(x, y), gt(y, x)))
+        }
+    }
+
+    /// @notice Overflow-safe average `(x + y) / 2` (rounds toward zero)
+    /// @dev Uses the bit identity `avg(x, y) = (x & y) + ((x ^ y) >> 1)` — never overflows
+    ///      even when `x + y > 2^256 - 1`. 4 opcodes: AND, XOR, SHR, ADD.
+    /// @param x First value
+    /// @param y Second value
+    /// @return z floor((x + y) / 2)
+    function avg(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        assembly ("memory-safe") {
+            z := add(and(x, y), shr(1, xor(x, y)))
+        }
+    }
+
+    /// @notice Clamps x into the closed range [lo, hi] (rounds toward the nearer boundary)
+    /// @dev Branchless composition of `max(x, lo)` then `min(_, hi)` — 6 opcodes.
+    ///      Does not validate `lo ≤ hi`: with `lo > hi` the function always returns `hi`
+    ///      (the second min step squashes the result down). Caller should ensure the range is sane.
+    /// @param x Value to clamp
+    /// @param lo Lower bound (inclusive)
+    /// @param hi Upper bound (inclusive)
+    /// @return z `lo` if x < lo, `hi` if x > hi, otherwise x
+    function clamp(uint256 x, uint256 lo, uint256 hi) internal pure returns (uint256 z) {
+        assembly ("memory-safe") {
+            z := xor(x, mul(xor(x, lo), lt(x, lo)))   // max(x, lo)
+            z := xor(z, mul(xor(z, hi), gt(z, hi)))   // min(_, hi)
+        }
+    }
+
+    /// @notice Returns the absolute value of x as an unsigned integer
+    /// @dev Branchless: arithmetic-shift-right by 255 broadcasts the sign bit into a mask, then
+    ///      `(x XOR mask) - mask` flips and increments for negatives (two's complement).
+    ///      Total: 1 SAR + 1 XOR + 1 SUB. Handles `type(int256).min` cleanly — returns 2^255.
+    /// @param x Signed input
+    /// @return z Absolute value
+    function abs(int256 x) internal pure returns (uint256 z) {
+        assembly ("memory-safe") {
+            let mask := sar(255, x)              // 0 if x ≥ 0, all-ones if x < 0
+            z := sub(xor(x, mask), mask)
+        }
+    }
+
     /// @notice Computes standard normal cumulative distribution function Φ(x)
     /// @dev Uses erf(x) internally, capped at ±16.447 to return 0 or 1
     /// @param x Input value in 18-decimal fixed-point format
@@ -530,5 +651,4 @@ library DeFiMath {
             }
         }
     }
-
 }

@@ -37,6 +37,30 @@ contract MathWrapper {
         return DeFiMath.cbrt(x);
     }
 
+    function mulDiv(uint256 a, uint256 b, uint256 d) external pure returns (uint256) {
+        return DeFiMath.mulDiv(a, b, d);
+    }
+
+    function abs(int256 x) external pure returns (uint256) {
+        return DeFiMath.abs(x);
+    }
+
+    function min(uint256 x, uint256 y) external pure returns (uint256) {
+        return DeFiMath.min(x, y);
+    }
+
+    function max(uint256 x, uint256 y) external pure returns (uint256) {
+        return DeFiMath.max(x, y);
+    }
+
+    function clamp(uint256 x, uint256 lo, uint256 hi) external pure returns (uint256) {
+        return DeFiMath.clamp(x, lo, hi);
+    }
+
+    function avg(uint256 x, uint256 y) external pure returns (uint256) {
+        return DeFiMath.avg(x, y);
+    }
+
     function stdNormCDF(int256 x) external pure returns (uint256) {
         return DeFiMath.stdNormCDF(x);
     }
@@ -156,6 +180,72 @@ contract MathWrapper {
         endGas = gasleft();
 
         return (y, startGas - endGas);
+    }
+
+    function mulDivMG(uint256 a, uint256 b, uint256 d) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.mulDiv(a, b, d);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
+    }
+
+    function absMG(int256 x) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.abs(x);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
+    }
+
+    function minMG(uint256 x, uint256 y) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.min(x, y);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
+    }
+
+    function maxMG(uint256 x, uint256 y) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.max(x, y);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
+    }
+
+    function clampMG(uint256 x, uint256 lo, uint256 hi) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.clamp(x, lo, hi);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
+    }
+
+    function avgMG(uint256 x, uint256 y) external view returns (uint256 z, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+
+        startGas = gasleft();
+        z = DeFiMath.avg(x, y);
+        endGas = gasleft();
+
+        return (z, startGas - endGas);
     }
 
     function sqrtTimeMG(uint256 x) external view returns (uint256 y, uint256 gasUsed) {
