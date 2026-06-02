@@ -1,14 +1,22 @@
 name: Publish to npm
 
+# Trigger: a SemVer tag is pushed (e.g. v3.2.0).
+# Local release flow:
+#   npm version patch | minor | major          # 3.1.0 -> 3.1.1 etc., commits + tags
+#   git push --follow-tags
 on:
-  workflow_run:
-    workflows: ["Hardhat Tests"]
-    types: [completed]
-    branches: [master]
+  push:
+    tags:
+      - 'v*.*.*'
+
+# `id-token: write` is required for npm provenance (the green "verified" badge
+# on the package page). `contents: read` is the default checkout permission.
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -22,17 +30,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Publish if version changed
+      - name: Run tests
+        run: npx hardhat test
+
+      - name: Verify tag matches package.json
         run: |
-          PKG_NAME=$(node -p "require('./package.json').name")
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view "$PKG_NAME" version 2>/dev/null || echo "0.0.0")
-          echo "Local: $PKG_VERSION  /  npm: $NPM_VERSION"
-          if [ "$PKG_VERSION" != "$NPM_VERSION" ]; then
-            echo "Publishing $PKG_NAME@$PKG_VERSION"
-            npm publish --access public
-          else
-            echo "Version $PKG_VERSION already published, skipping."
+          TAG="${GITHUB_REF#refs/tags/v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "Tag:          v$TAG"
+          echo "package.json: $PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $PKG"
+            exit 1
           fi
+
+      - name: Publish
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
