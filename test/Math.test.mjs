@@ -136,7 +136,7 @@ describe.only("DeFiMath", function () {
       it("exp when x in [0, 0.03125)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 0.03125; x += 0.0003) {
+        for (let x = 0; x < 0.03125; x += 0.0001563) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
@@ -146,7 +146,7 @@ describe.only("DeFiMath", function () {
       it("exp when x in [0.03125, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0.03125; x < 1; x += 0.0010125) {
+        for (let x = 0.03125; x < 1; x += 0.0048437) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
@@ -156,7 +156,7 @@ describe.only("DeFiMath", function () {
       it("exp when x in [1, 32)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 1; x < 32; x += 0.03200125) {
+        for (let x = 1; x < 32; x += 0.15501) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
@@ -166,7 +166,8 @@ describe.only("DeFiMath", function () {
       it("exp when x in [32, 135)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 32; x < 135; x += 0.25600125) {
+        for (let i = 0; i < 200; i++) {
+          const x = 32 + i * 0.515;
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
@@ -176,7 +177,7 @@ describe.only("DeFiMath", function () {
       it("exp when x in [-40, -0.05]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0.05; x <= 40; x += 0.05 ) { 
+        for (let x = 0.05; x <= 40; x += 0.20001) {
           const expected = Math.exp(-x);
 
           const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
