@@ -12,21 +12,34 @@ const MAX_REL_ERROR_SQRT = 2.2e-14;
 // Random helpers for the bit-level math functions (mulDiv, abs, min, max, clamp, avg).
 // Each call picks a random bit-length in [0, 256] then fills that many random bits,
 // so magnitudes are sampled logarithmically across the full uint256 / int256 range.
-function randomUint256() {
-  const bits = Math.floor(Math.random() * 257);
+// Seeded PRNG (mulberry32) — used by performance tests so gas numbers are
+// reproducible across runs. The `random` describes still pass no rng and so
+// get Math.random for genuine fuzz coverage.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomUint256(rng = Math.random) {
+  const bits = Math.floor(rng() * 257);
   if (bits === 0) return 0n;
   let n = 0n;
   let remaining = bits;
   while (remaining > 0) {
     const chunkBits = Math.min(remaining, 30);
-    const chunk = BigInt(Math.floor(Math.random() * (1 << chunkBits)));
+    const chunk = BigInt(Math.floor(rng() * (1 << chunkBits)));
     n = (n << BigInt(chunkBits)) | chunk;
     remaining -= chunkBits;
   }
   return n;
 }
-function randomInt256() {
-  const u = randomUint256();
+function randomInt256(rng = Math.random) {
+  const u = randomUint256(rng);
   const INT_MAX = (1n << 255n) - 1n;
   // Treat the high bit as the sign — wraps a uniform uint256 into a signed value
   return u > INT_MAX ? u - (1n << 256n) : u;
@@ -66,14 +79,14 @@ describe.only("DeFiMath", function () {
   // Magnitudes sampled log-uniformly so each decade of token amount is hit roughly
   // equally — avoids the bias toward the chosen extremes that a small hand-picked
   // grid produces.
-  function realisticAmount() {
+  function realisticAmount(rng = Math.random) {
     // Log-uniform across roughly 1e6 .. 1e30 (~20..100 bits)
-    const bits = 20 + Math.floor(Math.random() * 81);
+    const bits = 20 + Math.floor(rng() * 81);
     let n = 0n;
     let remaining = bits;
     while (remaining > 0) {
       const chunk = Math.min(remaining, 30);
-      n = (n << BigInt(chunk)) | BigInt(Math.floor(Math.random() * (1 << chunk)));
+      n = (n << BigInt(chunk)) | BigInt(Math.floor(rng() * (1 << chunk)));
       remaining -= chunk;
     }
     return n === 0n ? 1n : n;
@@ -92,14 +105,14 @@ describe.only("DeFiMath", function () {
   // pattern (acc = f(acc, xs[i])) makes each call data-dependent on the
   // previous, defeating reordering. To isolate the function's marginal cost
   // from loop overhead, we subtract a baseline (same loop with XOR instead).
-  async function measureBatch(deFiMath, batchFn, N) {
-    const xs = Array.from({ length: N }, () => "0x" + Math.floor(Math.random() * 1e16).toString(16).padStart(64, "0"));
+  async function measureBatch(deFiMath, batchFn, N, rng = Math.random) {
+    const xs = new Array(N);
     // Use a mix of magnitudes so the optimizer can't pre-compute anything
     for (let i = 0; i < N; i++) {
-      const bits = 20 + Math.floor(Math.random() * 200);
+      const bits = 20 + Math.floor(rng() * 200);
       let v = 0n;
       let r = bits;
-      while (r > 0) { const c = Math.min(r, 30); v = (v << BigInt(c)) | BigInt(Math.floor(Math.random() * (1 << c))); r -= c; }
+      while (r > 0) { const c = Math.min(r, 30); v = (v << BigInt(c)) | BigInt(Math.floor(rng() * (1 << c))); r -= c; }
       xs[i] = v;
     }
     const baseline = parseInt((await deFiMath.noopBatchMG(xs)).totalGas);
@@ -195,34 +208,11 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("exp when x in [0, 135]", async function () {
+      it("exp when x in [-40, 130]", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0; x < 0.03125; x += 0.0003125212) { 
+        for (let x = -40; x <= 130; x += 0.85) {
           totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 0.03125; x < 1; x += 0.01012) { 
-          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1; x < 32; x += 0.32087) { 
-          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 32; x < 135; x += 1.0123) { 
-          totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("exp when x in [-40, -0.05]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 0.05; x <= 40; x += 0.1 ) {
-          totalGas += parseInt((await deFiMath.expMG(tokens(-x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -281,22 +271,10 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expPositive when x in [0, 135]", async function () {
+      it("expPositive when x in [0, 130]", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0; x < 0.03125; x += 0.0003125212) {
-          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 0.03125; x < 1; x += 0.01012) {
-          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1; x < 32; x += 0.32087) {
-          totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 32; x < 135; x += 1.0123) {
+        for (let x = 0; x <= 130; x += 0.65) {
           totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
@@ -373,20 +351,10 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expm1 when x in [-0.01, 0.01] (Taylor branch)", async function () {
+      it("expm1 when x in [-40, 130]", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = -0.01; x <= 0.01; x += 0.0001012) {
-          totalGas += parseInt((await deFiMath.expm1MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("expm1 when x in [0.01, 135] (naive branch)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        let totalGas = 0, count = 0;
-        for (let x = 0.01; x < 135; x += 1.0123) {
+        for (let x = -40; x <= 130; x += 0.85) {
           totalGas += parseInt((await deFiMath.expm1MG(tokens(x))).gasUsed);
           count++;
         }
@@ -532,34 +500,10 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("ln when x in [1, 1e6]", async function () {
+      it("ln when x in [0.000001, 1000000] (log-spaced)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.090507732665257659; x += 0.01) { 
-          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 16; x < 1000; x += 10) { 
-          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1000; x < 1e6; x += 10000) { 
-          totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("ln when x in [1e-6, 1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1e-6; x < 1; x += 1e-2 / 4) {
+        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
@@ -645,24 +589,10 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log1p when x in [-0.01, 0.01] (Taylor branch)", async function () {
+      it("log1p when x in [0.000001, 1000000] (log-spaced)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = -0.01; x <= 0.01; x += 0.0001012) {
-          totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("log1p when x in [0.01, 1e6] (naive branch)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        let totalGas = 0, count = 0;
-        for (let x = 0.01; x < 16; x += 0.1) {
-          totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 16; x < 1000; x += 10) {
+        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
           totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
           count++;
         }
@@ -844,38 +774,14 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log2 when x in [1, 1e6]", async function () {
+      it("log2 when x in [0.000001, 1000000] (log-spaced)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.090507732665257659; x += 0.01) { 
+        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
           totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
           count++;
         }
-        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 16; x < 1000; x += 10) { 
-          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1000; x < 1e6; x += 10000) { 
-          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("log2 when x in [1e-6, 1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1e-6; x < 1; x += 1e-2 / 4) { 
-          totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
@@ -1017,38 +923,14 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log10 when x in [1, 1e6]", async function () {
+      it("log10 when x in [0.000001, 1000000] (log-spaced)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.090507732665257659; x += 0.01) { 
+        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
           totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
           count++;
         }
-        for (let x = 1.090507732665257659; x < 16; x += 0.1) { 
-          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 16; x < 1000; x += 10) { 
-          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1000; x < 1e6; x += 10000) { 
-          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("log10 when x in [1e-6, 1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1e-6; x < 1; x += 1e-2 / 4) { 
-          totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
@@ -1265,25 +1147,11 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("pow when x in [0.5, 10], a in [-3, 3]", async function () {
+      it("pow when x in [1e-3, 1e3] log-spaced × a in [-3, 3]", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 0.5; x < 10; x += 0.5) {
-          for (let a = -3; a <= 3; a += 0.5) {
-            totalGas += parseInt((await deFiMath.powMG(tokens(x), tokens(a))).gasUsed);
-            count++;
-          }
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("pow when x in [1e-3, 1e3], a in [-1, 1]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1e-3; x < 1e3; x *= 1.5) {
-          for (let a = -1; a <= 1; a += 0.25) {
+        for (let x = 1e-3; x <= 1e3; x *= 2.0691380811147901) {  // 20 steps over 6 decades
+          for (let a = -3; a <= 3; a += 6/9) {                    // 10 steps
             totalGas += parseInt((await deFiMath.powMG(tokens(x), tokens(a))).gasUsed);
             count++;
           }
@@ -1394,38 +1262,14 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("sqrt when x in [1, 1e6]", async function () {
+      it("sqrt when x in [0.000001, 1000000] (log-spaced)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 1.074607828321317497; x += 0.0007) {
+        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
           totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
-        for (let x = 1.074607828321317497; x < 100; x += 1.00232) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 100; x < 10000; x += 101.213) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 1e4; x < 1e6; x += 1e4) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
-      });
-
-      it("sqrt when x in [1e-6, 1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1; x < 1000000; x += 2234) {
-          totalGas += parseInt((await deFiMath.sqrtMG(tokens(1 / x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
@@ -1511,27 +1355,11 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("cbrt when x in [1, 1e6]", async function () {
+      it("cbrt when x in [0.000001, 1000000] (log-spaced)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 100; x += 1.00232) {
+        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
           totalGas += parseInt((await deFiMath.cbrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        for (let x = 100; x < 1e6; x += 1.013e3) {
-          totalGas += parseInt((await deFiMath.cbrtMG(tokens(x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("cbrt when x in [1e-6, 1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 1; x < 1000000; x += 2234) {
-          totalGas += parseInt((await deFiMath.cbrtMG(tokens(1 / x))).gasUsed);
           count++;
         }
         console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
@@ -1643,14 +1471,15 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("realistic distribution — 500 random DeFi-style triples", async function () {
+      it("realistic distribution — 200 random DeFi-style triples", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const N = 500;
+        const rng = mulberry32(1);
+        const N = 200;
         let totalGas = 0, fastPath = 0;
         for (let i = 0; i < N; i++) {
-          const a = realisticAmount();
-          const b = realisticAmount();
-          const d = REALISTIC_DENOMS[Math.floor(Math.random() * REALISTIC_DENOMS.length)];
+          const a = realisticAmount(rng);
+          const b = realisticAmount(rng);
+          const d = REALISTIC_DENOMS[Math.floor(rng() * REALISTIC_DENOMS.length)];
           if ((a * b) < (1n << 256n)) fastPath++;
           totalGas += parseInt((await deFiMath.mulDivMG(a, b, d)).gasUsed);
         }
@@ -1736,14 +1565,15 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("side-by-side on 500 random pairs", async function () {
+      it("side-by-side on 200 random pairs", async function () {
         const { deFiMath } = await loadFixture(deploy);
+        const rng = mulberry32(2);
         const D = 10n ** 18n;
-        const N = 500;
+        const N = 200;
         let gMulDiv = 0, gMul = 0, fastPath = 0;
         for (let i = 0; i < N; i++) {
-          const a = realisticAmount();
-          const b = realisticAmount();
+          const a = realisticAmount(rng);
+          const b = realisticAmount(rng);
           if ((a * b) < (1n << 256n)) fastPath++;
           gMulDiv += parseInt((await deFiMath.mulDivMG(a, b, D)).gasUsed);
           gMul    += parseInt((await deFiMath.mulMG(a, b)).gasUsed);
@@ -1821,24 +1651,16 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("abs across positive/negative magnitudes and bounds", async function () {
+      it("abs on 200 random int256 inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        const samples = [
-          0n,
-          1n, -1n,
-          12345n, -12345n,
-          tokens(1), `-${tokens(1)}`,
-          (1n << 200n), -(1n << 200n),
-          (1n << 255n) - 1n,              // int256 max
-          -(1n << 255n),                  // int256 min (handled cleanly: returns 2^255)
-        ];
-
+        const rng = mulberry32(3);
+        const N = 200;
         let totalGas = 0;
-        for (const x of samples) {
-          totalGas += parseInt((await deFiMath.absMG(x)).gasUsed);
+        for (let i = 0; i < N; i++) {
+          const v = randomInt256(rng);
+          totalGas += parseInt((await deFiMath.absMG(v)).gasUsed);
         }
-        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+        console.log("Avg gas: ", Math.round(totalGas / N), "tests: ", N);
       });
     });
   });
@@ -1892,7 +1714,7 @@ describe.only("DeFiMath", function () {
     describe("performance", function () {
       it("min per-call gas (batch minus baseline, N=200)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const perCall = await measureBatch(deFiMath, "minBatchMG", 200);
+        const perCall = await measureBatch(deFiMath, "minBatchMG", 200, mulberry32(4));
         console.log("Avg gas per min call:", perCall);
       });
     });
@@ -1947,7 +1769,7 @@ describe.only("DeFiMath", function () {
     describe("performance", function () {
       it("max per-call gas (batch minus baseline, N=200)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const perCall = await measureBatch(deFiMath, "maxBatchMG", 200);
+        const perCall = await measureBatch(deFiMath, "maxBatchMG", 200, mulberry32(5));
         console.log("Avg gas per max call:", perCall);
       });
     });
@@ -2027,25 +1849,21 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("clamp across in-range / below-lo / above-hi triples", async function () {
+      it("clamp on 200 random uint256 triples", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        const samples = [
-          [50n, 10n, 100n],         // in range
-          [5n, 10n, 100n],          // below lo
-          [500n, 10n, 100n],        // above hi
-          [10n, 10n, 100n],         // at lo boundary
-          [100n, 10n, 100n],        // at hi boundary
-          [42n, 42n, 42n],          // lo == hi
-          [tokens(1.5), tokens(1), tokens(2)],
-          [(1n << 256n) - 1n, 0n, (1n << 256n) - 1n],
-        ];
-
+        const rng = mulberry32(6);
+        const N = 200;
         let totalGas = 0;
-        for (const [x, lo, hi] of samples) {
+        for (let i = 0; i < N; i++) {
+          // ensure lo <= hi
+          const a = randomUint256(rng);
+          const b = randomUint256(rng);
+          const lo = a < b ? a : b;
+          const hi = a < b ? b : a;
+          const x = randomUint256(rng);
           totalGas += parseInt((await deFiMath.clampMG(x, lo, hi)).gasUsed);
         }
-        console.log("Avg gas: ", Math.round(totalGas / samples.length), "tests: ", samples.length);
+        console.log("Avg gas: ", Math.round(totalGas / N), "tests: ", N);
       });
     });
   });
@@ -2122,7 +1940,7 @@ describe.only("DeFiMath", function () {
     describe("performance", function () {
       it("avg per-call gas (batch minus baseline, N=200)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const perCall = await measureBatch(deFiMath, "avgBatchMG", 200);
+        const perCall = await measureBatch(deFiMath, "avgBatchMG", 200, mulberry32(7));
         console.log("Avg gas per avg call:", perCall);
       });
     });
@@ -2188,15 +2006,14 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("sqrtTime when x in [1s, 8y]", async function () {
+      it("sqrtTime when x in [1, 252288000]", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 1; x < 252288000; x += 252288000 / 400) {
+        for (let x = 1; x <= 252288000; x += 1261440) {
           totalGas += parseInt((await deFiMath.sqrtTimeMG(tokens(x))).gasUsed);
           count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);     
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
@@ -2273,26 +2090,14 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("stdNormCDF when x in [0, 11.63]", async function () {
+      it("stdNormCDF when x in [-11.63, 11.63]", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 0; x < 11.63; x += 0.1163 / 4) {
+        for (let x = -11.63; x <= 11.63; x += 0.1163) {
           totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(x))).gasUsed);
           count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
-      });
-
-      it("stdNormCDF when x in [-11.63, 0]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 0; x < 11.63; x += 0.1163 / 4) {
-          totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(-x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
@@ -2376,26 +2181,14 @@ describe.only("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("erf when x in [0, 10]", async function () {
+      it("erf when x in [-10, 10]", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         let totalGas = 0, count = 0;
-        for (let x = 0; x < 10; x += 0.100163 / 4) {
+        for (let x = -10; x <= 10; x += 0.1) {
           totalGas += parseInt((await deFiMath.erfMG(tokens(x))).gasUsed);
           count++;
         }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
-      });
-
-      it("erf when x in [-10, 0]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let totalGas = 0, count = 0;
-        for (let x = 0; x < 10; x += 0.100163 / 4) {
-          totalGas += parseInt((await deFiMath.erfMG(tokens(-x))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);   
+        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
       });
     });
   });
