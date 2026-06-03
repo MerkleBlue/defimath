@@ -126,6 +126,43 @@ export function generateTestRatePoints(min, max, step) {
   return testRatePoints;
 }
 
+// Seeded PRNG (mulberry32) — used by performance tests so gas numbers are
+// reproducible across runs. The `random` describes still pass no rng and so
+// get Math.random for genuine fuzz coverage.
+export function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Random helpers for the bit-level math functions (mulDiv, abs, min, max, clamp, avg).
+// Each call picks a random bit-length in [0, 256] then fills that many random bits,
+// so magnitudes are sampled logarithmically across the full uint256 / int256 range.
+export function randomUint256(rng = Math.random) {
+  const bits = Math.floor(rng() * 257);
+  if (bits === 0) return 0n;
+  let n = 0n;
+  let remaining = bits;
+  while (remaining > 0) {
+    const chunkBits = Math.min(remaining, 30);
+    const chunk = BigInt(Math.floor(rng() * (1 << chunkBits)));
+    n = (n << BigInt(chunkBits)) | chunk;
+    remaining -= chunkBits;
+  }
+  return n;
+}
+
+export function randomInt256(rng = Math.random) {
+  const u = randomUint256(rng);
+  const INT_MAX = (1n << 255n) - 1n;
+  // Treat the high bit as the sign — wraps a uniform uint256 into a signed value
+  return u > INT_MAX ? u - (1n << 256n) : u;
+}
+
 export function generateRandomTestPoints(startPoint, endPoint, count, doRound = false) {
   const testPoints = [];
   for (let i = 0; i < count; i++) {
