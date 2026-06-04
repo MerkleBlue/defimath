@@ -148,7 +148,7 @@ describe.only("DeFiMath", function () {
         assert.equal(actualSOL, 1);
       });
 
-      it("exp when x is -1 wei (first input to enter the else branch)", async function () {
+      it("exp when x is -1e-18", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // x = -1 wei is the smallest-magnitude negative input — the first integer
         // value to take the `else` branch in exp's `if (x >= 0) ... else ...`.
@@ -157,7 +157,7 @@ describe.only("DeFiMath", function () {
         assert.equal(actualSOL, 1);
       });
 
-      it("exp when x is largest positive (just below upper bound, 135.305999368893231588)", async function () {
+      it("exp when x is largest positive", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // 135305999368893231588 wei is the largest input that does not revert
         // (135305999368893231589 hits ExpUpperBoundError; see failure block).
@@ -256,7 +256,7 @@ describe.only("DeFiMath", function () {
         assert.equal(actualSOL, 1);
       });
 
-      it("expPositive when x is largest positive (just below upper bound, 135.305999368893231588)", async function () {
+      it("expPositive when x is largest positive", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // expPositive has no input validation by design (see Math.sol comment), so the
         // same value that's "just below" exp's upper bound is the largest meaningful input.
