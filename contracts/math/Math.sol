@@ -648,9 +648,13 @@ library DeFiMath {
 
     /// @notice Computes sqrt(x) with fixed-point precision for time values
     /// @dev Optimized for values up to 8 years
-    /// @param x Time value in 18-decimal fixed-point format
-    /// @return z Resulting sqrt in 18-decimal fixed-point format
+    /// @param x Time in years, in 18-decimal fixed-point format (e.g. 1e18 = 1 year)
+    /// @return z Resulting sqrt in 18-decimal fixed-point format (sqrt(years))
     function sqrtTime(uint256 x) internal pure returns (uint256 z) {
+        // WARNING: this function doesn't check input parameter x. It is specialized
+        // for Black-Scholes option pricing where x (time to expiry, in years) has
+        // already been validated by the caller. Not intended for direct external use;
+        // outside the [1s, 8y] range precision is not guaranteed.
         assembly {
             x := mul(x, 1000000000000000000) // convert to 1e36 base
 
