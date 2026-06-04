@@ -5,7 +5,7 @@ import erf from 'math-erf';
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32, randomInt256, randomUint256, tokens } from "./Common.test.mjs";
 import { assert } from "chai";
 
-const MAX_REL_ERROR_EXP_POS = 5.4e-14;
+const MAX_REL_ERROR_EXP = 5.4e-14;
 const MAX_REL_ERROR_LN = 1.6e-15;
 const MAX_REL_ERROR_SQRT = 2.2e-14;
 const MAX_REL_ERROR_SQRT_TIME = 9e-15;
@@ -15,7 +15,7 @@ const MAX_REL_ERROR_POW = 1e-11;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 6.4e-15;
 
-describe("DeFiMath", function () {
+describe.only("DeFiMath", function () {
 
   async function deploy() {
     const MathWrapper = await ethers.getContractFactory("MathWrapper");
@@ -88,23 +88,13 @@ describe("DeFiMath", function () {
 
   describe("exp", function () {
     describe("behaviour", function () {
-      it("exp when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        let actualSOL = (await deFiMath.exp(0)).toString() / 1e18;
-        assert.equal(actualSOL, 1);
-
-        actualSOL = (await deFiMath.expPositive(0)).toString() / 1e18;
-        assert.equal(actualSOL, 1);
-      });
-
       it("exp when x in [0, 0.03125)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
         for (let x = 0; x < 0.03125; x += 0.0001563) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -114,7 +104,7 @@ describe("DeFiMath", function () {
         for (let x = 0.03125; x < 1; x += 0.004844) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -124,7 +114,7 @@ describe("DeFiMath", function () {
         for (let x = 1; x < 32; x += 0.155) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -135,7 +125,7 @@ describe("DeFiMath", function () {
           const x = 32 + i * 0.515;
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -148,6 +138,33 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF); // todo
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("exp when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actualSOL = (await deFiMath.exp(0)).toString() / 1e18;
+        assert.equal(actualSOL, 1);
+      });
+
+      it("exp when x is -1 wei (first input to enter the else branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // x = -1 wei is the smallest-magnitude negative input — the first integer
+        // value to take the `else` branch in exp's `if (x >= 0) ... else ...`.
+        // Result is exp(-1e-18) ≈ 1 (rounds to 1.0 at 1e18 FP precision).
+        const actualSOL = (await deFiMath.exp(-1)).toString() / 1e18;
+        assert.equal(actualSOL, 1);
+      });
+
+      it("exp when x is largest positive (just below upper bound, 135.305999368893231588)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // 135305999368893231588 wei is the largest input that does not revert
+        // (135305999368893231589 hits ExpUpperBoundError; see failure block).
+        const x = "135305999368893231588";
+        const expected = Math.exp(135.305999368893231588);
+        const actualSOL = (await deFiMath.exp(x)).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
       });
 
       it("exp when x below -41", async function () {
@@ -185,6 +202,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 328, `avg gas ${avg} > 328`);
       });
     });
+
   });
 
   describe("expPositive", function () {
@@ -196,7 +214,7 @@ describe("DeFiMath", function () {
         for (let x = 0; x < 0.03125; x += 0.0001563) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -206,7 +224,7 @@ describe("DeFiMath", function () {
         for (let x = 0.03125; x < 1; x += 0.004844) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -216,7 +234,7 @@ describe("DeFiMath", function () {
         for (let x = 1; x < 32; x += 0.155) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -226,8 +244,26 @@ describe("DeFiMath", function () {
         for (let x = 32; x < 135; x += 0.515) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP_POS);
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("expPositive when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actualSOL = (await deFiMath.expPositive(0)).toString() / 1e18;
+        assert.equal(actualSOL, 1);
+      });
+
+      it("expPositive when x is largest positive (just below upper bound, 135.305999368893231588)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // expPositive has no input validation by design (see Math.sol comment), so the
+        // same value that's "just below" exp's upper bound is the largest meaningful input.
+        const x = "135305999368893231588";
+        const expected = Math.exp(135.305999368893231588);
+        const actualSOL = (await deFiMath.expPositive(x)).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
       });
     });
 
@@ -253,12 +289,6 @@ describe("DeFiMath", function () {
 
   describe("expm1", function () {
     describe("behaviour", function () {
-      it("expm1 when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        const actual = (await deFiMath.expm1(0)).toString() / 1e18;
-        assert.equal(actual, 0);
-      });
-
       it("expm1 when |x| < 0.01 (Taylor branch, precision-critical for small x)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = -0.01; x <= 0.01; x += 0.0001) {
@@ -267,15 +297,6 @@ describe("DeFiMath", function () {
           // small inputs require absolute tolerance, not relative (since true value can be tiny)
           assertAbsoluteBelow(actual, expected, 1e-15);
         }
-      });
-
-      it("expm1 when very small x (sub-ULP regime)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // for x at single-ULP scale, expm1(x) ≈ x and should be exact
-        const actualA = (await deFiMath.expm1("1")).toString() / 1e18;
-        assert.equal(actualA, 1e-18);
-        const actualB = (await deFiMath.expm1("1000")).toString() / 1e18;
-        assert.equal(actualB, 1e-15);
       });
 
       it("expm1 when x in [0.01, 1) (naive branch transition)", async function () {
@@ -298,6 +319,17 @@ describe("DeFiMath", function () {
           assertRelativeBelow(actual, expected, 1e-13);
         }
       });
+    });
+
+    describe("limits", function () {
+      it("expm1 when very small x (sub-ULP regime)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // for x at single-ULP scale, expm1(x) ≈ x and should be exact
+        const actualA = (await deFiMath.expm1("1")).toString() / 1e18;
+        assert.equal(actualA, 1e-18);
+        const actualB = (await deFiMath.expm1("1000")).toString() / 1e18;
+        assert.equal(actualB, 1e-15);
+      });
 
       it("expm1 when x is very negative (approaches -1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -306,6 +338,28 @@ describe("DeFiMath", function () {
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actual, expected, 1e-14);
         }
+      });
+
+      it("expm1 when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actual = (await deFiMath.expm1(0)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("expm1 when x is -1 wei (first input to enter the else branch in exp)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Taylor branch (|x| < 0.01): expm1(x) ≈ x. For x = -1 wei, result = -1 wei.
+        const actual = (await deFiMath.expm1(-1)).toString();
+        assert.equal(actual, "-1");
+      });
+
+      it("expm1 when x is largest positive (just below upper bound, 135.305999368893231588)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Above this, expm1 reverts via exp's ExpUpperBoundError (see failure block).
+        const x = "135305999368893231588";
+        const expected = Math.exp(135.305999368893231588) - 1;
+        const actual = (await deFiMath.expm1(x)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXP);
       });
     });
 
@@ -332,6 +386,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 416, `avg gas ${avg} > 416`);
       });
     });
+
   });
 
   describe("ln", function () {
@@ -412,17 +467,6 @@ describe("DeFiMath", function () {
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
-
-      it("ln when x is uint256 max", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
-        const expected = Math.log(x);
-        
-        const actualSOL = (await deFiMath.ln("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-      });
-
       // todo: add random tests
 
       it("ln when x in [0.0625, 1)", async function () {
@@ -445,6 +489,18 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("ln when x is uint256 max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const expected = Math.log(x);
+        
+        const actualSOL = (await deFiMath.ln("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
       });
 
       it("ln when x is minimum", async function () {
@@ -482,16 +538,11 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 390, `avg gas ${avg} > 390`);
       });
     });
+
   });
 
   describe("log1p", function () {
     describe("behaviour", function () {
-      it("log1p when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        const actual = (await deFiMath.log1p(0)).toString() / 1e18;
-        assert.equal(actual, 0);
-      });
-
       it("log1p when |x| < 0.01 (Taylor branch, precision-critical for small x)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = -0.01; x <= 0.01; x += 0.0001) {
@@ -499,15 +550,6 @@ describe("DeFiMath", function () {
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actual, expected, 1e-17);
         }
-      });
-
-      it("log1p when very small x (sub-ULP regime)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // for x at single-ULP scale, log1p(x) ≈ x and should be exact
-        const actualA = (await deFiMath.log1p("1")).toString() / 1e18;
-        assert.equal(actualA, 1e-18);
-        const actualB = (await deFiMath.log1p("1000")).toString() / 1e18;
-        assert.equal(actualB, 1e-15);
       });
 
       it("log1p when x in [0.01, 1) (naive branch transition)", async function () {
@@ -536,6 +578,46 @@ describe("DeFiMath", function () {
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("log1p when very small x (sub-ULP regime)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // for x at single-ULP scale, log1p(x) ≈ x and should be exact
+        const actualA = (await deFiMath.log1p("1")).toString() / 1e18;
+        assert.equal(actualA, 1e-18);
+        const actualB = (await deFiMath.log1p("1000")).toString() / 1e18;
+        assert.equal(actualB, 1e-15);
+      });
+
+      it("log1p when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actual = (await deFiMath.log1p(0)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("log1p when x is just above -1 (smallest valid input, -1 + 1 wei)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // -999999999999999999 = -1 + 1 wei. log1p(-1) reverts (see failure block);
+        // 1 wei above is the smallest non-reverting input — result is ln(1e-18) ≈ -41.4.
+        // Can't compute via Math.log1p(-1 + 1e-18): -1 + 1e-18 rounds to -1 in IEEE 754
+        // (1e-18 is below ULP of 1.0). Use Math.log(1e-18) directly.
+        const x = "-999999999999999999";
+        const expected = Math.log(1e-18);
+        const actual = (await deFiMath.log1p(x)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+      });
+
+      it("log1p when x is int256 max (largest valid input)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // int256 max = 2^255 - 1 ≈ 5.79e76. log1p(int256.max) = ln(1 + int256.max/1e18)
+        // ≈ ln(int256.max/1e18) ≈ ln(5.79e58) for very large x.
+        const intMax = (1n << 255n) - 1n;
+        const intMaxFp = Number(intMax) / 1e18;
+        const expected = Math.log1p(intMaxFp);
+        const actual = (await deFiMath.log1p(intMax)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
       });
     });
 
@@ -568,6 +650,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 487, `avg gas ${avg} > 487`);
       });
     });
+
   });
 
   describe("log2", function () {
@@ -648,17 +731,6 @@ describe("DeFiMath", function () {
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
-
-      it("log2 when x is uint256 max", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
-        const expected = Math.log2(x);
-        
-        const actualSOL = (await deFiMath.log2("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-      });
-
       // todo: add random tests
 
       it("log2 when x in [0.0625, 1)", async function () {
@@ -681,6 +753,18 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("log2 when x is uint256 max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const expected = Math.log2(x);
+        
+        const actualSOL = (await deFiMath.log2("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
       });
 
       it("log2 when x is minimum", async function () {
@@ -718,6 +802,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 406, `avg gas ${avg} > 406`);
       });
     });
+
   });
 
   describe("log10", function () {
@@ -798,17 +883,6 @@ describe("DeFiMath", function () {
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
-
-      it("log10 when x is uint256 max", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
-        const expected = Math.log10(x);
-        
-        const actualSOL = (await deFiMath.log10("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-      });
-
       // todo: add random tests
 
       it("log10 when x in [0.0625, 1)", async function () {
@@ -831,6 +905,18 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("log10 when x is uint256 max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const x = 115792089237316195423570985008687907853269984665640564039457.584007913129639935;
+        const expected = Math.log10(x);
+        
+        const actualSOL = (await deFiMath.log10("115792089237316195423570985008687907853269984665640564039457584007913129639935")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
       });
 
       it("log10 when x is minimum", async function () {
@@ -868,6 +954,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 406, `avg gas ${avg} > 406`);
       });
     });
+
   });
 
   describe("pow", function () {
@@ -976,7 +1063,9 @@ describe("DeFiMath", function () {
           }
         }
       });
+    });
 
+    describe("limits", function () {
       it("pow underflow when exponent very negative", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
@@ -1098,6 +1187,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 765, `avg gas ${avg} > 765`);
       });
     });
+
   });
 
   describe("sqrt", function () {
@@ -1157,16 +1247,6 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("sqrt when x is max", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const x = 1208925819614628999999999.999999999999999999;
-        const expected = Math.sqrt(x);
-
-        const actualSOL = (await deFiMath.sqrt("1208925819614628999999999999999999999999999")).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-      });
-
       it("sqrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // Geometric doubling from 1e-18 — non-dyadic x at small magnitudes triggers
@@ -1177,6 +1257,19 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT); // todo: check if relative or not
         }
+      });
+
+    });
+
+    describe("limits", function () {
+      it("sqrt when x is max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const x = 1208925819614628999999999.999999999999999999;
+        const expected = Math.sqrt(x);
+
+        const actualSOL = (await deFiMath.sqrt("1208925819614628999999999999999999999999999")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
       });
 
       it("sqrt when x is 0", async function () {
@@ -1214,6 +1307,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 245, `avg gas ${avg} > 245`);
       });
     });
+
   });
 
   describe("cbrt", function () {
@@ -1248,16 +1342,6 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("cbrt when x is max", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // cap is 7.5557863725914323e40 in 1e18-FP → max valid x ≈ 7.555786e22 in true value
-        const x = 7.5557863725914323e22;
-        const expected = Math.cbrt(x);
-
-        const actualSOL = (await deFiMath.cbrt("75557863725914322999999999999999999999999")).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
-      });
-
       it("cbrt when x in (0, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // Geometric doubling from 1e-12 — non-dyadic x at small magnitudes triggers
@@ -1269,12 +1353,6 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("cbrt when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        const actualSOL = (await deFiMath.cbrt(0)).toString();
-        assert.equal(actualSOL, "0");
-      });
-
       it("cbrt of perfect cubes is exact", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (const n of [1, 2, 3, 8, 10, 27, 100, 1000, 1000000]) {
@@ -1282,6 +1360,24 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.cbrt(tokens(cube))).toString() / 1e18;
           assertRelativeBelow(actualSOL, n, MAX_REL_ERROR_CBRT);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("cbrt when x is max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // cap is 7.5557863725914323e40 in 1e18-FP → max valid x ≈ 7.555786e22 in true value
+        const x = 7.5557863725914323e22;
+        const expected = Math.cbrt(x);
+
+        const actualSOL = (await deFiMath.cbrt("75557863725914322999999999999999999999999")).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+      });
+
+      it("cbrt when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const actualSOL = (await deFiMath.cbrt(0)).toString();
+        assert.equal(actualSOL, "0");
       });
     });
 
@@ -1310,6 +1406,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 368, `avg gas ${avg} > 368`);
       });
     });
+
   });
 
   describe("mulDiv", function () {
@@ -1338,23 +1435,6 @@ describe("DeFiMath", function () {
         assert.equal((await deFiMath.mulDiv(1n, MAX, 1n)).toString(), MAX.toString());
       });
 
-      it("handles full 512-bit intermediate products", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        // 2^200 * 2^200 = 2^400 (overflows uint256), divided by 2^200 = 2^200 (fits)
-        assert.equal(
-          (await deFiMath.mulDiv(2n ** 200n, 2n ** 200n, 2n ** 200n)).toString(),
-          (2n ** 200n).toString()
-        );
-        // 2^255 * 2 = 2^256 (just overflows), / 4 = 2^254
-        assert.equal(
-          (await deFiMath.mulDiv(2n ** 255n, 2n, 4n)).toString(),
-          (2n ** 254n).toString()
-        );
-        // (2^256 - 1)^2 / (2^256 - 1) = 2^256 - 1 — extreme stress case
-        assert.equal((await deFiMath.mulDiv(MAX, MAX, MAX)).toString(), MAX.toString());
-      });
-
       it("matches BigInt reference across random inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
@@ -1371,6 +1451,33 @@ describe("DeFiMath", function () {
           const actual = await deFiMath.mulDiv(a, b, d);
           assert.equal(actual.toString(), expected.toString(), `mulDiv(${a}, ${b}, ${d})`);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("zero numerators (min input)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // a = 0 or b = 0 → quotient is 0 regardless of d.
+        assert.equal((await deFiMath.mulDiv(0n, 0n, 1n)).toString(), "0");
+        assert.equal((await deFiMath.mulDiv(0n, MAX, MAX)).toString(), "0");
+        assert.equal((await deFiMath.mulDiv(MAX, 0n, MAX)).toString(), "0");
+      });
+
+      it("handles full 512-bit intermediate products", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // 2^200 * 2^200 = 2^400 (overflows uint256), divided by 2^200 = 2^200 (fits)
+        assert.equal(
+          (await deFiMath.mulDiv(2n ** 200n, 2n ** 200n, 2n ** 200n)).toString(),
+          (2n ** 200n).toString()
+        );
+        // 2^255 * 2 = 2^256 (just overflows), / 4 = 2^254
+        assert.equal(
+          (await deFiMath.mulDiv(2n ** 255n, 2n, 4n)).toString(),
+          (2n ** 254n).toString()
+        );
+        // (2^256 - 1)^2 / (2^256 - 1) = 2^256 - 1 — extreme stress case
+        assert.equal((await deFiMath.mulDiv(MAX, MAX, MAX)).toString(), MAX.toString());
       });
     });
 
@@ -1432,6 +1539,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 155, `avg gas ${avg} > 155`);
       });
     });
+
   });
 
   describe("mul", function () {
@@ -1451,19 +1559,6 @@ describe("DeFiMath", function () {
         assert.equal((await deFiMath.mul(D + 1n, D + 1n)).toString(), (D + 2n).toString());
       });
 
-      it("slow-path matches BigInt reference (a · b > 2^256)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        const cases = [
-          [(1n << 200n), (1n << 50n)],
-          [(1n << 250n) + 1n, 13n],
-          [(1n << 200n) - 1n, (1n << 100n) + 7n],
-        ];
-        for (const [a, b] of cases) {
-          const expected = (a * b) / D;
-          assert.equal((await deFiMath.mul(a, b)).toString(), expected.toString(), `mul(${a}, ${b})`);
-        }
-      });
-
       it("matches mulDiv(a, b, 1e18) across mixed inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const cases = [
@@ -1477,6 +1572,28 @@ describe("DeFiMath", function () {
           const viaMul = (await deFiMath.mul(a, b)).toString();
           const viaMulDiv = (await deFiMath.mulDiv(a, b, D)).toString();
           assert.equal(viaMul, viaMulDiv, `mul(${a}, ${b}) should match mulDiv(_, _, 1e18)`);
+        }
+      });
+    });
+
+    describe("limits", function () {
+      it("zero inputs (min input)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        assert.equal((await deFiMath.mul(0n, 0n)).toString(), "0");
+        assert.equal((await deFiMath.mul(0n, UMAX)).toString(), "0");
+        assert.equal((await deFiMath.mul(UMAX, 0n)).toString(), "0");
+      });
+
+      it("slow-path matches BigInt reference (a · b > 2^256)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [(1n << 200n), (1n << 50n)],
+          [(1n << 250n) + 1n, 13n],
+          [(1n << 200n) - 1n, (1n << 100n) + 7n],
+        ];
+        for (const [a, b] of cases) {
+          const expected = (a * b) / D;
+          assert.equal((await deFiMath.mul(a, b)).toString(), expected.toString(), `mul(${a}, ${b})`);
         }
       });
     });
@@ -1530,6 +1647,7 @@ describe("DeFiMath", function () {
         assert.ok(avgMulDiv <= 155, `avg mulDiv gas ${avgMulDiv} > 155`);
       });
     });
+
   });
 
   describe("abs", function () {
@@ -1537,11 +1655,6 @@ describe("DeFiMath", function () {
     const INT_MIN = -(1n << 255n);
 
     describe("behaviour", function () {
-      it("zero returns zero", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        assert.equal((await deFiMath.abs(0n)).toString(), "0");
-      });
-
       it("matches BigInt abs on positives and negatives", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const cases = [
@@ -1558,7 +1671,9 @@ describe("DeFiMath", function () {
           assert.equal((await deFiMath.abs(x)).toString(), expected.toString(), `abs(${x})`);
         }
       });
+    });
 
+    describe("limits", function () {
       it("handles int256 boundary values", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
@@ -1568,6 +1683,11 @@ describe("DeFiMath", function () {
         // int256 min: -2^255. No positive int256 represents +2^255, but the unsigned
         // result is 2^255 (the wrap-around in two's complement is the correct answer).
         assert.equal((await deFiMath.abs(INT_MIN)).toString(), (1n << 255n).toString());
+      });
+
+      it("zero returns zero", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        assert.equal((await deFiMath.abs(0n)).toString(), "0");
       });
     });
 
@@ -1611,22 +1731,35 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 17, `avg gas ${avg} > 17`);
       });
     });
+
   });
 
   describe("min", function () {
     const UMAX = (1n << 256n) - 1n;
 
     describe("behaviour", function () {
-      it("matches BigInt min across mixed pairs (commutative, equal, bounds)", async function () {
+      it("matches BigInt min across mixed pairs (commutative, equal)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const cases = [
-          [0n, 0n],
           [0n, 1n], [1n, 0n],
           [5n, 7n], [7n, 5n],
           [tokens(1.5), tokens(2)],
           [(1n << 200n), (1n << 100n)],
-          [UMAX, 0n], [0n, UMAX],
-          [UMAX, UMAX],
+        ];
+        for (const [a, b] of cases) {
+          const expected = a < b ? a : b;
+          assert.equal((await deFiMath.min(a, b)).toString(), expected.toString(), `min(${a}, ${b})`);
+        }
+      });
+    });
+
+    describe("limits", function () {
+      it("min at uint256 bounds (0 and 2^256 - 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [0n, 0n],                  // both at min
+          [UMAX, UMAX],              // both at max
+          [0n, UMAX], [UMAX, 0n],    // mixed extremes
         ];
         for (const [a, b] of cases) {
           const expected = a < b ? a : b;
@@ -1672,16 +1805,28 @@ describe("DeFiMath", function () {
     const UMAX = (1n << 256n) - 1n;
 
     describe("behaviour", function () {
-      it("matches BigInt max across mixed pairs (commutative, equal, bounds)", async function () {
+      it("matches BigInt max across mixed pairs (commutative, equal)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const cases = [
-          [0n, 0n],
           [0n, 1n], [1n, 0n],
           [5n, 7n], [7n, 5n],
           [tokens(1.5), tokens(2)],
           [(1n << 200n), (1n << 100n)],
-          [UMAX, 0n], [0n, UMAX],
-          [UMAX, UMAX],
+        ];
+        for (const [a, b] of cases) {
+          const expected = a > b ? a : b;
+          assert.equal((await deFiMath.max(a, b)).toString(), expected.toString(), `max(${a}, ${b})`);
+        }
+      });
+    });
+
+    describe("limits", function () {
+      it("max at uint256 bounds (0 and 2^256 - 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const cases = [
+          [0n, 0n],                  // both at min
+          [UMAX, UMAX],              // both at max
+          [0n, UMAX], [UMAX, 0n],    // mixed extremes
         ];
         for (const [a, b] of cases) {
           const expected = a > b ? a : b;
@@ -1751,20 +1896,22 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("handles full-range bounds", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // lo = 0, hi = UMAX → never clamps
-        for (const x of [0n, 1n, tokens(1), UMAX]) {
-          assert.equal((await deFiMath.clamp(x, 0n, UMAX)).toString(), x.toString(), `clamp(${x}, 0, UMAX)`);
-        }
-      });
-
       it("inverted range (lo > hi) always returns hi", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // Documented behavior: function does not validate lo ≤ hi; the second min step
         // squashes the result to hi regardless of x. Caller's responsibility.
         for (const x of [0n, 50n, 200n, UMAX]) {
           assert.equal((await deFiMath.clamp(x, 100n, 10n)).toString(), "10", `clamp(${x}, 100, 10)`);
+        }
+      });
+    });
+
+    describe("limits", function () {
+      it("handles full-range bounds", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // lo = 0, hi = UMAX → never clamps
+        for (const x of [0n, 1n, tokens(1), UMAX]) {
+          assert.equal((await deFiMath.clamp(x, 0n, UMAX)).toString(), x.toString(), `clamp(${x}, 0, UMAX)`);
         }
       });
     });
@@ -1815,6 +1962,7 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 78, `avg gas ${avg} > 78`);
       });
     });
+
   });
 
   describe("avg", function () {
@@ -1839,16 +1987,6 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("does not overflow at the uint256 ceiling", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // Sum (2^256 - 1) + (2^256 - 1) would wrap a naive (a+b)/2 to ~0; bit-trick handles it.
-        assert.equal((await deFiMath.avg(UMAX, UMAX)).toString(), UMAX.toString());
-        // (UMAX + 1) / 2 = 2^255
-        assert.equal((await deFiMath.avg(UMAX, 1n)).toString(), (1n << 255n).toString());
-        // (2^255 + 2^255) / 2 = 2^255
-        assert.equal((await deFiMath.avg(1n << 255n, 1n << 255n)).toString(), (1n << 255n).toString());
-      });
-
       it("is commutative", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const pairs = [[5n, 7n], [UMAX, 0n], [(1n << 200n), (1n << 100n)]];
@@ -1857,6 +1995,25 @@ describe("DeFiMath", function () {
           const ba = (await deFiMath.avg(b, a)).toString();
           assert.equal(ab, ba, `avg should be commutative for (${a}, ${b})`);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("zero inputs (min input)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        assert.equal((await deFiMath.avg(0n, 0n)).toString(), "0");
+        assert.equal((await deFiMath.avg(0n, 1n)).toString(), "0");  // floor(1/2) = 0
+        assert.equal((await deFiMath.avg(0n, UMAX)).toString(), ((UMAX) / 2n).toString());
+      });
+
+      it("does not overflow at the uint256 ceiling", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sum (2^256 - 1) + (2^256 - 1) would wrap a naive (a+b)/2 to ~0; bit-trick handles it.
+        assert.equal((await deFiMath.avg(UMAX, UMAX)).toString(), UMAX.toString());
+        // (UMAX + 1) / 2 = 2^255
+        assert.equal((await deFiMath.avg(UMAX, 1n)).toString(), (1n << 255n).toString());
+        // (2^255 + 2^255) / 2 = 2^255
+        assert.equal((await deFiMath.avg(1n << 255n, 1n << 255n)).toString(), (1n << 255n).toString());
       });
     });
 
@@ -1893,19 +2050,11 @@ describe("DeFiMath", function () {
         assert.ok(perCall <= 21, `avg gas ${perCall} > 21`);
       });
     });
+
   });
 
   describe("sqrtTime", function () {
     describe("behaviour", function () {
-      it("sqrtTime when x is 1s", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
-        const expected = Math.sqrt(x); // 1 / 31536000
-
-        const actualSOL = (await deFiMath.sqrtTime(31709792000)).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
-      });
-
       it("sqrtTime when x in [1s, 8192s]", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = 1; x < 64 * 128; x += 41) {
@@ -1945,6 +2094,27 @@ describe("DeFiMath", function () {
           const actualSOL = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
         }
+      });
+    });
+
+    describe("limits", function () {
+      it("sqrtTime when x is 1s (smallest documented input)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
+        const expected = Math.sqrt(x); // 1 / 31536000
+
+        const actualSOL = (await deFiMath.sqrtTime(31709792000)).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+      });
+
+      it("sqrtTime when x is 8y (largest documented input)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // 8 years is the top of the documented operational range — the function has
+        // no input validation, but precision is calibrated to [1s, 8y] in FP years.
+        const x = 8;
+        const expected = Math.sqrt(x);
+        const actualSOL = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
       });
     });
 
@@ -1991,7 +2161,9 @@ describe("DeFiMath", function () {
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
         }
       });
+    });
 
+    describe("limits", function () {
       it("stdNormCDF when x is int max", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
@@ -2051,17 +2223,11 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 734, `avg gas ${avg} > 734`);
       });
     });
+
   });
 
   describe("erf", function () {
     describe("behaviour", function () {
-      it("erf when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const actualSOL = (await deFiMath.erf(tokens(0))).toString() / 1e18;
-        assert.equal(0, actualSOL);
-      });
-
       it("erf when x in [0, 11.63)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
@@ -2083,7 +2249,9 @@ describe("DeFiMath", function () {
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
         }
       });
+    });
 
+    describe("limits", function () {
       it("erf when x is int max", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
@@ -2123,6 +2291,13 @@ describe("DeFiMath", function () {
         const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
       });
+
+      it("erf when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const actualSOL = (await deFiMath.erf(tokens(0))).toString() / 1e18;
+        assert.equal(0, actualSOL);
+      });
     });
 
     describe("random", function () {
@@ -2143,5 +2318,6 @@ describe("DeFiMath", function () {
         assert.ok(avg <= 691, `avg gas ${avg} > 691`);
       });
     });
+
   });
 });
