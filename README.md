@@ -17,7 +17,7 @@
 - **Unlocks new use cases.** Gas-efficient enough to make real-time options pricing, on-chain IV solving on every quote, and risk-adjusted vault fees economically viable. Use cases that were previously off-chain workarounds now fit in a single transaction.
 - **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
 - **Pure Solidity.** ~16KB published, zero runtime dependencies, easy to audit.
-- **Validated precision.** Sub-1e-10 absolute error on options pricing; sub-1e-12 on math primitives. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
+- **Validated precision.** Sub-1e-10 absolute error on options pricing; sub-1e-12 relative error on math primitives (absolute error for bounded functions like `stdNormCDF` and `erf`). Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
 
 ## Benchmarks
 
@@ -91,7 +91,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `clamp`      | 78   | exact   | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
 | `avg`        | 21   | exact   | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
 
-*Precision is max relative error vs. JS reference implementation. `exact` denotes integer-arithmetic functions with no approximation error.*
+*Precision is max relative error vs. JS reference implementation, except `stdNormCDF` and `erf` — both bounded in [0, 1] and [−1, 1] respectively, where the test suite measures max absolute error. `exact` denotes integer-arithmetic functions with no approximation error.*
 
 ### Derivatives — `DeFiMathOptions`, `DeFiMathBinary`, `DeFiMathFutures`
 
