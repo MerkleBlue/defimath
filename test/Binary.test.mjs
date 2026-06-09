@@ -575,7 +575,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 2092, `avg gas ${avg} > 2092`);
+        assert.equal(avg, 2092, `gas changed: ${avg} ≠ 2092 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -784,7 +784,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 2097, `avg gas ${avg} > 2097`);
+        assert.equal(avg, 2097, `gas changed: ${avg} ≠ 2097 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -985,7 +985,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 1825, `avg gas ${avg} > 1825`);
+        assert.equal(avg, 1825, `gas changed: ${avg} ≠ 1825 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1196,7 +1196,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 1967, `avg gas ${avg} > 1967`);
+        assert.equal(avg, 1967, `gas changed: ${avg} ≠ 1967 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1388,7 +1388,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 3501, `avg gas ${avg} > 3501`);
+        assert.equal(avg, 3501, `gas changed: ${avg} ≠ 3501 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1589,7 +1589,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 1913, `avg gas ${avg} > 1913`);
+        assert.equal(avg, 1913, `gas changed: ${avg} ≠ 1913 — deterministic, update threshold if intentional`);
       });
     });
   });

@@ -360,7 +360,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 2876, `avg gas ${avg} > 2876`);
+        assert.equal(avg, 2876, `gas changed: ${avg} ≠ 2876 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -549,7 +549,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 2887, `avg gas ${avg} > 2887`);
+        assert.equal(avg, 2887, `gas changed: ${avg} ≠ 2887 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -689,7 +689,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 1797, `avg gas ${avg} > 1797`);
+        assert.equal(avg, 1797, `gas changed: ${avg} ≠ 1797 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -816,7 +816,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 1499, `avg gas ${avg} > 1499`);
+        assert.equal(avg, 1499, `gas changed: ${avg} ≠ 1499 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -948,7 +948,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 3441, `avg gas ${avg} > 3441`);
+        assert.equal(avg, 3441, `gas changed: ${avg} ≠ 3441 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1075,7 +1075,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.ok(avg <= 1439, `avg gas ${avg} > 1439`);
+        assert.equal(avg, 1439, `gas changed: ${avg} ≠ 1439 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1247,8 +1247,8 @@ describe("DeFiMathOptions", function () {
         }
         const avgCall = Math.round(callGas / N);
         const avgPut  = Math.round(putGas / N);
-        assert.ok(avgCall <= 13100, `avg call gas ${avgCall} > 13100`);
-        assert.ok(avgPut  <= 13184, `avg put gas ${avgPut} > 13184`);
+        assert.equal(avgCall, 13100, `gas changed: ${avgCall} ≠ 13100 — deterministic, update threshold if intentional`);
+        assert.equal(avgPut, 13184, `gas changed: ${avgPut} ≠ 13184 — deterministic, update threshold if intentional`);
       });
     });
   });
