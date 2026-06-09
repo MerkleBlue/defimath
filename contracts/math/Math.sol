@@ -7,6 +7,30 @@ pragma solidity ^0.8.31;
 /// @dev All functions use fixed-point arithmetic with 18 decimals (1e18) and are optimized for gas efficiency.
 library DeFiMath {
 
+    // input limits
+
+    /// @notice Largest x where exp(x) still fits in uint256 fixed-point — exp reverts at or above this.
+    ///         Equals ⌊ln(2^256 / 1e18) · 1e18⌋ + 1 = floor(ln(2^256) · 1e18) at the wrap point.
+    uint256 internal constant EXP_UPPER_BOUND = 135.305999368893231589e18;
+
+    /// @notice Smallest |x| (negative side) where e^x silently underflows to 0 in 18-decimal fixed-point.
+    ///         Equals ⌊ln(1e18) · 1e18⌋ + 1 — below this, exp(-x) < 1e-18 and rounds to 0.
+    uint256 internal constant EXP_LOWER_BOUND = 41.446531673892822313e18;
+
+    /// @notice Largest sqrt input that keeps the squared output under 2^160 (and the answer under 2^40 in FP).
+    ///         Equals 2^80 in fixed-point (= 2^80 · 1e18).
+    uint256 internal constant SQRT_UPPER_BOUND = 1.208925819614629e42;
+
+    /// @notice Largest cbrt input that keeps the cubed output under 2^228 (and the answer under 2^26 in FP).
+    ///         Equals 2^76 in fixed-point (= 2^76 · 1e18).
+    uint256 internal constant CBRT_UPPER_BOUND = 7.5557863725914323e40;
+
+    // math constants
+
+    /// @notice ln(2) in 18-decimal fixed-point — used by exp's range reduction (x → x − k·ln 2)
+    ///         and by log2 (ln(x) / ln(2)).
+    uint256 internal constant LN_2 = 693147180559945309;
+
     // errors
     /// @notice Thrown when input to exp() exceeds the upper bound (~135)
     error ExpUpperBoundError();
@@ -19,12 +43,16 @@ library DeFiMath {
 
     /// @notice Thrown when input to sqrt() exceeds the upper bound (~2^80)
     error SqrtUpperBoundError();
+
+    /// @notice Thrown when input to cbrt() exceeds the upper bound (~2^76)
     error CbrtUpperBoundError();
 
     /// @notice Thrown when mulDiv() is called with denominator == 0
     error MulDivByZeroError();
+
     /// @notice Thrown when mulDiv() result would overflow uint256
     error MulDivOverflowError();
+    
     /// @notice Thrown when mul() result would overflow uint256
     error MulOverflowError();
 
@@ -38,10 +66,10 @@ library DeFiMath {
                 // positive
                 uint256 absX = uint256(x);                         // since x is positive, absX = x
 
-                if (absX >= 135305999368893231589) revert ExpUpperBoundError();
+                if (absX >= EXP_UPPER_BOUND) revert ExpUpperBoundError();
 
-                uint256 k = absX / 693147180559945309;             // find integer k
-                absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+                uint256 k = absX / LN_2;             // find integer k
+                absX -= k * LN_2;                    // reduce x to [0, ln(2)]
                 absX >>= 8;                                        // reduce x to [0, 0.0027]
 
 
@@ -71,10 +99,10 @@ library DeFiMath {
                 uint256 absX = uint256(-x);                         // since x is negative, absX = -x
 
                 // check input
-                if (absX >= 41446531673892822313) return 0;
+                if (absX >= EXP_LOWER_BOUND) return 0;
 
-                uint256 k = absX / 693147180559945309;             // find integer k
-                absX -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+                uint256 k = absX / LN_2;             // find integer k
+                absX -= k * LN_2;                    // reduce x to [0, ln(2)]
                 absX >>= 8;                                        // reduce x to [0, 0.0027]
 
 
@@ -260,7 +288,7 @@ library DeFiMath {
     function log2(uint256 x) internal pure returns (int256 y) {
         unchecked {
             // todo: inline
-            y = ln(x) * 1e18 / 693147180559945309;
+            y = ln(x) * 1e18 / int256(LN_2);
         }
     }
 
@@ -294,7 +322,7 @@ library DeFiMath {
         unchecked {
             if (x >= 1e18) {
                 // check input
-                if (x >= 1.208925819614629e42) revert SqrtUpperBoundError(); // up to 2^80
+                if (x >= SQRT_UPPER_BOUND) revert SqrtUpperBoundError(); // up to 2^80
 
                 assembly ("memory-safe") {
                     x := mul(x, 1000000000000000000) // convert to 1e36 base
@@ -341,7 +369,7 @@ library DeFiMath {
     function cbrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x == 0) return 0;
-            if (x >= 7.5557863725914323e40) revert CbrtUpperBoundError(); // up to 2^76
+            if (x >= CBRT_UPPER_BOUND) revert CbrtUpperBoundError(); // up to 2^76
 
             assembly ("memory-safe") {
                 x := mul(x, 1000000000000000000000000000000000000) // shift to 1e54 base
@@ -617,8 +645,8 @@ library DeFiMath {
             // The value of x' is calculated by subtracting k * ln(2) from x.
             // Credit for this method: https://xn--2-umb.com/22/exp-ln/
             // The range is then reduced to [0, 0.0027] by dividing x by 256. 
-            uint256 k = x / 693147180559945309;             // find integer k
-            x -= k * 693147180559945309;                    // reduce x to [0, ln(2)]
+            uint256 k = x / LN_2;             // find integer k
+            x -= k * LN_2;                    // reduce x to [0, ln(2)]
             x >>= 8;                                        // reduce x to [0, 0.0027]
 
 
