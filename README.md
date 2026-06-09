@@ -136,11 +136,11 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `mean`                     | 6,980 @ 30 elem    | 1.7e-16 | Arithmetic mean |
 | `stdDev`                   | 15,298 @ 30 elem   | 4.2e-16 | Sample std. dev. (Bessel-corrected) |
 | `weightedAverage`          | 15,687 @ 30 elem   | 2.8e-16 | Σ(v·w) / Σ(w) |
-| `historicalVolatility`     | 26,135 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
-| `sharpeRatio`              | 26,273 @ 30 prices | 2.2e-14 | Risk-adjusted return |
-| `maxDrawdown`              | 15,191 @ 30 prices | 9.9e-16 | Peak-to-trough decline |
-| `valueAtRisk`              | 36,752 @ 30 prices | 1.9e-14 | NumPy-compatible linear interpolation |
-| `conditionalValueAtRisk`   | 32,917 @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
+| `historicalVolatility`     | 25,915 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
+| `sharpeRatio`              | 26,053 @ 30 prices | 2.2e-14 | Risk-adjusted return |
+| `maxDrawdown`              | 15,470 @ 30 prices | 9.9e-16 | Peak-to-trough decline |
+| `valueAtRisk`              | 34,531 @ 30 prices | 1.9e-14 | NumPy-compatible linear interpolation |
+| `conditionalValueAtRisk`   | 31,889 @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
 
 *Precision is max relative error vs. JS reference (`simple-statistics` for `valueAtRisk`). Sub-1e-15 values are at IEEE 754 machine-epsilon precision (arithmetic-only operations).*
 

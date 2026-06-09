@@ -86,207 +86,21 @@ function jsSharpeRatio(prices, intervalSec, rfAnnual) {
 
 describe("DeFiMathStats", function () {
 
+  before(async function () {
+    // Pay the deploy + snapshot cost once so the first it() isn't charged with cold-start.
+    await loadFixture(deploy);
+  });
+
+
   async function deploy() {
     const StatsWrapper = await ethers.getContractFactory("StatsWrapper");
     const stats = await StatsWrapper.deploy();
     return { stats };
   }
 
-  describe("performance", function () {
-    describe("geometricMean", function () {
-      it("single", async function () {
-        const { stats } = await loadFixture(deploy);
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.geometricMeanMG(tokens(100), tokens(400))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
+  describe("geometricMean", function () {
 
-      it("multiple in typical range", async function () {
-        const { stats } = await loadFixture(deploy);
-        const pairs = [[100, 400], [1000, 1000], [0.5, 2], [1e6, 1e6], [1, 1e9]];
-        let totalGas = 0, count = 0;
-        for (const [a, b] of pairs) {
-          totalGas += parseInt((await stats.geometricMeanMG(tokens(a), tokens(b))).gasUsed);
-          count++;
-        }
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("weightedAverage", function () {
-      it("10-element array", async function () {
-        const { stats } = await loadFixture(deploy);
-        const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
-        const weights = Array.from({ length: 10 }, () => tokens(1));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.weightedAverageMG(values, weights)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100-element array", async function () {
-        const { stats } = await loadFixture(deploy);
-        const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
-        const weights = Array.from({ length: 100 }, () => tokens(1));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.weightedAverageMG(values, weights)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("mean", function () {
-      it("10-element array", async function () {
-        const { stats } = await loadFixture(deploy);
-        const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.meanMG(values)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100-element array", async function () {
-        const { stats } = await loadFixture(deploy);
-        const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.meanMG(values)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("stdDev", function () {
-      it("10-element array", async function () {
-        const { stats } = await loadFixture(deploy);
-        const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.stdDevMG(values)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100-element array", async function () {
-        const { stats } = await loadFixture(deploy);
-        const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.stdDevMG(values)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("historicalVolatility", function () {
-      it("30 daily prices", async function () {
-        const { stats } = await loadFixture(deploy);
-        // simulate 30 daily prices with small random walks around 100
-        const prices = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
-                        103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
-                        107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
-                       .map(p => tokens(p));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100 daily prices", async function () {
-        const { stats } = await loadFixture(deploy);
-        // generate 100 prices via simple cosine pattern around 100
-        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("sharpeRatio", function () {
-      it("30 daily prices, 5% rf", async function () {
-        const { stats } = await loadFixture(deploy);
-        const prices = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
-                        103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
-                        107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
-                       .map(p => tokens(p));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100 daily prices, 5% rf", async function () {
-        const { stats } = await loadFixture(deploy);
-        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("maxDrawdown", function () {
-      it("30 prices", async function () {
-        const { stats } = await loadFixture(deploy);
-        const equity = Array.from({ length: 30 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.maxDrawdownMG(equity)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100 prices", async function () {
-        const { stats } = await loadFixture(deploy);
-        const equity = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.maxDrawdownMG(equity)).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("valueAtRisk", function () {
-      it("30 daily prices, 95% confidence", async function () {
-        const { stats } = await loadFixture(deploy);
-        const prices = Array.from({ length: 30 }, (_, i) => tokens(100 + 2 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.valueAtRiskMG(prices, tokens(0.95))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100 daily prices, 95% confidence", async function () {
-        const { stats } = await loadFixture(deploy);
-        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.valueAtRiskMG(prices, tokens(0.95))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-
-    describe("conditionalValueAtRisk", function () {
-      it("30 daily prices, 95% confidence", async function () {
-        const { stats } = await loadFixture(deploy);
-        const prices = Array.from({ length: 30 }, (_, i) => tokens(100 + 2 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.conditionalValueAtRiskMG(prices, tokens(0.95))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-
-      it("100 daily prices, 95% confidence", async function () {
-        const { stats } = await loadFixture(deploy);
-        const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
-        let totalGas = 0, count = 0;
-        totalGas += parseInt((await stats.conditionalValueAtRiskMG(prices, tokens(0.95))).gasUsed);
-        count++;
-        console.log("Avg gas: ", Math.round(totalGas / count), "tests: ", count);
-      });
-    });
-  });
-
-  describe("functionality", function () {
-    describe("geometricMean", function () {
+    describe("behaviour", function () {
       it("sqrt(a · b) for known inputs", async function () {
         const { stats } = await loadFixture(deploy);
         // sqrt(100 · 400) = sqrt(40000) = 200
@@ -300,14 +114,6 @@ describe("DeFiMathStats", function () {
         assertRelativeBelow(actual, 1000, MAX_REL_ERROR_SQRT);
       });
 
-      it("returns 0 when either input is 0", async function () {
-        const { stats } = await loadFixture(deploy);
-        const actualA = (await stats.geometricMean(0, tokens(100))).toString() / 1e18;
-        assert.equal(actualA, 0);
-        const actualB = (await stats.geometricMean(tokens(100), 0)).toString() / 1e18;
-        assert.equal(actualB, 0);
-      });
-
       it("typical range", async function () {
         const { stats } = await loadFixture(deploy);
         const pairs = [[1, 4], [0.5, 2], [100, 1000], [1e-6, 1e-2], [1e6, 1e9]];
@@ -317,21 +123,66 @@ describe("DeFiMathStats", function () {
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
         }
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when a exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.geometricMean("1000000000000000000000000000000001", tokens(100)), "ValueUpperBoundError");
-        });
+    describe("limits", function () {
+      it("returns 0 when either input is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        const actualA = (await stats.geometricMean(0, tokens(100))).toString() / 1e18;
+        assert.equal(actualA, 0);
+        const actualB = (await stats.geometricMean(tokens(100), 0)).toString() / 1e18;
+        assert.equal(actualB, 0);
+      });
 
-        it("rejects when b exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.geometricMean(tokens(100), "1000000000000000000000000000000001"), "ValueUpperBoundError");
-        });
+      it("asymmetric near limit (a at MAX_VALUE = 1e15, b = 1e9)", async function () {
+        const { stats } = await loadFixture(deploy);
+        // MAX_VALUE per-input is 1e15 (FP) = 1e33 wei. But geometricMean internally calls
+        // sqrt(a · b / 1e18) which itself reverts above 2^80 ≈ 1.2089e24 (FP) ≈ 1.2089e42 wei.
+        // → effective joint bound: a · b ≤ 1.2089e60 wei. With a at MAX, b must be ≤ ~1.2e9.
+        // Test the asymmetric corner where one side is at MAX.
+        const MAX = "1000000000000000000000000000000000";  // 1e15 FP
+        const actual = (await stats.geometricMean(MAX, tokens(1e9))).toString() / 1e18;
+        assertRelativeBelow(actual, Math.sqrt(1e15 * 1e9), MAX_REL_ERROR_SQRT);
+      });
+
+      it("symmetric near limit (a = b at sqrt bound)", async function () {
+        const { stats } = await loadFixture(deploy);
+        // Largest a = b is bounded by a² · 1e18 ≤ SQRT_UPPER_BOUND wei ≈ 1.21e42, so a ≤ ~1.1e12.
+        const actual = (await stats.geometricMean(tokens(1e12), tokens(1e12))).toString() / 1e18;
+        assertRelativeBelow(actual, 1e12, MAX_REL_ERROR_SQRT);
       });
     });
 
-    describe("weightedAverage", function () {
+    describe("failure", function () {
+      it("rejects when a exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.geometricMean("1000000000000000000000000000000001", tokens(100)), "ValueUpperBoundError");
+      });
+
+      it("rejects when b exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.geometricMean(tokens(100), "1000000000000000000000000000000001"), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("geometricMean across 5 representative pairs — 330 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pairs = [[100, 400], [1000, 1000], [0.5, 2], [1e6, 1e6], [1, 1e9]];
+        let totalGas = 0, count = 0;
+        for (const [a, b] of pairs) {
+          totalGas += parseInt((await stats.geometricMeanMG(tokens(a), tokens(b))).gasUsed);
+          count++;
+        }
+        const avg = Math.round(totalGas / count);
+        assert.equal(avg, 330, `gas changed: ${avg} ≠ 330 — deterministic, update threshold if intentional`);
+      });
+    });
+  });
+
+  describe("weightedAverage", function () {
+
+    describe("behaviour", function () {
       it("equal weights reduce to arithmetic mean", async function () {
         const { stats } = await loadFixture(deploy);
         const values = [10, 20, 30, 40].map(v => tokens(v));
@@ -350,12 +201,6 @@ describe("DeFiMathStats", function () {
         const weights = weightsJS.map(w => tokens(w));
         const actual = (await stats.weightedAverage(values, weights)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
-      });
-
-      it("single-element array returns the value", async function () {
-        const { stats } = await loadFixture(deploy);
-        const actual = (await stats.weightedAverage([tokens(42)], [tokens(7)])).toString() / 1e18;
-        assert.equal(actual, 42);
       });
 
       it("zero weights are skipped (effectively)", async function () {
@@ -377,53 +222,109 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.weightedAverage(values, weights)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when arrays empty", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.weightedAverage([], []), "ArrayLengthLowerBoundError");
-        });
+    describe("limits", function () {
+      it("single-element array returns the value", async function () {
+        const { stats } = await loadFixture(deploy);
+        const actual = (await stats.weightedAverage([tokens(42)], [tokens(7)])).toString() / 1e18;
+        assert.equal(actual, 42);
+      });
 
-        it("rejects when arrays mismatched in length", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.weightedAverage([tokens(1), tokens(2)], [tokens(1)]), "ArrayLengthMismatchError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 elements)", async function () {
+        const { stats } = await loadFixture(deploy);
+        // MAX_ARRAY_LENGTH = 1024 + 1 — largest valid array is 1024 elements.
+        const valuesJS = Array.from({ length: 1024 }, (_, i) => 100 + (i % 10));
+        const weightsJS = Array.from({ length: 1024 }, (_, i) => 1 + (i % 5));
+        const expected = jsWeightedAverage(valuesJS, weightsJS);
+        const values = valuesJS.map(v => tokens(v));
+        const weights = weightsJS.map(w => tokens(w));
+        const actual = (await stats.weightedAverage(values, weights)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
+      });
 
-        it("rejects when array length exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(1));
-          await assertRevertError(stats, stats.weightedAverage(big, big), "ArrayLengthUpperBoundError");
-        });
+      it("values at MAX_VALUE (1e15)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const MAX = "1000000000000000000000000000000000";
+        const values = [MAX, MAX, MAX];
+        const weights = [tokens(1), tokens(2), tokens(3)];
+        // weighted average of identical values is the value itself
+        const actual = (await stats.weightedAverage(values, weights)).toString() / 1e18;
+        assert.equal(actual, 1e15);
+      });
 
-        it("rejects when all weights are zero", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.weightedAverage([tokens(1), tokens(2)], [0, 0]), "WeightSumZeroError");
-        });
-
-        it("rejects when a value exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.weightedAverage(["1000000000000000000000000000000001"], [tokens(1)]), "ValueUpperBoundError");
-        });
-
-        it("rejects when a weight exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.weightedAverage([tokens(1)], ["1000000000000000000000000000000001"]), "ValueUpperBoundError");
-        });
+      it("weights at MAX_VALUE (1e15)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const MAX = "1000000000000000000000000000000000";
+        const values = [tokens(100), tokens(200), tokens(300)];
+        const weights = [MAX, MAX, MAX];
+        // equal weights → arithmetic mean = 200
+        const actual = (await stats.weightedAverage(values, weights)).toString() / 1e18;
+        assertRelativeBelow(actual, 200, MAX_REL_ERROR_AGG);
       });
     });
 
-    describe("mean", function () {
+    describe("failure", function () {
+      it("rejects when arrays empty", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.weightedAverage([], []), "ArrayLengthLowerBoundError");
+      });
+
+      it("rejects when arrays mismatched in length", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.weightedAverage([tokens(1), tokens(2)], [tokens(1)]), "ArrayLengthMismatchError");
+      });
+
+      it("rejects when array length exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const big = Array.from({ length: 1025 }, () => tokens(1));
+        await assertRevertError(stats, stats.weightedAverage(big, big), "ArrayLengthUpperBoundError");
+      });
+
+      it("rejects when all weights are zero", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.weightedAverage([tokens(1), tokens(2)], [0, 0]), "WeightSumZeroError");
+      });
+
+      it("rejects when a value exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.weightedAverage(["1000000000000000000000000000000001"], [tokens(1)]), "ValueUpperBoundError");
+      });
+
+      it("rejects when a weight exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.weightedAverage([tokens(1)], ["1000000000000000000000000000000001"]), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("weightedAverage at N=10 and N=100 — 5387 / 51737 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
+          const weights = Array.from({ length: 10 }, () => tokens(1));
+          const gas = parseInt((await stats.weightedAverageMG(values, weights)).gasUsed);
+          assert.equal(gas, 5387, `gas changed: ${gas} ≠ 5387 (N=10) — deterministic, update threshold if intentional`);
+        }
+        {
+          const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
+          const weights = Array.from({ length: 100 }, () => tokens(1));
+          const gas = parseInt((await stats.weightedAverageMG(values, weights)).gasUsed);
+          assert.equal(gas, 51737, `gas changed: ${gas} ≠ 51737 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("mean", function () {
+
+    describe("behaviour", function () {
       it("simple arithmetic mean", async function () {
         const { stats } = await loadFixture(deploy);
         const values = [10, 20, 30, 40].map(v => tokens(v));
         const actual = (await stats.mean(values)).toString() / 1e18;
         assert.equal(actual, 25);
-      });
-
-      it("single-element array returns the value", async function () {
-        const { stats } = await loadFixture(deploy);
-        const actual = (await stats.mean([tokens(42)])).toString() / 1e18;
-        assert.equal(actual, 42);
       });
 
       it("array of zeros returns zero", async function () {
@@ -440,43 +341,72 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.mean(values)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when array empty", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.mean([]), "ArrayLengthLowerBoundError");
-        });
+    describe("limits", function () {
+      it("single-element array returns the value", async function () {
+        const { stats } = await loadFixture(deploy);
+        const actual = (await stats.mean([tokens(42)])).toString() / 1e18;
+        assert.equal(actual, 42);
+      });
 
-        it("rejects when array length exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(1));
-          await assertRevertError(stats, stats.mean(big), "ArrayLengthUpperBoundError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 elements)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const valuesJS = Array.from({ length: 1024 }, (_, i) => 100 + (i % 10));
+        const expected = jsMean(valuesJS);
+        const values = valuesJS.map(v => tokens(v));
+        const actual = (await stats.mean(values)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
+      });
 
-        it("rejects when a value exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.mean(["1000000000000000000000000000000001"]), "ValueUpperBoundError");
-        });
+      it("values at MAX_VALUE (1e15)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const MAX = "1000000000000000000000000000000000";
+        // mean of identical values = the value
+        const actual = (await stats.mean([MAX, MAX, MAX])).toString() / 1e18;
+        assert.equal(actual, 1e15);
       });
     });
 
-    describe("stdDev", function () {
-      it("two-element array (smallest sample)", async function () {
+    describe("failure", function () {
+      it("rejects when array empty", async function () {
         const { stats } = await loadFixture(deploy);
-        // stdDev([10, 14]) = sqrt((4+4)/1) = sqrt(8) ≈ 2.828
-        const values = [10, 14].map(v => tokens(v));
-        const expected = jsStdDev([10, 14]);
-        const actual = (await stats.stdDev(values)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        await assertRevertError(stats, stats.mean([]), "ArrayLengthLowerBoundError");
       });
 
-      it("array of equal values returns 0", async function () {
+      it("rejects when array length exceeds max", async function () {
         const { stats } = await loadFixture(deploy);
-        const values = [100, 100, 100, 100].map(v => tokens(v));
-        const actual = (await stats.stdDev(values)).toString() / 1e18;
-        assert.equal(actual, 0);
+        const big = Array.from({ length: 1025 }, () => tokens(1));
+        await assertRevertError(stats, stats.mean(big), "ArrayLengthUpperBoundError");
       });
 
+      it("rejects when a value exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.mean(["1000000000000000000000000000000001"]), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("mean at N=10 and N=100 — 2440 / 22870 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
+          const gas = parseInt((await stats.meanMG(values)).gasUsed);
+          assert.equal(gas, 2440, `gas changed: ${gas} ≠ 2440 (N=10) — deterministic, update threshold if intentional`);
+        }
+        {
+          const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
+          const gas = parseInt((await stats.meanMG(values)).gasUsed);
+          assert.equal(gas, 22870, `gas changed: ${gas} ≠ 22870 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("stdDev", function () {
+
+    describe("behaviour", function () {
       it("known std-dev case", async function () {
         const { stats } = await loadFixture(deploy);
         // Sample [2, 4, 4, 4, 5, 5, 7, 9] has sample stdDev = 2 (textbook example)
@@ -495,51 +425,89 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.stdDev(values)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
-
-      describe("failure", function () {
-        it("rejects when array empty", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.stdDev([]), "ArrayLengthLowerBoundError");
-        });
-
-        it("rejects when array has only one element", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.stdDev([tokens(1)]), "ArrayLengthLowerBoundError");
-        });
-
-        it("rejects when array length exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(1));
-          await assertRevertError(stats, stats.stdDev(big), "ArrayLengthUpperBoundError");
-        });
-
-        it("rejects when a value exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.stdDev(["1000000000000000000000000000000001", tokens(1)]), "ValueUpperBoundError");
-        });
-      });
     });
 
-    describe("historicalVolatility", function () {
-      const SEC_PER_DAY = 86400;
-      const SEC_PER_YEAR_LOCAL = 31536000;
-
-      it("constant prices return 0 volatility", async function () {
+    describe("limits", function () {
+      it("two-element array (smallest sample)", async function () {
         const { stats } = await loadFixture(deploy);
-        const prices = [100, 100, 100, 100, 100].map(p => tokens(p));
-        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
-        assert.equal(actual, 0);
-      });
-
-      it("minimum sample size (3 prices, 2 returns)", async function () {
-        const { stats } = await loadFixture(deploy);
-        const pricesJS = [100, 105, 102];
-        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
-        const prices = pricesJS.map(p => tokens(p));
-        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        // stdDev([10, 14]) = sqrt((4+4)/1) = sqrt(8) ≈ 2.828
+        const values = [10, 14].map(v => tokens(v));
+        const expected = jsStdDev([10, 14]);
+        const actual = (await stats.stdDev(values)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
 
+      it("array of equal values returns 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        const values = [100, 100, 100, 100].map(v => tokens(v));
+        const actual = (await stats.stdDev(values)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+
+      it("at MAX_ARRAY_LENGTH (1024 elements)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const valuesJS = Array.from({ length: 1024 }, (_, i) => 100 + (i % 20));
+        const expected = jsStdDev(valuesJS);
+        const values = valuesJS.map(v => tokens(v));
+        const actual = (await stats.stdDev(values)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("values at MAX_VALUE (1e15) — all equal returns 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        const MAX = "1000000000000000000000000000000000";
+        // identical values at MAX → variance 0 → stdDev 0 (no overflow on diff²)
+        const actual = (await stats.stdDev([MAX, MAX, MAX])).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
+    });
+
+    describe("failure", function () {
+      it("rejects when array empty", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.stdDev([]), "ArrayLengthLowerBoundError");
+      });
+
+      it("rejects when array has only one element", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.stdDev([tokens(1)]), "ArrayLengthLowerBoundError");
+      });
+
+      it("rejects when array length exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const big = Array.from({ length: 1025 }, () => tokens(1));
+        await assertRevertError(stats, stats.stdDev(big), "ArrayLengthUpperBoundError");
+      });
+
+      it("rejects when a value exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.stdDev(["1000000000000000000000000000000001", tokens(1)]), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("stdDev at N=10 and N=100 — 5441 / 49811 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
+          const gas = parseInt((await stats.stdDevMG(values)).gasUsed);
+          assert.equal(gas, 5441, `gas changed: ${gas} ≠ 5441 (N=10) — deterministic, update threshold if intentional`);
+        }
+        {
+          const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
+          const gas = parseInt((await stats.stdDevMG(values)).gasUsed);
+          assert.equal(gas, 49811, `gas changed: ${gas} ≠ 49811 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("historicalVolatility", function () {
+    const SEC_PER_DAY = 86400;
+    const SEC_PER_YEAR_LOCAL = 31536000;
+
+    describe("behaviour", function () {
       it("daily prices, 1-day interval, against JS reference", async function () {
         const { stats } = await loadFixture(deploy);
         // 30 daily price observations with realistic-ish returns
@@ -588,47 +556,105 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when prices array has fewer than 3 entries", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.historicalVolatility([], 86400), "ArrayLengthLowerBoundError");
-          await assertRevertError(stats, stats.historicalVolatility([tokens(100)], 86400), "ArrayLengthLowerBoundError");
-          await assertRevertError(stats, stats.historicalVolatility([tokens(100), tokens(101)], 86400), "ArrayLengthLowerBoundError");
-        });
+    describe("limits", function () {
+      it("constant prices return 0 volatility", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 100, 100, 100, 100].map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
 
-        it("rejects when array length exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(100));
-          await assertRevertError(stats, stats.historicalVolatility(big, 86400), "ArrayLengthUpperBoundError");
-        });
+      it("minimum sample size (3 prices, 2 returns)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 105, 102];
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
 
-        it("rejects when intervalSec is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          const prices = [100, 105, 102].map(p => tokens(p));
-          await assertRevertError(stats, stats.historicalVolatility(prices, 0), "IntervalLowerBoundError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 prices)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 1024 }, (_, i) => 100 + 5 * Math.cos(i * 0.3));
+        const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
 
-        it("rejects when any price is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.historicalVolatility([0, tokens(100), tokens(101)], 86400), "PriceLowerBoundError");
-          await assertRevertError(stats, stats.historicalVolatility([tokens(100), 0, tokens(101)], 86400), "PriceLowerBoundError");
-          await assertRevertError(stats, stats.historicalVolatility([tokens(100), tokens(101), 0], 86400), "PriceLowerBoundError");
-        });
-
-        it("rejects when a price exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.historicalVolatility(["1000000000000000000000000000000001", tokens(100), tokens(101)], 86400), "ValueUpperBoundError");
-          // non-first price over max — exercises the in-loop check
-          await assertRevertError(stats, stats.historicalVolatility([tokens(100), "1000000000000000000000000000000001", tokens(101)], 86400), "ValueUpperBoundError");
-        });
+      it("intervalSec = 1 (smallest valid interval)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 105, 102, 108, 106];
+        const expected = jsHistoricalVolatility(pricesJS, 1);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.historicalVolatility(prices, 1)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
     });
 
-    describe("sharpeRatio", function () {
-      const SEC_PER_DAY = 86400;
-      const SEC_PER_YEAR_LOCAL = 31536000;
+    describe("failure", function () {
+      it("rejects when prices array has fewer than 3 entries", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.historicalVolatility([], 86400), "ArrayLengthLowerBoundError");
+        await assertRevertError(stats, stats.historicalVolatility([tokens(100)], 86400), "ArrayLengthLowerBoundError");
+        await assertRevertError(stats, stats.historicalVolatility([tokens(100), tokens(101)], 86400), "ArrayLengthLowerBoundError");
+      });
 
+      it("rejects when array length exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const big = Array.from({ length: 1025 }, () => tokens(100));
+        await assertRevertError(stats, stats.historicalVolatility(big, 86400), "ArrayLengthUpperBoundError");
+      });
+
+      it("rejects when intervalSec is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 105, 102].map(p => tokens(p));
+        await assertRevertError(stats, stats.historicalVolatility(prices, 0), "IntervalLowerBoundError");
+      });
+
+      it("rejects when any price is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.historicalVolatility([0, tokens(100), tokens(101)], 86400), "PriceLowerBoundError");
+        await assertRevertError(stats, stats.historicalVolatility([tokens(100), 0, tokens(101)], 86400), "PriceLowerBoundError");
+        await assertRevertError(stats, stats.historicalVolatility([tokens(100), tokens(101), 0], 86400), "PriceLowerBoundError");
+      });
+
+      it("rejects when a price exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.historicalVolatility(["1000000000000000000000000000000001", tokens(100), tokens(101)], 86400), "ValueUpperBoundError");
+        // non-first price over max — exercises the in-loop check
+        await assertRevertError(stats, stats.historicalVolatility([tokens(100), "1000000000000000000000000000000001", tokens(101)], 86400), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("historicalVolatility at N=30 and N=100 — 25915 / 86595 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const prices = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
+                          103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
+                          107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
+                         .map(p => tokens(p));
+          const gas = parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
+          assert.equal(gas, 25915, `gas changed: ${gas} ≠ 25915 (N=30) — deterministic, update threshold if intentional`);
+        }
+        {
+          const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
+          assert.equal(gas, 86595, `gas changed: ${gas} ≠ 86595 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("sharpeRatio", function () {
+    const SEC_PER_DAY = 86400;
+    const SEC_PER_YEAR_LOCAL = 31536000;
+
+    describe("behaviour", function () {
       it("positive Sharpe for upward trend with low rf", async function () {
         const { stats } = await loadFixture(deploy);
         // 30 prices trending upward + some noise
@@ -682,52 +708,103 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when prices array has fewer than 3 entries", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.sharpeRatio([tokens(100), tokens(101)], 86400, tokens(0.05)), "ArrayLengthLowerBoundError");
-        });
+    describe("limits", function () {
+      it("minimum sample size (3 prices, 2 returns)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = [100, 105, 102];
+        const rfAnnual = 0.05;
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
 
-        it("rejects when array length exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(100));
-          await assertRevertError(stats, stats.sharpeRatio(big, 86400, tokens(0.05)), "ArrayLengthUpperBoundError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 prices)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 1024 }, (_, i) => 100 + 5 * Math.cos(i * 0.3) + i * 0.01);
+        const rfAnnual = 0.05;
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
 
-        it("rejects when intervalSec is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          const prices = [100, 105, 102].map(p => tokens(p));
-          await assertRevertError(stats, stats.sharpeRatio(prices, 0, tokens(0.05)), "IntervalLowerBoundError");
-        });
-
-        it("rejects when rf exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const prices = [100, 105, 102].map(p => tokens(p));
-          await assertRevertError(stats, stats.sharpeRatio(prices, SEC_PER_DAY, "4000000000000000001"), "RateUpperBoundError");
-        });
-
-        it("rejects when stdDev = 0 (constant prices)", async function () {
-          const { stats } = await loadFixture(deploy);
-          const prices = [100, 100, 100, 100].map(p => tokens(p));
-          await assertRevertError(stats, stats.sharpeRatio(prices, SEC_PER_DAY, tokens(0.05)), "VolatilityZeroError");
-        });
-
-        it("rejects when any price is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.sharpeRatio([0, tokens(100), tokens(101)], 86400, tokens(0.05)), "PriceLowerBoundError");
-        });
+      it("rfAnnual just below MAX_RATE (4 = 400%)", async function () {
+        const { stats } = await loadFixture(deploy);
+        // MAX_RATE = 4e18 + 1, so largest valid rfAnnual is 4e18 wei (= 4.0 in FP, 400%).
+        // At this extreme rf, the (mean - rf) numerator becomes ~-4 while stdDev is small —
+        // small absolute errors get amplified into ~1e-12 relative noise. Threshold reflects that.
+        const pricesJS = [100, 101, 102, 103, 104];
+        const rfAnnual = 4;
+        const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, 1e-11);
       });
     });
 
-    describe("maxDrawdown", function () {
-      it("monotonically increasing equity → 0 drawdown", async function () {
+    describe("failure", function () {
+      it("rejects when prices array has fewer than 3 entries", async function () {
         const { stats } = await loadFixture(deploy);
-        const equity = [100, 101, 102, 103, 105, 110].map(v => tokens(v));
-        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
-        assert.equal(actual, 0);
+        await assertRevertError(stats, stats.sharpeRatio([tokens(100), tokens(101)], 86400, tokens(0.05)), "ArrayLengthLowerBoundError");
       });
 
+      it("rejects when array length exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const big = Array.from({ length: 1025 }, () => tokens(100));
+        await assertRevertError(stats, stats.sharpeRatio(big, 86400, tokens(0.05)), "ArrayLengthUpperBoundError");
+      });
+
+      it("rejects when intervalSec is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 105, 102].map(p => tokens(p));
+        await assertRevertError(stats, stats.sharpeRatio(prices, 0, tokens(0.05)), "IntervalLowerBoundError");
+      });
+
+      it("rejects when rf exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 105, 102].map(p => tokens(p));
+        await assertRevertError(stats, stats.sharpeRatio(prices, SEC_PER_DAY, "4000000000000000001"), "RateUpperBoundError");
+      });
+
+      it("rejects when stdDev = 0 (constant prices)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const prices = [100, 100, 100, 100].map(p => tokens(p));
+        await assertRevertError(stats, stats.sharpeRatio(prices, SEC_PER_DAY, tokens(0.05)), "VolatilityZeroError");
+      });
+
+      it("rejects when any price is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.sharpeRatio([0, tokens(100), tokens(101)], 86400, tokens(0.05)), "PriceLowerBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("sharpeRatio at N=30 and N=100, 5% rf — 26053 / 86733 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const prices = [100, 101.2, 100.5, 102.1, 101.8, 102.5, 103.1, 102.8, 103.5, 104.2,
+                          103.8, 104.5, 105.1, 104.8, 105.5, 106.2, 105.8, 106.5, 107.1, 106.8,
+                          107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
+                         .map(p => tokens(p));
+          const gas = parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
+          assert.equal(gas, 26053, `gas changed: ${gas} ≠ 26053 (N=30) — deterministic, update threshold if intentional`);
+        }
+        {
+          const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
+          assert.equal(gas, 86733, `gas changed: ${gas} ≠ 86733 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("maxDrawdown", function () {
+
+    describe("behaviour", function () {
       it("known case: 100 → 50 → 80 → drawdown = 50%", async function () {
         const { stats } = await loadFixture(deploy);
         const equity = [100, 50, 80].map(v => tokens(v));
@@ -762,36 +839,91 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_AGG);
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when array has fewer than 2 entries", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.maxDrawdown([]), "ArrayLengthLowerBoundError");
-          await assertRevertError(stats, stats.maxDrawdown([tokens(100)]), "ArrayLengthLowerBoundError");
-        });
+    describe("limits", function () {
+      it("monotonically increasing equity → 0 drawdown", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equity = [100, 101, 102, 103, 105, 110].map(v => tokens(v));
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assert.equal(actual, 0);
+      });
 
-        it("rejects when array exceeds max length", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(100));
-          await assertRevertError(stats, stats.maxDrawdown(big), "ArrayLengthUpperBoundError");
-        });
+      it("minimum 2-element series", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 100 → 50 → drawdown = 50%
+        const equity = [100, 50].map(v => tokens(v));
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assertRelativeBelow(actual, 0.5, MAX_REL_ERROR_AGG);
+      });
 
-        it("rejects when any equity is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.maxDrawdown([0, tokens(100)]), "PriceLowerBoundError");
-          await assertRevertError(stats, stats.maxDrawdown([tokens(100), 0]), "PriceLowerBoundError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 elements)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const equityJS = Array.from({ length: 1024 }, (_, i) => 100 + 5 * Math.cos(i * 0.3));
+        const expected = jsMaxDrawdown(equityJS);
+        const equity = equityJS.map(v => tokens(v));
+        const actual = (await stats.maxDrawdown(equity)).toString() / 1e18;
+        assertRelativeBelow(actual, expected, 2e-15);
+      });
 
-        it("rejects when equity exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.maxDrawdown(["1000000000000000000000000000000001", tokens(100)]), "ValueUpperBoundError");
-          // non-first equity over max — exercises the in-loop check
-          await assertRevertError(stats, stats.maxDrawdown([tokens(100), "1000000000000000000000000000000001"]), "ValueUpperBoundError");
-        });
+      it("values at MAX_VALUE (1e15)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const MAX = "1000000000000000000000000000000000";
+        const HALF_MAX = "500000000000000000000000000000000";  // 5e14 in FP
+        // 1e15 → 5e14 → 50% drawdown, regardless of absolute scale
+        const actual = (await stats.maxDrawdown([MAX, HALF_MAX])).toString() / 1e18;
+        assertRelativeBelow(actual, 0.5, MAX_REL_ERROR_AGG);
       });
     });
 
-    describe("valueAtRisk", function () {
+    describe("failure", function () {
+      it("rejects when array has fewer than 2 entries", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.maxDrawdown([]), "ArrayLengthLowerBoundError");
+        await assertRevertError(stats, stats.maxDrawdown([tokens(100)]), "ArrayLengthLowerBoundError");
+      });
+
+      it("rejects when array exceeds max length", async function () {
+        const { stats } = await loadFixture(deploy);
+        const big = Array.from({ length: 1025 }, () => tokens(100));
+        await assertRevertError(stats, stats.maxDrawdown(big), "ArrayLengthUpperBoundError");
+      });
+
+      it("rejects when any equity is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.maxDrawdown([0, tokens(100)]), "PriceLowerBoundError");
+        await assertRevertError(stats, stats.maxDrawdown([tokens(100), 0]), "PriceLowerBoundError");
+      });
+
+      it("rejects when equity exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.maxDrawdown(["1000000000000000000000000000000001", tokens(100)]), "ValueUpperBoundError");
+        // non-first equity over max — exercises the in-loop check
+        await assertRevertError(stats, stats.maxDrawdown([tokens(100), "1000000000000000000000000000000001"]), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("maxDrawdown at N=30 and N=100 — 15470 / 51950 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const equity = Array.from({ length: 30 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.maxDrawdownMG(equity)).gasUsed);
+          assert.equal(gas, 15470, `gas changed: ${gas} ≠ 15470 (N=30) — deterministic, update threshold if intentional`);
+        }
+        {
+          const equity = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.maxDrawdownMG(equity)).gasUsed);
+          assert.equal(gas, 51950, `gas changed: ${gas} ≠ 51950 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("valueAtRisk", function () {
+
+    describe("behaviour", function () {
       it("95% VaR on known series matches JS", async function () {
         const { stats } = await loadFixture(deploy);
         const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100,
@@ -820,6 +952,9 @@ describe("DeFiMathStats", function () {
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
 
+    });
+
+    describe("limits", function () {
       it("handles the minimum 2-price series", async function () {
         const { stats } = await loadFixture(deploy);
         // 2 prices → 1 log return; k clamps to n-1=0, K=0 ≠ k+1 → exercises the boundary (no-interp) path
@@ -827,31 +962,80 @@ describe("DeFiMathStats", function () {
         assertRelativeBelow(actual, Math.log(90 / 100), MAX_REL_ERROR_SQRT);
       });
 
-      describe("failure", function () {
-        it("rejects when confidence is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], 0), "ConfidenceOutOfRangeError");
-        });
+      it("confidence just above 0 (1 wei = 1e-18) — returns max log return", async function () {
+        const { stats } = await loadFixture(deploy);
+        // confidence ≈ 0 → quantile(returns, 1 - 0) = quantile(returns, 1) = max(returns)
+        const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100];
+        const expected = jsValueAtRisk(pricesJS, 1e-18);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.valueAtRisk(prices, "1")).toString() / 1e18;
+        assertAbsoluteBelow(actual, expected, 1e-12);
+      });
 
-        it("rejects when confidence >= 1", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], tokens(1)), "ConfidenceOutOfRangeError");
-          await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], "1000000000000000001"), "ConfidenceOutOfRangeError");
-        });
+      it("confidence just below 1 (1 - 1 wei) — returns min log return", async function () {
+        const { stats } = await loadFixture(deploy);
+        // confidence ≈ 1 → quantile(returns, 1 - 1) = quantile(returns, 0) = min(returns)
+        const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100];
+        const expected = jsValueAtRisk(pricesJS, 1 - 1e-18);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.valueAtRisk(prices, "999999999999999999")).toString() / 1e18;
+        assertAbsoluteBelow(actual, expected, 1e-12);
+      });
 
-        it("rejects when array has fewer than 2 prices", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.valueAtRisk([tokens(100)], tokens(0.95)), "ArrayLengthLowerBoundError");
-        });
-
-        it("rejects when any price is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.valueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 prices)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 1024 }, (_, i) => 100 + 2 * Math.cos(i * 0.3));
+        const expected = jsValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
     });
 
-    describe("conditionalValueAtRisk", function () {
+    describe("failure", function () {
+      it("rejects when confidence is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], 0), "ConfidenceOutOfRangeError");
+      });
+
+      it("rejects when confidence >= 1", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], tokens(1)), "ConfidenceOutOfRangeError");
+        await assertRevertError(stats, stats.valueAtRisk([tokens(100), tokens(101)], "1000000000000000001"), "ConfidenceOutOfRangeError");
+      });
+
+      it("rejects when array has fewer than 2 prices", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.valueAtRisk([tokens(100)], tokens(0.95)), "ArrayLengthLowerBoundError");
+      });
+
+      it("rejects when any price is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.valueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("valueAtRisk at N=30 and N=100, 95% confidence — 34531 / 113751 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const prices = Array.from({ length: 30 }, (_, i) => tokens(100 + 2 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.valueAtRiskMG(prices, tokens(0.95))).gasUsed);
+          assert.equal(gas, 34531, `gas changed: ${gas} ≠ 34531 (N=30) — deterministic, update threshold if intentional`);
+        }
+        {
+          const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.valueAtRiskMG(prices, tokens(0.95))).gasUsed);
+          assert.equal(gas, 113751, `gas changed: ${gas} ≠ 113751 (N=100) — deterministic, update threshold if intentional`);
+        }
+      });
+    });
+  });
+
+  describe("conditionalValueAtRisk", function () {
+
+    describe("behaviour", function () {
       it("matches JS reference on known series", async function () {
         const { stats } = await loadFixture(deploy);
         const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100,
@@ -879,46 +1063,110 @@ describe("DeFiMathStats", function () {
         const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
       });
+    });
 
-      describe("failure", function () {
-        it("rejects when confidence is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(101)], 0), "ConfidenceOutOfRangeError");
-        });
+    describe("limits", function () {
+      it("minimum 2-price series", async function () {
+        const { stats } = await loadFixture(deploy);
+        // 2 prices → 1 log return; CVaR collapses to that return
+        const pricesJS = [100, 90];
+        const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
 
-        it("rejects when confidence >= 1", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(101)], tokens(1)), "ConfidenceOutOfRangeError");
-        });
+      it("confidence just above 0 (1 wei) — averages all-but-one worst returns", async function () {
+        const { stats } = await loadFixture(deploy);
+        // With confidence = 1 wei (FP value 1e-18), Solidity computes
+        //   k = floor((1e18 - 1) · (n-1) / 1e18)  →  n - 2  (integer truncation, not n - 1).
+        // CVaR then averages the k+1 = n-1 smallest returns. JS doubles round 1 - 1e-18 to 1,
+        // making jsConditionalValueAtRisk pick k = n-1 instead, so we compute the expectation
+        // directly to match the on-chain semantics.
+        const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100];
+        const sorted = jsLogReturns(pricesJS).slice().sort((a, b) => a - b);
+        const expected = sorted.slice(0, sorted.length - 1).reduce((a, b) => a + b, 0) / (sorted.length - 1);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.conditionalValueAtRisk(prices, "1")).toString() / 1e18;
+        assertAbsoluteBelow(actual, expected, 1e-12);
+      });
 
-        it("rejects when array has fewer than 2 prices", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100)], tokens(0.95)), "ArrayLengthLowerBoundError");
-        });
+      it("confidence just below 1 (1 - 1 wei) — returns min log return", async function () {
+        const { stats } = await loadFixture(deploy);
+        // confidence → 1 means k = 0, CVaR = single worst return
+        const pricesJS = [100, 101, 99, 103, 98, 105, 95, 110, 90, 100];
+        const expected = jsConditionalValueAtRisk(pricesJS, 1 - 1e-18);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.conditionalValueAtRisk(prices, "999999999999999999")).toString() / 1e18;
+        assertAbsoluteBelow(actual, expected, 1e-12);
+      });
 
-        it("rejects when any price is 0", async function () {
-          const { stats } = await loadFixture(deploy);
-          await assertRevertError(stats, stats.conditionalValueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
-          // zero price inside the seed buffer (index 1) and inside the scan loop (index 2)
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), 0, tokens(100)], tokens(0.95)), "PriceLowerBoundError");
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(100), 0, tokens(100)], tokens(0.95)), "PriceLowerBoundError");
-        });
+      it("at MAX_ARRAY_LENGTH (1024 prices)", async function () {
+        const { stats } = await loadFixture(deploy);
+        const pricesJS = Array.from({ length: 1024 }, (_, i) => 100 + 2 * Math.cos(i * 0.3));
+        const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
+        const prices = pricesJS.map(p => tokens(p));
+        const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+      });
+    });
 
-        it("rejects when array length exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const big = Array.from({ length: 1025 }, () => tokens(100));
-          await assertRevertError(stats, stats.conditionalValueAtRisk(big, tokens(0.95)), "ArrayLengthUpperBoundError");
-        });
+    describe("failure", function () {
+      it("rejects when confidence is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(101)], 0), "ConfidenceOutOfRangeError");
+      });
 
-        it("rejects when a price exceeds max", async function () {
-          const { stats } = await loadFixture(deploy);
-          const BIG = "1000000000000000000000000000000001";
-          await assertRevertError(stats, stats.conditionalValueAtRisk([BIG, tokens(100), tokens(100)], tokens(0.95)), "ValueUpperBoundError");
-          // over-max price inside the seed buffer (index 1) and inside the scan loop (index 2)
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), BIG, tokens(100)], tokens(0.95)), "ValueUpperBoundError");
-          await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(100), BIG, tokens(100)], tokens(0.95)), "ValueUpperBoundError");
-        });
+      it("rejects when confidence >= 1", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(101)], tokens(1)), "ConfidenceOutOfRangeError");
+      });
+
+      it("rejects when array has fewer than 2 prices", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100)], tokens(0.95)), "ArrayLengthLowerBoundError");
+      });
+
+      it("rejects when any price is 0", async function () {
+        const { stats } = await loadFixture(deploy);
+        await assertRevertError(stats, stats.conditionalValueAtRisk([0, tokens(101)], tokens(0.95)), "PriceLowerBoundError");
+        // zero price inside the seed buffer (index 1) and inside the scan loop (index 2)
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), 0, tokens(100)], tokens(0.95)), "PriceLowerBoundError");
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(100), 0, tokens(100)], tokens(0.95)), "PriceLowerBoundError");
+      });
+
+      it("rejects when array length exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const big = Array.from({ length: 1025 }, () => tokens(100));
+        await assertRevertError(stats, stats.conditionalValueAtRisk(big, tokens(0.95)), "ArrayLengthUpperBoundError");
+      });
+
+      it("rejects when a price exceeds max", async function () {
+        const { stats } = await loadFixture(deploy);
+        const BIG = "1000000000000000000000000000000001";
+        await assertRevertError(stats, stats.conditionalValueAtRisk([BIG, tokens(100), tokens(100)], tokens(0.95)), "ValueUpperBoundError");
+        // over-max price inside the seed buffer (index 1) and inside the scan loop (index 2)
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), BIG, tokens(100)], tokens(0.95)), "ValueUpperBoundError");
+        await assertRevertError(stats, stats.conditionalValueAtRisk([tokens(100), tokens(100), BIG, tokens(100)], tokens(0.95)), "ValueUpperBoundError");
+      });
+    });
+
+    describe("performance", function () {
+      it("conditionalValueAtRisk at N=30 and N=100, 95% confidence — 31889 / 108772 gas", async function () {
+        const { stats } = await loadFixture(deploy);
+
+        {
+          const prices = Array.from({ length: 30 }, (_, i) => tokens(100 + 2 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.conditionalValueAtRiskMG(prices, tokens(0.95))).gasUsed);
+          assert.equal(gas, 31889, `gas changed: ${gas} ≠ 31889 (N=30) — deterministic, update threshold if intentional`);
+        }
+        {
+          const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
+          const gas = parseInt((await stats.conditionalValueAtRiskMG(prices, tokens(0.95))).gasUsed);
+          assert.equal(gas, 108772, `gas changed: ${gas} ≠ 108772 (N=100) — deterministic, update threshold if intentional`);
+        }
       });
     });
   });
+
 });
