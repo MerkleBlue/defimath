@@ -77,10 +77,6 @@ contract MathWrapper {
         return DeFiMath.expPositive(x);
     }
 
-    function erfPositiveHalf(uint256 x) external pure returns (uint256) {
-        return DeFiMath.erfPositiveHalf(x);
-    }
-
     function expm1(int256 x) external pure returns (int256) {
         return DeFiMath.expm1(x);
     }

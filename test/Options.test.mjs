@@ -340,7 +340,7 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("performance", function () {
-      it("call across 5×5×3×3 strikes/times/vols/rates — 2876 gas", async function () {
+      it("call across 5×5×3×3 strikes/times/vols/rates — 2729 gas", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -360,7 +360,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 2876, `gas changed: ${avg} ≠ 2876 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 2729, `gas changed: ${avg} ≠ 2729 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -529,7 +529,7 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("performance", function () {
-      it("put across 5×5×3×3 strikes/times/vols/rates — 2887 gas", async function () {
+      it("put across 5×5×3×3 strikes/times/vols/rates — 2739 gas", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -549,7 +549,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 2887, `gas changed: ${avg} ≠ 2887 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 2739, `gas changed: ${avg} ≠ 2739 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -669,7 +669,7 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("performance", function () {
-      it("delta across 5×5×3×3 strikes/times/vols/rates — 1797 gas", async function () {
+      it("delta across 5×5×3×3 strikes/times/vols/rates — 1724 gas", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -689,7 +689,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1797, `gas changed: ${avg} ≠ 1797 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 1724, `gas changed: ${avg} ≠ 1724 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -928,7 +928,7 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("performance", function () {
-      it("theta across 5×5×3×3 strikes/times/vols/rates — 3441 gas", async function () {
+      it("theta across 5×5×3×3 strikes/times/vols/rates — 3293 gas", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -948,7 +948,7 @@ describe("DeFiMathOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 3441, `gas changed: ${avg} ≠ 3441 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 3293, `gas changed: ${avg} ≠ 3293 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1222,7 +1222,7 @@ describe("DeFiMathOptions", function () {
     });
 
     describe("performance", function () {
-      it("impliedVolatility across 5×5×3×3 strikes/times/vols/rates — 13100 gas (call) / 13184 gas (put)", async function () {
+      it("impliedVolatility across 5×5×3×3 strikes/times/vols/rates — 12370 gas (call) / 12446 gas (put)", async function () {
         const { options } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1247,8 +1247,8 @@ describe("DeFiMathOptions", function () {
         }
         const avgCall = Math.round(callGas / N);
         const avgPut  = Math.round(putGas / N);
-        assert.equal(avgCall, 13100, `gas changed: ${avgCall} ≠ 13100 — deterministic, update threshold if intentional`);
-        assert.equal(avgPut, 13184, `gas changed: ${avgPut} ≠ 13184 — deterministic, update threshold if intentional`);
+        assert.equal(avgCall, 12370, `gas changed: ${avgCall} ≠ 12370 — deterministic, update threshold if intentional`);
+        assert.equal(avgPut, 12446, `gas changed: ${avgPut} ≠ 12446 — deterministic, update threshold if intentional`);
       });
     });
   });

@@ -33,10 +33,6 @@ library DeFiMath {
     ///         and by log2 (ln(x) / ln(2)).
     uint256 internal constant LN_2 = 693147180559945309;
 
-    /// @notice 1/√2 in 18-decimal fixed-point — used by stdNormCDF to convert its argument into
-    ///         the erf domain via the identity Φ(x) = ½ + ½·erf(x/√2).
-    int256 internal constant INV_SQRT_2 = 0.707106781186547524e18;
-
     // errors
     /// @notice Thrown when input to exp() exceeds the upper bound (~135)
     error ExpUpperBoundError();
@@ -548,24 +544,60 @@ library DeFiMath {
     }
 
     /// @notice Computes standard normal cumulative distribution function Φ(x)
-    /// @dev Uses erf(x) internally, capped at ±16.447 to return 0 or 1
+    /// @dev Inlines West's half-erf approximation directly — see
+    ///      https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf.
+    ///      West parameterizes by t = z · √2; here z = |x| · (1/√2), so t = |x| directly
+    ///      (the 1/√2 and √2 conversions cancel — no pre-scaling needed). Caps at ±16.447
+    ///      since Φ(x) is within 1e-18 of {0, 1} beyond that.
     /// @param x Input value in 18-decimal fixed-point format
     /// @return y Result in range [0, 1e18]
     function stdNormCDF(int256 x) internal pure returns (uint256 y) {
         unchecked {
-            // todo: make sure erf(x) is < 1
             if (x >= 0) {
                 if (x >= STD_NORM_CDF_BOUND) {
                     return 1e18;
                 }
-                uint256 absX = uint256(x * INV_SQRT_2 / 1e18);
-                y = 5e17 + erfPositiveHalf(absX);
+
+                uint256 t = uint256(x);                          // since x is positive, t = x
+
+                uint256 t2 = t * t / 1e18;
+                uint256 t3 = t2 * t / 1e18;
+                uint256 t4 = t3 * t / 1e18;
+
+                uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18;
+                uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
+
+                uint256 expRes = expPositive(t2 >> 1);
+
+                // NOTE: denom and expRes can never be 0
+                assembly {
+                    let res := div(1000000000000000000000000000000000000, expRes)
+                    res := mul(res, num)
+                    res := div(res, denom)
+                    y := sub(1000000000000000000, res)             // Φ(x) = 1 − res
+                }
             } else {
                 if (x <= -STD_NORM_CDF_BOUND) {
                     return 0;
                 }
-                uint256 absX = uint256(-x * INV_SQRT_2 / 1e18);
-                y = 5e17 - erfPositiveHalf(absX);
+
+                uint256 t = uint256(-x);                         // since x is negative, t = -x
+
+                uint256 t2 = t * t / 1e18;
+                uint256 t3 = t2 * t / 1e18;
+                uint256 t4 = t3 * t / 1e18;
+
+                uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18;
+                uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
+
+                uint256 expRes = expPositive(t2 >> 1);
+
+                // NOTE: denom and expRes can never be 0
+                assembly {
+                    y := div(1000000000000000000000000000000000000, expRes)
+                    y := mul(y, num)
+                    y := div(y, denom)                              // Φ(x) = res  (symmetric negative branch)
+                }
             }
         }
     }
@@ -698,32 +730,6 @@ library DeFiMath {
             z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))
             z := shr(1, add(z, div(x, z)))
-        }
-    }
-
-    /// @notice Computes erf(x)/2 for positive x using West’s approximation
-    /// @dev Used by stdNormCDF and erf
-    /// @param x Positive input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
-    function erfPositiveHalf(uint256 x) internal pure returns (uint256 y) {
-        unchecked {
-            // erf from West's paper - https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf 
-            uint256 t = x * 1414213562373095049 / 1e18;
-            uint256 t2 = t * t / 1e18;
-            uint256 t3 = t2 * t / 1e18;
-            uint256 t4 = t3 * t / 1e18;
-
-            uint256 num = (35262496599891100 * t4 + 700383064443688000 * t3 + 6373962203531650000 * t2) / 1e18 * t2 + 33912866078383000000 * t3 + 112079291497871000000 * t2 + 221213596169931000000 * t + 220206867912376000000e18; 
-            uint256 denom = (88388347648318400 * t4 + 1755667163182640000 * t3 + 16064177579207000000 * t2 + 86780732202946100000 * t) / 1e18 * t3  + 296564248779674000000 * t3 + 637333633378831000000 * t2 + 793826512519948000000 * t + 440413735824752000000e18;
-
-            uint256 expRes = expPositive(t2 >> 1);
-
-            assembly {
-                let res := div(1000000000000000000000000000000000000, expRes)
-                res := mul(res, num)
-                res := div(res, denom)
-                y := sub(500000000000000000, res)
-            }
         }
     }
 }

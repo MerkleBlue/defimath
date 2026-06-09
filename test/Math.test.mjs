@@ -2212,7 +2212,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("stdNormCDF when x in [-11.63, 11.63] — 734 gas", async function () {
+      it("stdNormCDF when x in [-11.63, 11.63] — 660 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -11.63; x <= 11.63; x += 0.1163) {
@@ -2220,7 +2220,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 734, `gas changed: ${avg} ≠ 734 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 660, `gas changed: ${avg} ≠ 660 — deterministic, update threshold if intentional`);
       });
     });
 

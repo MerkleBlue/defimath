@@ -8,7 +8,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
 [![Solidity](https://img.shields.io/badge/Solidity-%5E0.8.31-blue.svg)](https://soliditylang.org)
 
-> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,876 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
+> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,729 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
 
 [DeFiMath](https://defimath.com) is a pure-Solidity library of DeFi math primitives. 40+ functions across four modules: low-level math, derivatives, interest rates, and statistics. No external runtime dependencies. MIT-licensed.
 
@@ -25,15 +25,15 @@ Every function is benchmarked against existing on-chain implementations. A repre
 
 | Function | DeFiMath | Next best | Multiple |
 | :------- | -------: | --------: | -------: |
-| `callOptionPrice` | **2,876** | 13,360 (Derivexyz) | **4.6×** |
-| `putOptionPrice`  | **2,887** | 13,363 (Derivexyz) | **4.6×** |
-| `binaryCallPrice` | **2,092** | 16,218 (Haptic)    | **7.8×** |
-| `delta`           | **1,797** | 8,621 (Derivexyz)  | **4.8×** |
+| `callOptionPrice` | **2,729** | 13,360 (Derivexyz) | **4.9×** |
+| `putOptionPrice`  | **2,739** | 13,363 (Derivexyz) | **4.9×** |
+| `binaryCallPrice` | **2,018** | 16,218 (Haptic)    | **8.0×** |
+| `delta`           | **1,724** | 8,621 (Derivexyz)  | **5.0×** |
 | `vega`            | **1,439** | 7,490 (Derivexyz)  | **5.2×** |
 | `ln`              | **375**   | 518 (Solady)       | 1.4× |
 | `sqrt`            | **245**   | 341 (Solady)       | 1.4× |
 | `cbrt`            | **368**   | 550 (Solady)       | 1.5× |
-| `stdNormCDF`      | **731**   | 2,794 (SolStat)    | **3.8×** |
+| `stdNormCDF`      | **660**   | 2,794 (SolStat)    | **4.2×** |
 
 Full per-function tables in the [defimath-compare README](https://github.com/MerkleBlue/defimath-compare#readme).
 
@@ -81,7 +81,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `cbrt`       | 368  | 2.2e-16 | Cube root |
 | `expm1`      | 439  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
 | `log1p`      | 500  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
-| `stdNormCDF` | 731  | 4.7e-15 | Standard normal CDF Φ(x) |
+| `stdNormCDF` | 660  | 4.7e-15 | Standard normal CDF Φ(x) |
 | `erf`        | 685  | 7.4e-15 | Error function |
 | `mulDiv`     | 155  | exact   | `(a · b) / d` with full 512-bit intermediate precision |
 | `mul`        | 130  | exact   | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
@@ -97,18 +97,18 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `callOptionPrice`     | 2,876  | 5.6e-12 | European call (Black-Scholes) |
-| `putOptionPrice`      | 2,887  | 5.4e-12 | European put (Black-Scholes) |
-| `delta`               | 1,797  | 6.2e-15 | First derivative w.r.t. spot |
+| `callOptionPrice`     | 2,729  | 5.6e-12 | European call (Black-Scholes) |
+| `putOptionPrice`      | 2,739  | 5.4e-12 | European put (Black-Scholes) |
+| `delta`               | 1,724  | 6.2e-15 | First derivative w.r.t. spot |
 | `gamma`               | 1,499  | 9.1e-17 | Second derivative w.r.t. spot |
-| `theta`               | 3,441  | 3.5e-14 | Time decay (per day) |
+| `theta`               | 3,293  | 3.5e-14 | Time decay (per day) |
 | `vega`                | 1,439  | 4.3e-14 | Sensitivity to volatility |
-| `impliedVolatility`   | 13,100 | ≤ 1e-6  | IV via Newton-Raphson |
-| `binaryCallPrice`     | 2,092  | 6.2e-15 | Cash-or-nothing call |
-| `binaryPutPrice`      | 2,097  | 5.9e-15 | Cash-or-nothing put |
+| `impliedVolatility`   | 12,370 | ≤ 1e-6  | IV via Newton-Raphson |
+| `binaryCallPrice`     | 2,018  | 6.2e-15 | Cash-or-nothing call |
+| `binaryPutPrice`      | 2,023  | 5.9e-15 | Cash-or-nothing put |
 | `binaryDelta`         | 1,825  | 1.3e-16 | Binary delta (signed) |
 | `binaryGamma`         | 1,967  | 1.5e-18 | Binary gamma (signed) |
-| `binaryTheta`         | 3,501  | 8.3e-16 | Binary theta (per day) |
+| `binaryTheta`         | 3,353  | 8.3e-16 | Binary theta (per day) |
 | `binaryVega`          | 1,913  | 2.7e-16 | Binary vega (signed) |
 | `futurePrice`         | ~400   | ≤ 5e-14 | `spot · e^(rt)` |
 
