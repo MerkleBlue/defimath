@@ -120,9 +120,9 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | :------- | --: | --------: | :---------- |
 | `compoundInterest`       | 467     | 2.8e-14 | Continuous compounding: `P · e^(rt)` |
 | `presentValue`           | 519     | 2.8e-14 | Discounting: `FV · e^(−rt)` |
-| `logReturn`              | 591     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
-| `continuousToDiscrete`   | 509     | 2.4e-14 | `e^apr − 1` (APR → APY) |
-| `discreteToContinuous`   | 590     | 5.1e-16 | `ln(1 + apy)` (APY → APR) |
+| `logReturn`              | 600     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
+| `continuousToDiscrete`   | 508     | 2.4e-14 | `e^apr − 1` (APR → APY) |
+| `discreteToContinuous`   | 589     | 5.1e-16 | `ln(1 + apy)` (APY → APR) |
 | `yieldToMaturity`        | 736     | 2.7e-14 | Zero-coupon YTM (closed form) |
 | `internalRateOfReturn`   | 17k–49k | 3.7e-15 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
