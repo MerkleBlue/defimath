@@ -15,7 +15,7 @@ const MAX_REL_ERROR_POW = 1e-11;
 const MAX_ABS_ERROR_ERF = 4.5e-9;
 const MAX_ABS_ERROR_CDF = 6.4e-15;
 
-describe.only("DeFiMath", function () {
+describe("DeFiMath", function () {
 
   async function deploy() {
     const MathWrapper = await ethers.getContractFactory("MathWrapper");
