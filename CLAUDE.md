@@ -62,7 +62,7 @@ describe.only("ModuleName", function () {
 | :--- | :--- |
 | `test/Math.test.mjs` | ✅ done (20 function groups, 187 tests) |
 | `test/Options.test.mjs` | ✅ done (7 function groups, 96 tests) |
-| `test/Binary.test.mjs` | ⬜ pending |
+| `test/Binary.test.mjs` | ✅ done (6 function groups, 109 tests) |
 | `test/Rates.test.mjs` | ⬜ pending |
 | `test/Stats.test.mjs` | ⬜ pending |
 | `test/Futures.test.mjs` | ⬜ pending |
