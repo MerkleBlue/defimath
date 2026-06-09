@@ -7,8 +7,7 @@ pragma solidity ^0.8.31;
 /// @dev All functions use fixed-point arithmetic with 18 decimals (1e18) and are optimized for gas efficiency.
 library DeFiMath {
 
-    // input limits
-
+    // limits
     /// @notice Largest x where exp(x) still fits in uint256 fixed-point — exp reverts at or above this.
     ///         Equals ⌊ln(2^256 / 1e18) · 1e18⌋ + 1 = floor(ln(2^256) · 1e18) at the wrap point.
     uint256 internal constant EXP_UPPER_BOUND = 135.305999368893231589e18;
@@ -25,11 +24,18 @@ library DeFiMath {
     ///         Equals 2^76 in fixed-point (= 2^76 · 1e18).
     uint256 internal constant CBRT_UPPER_BOUND = 7.5557863725914323e40;
 
-    // math constants
+    /// @notice Saturation magnitude for stdNormCDF — |x| ≥ this returns 0 (negative) or 1 (positive).
+    ///         At ±16.447, Φ(x) is within 1e-18 of {0, 1} so the cap costs no observable precision.
+    int256 internal constant STD_NORM_CDF_BOUND = 16.447e18;
 
+    // math constants
     /// @notice ln(2) in 18-decimal fixed-point — used by exp's range reduction (x → x − k·ln 2)
     ///         and by log2 (ln(x) / ln(2)).
     uint256 internal constant LN_2 = 693147180559945309;
+
+    /// @notice 1/√2 in 18-decimal fixed-point — used by stdNormCDF to convert its argument into
+    ///         the erf domain via the identity Φ(x) = ½ + ½·erf(x/√2).
+    int256 internal constant INV_SQRT_2 = 0.707106781186547524e18;
 
     // errors
     /// @notice Thrown when input to exp() exceeds the upper bound (~135)
@@ -287,7 +293,6 @@ library DeFiMath {
     /// @return y Result in 18-decimal fixed-point format
     function log2(uint256 x) internal pure returns (int256 y) {
         unchecked {
-            // todo: inline
             y = ln(x) * 1e18 / int256(LN_2);
         }
     }
@@ -297,7 +302,6 @@ library DeFiMath {
     /// @return y Result in 18-decimal fixed-point format
     function log10(uint256 x) internal pure returns (int256 y) {
         unchecked {
-            // todo: inline
             y = ln(x) * 1e18 / 2302585092994045684;
         }
     }
@@ -551,18 +555,16 @@ library DeFiMath {
         unchecked {
             // todo: make sure erf(x) is < 1
             if (x >= 0) {
-                if (x >= 16.447e18) {
+                if (x >= STD_NORM_CDF_BOUND) {
                     return 1e18;
                 }
-                // todo: inline
-                uint256 absX = uint256(x * 707106781186547524 / 1e18);
+                uint256 absX = uint256(x * INV_SQRT_2 / 1e18);
                 y = 5e17 + erfPositiveHalf(absX);
             } else {
-                if (x <= -16.447e18) {
+                if (x <= -STD_NORM_CDF_BOUND) {
                     return 0;
                 }
-                // todo: inline
-                uint256 absX = uint256(-x * 707106781186547524 / 1e18);
+                uint256 absX = uint256(-x * INV_SQRT_2 / 1e18);
                 y = 5e17 - erfPositiveHalf(absX);
             }
         }
