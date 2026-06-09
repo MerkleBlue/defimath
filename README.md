@@ -110,7 +110,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `binaryGamma`         | 1,967  | 1.5e-18 | Binary gamma (signed) |
 | `binaryTheta`         | 3,353  | 8.3e-16 | Binary theta (per day) |
 | `binaryVega`          | 1,913  | 2.7e-16 | Binary vega (signed) |
-| `futurePrice`         | ~400   | ≤ 5e-14 | `spot · e^(rt)` |
+| `futurePrice`         | 442    | 1.2e-9 | `spot · e^(rt)` |
 
 *Precision is max absolute error vs. JS reference (at $1,000 spot for European, unit-payout for binary). `impliedVolatility` uses round-trip relative error.*
 

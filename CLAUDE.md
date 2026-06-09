@@ -65,7 +65,7 @@ describe.only("ModuleName", function () {
 | `test/Binary.test.mjs` | ✅ done (6 function groups, 109 tests) |
 | `test/Rates.test.mjs` | ⬜ pending |
 | `test/Stats.test.mjs` | ⬜ pending |
-| `test/Futures.test.mjs` | ⬜ pending |
+| `test/Futures.test.mjs` | ✅ done (1 function group, 13 tests) |
 
 ### Workflow rule: when refactoring a test file
 
