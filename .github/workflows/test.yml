@@ -1,9 +1,10 @@
-name: Hardhat Tests
+name: Tests
 
 on: [push, pull_request]
 
 jobs:
-  test:
+  hardhat:
+    name: Hardhat tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -16,8 +17,27 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run tests
+      - name: Run Hardhat tests
         run: npx hardhat test
 
-    #   - name: Run coverage
-    #     run: npx hardhat coverage
+      # - name: Run coverage
+      #   run: npx hardhat coverage
+
+  foundry:
+    name: Foundry property tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Build
+        run: forge build --sizes
+
+      - name: Run property tests
+        run: forge test -vvv

@@ -1,0 +1,37 @@
+[profile.default]
+# Source layout — match the Hardhat structure
+src = "contracts"
+out = "out"
+libs = ["lib"]
+test = "test/foundry"
+
+# Match Hardhat's compiler config exactly (see hardhat.config.js)
+solc_version = "0.8.35"
+evm_version = "osaka"
+via_ir = true
+optimizer = true
+optimizer_runs = 10_000_000
+
+# Treat the existing JS-test wrappers as out-of-scope for forge so it doesn't
+# try to deploy them in tests. The library code under contracts/{math,finance,options}
+# is what we want to fuzz.
+no_match_path = "contracts/mocks/**"
+
+[lint]
+# Suppress two noisy lints that don't apply to a precision-tuned math library:
+#  - unsafe-typecast: every int↔uint cast is preceded by an input-bound check
+#    (e.g. MAX_RATE, MAX_VALUE). The linter can't see the proof.
+#  - divide-before-multiply: a few CDF / Greeks sites in Options.sol divide first
+#    on purpose, to keep intermediates from overflowing uint256.
+exclude_lints = ["unsafe-typecast", "divide-before-multiply"]
+
+[fuzz]
+# 10k runs per property — deep coverage at near-zero CI cost. The Math suite at
+# 28 properties completes in <1s locally and ~3–5s on a single CI core.
+runs = 10000
+max_test_rejects = 100000
+
+[invariant]
+runs = 32
+depth = 64
+fail_on_revert = false

@@ -8,6 +8,8 @@
 /coverage
 /artifacts
 /cache
+/out
+/cache_forge
 .nyc_output/
 /report
 /testfiles
