@@ -2,7 +2,7 @@
 
 ## Test file structure
 
-Every Solidity contract test file (`test/<Module>.test.mjs`) is organized **function-first** —
+Every Solidity contract test file (`test/hardhat/<Module>.test.mjs`) is organized **function-first** —
 each function has its own top-level `describe` block, and within that, a fixed sequence of
 sub-describes models the kind of property being checked.
 
@@ -60,19 +60,19 @@ describe.only("ModuleName", function () {
 
 | File | Restructured to function-first |
 | :--- | :--- |
-| `test/Math.test.mjs` | ✅ done (20 function groups, 187 tests) |
-| `test/Options.test.mjs` | ✅ done (7 function groups, 96 tests) |
-| `test/Binary.test.mjs` | ✅ done (6 function groups, 109 tests) |
-| `test/Rates.test.mjs` | ✅ done (7 function groups, 66 tests) |
-| `test/Stats.test.mjs` | ✅ done (9 function groups, 114 tests) |
-| `test/Futures.test.mjs` | ✅ done (1 function group, 13 tests) |
+| `test/hardhat/Math.test.mjs` | ✅ done (20 function groups, 187 tests) |
+| `test/hardhat/Options.test.mjs` | ✅ done (7 function groups, 96 tests) |
+| `test/hardhat/Binary.test.mjs` | ✅ done (6 function groups, 109 tests) |
+| `test/hardhat/Rates.test.mjs` | ✅ done (7 function groups, 66 tests) |
+| `test/hardhat/Stats.test.mjs` | ✅ done (9 function groups, 114 tests) |
+| `test/hardhat/Futures.test.mjs` | ✅ done (1 function group, 13 tests) |
 
 ### Workflow rule: when refactoring a test file
 
 1. **Inventory** the existing test names + which function each touches.
 2. **Move** each test into the function-first layout under its own `describe(fn)`.
 3. **Categorize** each `it()` into `behaviour` / `limits` / `random` / `failure` / `performance`.
-4. **Verify** all tests still pass before any name/step changes (`npx hardhat test test/<File>.test.mjs`).
+4. **Verify** all tests still pass before any name/step changes (`npx hardhat test test/hardhat/<File>.test.mjs`).
 5. **Reduce** sweep tests to ~200 samples each, log-spaced for multi-decade domains.
 6. **Add `limits` coverage** for min and max valid inputs of every function (move existing identity tests, add new boundary tests).
 7. **Consolidate** performance: one deterministic `it()` per function with a tight `≤ threshold` gas assert in the test name. No `console.log`.
