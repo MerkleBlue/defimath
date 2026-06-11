@@ -27,7 +27,9 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "npx hardhat test",
+    "test": "npm run test:hardhat && npm run test:foundry",
+    "test:hardhat": "npx hardhat test",
+    "test:foundry": "forge test",
     "coverage": "npx hardhat coverage",
     "check-coverage": "npx hardhat coverage && grep -q '100.00%' coverage/lcov.info"
   },
