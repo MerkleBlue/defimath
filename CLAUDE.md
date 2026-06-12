@@ -56,6 +56,14 @@ describe.only("ModuleName", function () {
 - **Performance determinism**: seed `mulberry32(N)` per function (`N` = distinct integer per `it()` so changes don't propagate gas drift across tests). Gas threshold in `assert.ok(avg <= N, ...)` is tight — bump deliberately on intentional changes.
 - **`before` hook**: outer `describe("Module")` has a `before` that calls `loadFixture(deploy)` once. Pays the ~300ms cold-start cost outside any `it()` so Mocha doesn't flag the first test as slow.
 
+### Source of truth for gas numbers
+
+The Hardhat `performance` test thresholds (`— N gas` in test names) are **internal regression gates** that include Hardhat harness + wrapper overhead. They will run a bit higher than the canonical figures.
+
+The **canonical gas numbers** quoted on the website (`Math.tsx` FunctionTable, etc.) and in the README come from [`defimath-compare`](https://github.com/MerkleBlue/defimath-compare) — the standalone benchmark repo that measures via Foundry's `forge snapshot` against bare contract calls.
+
+So if the website says `log10: 391 gas` and the Hardhat threshold is `406 gas`, both are correct for what they measure. **Don't "fix" the website to match the Hardhat threshold** — defimath-compare is the source of truth for user-facing gas.
+
 ### Status
 
 | File | Restructured to function-first |

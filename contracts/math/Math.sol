@@ -33,6 +33,9 @@ library DeFiMath {
     ///         and by log2 (ln(x) / ln(2)).
     uint256 internal constant LN_2 = 693147180559945309;
 
+    /// @notice ln(10) in 18-decimal fixed-point — used by log10 (ln(x) / ln(10)).
+    int256 internal constant LN_10 = 2302585092994045684;
+
     // errors
     /// @notice Thrown when input to exp() exceeds the upper bound (~135)
     error ExpUpperBoundError();
@@ -298,7 +301,7 @@ library DeFiMath {
     /// @return y Result in 18-decimal fixed-point format
     function log10(uint256 x) internal pure returns (int256 y) {
         unchecked {
-            y = ln(x) * 1e18 / 2302585092994045684;
+            y = ln(x) * 1e18 / LN_10;
         }
     }
 
