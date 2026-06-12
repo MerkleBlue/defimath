@@ -28,6 +28,10 @@ library DeFiMath {
     ///         At ±16.447, Φ(x) is within 1e-18 of {0, 1} so the cap costs no observable precision.
     int256 internal constant STD_NORM_CDF_BOUND = 16.447e18;
 
+    /// @notice Saturation magnitude for erf — |x| ≥ this returns ±1.
+    ///         At ±11.63, erf(x) is within 1e-18 of ±1 so the cap costs no observable precision.
+    int256 internal constant ERF_BOUND = 11.63e18;
+
     // math constants
     /// @notice ln(2) in 18-decimal fixed-point — used by exp's range reduction (x → x − k·ln 2)
     ///         and by log2 (ln(x) / ln(2)).
@@ -35,6 +39,11 @@ library DeFiMath {
 
     /// @notice ln(10) in 18-decimal fixed-point — used by log10 (ln(x) / ln(10)).
     int256 internal constant LN_10 = 2302585092994045684;
+
+    /// @notice √2 in 18-decimal fixed-point — used by ln's range reduction
+    ///         (compares x against √2 to fold into [1, √2]) and by stdNormCDF
+    ///         as `t = |x| · √2` change-of-variable for the West approximation.
+    uint256 internal constant SQRT_2 = 1414213562373095049;
 
     // errors
     /// @notice Thrown when input to exp() exceeds the upper bound (~135)
@@ -179,9 +188,9 @@ library DeFiMath {
                     x := shr(bits, x) // reduce range of x to [1, 2]
 
                     // reduce range of x to [1, 1.414]
-                    let multiplier := gt(x, 1414213562373095049)
+                    let multiplier := gt(x, SQRT_2)
                     x := mul(x, 1000000000000000000)
-                    x := div(x, add(1000000000000000000, mul(gt(multiplier, 0), 414213562373095049)))
+                    x := div(x, add(1000000000000000000, mul(gt(multiplier, 0), 414213562373095049))) // = SQRT_2 − 1e18
 
                     multiplier := add(multiplier, shl(1, bits))
 
@@ -224,9 +233,9 @@ library DeFiMath {
                     x := shr(bits, x) // reduce range of x to [1, 2]
 
                     // reduce range of x to [1, 1.414]
-                    let multiplier := gt(x, 1414213562373095049)
+                    let multiplier := gt(x, SQRT_2)
                     x := mul(x, 1000000000000000000)
-                    x := div(x, add(1000000000000000000, mul(gt(multiplier, 0), 414213562373095049)))
+                    x := div(x, add(1000000000000000000, mul(gt(multiplier, 0), 414213562373095049))) // = SQRT_2 − 1e18
 
                     multiplier := add(multiplier, shl(1, bits))
 
@@ -611,13 +620,13 @@ library DeFiMath {
     function erf(int256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 0) {
-                if (x >= 11.63e18) {
+                if (x >= ERF_BOUND) {
                     return 1e18;
                 }
 
                 uint256 absX = uint256(x);                         // since x is positive, absX = x
 
-                uint256 t = absX * 1414213562373095049 / 1e18;
+                uint256 t = absX * SQRT_2 / 1e18;
                 uint256 t2 = t * t / 1e18;
                 uint256 t3 = t2 * t / 1e18;
                 uint256 t4 = t3 * t / 1e18;
@@ -636,13 +645,13 @@ library DeFiMath {
                     y := shl(1, y)
                 }
             } else {
-                if (x <= -11.63e18) {
+                if (x <= -ERF_BOUND) {
                     return -1e18;
                 }
 
                 uint256 absX = uint256(-x);                         // since x is negative, absX = -x
                 
-                uint256 t = absX * 1414213562373095049 / 1e18;
+                uint256 t = absX * SQRT_2 / 1e18;
                 uint256 t2 = t * t / 1e18;
                 uint256 t3 = t2 * t / 1e18;
                 uint256 t4 = t3 * t / 1e18;
