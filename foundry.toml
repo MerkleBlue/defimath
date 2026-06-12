@@ -26,10 +26,11 @@ no_match_path = "contracts/mocks/**"
 exclude_lints = ["unsafe-typecast", "divide-before-multiply"]
 
 [fuzz]
-# 10k runs per property — deep coverage at near-zero CI cost. The Math suite at
-# 28 properties completes in <1s locally and ~3–5s on a single CI core.
-runs = 10000
-max_test_rejects = 100000
+# 32k runs per property — deep coverage at low CI cost. Sweet spot between
+# 10k (basic) and 256k (saturation): roughly catches anything 256k would catch
+# while keeping the full Foundry suite comfortably under 10s locally.
+runs = 32000
+max_test_rejects = 320000
 
 [invariant]
 runs = 32
