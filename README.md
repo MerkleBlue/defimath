@@ -144,6 +144,15 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 *Precision is max relative error vs. JS reference (`simple-statistics` for `valueAtRisk`). Sub-1e-15 values are at IEEE 754 machine-epsilon precision (arithmetic-only operations).*
 
+## Testing
+
+Two independent layers:
+
+- **Hardhat** — 589 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
+- **Foundry** — 92 mathematical properties × 32,000 random runs each = **2,944,000 random executions per CI run**. Validates the algebraic structure (round-trips, monotonicity, identities, output bounds, symmetries) with automatic counterexample shrinking.
+
+681 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
+
 ## Precision
 
 Every function is validated against trusted JavaScript reference implementations: `black-scholes`, `greeks`, `math-erf`, and `simple-statistics`. Per-function error figures appear in the tables above; the full benchmark suite — including head-to-head precision vs. competing libraries — lives in [defimath-compare](https://github.com/MerkleBlue/defimath-compare).
