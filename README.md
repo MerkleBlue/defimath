@@ -29,7 +29,7 @@ Every function is benchmarked against existing on-chain implementations. A repre
 | `putOptionPrice`  | **2,739** | 13,363 (Derivexyz) | **4.9×** |
 | `binaryCallPrice` | **2,018** | 16,218 (Haptic)    | **8.0×** |
 | `delta`           | **1,724** | 8,621 (Derivexyz)  | **5.0×** |
-| `vega`            | **1,439** | 7,490 (Derivexyz)  | **5.2×** |
+| `vega`            | **1,436** | 7,490 (Derivexyz)  | **5.2×** |
 | `ln`              | **375**   | 518 (Solady)       | 1.4× |
 | `sqrt`            | **245**   | 341 (Solady)       | 1.4× |
 | `cbrt`            | **368**   | 550 (Solady)       | 1.5× |
@@ -72,14 +72,14 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `exp`        | 333  | 5.1e-14 | Exponential function `e^x` |
+| `exp`        | 331  | 5.1e-14 | Exponential function `e^x` |
 | `ln`         | 375  | 1.5e-14 | Natural logarithm |
 | `log2`       | 391  | 1.5e-14 | Base-2 logarithm |
 | `log10`      | 391  | 1.4e-14 | Base-10 logarithm |
-| `pow`        | 750  | 5.2e-14 | Power function `x^a` |
+| `pow`        | 748  | 5.2e-14 | Power function `x^a` |
 | `sqrt`       | 245  | 2.8e-16 | Square root |
 | `cbrt`       | 368  | 2.2e-16 | Cube root |
-| `expm1`      | 439  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
+| `expm1`      | 438  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
 | `log1p`      | 500  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 660  | 4.7e-15 | Standard normal CDF Φ(x) |
 | `erf`        | 685  | 7.4e-15 | Error function |
@@ -100,16 +100,16 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `callOptionPrice`     | 2,729  | 5.6e-12 | European call (Black-Scholes) |
 | `putOptionPrice`      | 2,739  | 5.4e-12 | European put (Black-Scholes) |
 | `delta`               | 1,724  | 6.2e-15 | First derivative w.r.t. spot |
-| `gamma`               | 1,499  | 9.1e-17 | Second derivative w.r.t. spot |
-| `theta`               | 3,293  | 3.5e-14 | Time decay (per day) |
-| `vega`                | 1,439  | 4.3e-14 | Sensitivity to volatility |
+| `gamma`               | 1,496  | 9.1e-17 | Second derivative w.r.t. spot |
+| `theta`               | 3,290  | 3.5e-14 | Time decay (per day) |
+| `vega`                | 1,436  | 4.3e-14 | Sensitivity to volatility |
 | `impliedVolatility`   | 12,370 | ≤ 1e-6  | IV via Newton-Raphson |
 | `binaryCallPrice`     | 2,018  | 6.2e-15 | Cash-or-nothing call |
 | `binaryPutPrice`      | 2,023  | 5.9e-15 | Cash-or-nothing put |
-| `binaryDelta`         | 1,825  | 1.3e-16 | Binary delta (signed) |
-| `binaryGamma`         | 1,967  | 1.5e-18 | Binary gamma (signed) |
-| `binaryTheta`         | 3,353  | 8.3e-16 | Binary theta (per day) |
-| `binaryVega`          | 1,913  | 2.7e-16 | Binary vega (signed) |
+| `binaryDelta`         | 1,822  | 1.3e-16 | Binary delta (signed) |
+| `binaryGamma`         | 1,964  | 1.5e-18 | Binary gamma (signed) |
+| `binaryTheta`         | 3,350  | 8.3e-16 | Binary theta (per day) |
+| `binaryVega`          | 1,910  | 2.7e-16 | Binary vega (signed) |
 | `futurePrice`         | 442    | 1.2e-9 | `spot · e^(rt)` |
 
 *Precision is max absolute error vs. JS reference (at $1,000 spot for European, unit-payout for binary). `impliedVolatility` uses round-trip relative error.*

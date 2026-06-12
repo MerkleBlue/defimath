@@ -12,9 +12,9 @@ library DeFiMath {
     ///         Equals ⌊ln(2^256 / 1e18) · 1e18⌋ + 1 = floor(ln(2^256) · 1e18) at the wrap point.
     uint256 internal constant EXP_UPPER_BOUND = 135.305999368893231589e18;
 
-    /// @notice Smallest |x| (negative side) where e^x silently underflows to 0 in 18-decimal fixed-point.
-    ///         Equals ⌊ln(1e18) · 1e18⌋ + 1 — below this, exp(-x) < 1e-18 and rounds to 0.
-    uint256 internal constant EXP_LOWER_BOUND = 41.446531673892822313e18;
+    /// @notice Lowest x where e^x is still representable in 18-decimal fixed-point.
+    ///         Equals −⌊ln(1e18) · 1e18⌋ − 1 — at or below this, exp(x) silently returns 0.
+    int256 internal constant EXP_LOWER_BOUND = -41.446531673892822313e18;
 
     /// @notice Largest sqrt input that keeps the squared output under 2^160 (and the answer under 2^40 in FP).
     ///         Equals 2^80 in fixed-point (= 2^80 · 1e18).
@@ -109,11 +109,9 @@ library DeFiMath {
                 y = y * y * y * y / 1e54;                       // y ** 256
                 y <<= k;                                        // multiply y by 2 ** k
             } else {
-                // negative
-                uint256 absX = uint256(-x);                         // since x is negative, absX = -x
-
-                // check input
-                if (absX >= EXP_LOWER_BOUND) return 0;
+                // negative — check input first, then compute absX for the math
+                if (x <= EXP_LOWER_BOUND) return 0;
+                uint256 absX = uint256(-x);
 
                 uint256 k = absX / LN_2;             // find integer k
                 absX -= k * LN_2;                    // reduce x to [0, ln(2)]
