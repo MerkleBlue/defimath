@@ -11,6 +11,7 @@
     "options",
     "binary-options",
     "futures",
+    "option-pricing",
     "implied-volatility",
     "black-scholes",
     "sharpe-ratio"
