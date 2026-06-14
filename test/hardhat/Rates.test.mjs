@@ -397,7 +397,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("continuousToDiscrete across r in [-0.5, 0.5] — 508 gas", async function () {
+      it("continuousToDiscrete across r in [-0.5, 0.5] — 507 gas", async function () {
         const { rates } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let r = -0.5; r <= 0.5; r += 0.01) {
@@ -405,7 +405,7 @@ describe("DeFiMathRates", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 508, `gas changed: ${avg} ≠ 508 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 507, `gas changed: ${avg} ≠ 507 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -645,7 +645,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("internalRateOfReturn on 4-cashflow annuity + 12-cashflow bond — 17043 / 49285 gas", async function () {
+      it("internalRateOfReturn on 4-cashflow annuity + 12-cashflow bond — 16995 / 49120 gas", async function () {
         const { rates } = await loadFixture(deploy);
 
         // 4-cashflow annuity: invest 1000, receive 300 at each of years 1, 2, 3, 4
@@ -653,7 +653,7 @@ describe("DeFiMathRates", function () {
           const cashflows = [-1000, 300, 300, 300, 300].map(c => tokens(c));
           const times = [0, SEC_IN_YEAR, 2 * SEC_IN_YEAR, 3 * SEC_IN_YEAR, 4 * SEC_IN_YEAR];
           const gas = parseInt((await rates.internalRateOfReturnMG(cashflows, times, tokens(0.05))).gasUsed);
-          assert.equal(gas, 17043, `gas changed: ${gas} ≠ 17043 (4-cashflow) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 16995, `gas changed: ${gas} ≠ 16995 (4-cashflow) — deterministic, update threshold if intentional`);
         }
 
         // 12-cashflow bond: invest 10000, receive 1000 per month for 12 months
@@ -661,7 +661,7 @@ describe("DeFiMathRates", function () {
           const cashflows = [-10000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000].map(c => tokens(c));
           const times = Array.from({length: 12}, (_, i) => i === 0 ? 0 : (i * SEC_IN_DAY * 30));
           const gas = parseInt((await rates.internalRateOfReturnMG(cashflows, times, tokens(0.05))).gasUsed);
-          assert.equal(gas, 49285, `gas changed: ${gas} ≠ 49285 (12-cashflow) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 49120, `gas changed: ${gas} ≠ 49120 (12-cashflow) — deterministic, update threshold if intentional`);
         }
       });
     });
