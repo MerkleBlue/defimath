@@ -55,7 +55,7 @@ library DeFiMath {
     /// @notice Thrown when input to log1p() is at or below -1 (i.e., 1+x ≤ 0)
     error Log1pLowerBoundError();
 
-    /// @notice Thrown when input to sqrt() exceeds the upper bound (~2^80)
+    /// @notice Thrown when input to sqrt() exceeds the upper bound at which the FP18 scaling step (`x · 1e18`) would overflow uint256.
     error SqrtUpperBoundError();
 
     /// @notice Thrown when input to cbrt() exceeds the upper bound (~2^76)
@@ -332,7 +332,7 @@ library DeFiMath {
         unchecked {
             if (x >= 1e18) {
                 // check input
-                if (x >= SQRT_UPPER_BOUND) revert SqrtUpperBoundError(); // up to 2^80
+                if (x >= SQRT_UPPER_BOUND) revert SqrtUpperBoundError();
 
                 assembly ("memory-safe") {
                     x := mul(x, 1000000000000000000) // convert to 1e36 base

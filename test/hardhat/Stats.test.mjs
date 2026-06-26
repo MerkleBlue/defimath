@@ -134,20 +134,22 @@ describe("DeFiMathStats", function () {
         assert.equal(actualB, 0);
       });
 
-      it("asymmetric near limit (a at MAX_VALUE = 1e15, b = 1e9)", async function () {
+      it("asymmetric corner (a at MAX_VALUE = 1e15, b = 1e9)", async function () {
         const { stats } = await loadFixture(deploy);
-        // MAX_VALUE per-input is 1e15 (FP) = 1e33 wei. But geometricMean internally calls
-        // sqrt(a · b / 1e18) which itself reverts above 2^80 ≈ 1.2089e24 (FP) ≈ 1.2089e42 wei.
-        // → effective joint bound: a · b ≤ 1.2089e60 wei. With a at MAX, b must be ≤ ~1.2e9.
-        // Test the asymmetric corner where one side is at MAX.
+        // Coverage for a highly asymmetric pair where one input is at MAX_VALUE (1e15 FP = 1e33 wei)
+        // and the other is much smaller. The sqrt step inside geometricMean has plenty of headroom
+        // (sqrt now reverts only when x · 1e18 overflows uint256), so the only binding constraint
+        // is the per-input MAX_VALUE check.
         const MAX = "1000000000000000000000000000000000";  // 1e15 FP
         const actual = (await stats.geometricMean(MAX, tokens(1e9))).toString() / 1e18;
         assertRelativeBelow(actual, Math.sqrt(1e15 * 1e9), MAX_REL_ERROR_SQRT);
       });
 
-      it("symmetric near limit (a = b at sqrt bound)", async function () {
+      it("symmetric mid-range (a = b = 1e12)", async function () {
         const { stats } = await loadFixture(deploy);
-        // Largest a = b is bounded by a² · 1e18 ≤ SQRT_UPPER_BOUND wei ≈ 1.21e42, so a ≤ ~1.1e12.
+        // Symmetric pair coverage at a representative middle magnitude. Both inputs sit well below
+        // MAX_VALUE and the internal sqrt has no binding constraint, so this is straight functional
+        // coverage of the symmetric path.
         const actual = (await stats.geometricMean(tokens(1e12), tokens(1e12))).toString() / 1e18;
         assertRelativeBelow(actual, 1e12, MAX_REL_ERROR_SQRT);
       });
