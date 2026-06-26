@@ -540,8 +540,8 @@ describe("DeFiMathBinary", function () {
       it("rejects when time > max time", async function () {
         const { binary } = await loadFixture(deploy);
 
-        await assertRevertError(binary, binary.binaryCallPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await binary.binaryCallPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(binary, binary.binaryCallPrice(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await binary.binaryCallPrice(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(binary, binary.binaryCallPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -749,8 +749,8 @@ describe("DeFiMathBinary", function () {
       it("rejects when time > max time", async function () {
         const { binary } = await loadFixture(deploy);
 
-        await assertRevertError(binary, binary.binaryPutPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await binary.binaryPutPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(binary, binary.binaryPutPrice(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await binary.binaryPutPrice(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(binary, binary.binaryPutPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -950,8 +950,8 @@ describe("DeFiMathBinary", function () {
       it("rejects when time > max time", async function () {
         const { binary } = await loadFixture(deploy);
 
-        await assertRevertError(binary, binary.binaryDelta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await binary.binaryDelta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(binary, binary.binaryDelta(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await binary.binaryDelta(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(binary, binary.binaryDelta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -1161,8 +1161,8 @@ describe("DeFiMathBinary", function () {
       it("rejects when time > max time", async function () {
         const { binary } = await loadFixture(deploy);
 
-        await assertRevertError(binary, binary.binaryGamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await binary.binaryGamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(binary, binary.binaryGamma(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await binary.binaryGamma(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(binary, binary.binaryGamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -1353,8 +1353,8 @@ describe("DeFiMathBinary", function () {
       it("rejects when time > max time", async function () {
         const { binary } = await loadFixture(deploy);
 
-        await assertRevertError(binary, binary.binaryTheta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await binary.binaryTheta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(binary, binary.binaryTheta(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await binary.binaryTheta(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(binary, binary.binaryTheta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -1554,8 +1554,8 @@ describe("DeFiMathBinary", function () {
       it("rejects when time > max time", async function () {
         const { binary } = await loadFixture(deploy);
 
-        await assertRevertError(binary, binary.binaryVega(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await binary.binaryVega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(binary, binary.binaryVega(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await binary.binaryVega(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(binary, binary.binaryVega(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 

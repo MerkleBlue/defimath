@@ -26,8 +26,8 @@ library DeFiMathBinary {
     /// @notice Maximum strike/spot ratio (5x and 1/5x range)
     uint256 internal constant MAX_STSP_RATIO = 5;
 
-    /// @notice Maximum allowed time to expiration: 2 years in seconds
-    uint256 internal constant MAX_EXPIRATION = 63072000 + 1;
+    /// @notice Maximum allowed time to expiration: 32 years in seconds
+    uint256 internal constant MAX_EXPIRATION = 32 * SECONDS_IN_YEAR + 1;
 
     /// @notice Maximum allowed risk-free interest rate (400%)
     uint256 internal constant MAX_RATE = 4e18 + 1;
@@ -45,7 +45,7 @@ library DeFiMathBinary {
     /// @notice Reverts when strike is too high relative to spot
     error StrikeUpperBoundError();
 
-    /// @notice Reverts when time to expiration exceeds 2 years
+    /// @notice Reverts when time to expiration exceeds 32 years
     error TimeToExpiryUpperBoundError();
 
     /// @notice Reverts when risk-free rate exceeds 400%
