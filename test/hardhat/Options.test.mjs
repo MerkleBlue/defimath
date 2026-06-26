@@ -325,8 +325,8 @@ describe("DeFiMathOptions", function () {
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.callOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.callOptionPrice(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -514,8 +514,8 @@ describe("DeFiMathOptions", function () {
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.putOptionPrice(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.putOptionPrice(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -654,8 +654,8 @@ describe("DeFiMathOptions", function () {
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.delta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.delta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.delta(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.delta(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(options, options.delta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -781,8 +781,8 @@ describe("DeFiMathOptions", function () {
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.gamma(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.gamma(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(options, options.gamma(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -913,8 +913,8 @@ describe("DeFiMathOptions", function () {
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.theta(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.theta(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.theta(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.theta(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(options, options.theta(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -1040,8 +1040,8 @@ describe("DeFiMathOptions", function () {
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.vega(tokens(1000), tokens(930), 63072001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.vega(tokens(1000), tokens(930), 63072000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.vega(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.vega(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
         await assertRevertError(options, options.vega(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
@@ -1161,7 +1161,7 @@ describe("DeFiMathOptions", function () {
 
       it("rejects when expiration exceeds max", async function () {
         const { options } = await loadFixture(deploy);
-        await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 63072001, tokens(0.05), tokens(50), true), "TimeToExpiryUpperBoundError");
+        await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 1009152001, tokens(0.05), tokens(50), true), "TimeToExpiryUpperBoundError");
       });
 
       it("rejects when rate exceeds max", async function () {
