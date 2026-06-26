@@ -16,9 +16,9 @@ library DeFiMath {
     ///         Equals −⌊ln(1e18) · 1e18⌋ − 1 — at or below this, exp(x) silently returns 0.
     int256 internal constant EXP_LOWER_BOUND = -41.446531673892822313e18;
 
-    /// @notice Largest sqrt input that keeps the squared output under 2^160 (and the answer under 2^40 in FP).
-    ///         Equals 2^80 in fixed-point (= 2^80 · 1e18).
-    uint256 internal constant SQRT_UPPER_BOUND = 1.208925819614629e42;
+    /// @notice Largest sqrt input that doesn't overflow during the FP18 scaling step (`x · 1e18`).
+    ///         Equals ⌊(2^256 − 1) / 1e18⌋ + 1 — i.e. the smallest input for which `x · 1e18` overflows uint256.
+    uint256 internal constant SQRT_UPPER_BOUND = type(uint256).max / 1e18 + 1;
 
     /// @notice Largest cbrt input that keeps the cubed output under 2^228 (and the answer under 2^26 in FP).
     ///         Equals 2^76 in fixed-point (= 2^76 · 1e18).

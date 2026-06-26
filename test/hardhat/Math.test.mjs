@@ -1265,10 +1265,11 @@ describe("DeFiMath", function () {
       it("sqrt when x is max", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        const x = 1208925819614628999999999.999999999999999999;
+        // Largest valid input = ⌊(2^256 − 1) / 1e18⌋, the boundary just below where mul(x, 1e18) overflows uint256.
+        const x = 115792089237316195423570985008687907853269.984665640564039457;
         const expected = Math.sqrt(x);
 
-        const actualSOL = (await deFiMath.sqrt("1208925819614628999999999999999999999999999")).toString() / 1e18;
+        const actualSOL = (await deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457")).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
       });
 
@@ -1289,9 +1290,11 @@ describe("DeFiMath", function () {
       it("rejects when x >= max", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        await assertRevertError(deFiMath, deFiMath.sqrt("1208925819614629000000000000000000000000000"), "SqrtUpperBoundError");
+        // At and above SQRT_UPPER_BOUND = ⌊(2^256 − 1) / 1e18⌋ + 1 = 115792089237316195423570985008687907853269984665640564039458,
+        // the mul(x, 1e18) scaling step would overflow uint256.
+        await assertRevertError(deFiMath, deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039458"), "SqrtUpperBoundError");
         await assertRevertError(deFiMath, deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "SqrtUpperBoundError");
-        await deFiMath.sqrt("1208925819614628999999999999999999999999999");
+        await deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457");
       });
     });
 
