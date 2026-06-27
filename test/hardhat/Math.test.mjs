@@ -172,6 +172,29 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.exp on 500 random positive inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ [0, 130). Threshold is 2× MAX_REL_ERROR_EXP — the behaviour grid is
+        // calibrated to its stride; random sampling occasionally lands on worse non-dyadic spots.
+        for (let i = 0; i < 500; i++) {
+          const x = Math.random() * 130;
+          const expected = Math.exp(x);
+          const actual = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, 2 * MAX_REL_ERROR_EXP);
+        }
+      });
+
+      it("matches Math.exp on 500 random negative inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ (-40, 0). For x < -41.45 the contract clamps to 0 (handled in limits);
+        // negative branch uses absolute error since exp(x) shrinks far below 1.
+        for (let i = 0; i < 500; i++) {
+          const x = -Math.random() * 40;
+          const expected = Math.exp(x);
+          const actual = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_ERF);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -262,6 +285,17 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.exp on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ [0, 130). Threshold is 2× MAX_REL_ERROR_EXP — random sampling occasionally
+        // lands on worse non-dyadic spots than the behaviour stride grid.
+        for (let i = 0; i < 500; i++) {
+          const x = Math.random() * 130;
+          const expected = Math.exp(x);
+          const actual = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, 2 * MAX_REL_ERROR_EXP);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -358,6 +392,28 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.expm1 on 500 random positive inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ [0.01, 134) — above the small-x Taylor band, with headroom from the upper bound.
+        for (let i = 0; i < 500; i++) {
+          const x = 0.01 + Math.random() * 133.99;
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, 1e-13);
+        }
+      });
+
+      it("matches Math.expm1 on 500 random negative inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ (-40, -0.01). expm1 approaches -1; abs error matches behaviour convention,
+        // with 3× the behaviour-stride threshold to absorb random sampling on non-dyadic spots.
+        for (let i = 0; i < 500; i++) {
+          const x = -0.01 - Math.random() * 39.99;
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, 3e-14);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -628,6 +684,20 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.log1p on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const NEG_ONE_FP18 = -(10n ** 18n);
+        const SMALL_FP18 = 10n ** 16n;  // |x| < 0.01 ⇒ log1p(x) ≈ x, rel-error metric breaks
+        for (let i = 0; i < 500; i++) {
+          let xWei;
+          // Reject x ≤ -1 (tested in failure) and |x| < 0.01 (Taylor band: log1p(x) ≈ x,
+          // covered by behaviour). xWei is int256, valid range is (-1e18, +∞).
+          do { xWei = randomInt256(); } while (xWei <= NEG_ONE_FP18 || (xWei > -SMALL_FP18 && xWei < SMALL_FP18));
+          const expected = Math.log1p(Number(xWei) / 1e18);
+          const actual = (await deFiMath.log1p(xWei)).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -737,7 +807,6 @@ describe("DeFiMath", function () {
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
-      // todo: add random tests
 
       it("log2 when x in [0.0625, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -785,6 +854,19 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.log2 on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 500; i++) {
+          let xWei;
+          // Reject xWei = 0 (tested in failure) and xWei in [0.5, 2] FP18 — that thin
+          // band has log2(x) ≈ 0, where the relative-error metric breaks down.
+          do { xWei = randomUint256(); } while (xWei === 0n || (xWei > FP1 / 2n && xWei < FP1 * 2n));
+          const expected = Math.log2(Number(xWei) / 1e18);
+          const actual = (await deFiMath.log2(xWei)).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -889,7 +971,6 @@ describe("DeFiMath", function () {
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
-      // todo: add random tests
 
       it("log10 when x in [0.0625, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -937,6 +1018,19 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.log10 on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 500; i++) {
+          let xWei;
+          // Reject xWei = 0 (tested in failure) and xWei in [0.5, 2] FP18 — that thin
+          // band has log10(x) ≈ 0, where the relative-error metric breaks down.
+          do { xWei = randomUint256(); } while (xWei === 0n || (xWei > FP1 / 2n && xWei < FP1 * 2n));
+          const expected = Math.log10(Number(xWei) / 1e18);
+          const actual = (await deFiMath.log10(xWei)).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -1146,6 +1240,17 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.pow on 500 random (x, a) pairs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // x ∈ [0.01, 100], a ∈ [-2, 2]: a · ln(x) ∈ ~[-9.2, 9.2], safely inside exp's domain.
+        for (let i = 0; i < 500; i++) {
+          const x = 0.01 + Math.random() * 99.99;
+          const a = -2 + Math.random() * 4;
+          const expected = Math.pow(x, a);
+          const actual = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_POW);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -1290,6 +1395,20 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.sqrt on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const SQRT_UPPER_BOUND = BigInt("115792089237316195423570985008687907853269984665640564039458");
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 500; i++) {
+          let xWei;
+          // Reject xWei ≥ SQRT_UPPER_BOUND (tested in failure) and xWei < 1 FP18 — the
+          // sub-1 range needs dyadic samples to stay under threshold (see behaviour comment).
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei >= SQRT_UPPER_BOUND);
+          const expected = Math.sqrt(Number(xWei) / 1e18);
+          const actual = (await deFiMath.sqrt(xWei)).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -1391,6 +1510,20 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.cbrt on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const CBRT_UPPER_BOUND = BigInt("75557863725914323000000000000000000000000");
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 500; i++) {
+          let xWei;
+          // Reject xWei ≥ CBRT_UPPER_BOUND (tested in failure) and xWei < 1 FP18 — the
+          // sub-1 range needs dyadic samples to stay under threshold (see behaviour comment).
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei >= CBRT_UPPER_BOUND);
+          const expected = Math.cbrt(Number(xWei) / 1e18);
+          const actual = (await deFiMath.cbrt(xWei)).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_CBRT);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -2128,6 +2261,16 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.sqrt on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // sqrtTime is calibrated to FP18 years in [1s, 8y] ≈ [3.17e-8, 8].
+        for (let i = 0; i < 500; i++) {
+          const x = 3.17e-8 + Math.random() * (8 - 3.17e-8);
+          const expected = Math.sqrt(x);
+          const actual = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT_TIME);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -2215,6 +2358,17 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches bs.stdNormCDF on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ [-16.447, 16.447] — the documented operational range. Outside this band
+        // the CDF saturates to 0/1, handled in limits.
+        for (let i = 0; i < 500; i++) {
+          const x = -16.447 + Math.random() * 32.894;
+          const expected = bs.stdNormCDF(x);
+          const actual = (await deFiMath.stdNormCDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_CDF);
+        }
+      });
     });
 
     describe("failure", function () {
@@ -2310,6 +2464,17 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches math-erf on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ [-11.63, 11.63] — the documented operational range. Outside this band
+        // erf saturates to ±1, handled in limits.
+        for (let i = 0; i < 500; i++) {
+          const x = -11.63 + Math.random() * 23.26;
+          const expected = erf(x);
+          const actual = (await deFiMath.erf(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_ERF);
+        }
+      });
     });
 
     describe("failure", function () {
