@@ -3,7 +3,7 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import erf from "math-erf";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_BINARY_ABS_ERROR, MAX_BINARY_DELTA_ABS_ERROR, MAX_BINARY_GAMMA_ABS_ERROR, MAX_BINARY_THETA_ABS_ERROR, MAX_BINARY_VEGA_ABS_ERROR } from "./Tolerances.test.mjs";
+import { MAX_ABS_ERROR_BINARY, MAX_ABS_ERROR_BINARY_DELTA, MAX_ABS_ERROR_BINARY_GAMMA, MAX_ABS_ERROR_BINARY_THETA, MAX_ABS_ERROR_BINARY_VEGA } from "./Tolerances.test.mjs";
 
 const fastTest = true;
 
@@ -127,7 +127,7 @@ describe("DeFiMathBinary", function () {
     return { binary };
   }
 
-  async function testBinaryRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_BINARY_ABS_ERROR, multi = 10, log = true) {
+  async function testBinaryRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_ABS_ERROR_BINARY, multi = 10, log = true) {
     const { binary } = await loadFixture(deploy);
     log && console.log("Max abs error: $" + maxAbsError);
 
@@ -191,7 +191,7 @@ describe("DeFiMathBinary", function () {
     }
   }
 
-  async function testBinaryDeltaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_BINARY_DELTA_ABS_ERROR, multi = 10, log = true) {
+  async function testBinaryDeltaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_ABS_ERROR_BINARY_DELTA, multi = 10, log = true) {
     const { binary } = await loadFixture(deploy);
     log && console.log("Max abs error: " + maxAbsError);
 
@@ -237,7 +237,7 @@ describe("DeFiMathBinary", function () {
     }
   }
 
-  async function testBinaryGammaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_BINARY_GAMMA_ABS_ERROR, multi = 10, log = true) {
+  async function testBinaryGammaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_ABS_ERROR_BINARY_GAMMA, multi = 10, log = true) {
     const { binary } = await loadFixture(deploy);
     log && console.log("Max abs error: " + maxAbsError);
 
@@ -283,7 +283,7 @@ describe("DeFiMathBinary", function () {
     }
   }
 
-  async function testBinaryThetaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_BINARY_THETA_ABS_ERROR, multi = 10, log = true) {
+  async function testBinaryThetaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_ABS_ERROR_BINARY_THETA, multi = 10, log = true) {
     const { binary } = await loadFixture(deploy);
     log && console.log("Max abs error: " + maxAbsError);
 
@@ -329,7 +329,7 @@ describe("DeFiMathBinary", function () {
     }
   }
 
-  async function testBinaryVegaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_BINARY_VEGA_ABS_ERROR, multi = 10, log = true) {
+  async function testBinaryVegaRange(strikePoints, timePoints, volPoints, ratePoints, maxAbsError = MAX_ABS_ERROR_BINARY_VEGA, multi = 10, log = true) {
     const { binary } = await loadFixture(deploy);
     log && console.log("Max abs error: " + maxAbsError);
 
@@ -388,7 +388,7 @@ describe("DeFiMathBinary", function () {
         const expected = binaryCallWrapped(1000, 980, 60 * SEC_IN_DAY, 0.60, 0.05);
 
         const actualSOL = (await binary.binaryCallPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
       });
 
       it("multiple in typical range", async function () {
@@ -406,7 +406,7 @@ describe("DeFiMathBinary", function () {
                 const expected = binaryCallWrapped(1000, strike, time * SEC_IN_DAY, vol, rate);
 
                 const actualSOL = (await binary.binaryCallPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
               }
             }
           }
@@ -420,7 +420,7 @@ describe("DeFiMathBinary", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testBinaryRange(strikes, times, vols, rates, true, MAX_BINARY_ABS_ERROR, 10, false);
+        await testBinaryRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_BINARY, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -458,7 +458,7 @@ describe("DeFiMathBinary", function () {
               const expected = binaryCallWrapped(1000, strike, time, 0, rate);
 
               const actualSOL = (await binary.binaryCallPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-              assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+              assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
             }
           }
         }
@@ -469,7 +469,7 @@ describe("DeFiMathBinary", function () {
         const expected = binaryCallWrapped(1000, 1200, 1 * SEC_IN_DAY, 0.40, 0.05);
 
         const actualSOL = (await binary.binaryCallPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
       });
 
       it("handles when vol is 0, and time lowest", async function () {
@@ -477,7 +477,7 @@ describe("DeFiMathBinary", function () {
         const expected = binaryCallWrapped(1000, 1020, 1, 0, 0.05);
 
         const actualSOL = (await binary.binaryCallPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
       });
     });
 
@@ -487,7 +487,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryRange(strikes, times, vols, rates, true, MAX_BINARY_ABS_ERROR, 10, !fastTest);
+        await testBinaryRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_BINARY, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -495,7 +495,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryRange(strikes, times, vols, rates, true, MAX_BINARY_ABS_ERROR, 10, !fastTest);
+        await testBinaryRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_BINARY, 10, !fastTest);
       });
     });
 
@@ -583,7 +583,7 @@ describe("DeFiMathBinary", function () {
         const expected = binaryPutWrapped(1000, 1020, 60 * SEC_IN_DAY, 0.60, 0.05);
 
         const actualSOL = (await binary.binaryPutPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
       });
 
       it("multiple in typical range", async function () {
@@ -601,7 +601,7 @@ describe("DeFiMathBinary", function () {
                 const expected = binaryPutWrapped(1000, strike, time * SEC_IN_DAY, vol, rate);
 
                 const actualSOL = (await binary.binaryPutPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
               }
             }
           }
@@ -615,7 +615,7 @@ describe("DeFiMathBinary", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testBinaryRange(strikes, times, vols, rates, false, MAX_BINARY_ABS_ERROR, 10, false);
+        await testBinaryRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_BINARY, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -655,7 +655,7 @@ describe("DeFiMathBinary", function () {
               const expected = binaryPutWrapped(1000, strike, time, 0, rate);
 
               const actualSOL = (await binary.binaryPutPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-              assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+              assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
             }
           }
         }
@@ -666,7 +666,7 @@ describe("DeFiMathBinary", function () {
         const expected = binaryPutWrapped(1000, 800, 1 * SEC_IN_DAY, 0.40, 0.05);
 
         const actualSOL = (await binary.binaryPutPrice(tokens(1000), tokens(800), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
       });
 
       it("handles when vol is 0, and time lowest", async function () {
@@ -674,7 +674,7 @@ describe("DeFiMathBinary", function () {
         const expected = binaryPutWrapped(1000, 980, 1, 0, 0.05);
 
         const actualSOL = (await binary.binaryPutPrice(tokens(1000), tokens(980), 1, 0, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_BINARY);
       });
 
       it("call + put = e^(-r*τ) (parity)", async function () {
@@ -686,7 +686,7 @@ describe("DeFiMathBinary", function () {
         const putPrice = (await binary.binaryPutPrice(...args)).toString() / 1e18;
         const expectedDiscount = Math.exp(-0.05 * 30 / 365);
 
-        assertAbsoluteBelow(callPrice + putPrice, expectedDiscount, MAX_BINARY_ABS_ERROR);
+        assertAbsoluteBelow(callPrice + putPrice, expectedDiscount, MAX_ABS_ERROR_BINARY);
       });
     });
 
@@ -696,7 +696,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryRange(strikes, times, vols, rates, false, MAX_BINARY_ABS_ERROR, 10, !fastTest);
+        await testBinaryRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_BINARY, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -704,7 +704,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryRange(strikes, times, vols, rates, false, MAX_BINARY_ABS_ERROR, 10, !fastTest);
+        await testBinaryRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_BINARY, 10, !fastTest);
       });
     });
 
@@ -795,8 +795,8 @@ describe("DeFiMathBinary", function () {
         const actualCall = result.deltaCall.toString() / 1e18;
         const actualPut = result.deltaPut.toString() / 1e18;
 
-        assertAbsoluteBelow(actualCall, expected.deltaCall, MAX_BINARY_DELTA_ABS_ERROR);
-        assertAbsoluteBelow(actualPut, expected.deltaPut, MAX_BINARY_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(actualCall, expected.deltaCall, MAX_ABS_ERROR_BINARY_DELTA);
+        assertAbsoluteBelow(actualPut, expected.deltaPut, MAX_ABS_ERROR_BINARY_DELTA);
       });
 
       it("multiple in typical range", async function () {
@@ -817,8 +817,8 @@ describe("DeFiMathBinary", function () {
                 const actualCall = result.deltaCall.toString() / 1e18;
                 const actualPut = result.deltaPut.toString() / 1e18;
 
-                assertAbsoluteBelow(actualCall, expected.deltaCall, MAX_BINARY_DELTA_ABS_ERROR);
-                assertAbsoluteBelow(actualPut, expected.deltaPut, MAX_BINARY_DELTA_ABS_ERROR);
+                assertAbsoluteBelow(actualCall, expected.deltaCall, MAX_ABS_ERROR_BINARY_DELTA);
+                assertAbsoluteBelow(actualPut, expected.deltaPut, MAX_ABS_ERROR_BINARY_DELTA);
               }
             }
           }
@@ -832,7 +832,7 @@ describe("DeFiMathBinary", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testBinaryDeltaRange(strikes, times, vols, rates, MAX_BINARY_DELTA_ABS_ERROR, 10, false);
+        await testBinaryDeltaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_DELTA, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -886,8 +886,8 @@ describe("DeFiMathBinary", function () {
         const expected = binaryDeltaWrapped(1000, 1020, 1, 0, 0.05);
 
         const result = await binary.binaryDelta(tokens(1000), tokens(1020), 1, 0, tokens(0.05));
-        assertAbsoluteBelow(result.deltaCall.toString() / 1e18, expected.deltaCall, MAX_BINARY_DELTA_ABS_ERROR);
-        assertAbsoluteBelow(result.deltaPut.toString() / 1e18, expected.deltaPut, MAX_BINARY_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(result.deltaCall.toString() / 1e18, expected.deltaCall, MAX_ABS_ERROR_BINARY_DELTA);
+        assertAbsoluteBelow(result.deltaPut.toString() / 1e18, expected.deltaPut, MAX_ABS_ERROR_BINARY_DELTA);
       });
     });
 
@@ -897,7 +897,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryDeltaRange(strikes, times, vols, rates, MAX_BINARY_DELTA_ABS_ERROR, 10, !fastTest);
+        await testBinaryDeltaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_DELTA, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -905,7 +905,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryDeltaRange(strikes, times, vols, rates, MAX_BINARY_DELTA_ABS_ERROR, 10, !fastTest);
+        await testBinaryDeltaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_DELTA, 10, !fastTest);
       });
     });
 
@@ -996,8 +996,8 @@ describe("DeFiMathBinary", function () {
         const actualCall = result.gammaCall.toString() / 1e18;
         const actualPut = result.gammaPut.toString() / 1e18;
 
-        assertAbsoluteBelow(actualCall, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
-        assertAbsoluteBelow(actualPut, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
+        assertAbsoluteBelow(actualCall, expected.gammaCall, MAX_ABS_ERROR_BINARY_GAMMA);
+        assertAbsoluteBelow(actualPut, expected.gammaPut, MAX_ABS_ERROR_BINARY_GAMMA);
       });
 
       it("multiple in typical range", async function () {
@@ -1018,8 +1018,8 @@ describe("DeFiMathBinary", function () {
                 const actualCall = result.gammaCall.toString() / 1e18;
                 const actualPut = result.gammaPut.toString() / 1e18;
 
-                assertAbsoluteBelow(actualCall, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
-                assertAbsoluteBelow(actualPut, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
+                assertAbsoluteBelow(actualCall, expected.gammaCall, MAX_ABS_ERROR_BINARY_GAMMA);
+                assertAbsoluteBelow(actualPut, expected.gammaPut, MAX_ABS_ERROR_BINARY_GAMMA);
               }
             }
           }
@@ -1033,7 +1033,7 @@ describe("DeFiMathBinary", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testBinaryGammaRange(strikes, times, vols, rates, MAX_BINARY_GAMMA_ABS_ERROR, 10, false);
+        await testBinaryGammaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_GAMMA, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -1087,8 +1087,8 @@ describe("DeFiMathBinary", function () {
         const expected = binaryGammaWrapped(1000, 1020, 1, 0, 0.05);
 
         const result = await binary.binaryGamma(tokens(1000), tokens(1020), 1, 0, tokens(0.05));
-        assertAbsoluteBelow(result.gammaCall.toString() / 1e18, expected.gammaCall, MAX_BINARY_GAMMA_ABS_ERROR);
-        assertAbsoluteBelow(result.gammaPut.toString() / 1e18, expected.gammaPut, MAX_BINARY_GAMMA_ABS_ERROR);
+        assertAbsoluteBelow(result.gammaCall.toString() / 1e18, expected.gammaCall, MAX_ABS_ERROR_BINARY_GAMMA);
+        assertAbsoluteBelow(result.gammaPut.toString() / 1e18, expected.gammaPut, MAX_ABS_ERROR_BINARY_GAMMA);
       });
 
       it("returns 0 gamma when S·σ√τ underflows to 0 (sub-$1 spot, zero vol)", async function () {
@@ -1108,7 +1108,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryGammaRange(strikes, times, vols, rates, MAX_BINARY_GAMMA_ABS_ERROR, 10, !fastTest);
+        await testBinaryGammaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_GAMMA, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -1116,7 +1116,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryGammaRange(strikes, times, vols, rates, MAX_BINARY_GAMMA_ABS_ERROR, 10, !fastTest);
+        await testBinaryGammaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_GAMMA, 10, !fastTest);
       });
     });
 
@@ -1207,8 +1207,8 @@ describe("DeFiMathBinary", function () {
         const actualCall = result.thetaCall.toString() / 1e18;
         const actualPut = result.thetaPut.toString() / 1e18;
 
-        assertAbsoluteBelow(actualCall, expected.thetaCall, MAX_BINARY_THETA_ABS_ERROR);
-        assertAbsoluteBelow(actualPut, expected.thetaPut, MAX_BINARY_THETA_ABS_ERROR);
+        assertAbsoluteBelow(actualCall, expected.thetaCall, MAX_ABS_ERROR_BINARY_THETA);
+        assertAbsoluteBelow(actualPut, expected.thetaPut, MAX_ABS_ERROR_BINARY_THETA);
       });
 
       it("multiple in typical range", async function () {
@@ -1229,8 +1229,8 @@ describe("DeFiMathBinary", function () {
                 const actualCall = result.thetaCall.toString() / 1e18;
                 const actualPut = result.thetaPut.toString() / 1e18;
 
-                assertAbsoluteBelow(actualCall, expected.thetaCall, MAX_BINARY_THETA_ABS_ERROR);
-                assertAbsoluteBelow(actualPut, expected.thetaPut, MAX_BINARY_THETA_ABS_ERROR);
+                assertAbsoluteBelow(actualCall, expected.thetaCall, MAX_ABS_ERROR_BINARY_THETA);
+                assertAbsoluteBelow(actualPut, expected.thetaPut, MAX_ABS_ERROR_BINARY_THETA);
               }
             }
           }
@@ -1244,7 +1244,7 @@ describe("DeFiMathBinary", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testBinaryThetaRange(strikes, times, vols, rates, MAX_BINARY_THETA_ABS_ERROR, 10, false);
+        await testBinaryThetaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_THETA, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -1281,7 +1281,7 @@ describe("DeFiMathBinary", function () {
         const tPut = result.thetaPut.toString() / 1e18;
         const expected = r * Math.exp(-r * t / SEC_IN_YEAR) / 365;
 
-        assertAbsoluteBelow(tCall + tPut, expected, MAX_BINARY_THETA_ABS_ERROR);
+        assertAbsoluteBelow(tCall + tPut, expected, MAX_ABS_ERROR_BINARY_THETA);
       });
 
       it("handles when vol is 0, and time lowest", async function () {
@@ -1289,8 +1289,8 @@ describe("DeFiMathBinary", function () {
         const expected = binaryThetaWrapped(1000, 1020, 1, 0, 0.05);
 
         const result = await binary.binaryTheta(tokens(1000), tokens(1020), 1, 0, tokens(0.05));
-        assertAbsoluteBelow(result.thetaCall.toString() / 1e18, expected.thetaCall, MAX_BINARY_THETA_ABS_ERROR);
-        assertAbsoluteBelow(result.thetaPut.toString() / 1e18, expected.thetaPut, MAX_BINARY_THETA_ABS_ERROR);
+        assertAbsoluteBelow(result.thetaCall.toString() / 1e18, expected.thetaCall, MAX_ABS_ERROR_BINARY_THETA);
+        assertAbsoluteBelow(result.thetaPut.toString() / 1e18, expected.thetaPut, MAX_ABS_ERROR_BINARY_THETA);
       });
     });
 
@@ -1300,7 +1300,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryThetaRange(strikes, times, vols, rates, MAX_BINARY_THETA_ABS_ERROR, 10, !fastTest);
+        await testBinaryThetaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_THETA, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -1308,7 +1308,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryThetaRange(strikes, times, vols, rates, MAX_BINARY_THETA_ABS_ERROR, 10, !fastTest);
+        await testBinaryThetaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_THETA, 10, !fastTest);
       });
     });
 
@@ -1399,8 +1399,8 @@ describe("DeFiMathBinary", function () {
         const actualCall = result.vegaCall.toString() / 1e18;
         const actualPut = result.vegaPut.toString() / 1e18;
 
-        assertAbsoluteBelow(actualCall, expected.vegaCall, MAX_BINARY_VEGA_ABS_ERROR);
-        assertAbsoluteBelow(actualPut, expected.vegaPut, MAX_BINARY_VEGA_ABS_ERROR);
+        assertAbsoluteBelow(actualCall, expected.vegaCall, MAX_ABS_ERROR_BINARY_VEGA);
+        assertAbsoluteBelow(actualPut, expected.vegaPut, MAX_ABS_ERROR_BINARY_VEGA);
       });
 
       it("multiple in typical range", async function () {
@@ -1421,8 +1421,8 @@ describe("DeFiMathBinary", function () {
                 const actualCall = result.vegaCall.toString() / 1e18;
                 const actualPut = result.vegaPut.toString() / 1e18;
 
-                assertAbsoluteBelow(actualCall, expected.vegaCall, MAX_BINARY_VEGA_ABS_ERROR);
-                assertAbsoluteBelow(actualPut, expected.vegaPut, MAX_BINARY_VEGA_ABS_ERROR);
+                assertAbsoluteBelow(actualCall, expected.vegaCall, MAX_ABS_ERROR_BINARY_VEGA);
+                assertAbsoluteBelow(actualPut, expected.vegaPut, MAX_ABS_ERROR_BINARY_VEGA);
               }
             }
           }
@@ -1436,7 +1436,7 @@ describe("DeFiMathBinary", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testBinaryVegaRange(strikes, times, vols, rates, MAX_BINARY_VEGA_ABS_ERROR, 10, false);
+        await testBinaryVegaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_VEGA, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -1490,8 +1490,8 @@ describe("DeFiMathBinary", function () {
         const expected = binaryVegaWrapped(1000, 1020, 1, 0.0001, 0.05);
 
         const result = await binary.binaryVega(tokens(1000), tokens(1020), 1, tokens(0.0001), tokens(0.05));
-        assertAbsoluteBelow(result.vegaCall.toString() / 1e18, expected.vegaCall, MAX_BINARY_VEGA_ABS_ERROR);
-        assertAbsoluteBelow(result.vegaPut.toString() / 1e18, expected.vegaPut, MAX_BINARY_VEGA_ABS_ERROR);
+        assertAbsoluteBelow(result.vegaCall.toString() / 1e18, expected.vegaCall, MAX_ABS_ERROR_BINARY_VEGA);
+        assertAbsoluteBelow(result.vegaPut.toString() / 1e18, expected.vegaPut, MAX_ABS_ERROR_BINARY_VEGA);
       });
     });
 
@@ -1501,7 +1501,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryVegaRange(strikes, times, vols, rates, MAX_BINARY_VEGA_ABS_ERROR, 10, !fastTest);
+        await testBinaryVegaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_VEGA, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -1509,7 +1509,7 @@ describe("DeFiMathBinary", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testBinaryVegaRange(strikes, times, vols, rates, MAX_BINARY_VEGA_ABS_ERROR, 10, !fastTest);
+        await testBinaryVegaRange(strikes, times, vols, rates, MAX_ABS_ERROR_BINARY_VEGA, 10, !fastTest);
       });
     });
 

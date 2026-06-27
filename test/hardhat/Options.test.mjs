@@ -4,7 +4,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import bs from "black-scholes";
 import greeks from "greeks";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_OPTION_ABS_ERROR, MAX_DELTA_ABS_ERROR, MAX_GAMMA_ABS_ERROR, MAX_THETA_ABS_ERROR, MAX_VEGA_ABS_ERROR } from "./Tolerances.test.mjs";
+import { MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_ABS_ERROR_GAMMA, MAX_ABS_ERROR_THETA, MAX_ABS_ERROR_VEGA } from "./Tolerances.test.mjs";
 
 const fastTest = true;
 
@@ -35,7 +35,7 @@ describe("DeFiMathOptions", function () {
     return { options };
   }
 
-  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_OPTION_ABS_ERROR, multi = 10, log = true) {
+  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_ABS_ERROR_OPTION, multi = 10, log = true) {
     const { options } = await loadFixture(deploy);
     log && console.log("Max abs error: $" + maxAbsError);
 
@@ -132,28 +132,28 @@ describe("DeFiMathOptions", function () {
                 const expectedCall = greeks.getDelta(spot, k, t, vol, rate, "call");
                 const expectedPut = greeks.getDelta(spot, k, t, vol, rate, "put");
                 const actual = await options.delta(tokens(spot), tokens(k), time, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actual.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
-                assertAbsoluteBelow(actual.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
+                assertAbsoluteBelow(actual.deltaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_DELTA);
+                assertAbsoluteBelow(actual.deltaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_DELTA);
                 break;
               }
               case "gamma": {
                 const expected = greeks.getGamma(spot, k, t, vol, rate, "call");
                 const actual = (await options.gamma(tokens(spot), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actual, expected, MAX_GAMMA_ABS_ERROR);
+                assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_GAMMA);
                 break;
               }
               case "theta": {
                 const expectedCall = greeks.getTheta(spot, k, t, vol, rate, "call");
                 const expectedPut = greeks.getTheta(spot, k, t, vol, rate, "put");
                 const actual = await options.theta(tokens(spot), tokens(k), time, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actual.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
-                assertAbsoluteBelow(actual.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
+                assertAbsoluteBelow(actual.thetaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_THETA);
+                assertAbsoluteBelow(actual.thetaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_THETA);
                 break;
               }
               case "vega": {
                 const expected = greeks.getVega(spot, k, t, vol, rate, "call");
                 const actual = (await options.vega(tokens(spot), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actual, expected, MAX_VEGA_ABS_ERROR);
+                assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_VEGA);
                 break;
               }
             }
@@ -171,7 +171,7 @@ describe("DeFiMathOptions", function () {
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
         const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
 
       it("multiple in typical range", async function () {
@@ -189,7 +189,7 @@ describe("DeFiMathOptions", function () {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
 
                 const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
               }
             }
           }
@@ -203,7 +203,7 @@ describe("DeFiMathOptions", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, false);
+        await testOptionRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_OPTION, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -243,7 +243,7 @@ describe("DeFiMathOptions", function () {
               const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
       
               const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-              assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+              assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
             }
           }
         }
@@ -254,7 +254,7 @@ describe("DeFiMathOptions", function () {
         const expected = blackScholesWrapped(1000, 1200, 1 / 365, 0.40, 0.05, "call");
 
         const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
 
       it("handles when vol is 0, and time lowest", async function () {
@@ -262,7 +262,7 @@ describe("DeFiMathOptions", function () {
         const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
 
         const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
     });
 
@@ -272,7 +272,7 @@ describe("DeFiMathOptions", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_OPTION, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -280,7 +280,7 @@ describe("DeFiMathOptions", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, true, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_OPTION, 10, !fastTest);
       });
     });
 
@@ -368,7 +368,7 @@ describe("DeFiMathOptions", function () {
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
 
         const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
 
       it("multiple in typical range", async function () {
@@ -386,7 +386,7 @@ describe("DeFiMathOptions", function () {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
 
                 const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
               }
             }
           }
@@ -400,7 +400,7 @@ describe("DeFiMathOptions", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
-        await testOptionRange(strikes, times, vols, rates, false, MAX_OPTION_ABS_ERROR, 10, false);
+        await testOptionRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_OPTION, 10, false);
       });
 
       it("expired ITM", async function () {
@@ -440,7 +440,7 @@ describe("DeFiMathOptions", function () {
               const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
       
               const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-              assertAbsoluteBelow(actualSOL, expected, MAX_OPTION_ABS_ERROR);
+              assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
             }
           }
         }
@@ -461,7 +461,7 @@ describe("DeFiMathOptions", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, false, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_OPTION, 10, !fastTest);
       });
 
       it("higher strikes", async function () {
@@ -469,7 +469,7 @@ describe("DeFiMathOptions", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, false, MAX_OPTION_ABS_ERROR, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_OPTION, 10, !fastTest);
       });
     });
 
@@ -558,8 +558,8 @@ describe("DeFiMathOptions", function () {
         const expectedPut = greeks.getDelta(1000, 980, 60 / 365, 0.60, 0.05, "put");
         
         const actualSOL = await options.delta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
-        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_DELTA);
+        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_DELTA);
       });
 
       it("multiple in typical range", async function () {
@@ -578,8 +578,8 @@ describe("DeFiMathOptions", function () {
                 const expectedPut = greeks.getDelta(1000, strike, time / 365, vol, rate, "put");
 
                 const actualSOL = await options.delta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_DELTA_ABS_ERROR);
-                assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_DELTA_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_DELTA);
+                assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_DELTA);
               }
             }
           }
@@ -600,16 +600,16 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.delta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 1, MAX_DELTA_ABS_ERROR);
-        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 0, MAX_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 1, MAX_ABS_ERROR_DELTA);
+        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 0, MAX_ABS_ERROR_DELTA);
       });
 
       it("expired ITM put", async function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.delta(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 0, MAX_DELTA_ABS_ERROR);
-        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 1, MAX_DELTA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 0, MAX_ABS_ERROR_DELTA);
+        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 1, MAX_ABS_ERROR_DELTA);
       });
     });
 
@@ -697,7 +697,7 @@ describe("DeFiMathOptions", function () {
         const expected = greeks.getGamma(1000, 980, 60 / 365, 0.60, 0.05);
         
         const actualSOL = (await options.gamma(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_GAMMA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_GAMMA);
       });
 
       it("multiple in typical range", async function () {
@@ -715,7 +715,7 @@ describe("DeFiMathOptions", function () {
                 const expected = greeks.getGamma(1000, strike, time / 365, vol, rate, "call");
 
                 const actualSOL = (await options.gamma(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_GAMMA_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_GAMMA);
               }
             }
           }
@@ -736,7 +736,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.gamma(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_GAMMA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_ABS_ERROR_GAMMA);
       });
     });
 
@@ -825,8 +825,8 @@ describe("DeFiMathOptions", function () {
         const expectedPut = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "put");
         
         const actualSOL = await options.theta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
-        assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_THETA);
+        assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_THETA);
       });
 
       it("multiple in typical range", async function () {
@@ -845,8 +845,8 @@ describe("DeFiMathOptions", function () {
                 const expectedPut = greeks.getTheta(1000, strike, time / 365, vol, rate, "put");
 
                 const actualSOL = await options.theta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_THETA_ABS_ERROR);
-                assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_THETA_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_THETA);
+                assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_THETA);
               }
             }
           }
@@ -867,8 +867,8 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.theta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, 0, MAX_THETA_ABS_ERROR);
-        assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, 0, MAX_THETA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, 0, MAX_ABS_ERROR_THETA);
+        assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, 0, MAX_ABS_ERROR_THETA);
       });
     });
 
@@ -956,7 +956,7 @@ describe("DeFiMathOptions", function () {
         const expected = greeks.getVega(1000, 980, 60 / 365, 0.60, 0.05);
         
         const actualSOL = (await options.vega(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_VEGA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_VEGA);
       });
 
       it("multiple in typical range", async function () {
@@ -974,7 +974,7 @@ describe("DeFiMathOptions", function () {
                 const expected = greeks.getVega(1000, strike, time / 365, vol, rate, "call");
 
                 const actualSOL = (await options.vega(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_VEGA_ABS_ERROR);
+                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_VEGA);
               }
             }
           }
@@ -995,7 +995,7 @@ describe("DeFiMathOptions", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.vega(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_VEGA_ABS_ERROR);
+        assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_ABS_ERROR_VEGA);
       });
     });
 

@@ -23,20 +23,20 @@ export const MAX_ABS_ERROR_ERF        = 4.5e-9;
 export const MAX_ABS_ERROR_CDF        = 6.4e-15;
 
 // ── Options (vanilla, on a $1000 underlying) ─────────────────────────────────────────────
-export const MAX_OPTION_ABS_ERROR     = 1.3e-10;   // in $, for call/put price
-export const MAX_DELTA_ABS_ERROR      = 1.2e-13;
-export const MAX_GAMMA_ABS_ERROR      = 3.2e-15;
-export const MAX_THETA_ABS_ERROR      = 1.9e-12;
-export const MAX_VEGA_ABS_ERROR       = 4e-13;
+export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // in $, for call/put price
+export const MAX_ABS_ERROR_DELTA      = 1.2e-13;
+export const MAX_ABS_ERROR_GAMMA      = 3.2e-15;
+export const MAX_ABS_ERROR_THETA      = 1.9e-12;
+export const MAX_ABS_ERROR_VEGA       = 4e-13;
 
 // ── Binary (cash-or-nothing, unit-payout) ────────────────────────────────────────────────
 // Price worst-case ~9.5e-13: deep-OTM under 400% rate / 1844% vol, where true normCDF
 // underflows to 0 but Solidity stdNormCDF leaves a tiny residual.
-export const MAX_BINARY_ABS_ERROR       = 2e-12;
-export const MAX_BINARY_DELTA_ABS_ERROR = 1e-13;
-export const MAX_BINARY_GAMMA_ABS_ERROR = 1e-15;
-export const MAX_BINARY_THETA_ABS_ERROR = 1e-14;   // per day
-export const MAX_BINARY_VEGA_ABS_ERROR  = 1e-14;   // per 1% vol
+export const MAX_ABS_ERROR_BINARY       = 2e-12;
+export const MAX_ABS_ERROR_BINARY_DELTA = 1e-13;
+export const MAX_ABS_ERROR_BINARY_GAMMA = 1e-15;
+export const MAX_ABS_ERROR_BINARY_THETA = 1e-14;   // per day
+export const MAX_ABS_ERROR_BINARY_VEGA  = 1e-14;   // per 1% vol
 
 // ── Futures ──────────────────────────────────────────────────────────────────────────────
 export const MAX_ABS_ERROR_FUTURE     = 1.2e-9;
