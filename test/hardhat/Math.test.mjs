@@ -130,7 +130,7 @@ describe("DeFiMath", function () {
           const expected = Math.exp(-x);
 
           const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF); // todo
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
         }
       });
     });
@@ -456,12 +456,11 @@ describe("DeFiMath", function () {
 
         for (let x = 2 ** 128; x <= 2 ** 196; x += 5.021681388309345e+56) {
           const expected = Math.log(x);
-          
+
           const actualSOL = (await deFiMath.ln(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
-      // todo: add random tests
 
       it("ln when x in [0.0625, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -509,6 +508,19 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
+      it("matches Math.log on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 500; i++) {
+          let xWei;
+          // Reject xWei = 0 (tested in failure) and xWei in [0.5, 2] FP18 — that thin
+          // band has log(x) ≈ 0, where the relative-error metric breaks down.
+          do { xWei = randomUint256(); } while (xWei === 0n || (xWei > FP1 / 2n && xWei < FP1 * 2n));
+          const expected = Math.log(Number(xWei) / 1e18);
+          const actual = (await deFiMath.ln(xWei)).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        }
+      });
     });
 
     describe("failure", function () {
