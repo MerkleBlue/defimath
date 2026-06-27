@@ -2,11 +2,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert } from "chai";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-
-// Tuned for the full sweep t ∈ [0, 1y) × rate ∈ [0, 4) at spot = 1000 — worst case is
-// the high-rate / high-t corner where future ≈ 1000·e^(rt) reaches ~36k and the
-// underlying exp loses a few ULPs of precision.
-const MAX_ABS_ERROR_FUTURE = 1.2e-9;
+import { MAX_ABS_ERROR_FUTURE } from "./Tolerances.test.mjs";
 
 describe("DeFiMathFutures", function () {
 

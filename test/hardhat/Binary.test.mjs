@@ -3,14 +3,9 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import erf from "math-erf";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
+import { MAX_BINARY_ABS_ERROR, MAX_BINARY_DELTA_ABS_ERROR, MAX_BINARY_GAMMA_ABS_ERROR, MAX_BINARY_THETA_ABS_ERROR, MAX_BINARY_VEGA_ABS_ERROR } from "./Tolerances.test.mjs";
 
 const fastTest = true;
-
-const MAX_BINARY_ABS_ERROR = 2e-12; // unit-payout binary price, vs true-math reference (worst case ~9.5e-13: deep-OTM under 400% rate / 1844% vol, where true normCDF underflows to 0 but Solidity stdNormCDF leaves a tiny residual)
-const MAX_BINARY_DELTA_ABS_ERROR = 1e-13; // for unit-payout binary delta
-const MAX_BINARY_GAMMA_ABS_ERROR = 1e-15; // for unit-payout binary gamma
-const MAX_BINARY_THETA_ABS_ERROR = 1e-14; // for unit-payout binary theta (per day)
-const MAX_BINARY_VEGA_ABS_ERROR = 1e-14; // for unit-payout binary vega (per 1% vol)
 
 // True-math binary (cash-or-nothing) Black-Scholes reference.
 //

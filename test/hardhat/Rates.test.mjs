@@ -2,11 +2,7 @@
 import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-
-const MAX_REL_ERROR_COMPOUND = 5.4e-14;     // inherits exp's relative error
-const MAX_REL_ERROR_LOG_RETURN = 1.6e-15;   // inherits ln's relative error
-const MAX_ABS_ERROR_RATE_CONV = 1e-15;      // Taylor branch precision for rate conversions
-const MAX_REL_ERROR_IRR = 1e-9;             // Newton-Raphson convergence tolerance
+import { MAX_REL_ERROR_COMPOUND, MAX_REL_ERROR_LOG_RETURN, MAX_ABS_ERROR_RATE_CONV, MAX_REL_ERROR_IRR } from "./Tolerances.test.mjs";
 
 // JS reference: continuous-compounding YTM for zero-coupon bond
 function jsYieldToMaturity(price, faceValue, timeToMaturity) {

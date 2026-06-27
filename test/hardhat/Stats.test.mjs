@@ -3,9 +3,7 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import * as ss from "simple-statistics";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
-
-const MAX_REL_ERROR_SQRT = 2.2e-14;   // inherits sqrt's relative error
-const MAX_REL_ERROR_AGG = 1e-15;       // arithmetic-only operations: essentially exact
+import { MAX_REL_ERROR_SQRT, MAX_REL_ERROR_AGG } from "./Tolerances.test.mjs";
 
 // JS reference helpers
 function jsMean(arr) {

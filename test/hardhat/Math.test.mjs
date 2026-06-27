@@ -4,16 +4,10 @@ import bs from "black-scholes";
 import erf from 'math-erf';
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32, randomInt256, randomUint256, tokens } from "./Common.test.mjs";
 import { assert } from "chai";
-
-const MAX_REL_ERROR_EXP = 5.4e-14;
-const MAX_REL_ERROR_LN = 1.6e-15;
-const MAX_REL_ERROR_SQRT = 2.2e-14;
-const MAX_REL_ERROR_SQRT_TIME = 9e-15;
-const MAX_REL_ERROR_CBRT = 1e-14;
-const MAX_REL_ERROR_POW = 1e-11;
-
-const MAX_ABS_ERROR_ERF = 4.5e-9;
-const MAX_ABS_ERROR_CDF = 6.4e-15;
+import {
+    MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_REL_ERROR_SQRT_TIME,
+    MAX_REL_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
+} from "./Tolerances.test.mjs";
 
 describe("DeFiMath", function () {
 

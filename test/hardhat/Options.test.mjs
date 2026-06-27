@@ -4,14 +4,9 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import bs from "black-scholes";
 import greeks from "greeks";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
+import { MAX_OPTION_ABS_ERROR, MAX_DELTA_ABS_ERROR, MAX_GAMMA_ABS_ERROR, MAX_THETA_ABS_ERROR, MAX_VEGA_ABS_ERROR } from "./Tolerances.test.mjs";
 
 const fastTest = true;
-
-const MAX_OPTION_ABS_ERROR = 1.3e-10; // in $, for a call/put option on underlying valued at $1000
-const MAX_DELTA_ABS_ERROR = 1.2e-13;
-const MAX_GAMMA_ABS_ERROR = 3.2e-15;
-const MAX_THETA_ABS_ERROR = 1.9e-12;
-const MAX_VEGA_ABS_ERROR = 4e-13;
 
 // bs has a bug with time = 0, it returns NaN, so we are wrapping it
 export function blackScholesWrapped(spot, strike, time, vol, rate, callOrPut) {
