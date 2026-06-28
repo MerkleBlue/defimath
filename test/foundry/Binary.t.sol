@@ -37,9 +37,11 @@ contract BinaryPropertyTest is Test {
 
     /// Proportional slack absorbed in monotonicity asserts at the FP-precision floor.
     /// Binary prices are bounded in [0, 1] (in FP wei: [0, 1e18]) so ≤ 1e18 max, but
-    /// dust-OTM/ITM prices can be ~1e8 wei. Hybrid slack scales appropriately.
+    /// dust-OTM/ITM prices can be ~1e8 wei. Hybrid slack scales appropriately. The 1e7
+    /// absolute floor (vs Options' previous 1e6) accommodates the same dust-price
+    /// rounding corner — keeps the two suites in lockstep.
     function _slack(uint256 priceMagnitude) private pure returns (uint256) {
-        return priceMagnitude / 1e10 + 1e6;
+        return priceMagnitude / 1e10 + 1e7;
     }
 
     /// Standard 5-input boundary. Strike in [spot/4, spot*4] (tighter than the

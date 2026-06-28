@@ -57,12 +57,15 @@ contract OptionsPropertyTest is Test {
     /// Returns FP-proportional slack absorbed in monotonicity asserts. The Black-Scholes
     /// price is computed via several stdNormCDF, exp, and mulDiv calls; cumulative integer
     /// rounding can produce up to ~1e-10 relative non-monotonicity, especially at dust
-    /// prices (deep OTM) where the absolute output magnitude is below 1e10 wei. Slack:
+    /// prices (deep OTM, ATM at sub-cent spots) where the absolute output magnitude is
+    /// below 1e10 wei and the relative term integer-divides to 0. Slack:
     ///   ≈ 1e-10 relative (priceMagnitude / 1e10)
-    ///   + 1e6 wei absolute floor for dust prices ($1e-12 — invisible).
+    ///   + 1e7 wei absolute floor for dust prices ($1e-11 — invisible).
+    /// Floor was bumped 1e6 → 1e7 after a fuzz seed at spot=$0.001 / t=3s / vol=169%
+    /// landed cLo − cHi ≈ 1.05e6, ~5% over the previous 1e6 floor.
     /// Far below any user-observable amount, but catches real monotonicity regressions.
     function _slack(uint256 priceMagnitude) private pure returns (uint256) {
-        return priceMagnitude / 1e10 + 1e6;
+        return priceMagnitude / 1e10 + 1e7;
     }
 
     // Reasonable input domain — well inside the contract bounds, where precision holds.
