@@ -39,11 +39,27 @@ Full per-function tables in the [defimath-compare README](https://github.com/Mer
 
 ## Install
 
+### Hardhat / npm
+
 ```bash
 npm install defimath-lib
 ```
 
-Requires **Solidity `^0.8.31`** and **`evmVersion: "osaka"`** (Fusaka). The library uses the `clz` Yul builtin (added in Solidity 0.8.31) which emits the `CLZ` opcode introduced in Osaka — both the compiler version and EVM target are hard requirements.
+### Foundry
+
+```bash
+forge install defimath-lib=MerkleBlue/defimath
+```
+
+Then add to `remappings.txt`:
+
+```
+defimath-lib/=lib/defimath-lib/
+```
+
+The `defimath-lib=` install alias plus this remapping make the same `import "defimath-lib/contracts/derivatives/Options.sol"` line work under both Foundry and Hardhat. Without the remapping, Foundry auto-detects `contracts/` as the src directory and produces `defimath-lib/=lib/defimath-lib/contracts/`, which collides with the leading `contracts/` segment in the import path.
+
+Either way, your project must target **Solidity `^0.8.31`** and **`evmVersion: "osaka"`** (Fusaka). The library uses the `clz` Yul builtin (added in Solidity 0.8.31) which emits the `CLZ` opcode introduced in Osaka — both the compiler version and EVM target are hard requirements.
 
 ## Usage
 
