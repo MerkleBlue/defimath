@@ -29,7 +29,8 @@ library DeFiMath {
     ///         FP, the product would overflow int256 (~5.78e76) for any |a| ≳ 3.25e56. We cap at 1e54 — well
     ///         below the math wrap point (~30× margin) and astronomically larger than any realistic exponent
     ///         (real value 1e36) — so the only callers it ever rejects are pathological ones.
-    int256 internal constant MAX_POW_EXPONENT = 1e54;
+    ///         Typed as uint256 because it bounds the magnitude `abs(a)`, which is unsigned.
+    uint256 internal constant MAX_POW_EXPONENT = 1e54;
 
     /// @notice Saturation magnitude for stdNormCDF — |x| ≥ this returns 0 (negative) or 1 (positive).
     ///         At ±16.447, Φ(x) is within 1e-18 of {0, 1} so the cap costs no observable precision.
@@ -330,12 +331,13 @@ library DeFiMath {
     /// @return y Result in 18-decimal fixed-point format
     function pow(uint256 x, int256 a) internal pure returns (uint256 y) {
         unchecked {
-            // check inputs
-            if (a > MAX_POW_EXPONENT || a < -MAX_POW_EXPONENT) revert PowExponentOutOfBoundsError();
+            // check input
+            if (abs(a) > MAX_POW_EXPONENT) revert PowExponentOutOfBoundsError();
 
-            // handle special case
+            // handle special case: x^0 = 1
+            // (also covers 0^0 = 1 by convention)
             if (a == 0) {
-                return 1e18;                    // x^0 = 1 (also covers 0^0 = 1 by convention)
+                return 1e18;
             } 
 
             // do the math

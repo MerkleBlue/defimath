@@ -1342,7 +1342,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 828 gas", async function () {
+      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 803 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 1e-3; x <= 1e3; x *= 2.0691380811147901) {  // 20 steps over 6 decades
@@ -1352,7 +1352,7 @@ describe("DeFiMath", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 828, `gas changed: ${avg} ≠ 828 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 803, `gas changed: ${avg} ≠ 803 — deterministic, update threshold if intentional`);
       });
     });
 
