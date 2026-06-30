@@ -24,6 +24,13 @@ library DeFiMath {
     ///         Equals 2^76 in fixed-point (= 2^76 · 1e18).
     uint256 internal constant CBRT_UPPER_BOUND = 7.5557863725914323e40;
 
+    /// @notice Maximum |a| pow() accepts as exponent, in 18-decimal fixed-point.
+    ///         pow internally computes `a · ln(x)` inside `unchecked`; at the worst case ln(2^256 − 1) ≈ 1.78e20
+    ///         FP, the product would overflow int256 (~5.78e76) for any |a| ≳ 3.25e56. We cap at 1e54 — well
+    ///         below the math wrap point (~30× margin) and astronomically larger than any realistic exponent
+    ///         (real value 1e36) — so the only callers it ever rejects are pathological ones.
+    int256 internal constant MAX_POW_EXPONENT = 1e54;
+
     /// @notice Saturation magnitude for stdNormCDF — |x| ≥ this returns 0 (negative) or 1 (positive).
     ///         At ±16.447, Φ(x) is within 1e-18 of {0, 1} so the cap costs no observable precision.
     int256 internal constant STD_NORM_CDF_BOUND = 16.447e18;
@@ -60,6 +67,10 @@ library DeFiMath {
 
     /// @notice Thrown when input to cbrt() exceeds the upper bound (~2^76)
     error CbrtUpperBoundError();
+
+    /// @notice Thrown when |a| in pow(x, a) exceeds MAX_POW_EXPONENT, where the
+    ///         internal `a · ln(x)` multiplication could silently overflow int256.
+    error PowExponentOutOfBoundsError();
 
     /// @notice Thrown when mulDiv() is called with denominator == 0
     error MulDivByZeroError();
@@ -319,7 +330,15 @@ library DeFiMath {
     /// @return y Result in 18-decimal fixed-point format
     function pow(uint256 x, int256 a) internal pure returns (uint256 y) {
         unchecked {
-            if (a == 0) return 1e18;                    // x^0 = 1 (also covers 0^0 = 1 by convention)
+            // check inputs
+            if (a > MAX_POW_EXPONENT || a < -MAX_POW_EXPONENT) revert PowExponentOutOfBoundsError();
+
+            // handle special case
+            if (a == 0) {
+                return 1e18;                    // x^0 = 1 (also covers 0^0 = 1 by convention)
+            } 
+
+            // do the math
             y = exp(a * ln(x) / 1e18);
         }
     }

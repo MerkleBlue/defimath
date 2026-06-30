@@ -50,8 +50,13 @@ contract MathPropertyTest is Test {
 
     /// exp(ln(x)) ≈ x for x in a wide FP range.
     function test_RT_expLn(uint256 x) public pure {
-        // ln domain: x > 0. 1e9 wei (1e-9 FP) up to 1e30 (1e12 FP) for stable round-trips.
-        x = bound(x, 1e9, 1e30);
+        // ln domain: x > 0. Lower bound set by the assertion's relative-tolerance floor —
+        // at the smallest x, the error budget is x · REL_1e_10 = x · 1e-10 (in wei). For that
+        // budget to admit even a single wei of LSB rounding, x must exceed 1e10 wei. We use
+        // 1e11 (1e-7 FP) for ~10× margin — without it, fuzz seeds near x ≈ 1.83e9 hit a 1-wei
+        // round-trip miss that's a fundamental fixed-point ULP effect, not a bug.
+        // Upper bound 1e30 (1e12 FP) keeps ln output safely under exp's upper bound (135.3e18).
+        x = bound(x, 1e11, 1e30);
         int256 logged = DeFiMath.ln(x);
         if (logged >= 135e18) return;
         uint256 back = DeFiMath.exp(logged);
@@ -229,8 +234,11 @@ contract MathPropertyTest is Test {
     }
 
     /// pow(x, a) > 0 for x > 0 (when result doesn't underflow).
-    /// Bounds chosen so `|a · ln(x)|` stays safely under exp's ±135 revert/underflow
-    /// boundary: x ∈ [0.1, 10] FP gives |ln(x)| ≤ 2.3; with |a| ≤ 50 → product ≤ 115.
+    /// Bounds keep `|a · ln(x)|` inside exp's ±135 productive range so the property has a
+    /// well-defined result on every run: x ∈ [0.1, 10] gives |ln(x)| ≤ 2.3; |a| ≤ 50 → product ≤ 115.
+    /// The contract enforces its own MAX_POW_EXPONENT = ±1e54 at the input boundary (covered by
+    /// the Hardhat failure tests), so this fuzz bound is purely about staying in the productive
+    /// region, not about masking the silent-overflow corner the contract previously had.
     function test_BNDS_powPositiveOnPositive(uint256 x, int256 a) public pure {
         x = bound(x, 0.1e18, 10e18);
         a = bound(a, -50e18, 50e18);

@@ -1282,10 +1282,67 @@ describe("DeFiMath", function () {
         const uint256Max = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
         await assertRevertError(deFiMath, deFiMath.pow(uint256Max, tokens(1)), "ExpUpperBoundError");
       });
+
+      it("rejects when |a| > MAX_POW_EXPONENT — guards int256 overflow on a·ln(x)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // MAX_POW_EXPONENT = 1e54 (in FP-raw int256 units). Just above the bound on either side must revert,
+        // exactly at the bound must NOT revert. Pair the over-bound exponent with x = 1, so ln(x) = 0 —
+        // that isolates the input check itself, with no chance of cascading into exp's own bounds.
+        const MAX = "1000000000000000000000000000000000000000000000000000000";     //   1e54
+        const OVER = "1000000000000000000000000000000000000000000000000000001";    //   1e54 + 1
+        const UNDER = "-1000000000000000000000000000000000000000000000000000001";  //  -1e54 - 1
+
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(1), OVER), "PowExponentOutOfBoundsError");
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(1), UNDER), "PowExponentOutOfBoundsError");
+        await deFiMath.pow(tokens(1), MAX);                  // exactly at MAX_POW_EXPONENT → accepted
+        await deFiMath.pow(tokens(1), "-" + MAX);            // exactly at -MAX_POW_EXPONENT → accepted
+
+        // Also confirm the int256 extremes revert (where a silent overflow would previously occur).
+        const intMax  = "57896044618658097711785492504343953926634992332820282019728792003956564819967";
+        const intMin  = "-57896044618658097711785492504343953926634992332820282019728792003956564819968";
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(1), intMax), "PowExponentOutOfBoundsError");
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(1), intMin), "PowExponentOutOfBoundsError");
+      });
+
+      it("handles a near MAX_POW_EXPONENT with non-trivial x — multiplication stays inside int256", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // Past the input-check at |a| = MAX_POW_EXPONENT = 1e54, the unchecked multiplication
+        // a · ln(x) must still produce a meaningful int256. Worst case: |ln(x)| ≈ 178 at x = uint256.max,
+        // so |a · ln(x)| ≤ 1e54 · 1.78e20 = 1.78e74 — well under int256.max ≈ 5.78e76.
+        //
+        // At a = ±MAX the only x where pow returns a non-degenerate value is x = 1 (ln = 0).
+        // Every other x cascades through to exp() — gigantic-positive products revert with
+        // ExpUpperBoundError, gigantic-negative products underflow silently to 0. Sweep all four
+        // quadrants to confirm the multiplication doesn't wrap into a wrong int256 value (which
+        // would feed exp the wrong sign and break this expected branch behaviour).
+        const MAX = "1000000000000000000000000000000000000000000000000000000";  // 1e54
+        const NEG_MAX = "-" + MAX;
+
+        // x = 1, |a| = MAX → ln(x) = 0 → a·ln(x) = 0 → exp(0) = 1.
+        assert.equal((await deFiMath.pow(tokens(1), MAX)).toString(), tokens(1));
+        assert.equal((await deFiMath.pow(tokens(1), NEG_MAX)).toString(), tokens(1));
+
+        // x > 1 (ln > 0):  a = +MAX → +∞ regime → exp reverts.   a = −MAX → −∞ regime → returns 0.
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(2), MAX), "ExpUpperBoundError");
+        assert.equal((await deFiMath.pow(tokens(2), NEG_MAX)).toString(), "0");
+
+        // x < 1 (ln < 0):  a = +MAX → −∞ regime → returns 0.     a = −MAX → +∞ regime → exp reverts.
+        assert.equal((await deFiMath.pow(tokens(0.5), MAX)).toString(), "0");
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(0.5), NEG_MAX), "ExpUpperBoundError");
+
+        // Worst-case |ln(x)| at uint256.max — same four-quadrant logic applies, just with the
+        // largest possible |a · ln(x)|. If the unchecked multiplication wrapped, the sign would
+        // flip and exp would take the wrong branch — these assertions would fail loudly.
+        const uint256Max = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+        await assertRevertError(deFiMath, deFiMath.pow(uint256Max, MAX), "ExpUpperBoundError");
+        assert.equal((await deFiMath.pow(uint256Max, NEG_MAX)).toString(), "0");
+      });
     });
 
     describe("performance", function () {
-      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 763 gas", async function () {
+      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 828 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 1e-3; x <= 1e3; x *= 2.0691380811147901) {  // 20 steps over 6 decades
@@ -1295,7 +1352,7 @@ describe("DeFiMath", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 763, `gas changed: ${avg} ≠ 763 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 828, `gas changed: ${avg} ≠ 828 — deterministic, update threshold if intentional`);
       });
     });
 
