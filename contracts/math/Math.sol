@@ -166,7 +166,7 @@ library DeFiMath {
     function expm1(int256 x) internal pure returns (int256 y) {
         unchecked {
             // For |x| >= 0.01, naive exp(x) - 1 has sufficient precision
-            if (x >= 0.01e18 || x <= -0.01e18) {
+            if (abs(x) >= 0.01e18) {
                 return int256(exp(x)) - 1e18;
             }
             // Taylor series x + x²/2! + ... + x¹⁰/10! gives ~1e-29 truncation at |x|=0.01
@@ -288,7 +288,7 @@ library DeFiMath {
         if (x <= -1e18) revert Log1pLowerBoundError();
         unchecked {
             // For |x| >= 0.01, naive ln(1 + x) has sufficient precision
-            if (x >= 0.01e18 || x <= -0.01e18) {
+            if (abs(x) >= 0.01e18) {
                 return ln(uint256(int256(1e18) + x));
             }
             // Taylor series x - x²/2 + x³/3 - ... + x¹⁰/10 (alternating) gives ~1e-21 truncation at |x|=0.01

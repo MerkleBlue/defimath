@@ -425,7 +425,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expm1 when x in [-40, 130] — 415 gas", async function () {
+      it("expm1 when x in [-40, 130] — 407 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -40; x <= 130; x += 0.85) {
@@ -433,7 +433,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 415, `gas changed: ${avg} ≠ 415 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 407, `gas changed: ${avg} ≠ 407 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -715,7 +715,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log1p when x in [1e-6, 1e6] — 487 gas", async function () {
+      it("log1p when x in [1e-6, 1e6] — 476 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
@@ -723,7 +723,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 487, `gas changed: ${avg} ≠ 487 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 476, `gas changed: ${avg} ≠ 476 — deterministic, update threshold if intentional`);
       });
     });
 

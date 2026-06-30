@@ -393,7 +393,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("continuousToDiscrete across r in [-0.5, 0.5] — 507 gas", async function () {
+      it("continuousToDiscrete across r in [-0.5, 0.5] — 491 gas", async function () {
         const { rates } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let r = -0.5; r <= 0.5; r += 0.01) {
@@ -401,7 +401,7 @@ describe("DeFiMathRates", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 507, `gas changed: ${avg} ≠ 507 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 491, `gas changed: ${avg} ≠ 491 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -453,7 +453,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("discreteToContinuous across r in [-0.5, 0.5] — 589 gas", async function () {
+      it("discreteToContinuous across r in [-0.5, 0.5] — 574 gas", async function () {
         const { rates } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let r = -0.5; r <= 0.5; r += 0.01) {
@@ -461,7 +461,7 @@ describe("DeFiMathRates", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 589, `gas changed: ${avg} ≠ 589 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 574, `gas changed: ${avg} ≠ 574 — deterministic, update threshold if intentional`);
       });
     });
   });
