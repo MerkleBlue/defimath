@@ -426,7 +426,6 @@ library DeFiMath {
     /// @return y Cube root in 18-decimal fixed-point format
     function cbrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-            if (x == 0) return 0;
             if (x >= CBRT_UPPER_BOUND) revert CbrtUpperBoundError(); // up to 2^76
 
             assembly ("memory-safe") {
