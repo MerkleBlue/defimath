@@ -382,7 +382,7 @@ library DeFiMath {
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
 
-                    // post-scale
+                    // post-scale to 1e18 base
                     y := mul(y, 1000000000)
                 }
             }
@@ -430,6 +430,7 @@ library DeFiMath {
             if (x >= CBRT_UPPER_BOUND) revert CbrtUpperBoundError(); // up to 2^76
 
             assembly ("memory-safe") {
+                // pre-scale to 1e54 base
                 x := mul(x, 1000000000000000000000000000000000000) // shift to 1e54 base
 
                 // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
