@@ -16,10 +16,6 @@ library DeFiMath {
     ///         Equals −⌊ln(1e18) · 1e18⌋ − 1 — at or below this, exp(x) silently returns 0.
     int256 internal constant EXP_LOWER_BOUND = -41.446531673892822313e18;
 
-    /// @notice Largest sqrt input that doesn't overflow during the FP18 scaling step (`x · 1e18`).
-    ///         Equals ⌊(2^256 − 1) / 1e18⌋ + 1 — i.e. the smallest input for which `x · 1e18` overflows uint256.
-    uint256 internal constant SQRT_UPPER_BOUND = type(uint256).max / 1e18 + 1;
-
     /// @notice Largest cbrt input that keeps the cubed output under 2^228 (and the answer under 2^26 in FP).
     ///         Equals 2^76 in fixed-point (= 2^76 · 1e18).
     uint256 internal constant CBRT_UPPER_BOUND = 7.5557863725914323e40;
@@ -62,9 +58,6 @@ library DeFiMath {
 
     /// @notice Thrown when input to log1p() is at or below -1 (i.e., 1+x ≤ 0)
     error Log1pLowerBoundError();
-
-    /// @notice Thrown when input to sqrt() exceeds the upper bound at which the FP18 scaling step (`x · 1e18`) would overflow uint256.
-    error SqrtUpperBoundError();
 
     /// @notice Thrown when input to cbrt() exceeds the upper bound (~2^76)
     error CbrtUpperBoundError();
@@ -345,51 +338,85 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes sqrt(x) using Newton's method
-    /// @dev Works for both x >= 1e18 and x < 1e18 via inversion trick
+    /// @notice Computes sqrt(x) using seeding combined with Newton's method
     /// @param x Input in 18-decimal fixed-point format
     /// @return y Square root in 18-decimal fixed-point format
     function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-            if (x >= 1e18) {
-                // check input
-                if (x >= SQRT_UPPER_BOUND) revert SqrtUpperBoundError();
-
+            if (x <= type(uint128).max) {
+                // lower 128 bits of uint256 
                 assembly ("memory-safe") {
-                    x := mul(x, 1000000000000000000) // convert to 1e36 base
+                    // pre-scale to 1e36 base (because x can be small)
+                    x := mul(x, 1000000000000000000)
 
-                    // CLZ-derived initial guess: y = 2^ceil(bits/2), within factor √2 of sqrt(x)
-                    y := shl(shr(1, sub(256, clz(x))), 1)
+                    // Approximate Y in 3 steps: 1) find m and k such that: X = m x 2^k, 
+                    // where m in [2^30, 2^32], and k is even. 2) approximate sqrt(m) using
+                    // minimax linear in reduced range. 3) reconstruct back to 
+                    // Y = sqrt(m) x 2^(k/2) 
+                    let k := and(sub(sub(256, clz(x)), 31), not(1))
+                    let m := shr(k, x)
+                    let seed := add(760567125, div(m, 3))
+                    y := shr(15, shl(shr(1, k), seed))
 
-                    // 6x Newton method (sufficient for bit-exact from factor-√2 start)
-                    y := shr(1, add(y, div(x, y)))
-                    y := shr(1, add(y, div(x, y)))
+                    // refine Y using 4x Newton's method for full precision
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                 }
             } else {
-                if (x == 0) return 0;
-
+                // higher 128 bits of uint256 
                 assembly ("memory-safe") {
-                    x := div(1000000000000000000000000000000000000000000000000000000, x)
+                    // Approximate Y in 3 steps: 1) find m and k such that: X = m x 2^k, 
+                    // where m in [2^30, 2^32], and k is even. 2) approximate sqrt(m) using
+                    // minimax linear in reduced range. 3) reconstruct back to 
+                    // Y = sqrt(m) x 2^(k/2) 
+                    let k := and(sub(sub(256, clz(x)), 31), not(1))
+                    let m := shr(k, x)
+                    let seed := add(760567125, div(m, 3))
+                    y := shr(15, shl(shr(1, k), seed))
 
-                    // CLZ-derived initial guess: y = 2^ceil(bits/2), within factor √2 of sqrt(x)
-                    y := shl(shr(1, sub(256, clz(x))), 1)
-
-                    // 6x Newton method
-                    y := shr(1, add(y, div(x, y)))
-                    y := shr(1, add(y, div(x, y)))
+                    // refine Y using 4x Newton's method for full precision
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
 
-                    // invert y
-                    y := div(1000000000000000000000000000000000000, y)
+                    // post-scale
+                    y := mul(y, 1000000000)
                 }
             }
+        }
+    }
+
+    /// @notice Computes sqrt(x) with fixed-point precision for time values
+    /// @dev Optimized for values up to 32 years
+    /// @param x Time in years, in 18-decimal fixed-point format (e.g. 1e18 = 1 year)
+    /// @return y Resulting sqrt in 18-decimal fixed-point format (sqrt(years))
+    function sqrtTime(uint256 x) internal pure returns (uint256 y) {
+        // WARNING: this function doesn't check input parameter x. It is specialized
+        // for Black-Scholes option pricing where x (time to expiry, in years) has
+        // already been validated by function calling it. Not intended for direct 
+        // external use; outside the [1s, 32y] range precision is not guaranteed.
+        // Also, it will OVERFLOW if x is large.
+        assembly ("memory-safe") {
+            // pre-scale to 1e36 base (because x is small)
+            x := mul(x, 1000000000000000000)
+
+            // Approximate Y in 3 steps: 1) find m and k such that: X = m x 2^k, 
+            // where m in [2^30, 2^32], and k is even. 2) approximate sqrt(m) using
+            // minimax linear in reduced range. 3) reconstruct back to 
+            // Y = sqrt(m) x 2^(k/2) 
+            let k := and(sub(sub(256, clz(x)), 31), not(1))
+            let m := shr(k, x)
+            let seed := add(760567125, div(m, 3))
+            y := shr(15, shl(shr(1, k), seed))
+
+            // refine Y using 4x Newton's method for full precision
+            y := shr(1, add(y, div(x, y)))
+            y := shr(1, add(y, div(x, y)))
+            y := shr(1, add(y, div(x, y)))
+            y := shr(1, add(y, div(x, y)))
         }
     }
 
@@ -736,31 +763,6 @@ library DeFiMath {
             y = y * y * y * y / 1e54;                       // y ^ 64
             y = y * y * y * y / 1e54;                       // y ^ 256
             y <<= k;                                        // multiply y by 2 ** k
-        }
-    }
-
-    /// @notice Computes sqrt(x) with fixed-point precision for time values
-    /// @dev Optimized for values up to 32 years
-    /// @param x Time in years, in 18-decimal fixed-point format (e.g. 1e18 = 1 year)
-    /// @return z Resulting sqrt in 18-decimal fixed-point format (sqrt(years))
-    function sqrtTime(uint256 x) internal pure returns (uint256 z) {
-        // WARNING: this function doesn't check input parameter x. It is specialized
-        // for Black-Scholes option pricing where x (time to expiry, in years) has
-        // already been validated by the caller. Not intended for direct external use;
-        // outside the [1s, 32y] range precision is not guaranteed.
-        assembly {
-            x := mul(x, 1000000000000000000) // convert to 1e36 base
-
-            // CLZ-derived initial guess: z = 2^ceil(bits/2), within factor √2 of sqrt(x)
-            z := shl(shr(1, sub(256, clz(x))), 1)
-
-            // 6x Newton method
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
-            z := shr(1, add(z, div(x, z)))
         }
     }
 }

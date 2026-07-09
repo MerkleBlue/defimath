@@ -1452,15 +1452,16 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
-      it("matches Math.sqrt on 500 random inputs", async function () {
+      it("matches Math.sqrt on 500 random inputs (small-x branch, x ≤ uint128.max)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const SQRT_UPPER_BOUND = BigInt("115792089237316195423570985008687907853269984665640564039458");
+        // Small-x branch cutoff: sqrt uses the pre-scale path when x ≤ uint128.max.
+        // JS Math.sqrt also loses precision on inputs above this range (Number → f64),
+        // so keeping the sample space below the cutoff keeps the reference reliable.
+        const UINT128_MAX = 2n ** 128n - 1n;
         const FP1 = 10n ** 18n;
         for (let i = 0; i < 500; i++) {
           let xWei;
-          // Reject xWei ≥ SQRT_UPPER_BOUND (tested in failure) and xWei < 1 FP18 — the
-          // sub-1 range needs dyadic samples to stay under threshold (see behaviour comment).
-          do { xWei = randomUint256(); } while (xWei < FP1 || xWei >= SQRT_UPPER_BOUND);
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT128_MAX);
           const expected = Math.sqrt(Number(xWei) / 1e18);
           const actual = (await deFiMath.sqrt(xWei)).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
@@ -1468,20 +1469,50 @@ describe("DeFiMath", function () {
       });
     });
 
-    describe("failure", function () {
-      it("rejects when x >= max", async function () {
+    describe("handles the full uint256 range without reverting", function () {
+      it("computes sqrt across the large-x branch [uint128.max+1, uint256.max] with sub-FP18 precision", async function () {
         const { deFiMath } = await loadFixture(deploy);
+        // Large-x branch: sqrt uses the no-pre-scale path (Newton on raw x, post-scale × 1e9)
+        // for any x > uint128.max. This zone was previously rejected as out-of-range;
+        // now sqrt handles it with sub-FP18 precision (integer sqrt has plenty of digits).
+        const UINT128_MAX = 2n ** 128n - 1n;
+        const UINT_MAX = 2n ** 256n - 1n;
 
-        // At and above SQRT_UPPER_BOUND = ⌊(2^256 − 1) / 1e18⌋ + 1 = 115792089237316195423570985008687907853269984665640564039458,
-        // the mul(x, 1e18) scaling step would overflow uint256.
-        await assertRevertError(deFiMath, deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039458"), "SqrtUpperBoundError");
-        await assertRevertError(deFiMath, deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "SqrtUpperBoundError");
-        await deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457");
+        // BigInt integer sqrt (Newton) — reference for the post-scale branch.
+        const bigIntSqrt = (n) => {
+          if (n < 2n) return n;
+          let y = n, x = (n + 1n) / 2n;
+          while (x < y) { y = x; x = (x + n / x) / 2n; }
+          return y;
+        };
+
+        // Sweep across the full large-x domain.
+        const cases = [
+          UINT128_MAX + 1n,             // just past the branch cutoff
+          UINT128_MAX * 2n,
+          10n ** 40n,
+          10n ** 50n,
+          10n ** 60n,
+          10n ** 70n,
+          10n ** 76n,
+          UINT_MAX / 2n,
+          UINT_MAX,
+        ];
+        let maxRelErr = 0;
+        for (const x of cases) {
+          const y = await deFiMath.sqrt(x);
+          // For x > uint128.max, FP18 sqrt = floor(sqrt(x)) · 1e9 (post-scale form).
+          const expected = bigIntSqrt(x) * 10n ** 9n;
+          const delta = y > expected ? y - expected : expected - y;
+          const relErr = Number(delta) / Number(expected);
+          if (relErr > maxRelErr) maxRelErr = relErr;
+        }
+        assert.ok(maxRelErr < 1e-18, `large-x precision below FP18: ${maxRelErr}`);
       });
     });
 
     describe("performance", function () {
-      it("sqrt when x in [1e-6, 1e6] — 245 gas", async function () {
+      it("sqrt when x in [1e-6, 1e6] — 218 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
@@ -1489,7 +1520,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 245, `gas changed: ${avg} ≠ 245 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 218, `gas changed: ${avg} ≠ 218 — deterministic, update threshold if intentional`);
       });
     });
 
