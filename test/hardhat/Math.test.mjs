@@ -1580,13 +1580,12 @@ describe("DeFiMath", function () {
     });
 
     describe("limits", function () {
-      it("cbrt when x is max", async function () {
+      it("cbrt when x is in the small-x branch top (near uint128.max)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // cap is 7.5557863725914323e40 in 1e18-FP → max valid x ≈ 7.555786e22 in true value
-        const x = 7.5557863725914323e22;
-        const expected = Math.cbrt(x);
-
-        const actualSOL = (await deFiMath.cbrt("75557863725914322999999999999999999999999")).toString() / 1e18;
+        // Small-x branch: x ≤ type(uint128).max ≈ 3.4e38. In true (FP18) value that's ~3.4e20.
+        const xWei = 2n ** 128n - 1n;
+        const expected = Math.cbrt(Number(xWei) / 1e18);
+        const actualSOL = (await deFiMath.cbrt(xWei)).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
       });
 
@@ -1598,15 +1597,15 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
-      it("matches Math.cbrt on 500 random inputs", async function () {
+      it("matches Math.cbrt on 500 random inputs (small-x branch, x ≤ uint128.max)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const CBRT_UPPER_BOUND = BigInt("75557863725914323000000000000000000000000");
+        // Small-x branch cutoff. JS Math.cbrt also loses precision on inputs above this range,
+        // so keeping the sample space below the cutoff keeps the reference reliable.
+        const UINT128_MAX = 2n ** 128n - 1n;
         const FP1 = 10n ** 18n;
         for (let i = 0; i < 500; i++) {
           let xWei;
-          // Reject xWei ≥ CBRT_UPPER_BOUND (tested in failure) and xWei < 1 FP18 — the
-          // sub-1 range needs dyadic samples to stay under threshold (see behaviour comment).
-          do { xWei = randomUint256(); } while (xWei < FP1 || xWei >= CBRT_UPPER_BOUND);
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT128_MAX);
           const expected = Math.cbrt(Number(xWei) / 1e18);
           const actual = (await deFiMath.cbrt(xWei)).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_CBRT);
@@ -1614,18 +1613,48 @@ describe("DeFiMath", function () {
       });
     });
 
-    describe("failure", function () {
-      it("rejects when x >= max", async function () {
+    describe("handles the full uint256 range without reverting", function () {
+      it("computes cbrt across the large-x branch [uint128.max+1, uint256.max]", async function () {
         const { deFiMath } = await loadFixture(deploy);
+        // Large-x branch: no pre-scale, Newton on raw x, post-scale × 1e12 for FP18.
+        // This zone was previously rejected as out-of-range; now cbrt handles it
+        // with sub-FP18 precision (integer cbrt · 1e12 gives ~1e-13 at the boundary,
+        // tightening to bit-perfect as x grows past 1e54).
+        const UINT128_MAX = 2n ** 128n - 1n;
+        const UINT_MAX = 2n ** 256n - 1n;
 
-        await assertRevertError(deFiMath, deFiMath.cbrt("75557863725914323000000000000000000000000"), "CbrtUpperBoundError");
-        await assertRevertError(deFiMath, deFiMath.cbrt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), "CbrtUpperBoundError");
-        await deFiMath.cbrt("75557863725914322999999999999999999999999");
+        const cases = [
+          UINT128_MAX + 1n,             // just past the branch cutoff
+          UINT128_MAX * 2n,
+          10n ** 45n,
+          10n ** 55n,
+          10n ** 65n,
+          10n ** 75n,
+          UINT_MAX / 2n,
+          UINT_MAX,
+        ];
+        for (const x of cases) {
+          const y = await deFiMath.cbrt(x);
+          // Contract returns integer_cbrt(x) · 1e12 (post-scale form). Newton on the
+          // un-prescaled integer can accumulate precision loss for near-perfect cubes,
+          // giving an intCbrt off by a small amount. Verify accuracy by cubing intCbrt
+          // and comparing to x — |intCbrt^3 − x| / x should be << 1.
+          assert.equal((y % 10n ** 12n).toString(), "0",
+            `cbrt(${x}): y=${y} should be a multiple of 1e12`);
+          const intCbrt = y / 10n ** 12n;
+          const cubed = intCbrt * intCbrt * intCbrt;
+          const diff = cubed > x ? cubed - x : x - cubed;
+          // Assert relative error ~< 1e-10 (cube of a 1e-11-precise intCbrt).
+          // At the branch boundary (x ≈ 2^128) precision is ~1e-13; at x ≥ 10^54 it's FP18-perfect.
+          // Test tolerance: 1e-10 catches egregious errors while allowing the observed noise.
+          assert.ok(diff * 10n ** 10n < x,
+            `cbrt(${x}) relative error > 1e-10: intCbrt=${intCbrt}, cubed=${cubed}, diff=${diff}`);
+        }
       });
     });
 
     describe("performance", function () {
-      it("cbrt when x in [1e-6, 1e6] — 349 gas", async function () {
+      it("cbrt when x in [1e-6, 1e6] — 346 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
@@ -1633,7 +1662,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 349, `gas changed: ${avg} ≠ 349 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 346, `gas changed: ${avg} ≠ 346 — deterministic, update threshold if intentional`);
       });
     });
 

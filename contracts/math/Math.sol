@@ -16,10 +16,6 @@ library DeFiMath {
     ///         Equals −⌊ln(1e18) · 1e18⌋ − 1 — at or below this, exp(x) silently returns 0.
     int256 internal constant EXP_LOWER_BOUND = -41.446531673892822313e18;
 
-    /// @notice Largest cbrt input that keeps the cubed output under 2^228 (and the answer under 2^26 in FP).
-    ///         Equals 2^76 in fixed-point (= 2^76 · 1e18).
-    uint256 internal constant CBRT_UPPER_BOUND = 7.5557863725914323e40;
-
     /// @notice Maximum |a| pow() accepts as exponent, in 18-decimal fixed-point.
     ///         pow internally computes `a · ln(x)` inside `unchecked`; at the worst case ln(2^256 − 1) ≈ 1.78e20
     ///         FP, the product would overflow int256 (~5.78e76) for any |a| ≳ 3.25e56. We cap at 1e54 — well
@@ -58,9 +54,6 @@ library DeFiMath {
 
     /// @notice Thrown when input to log1p() is at or below -1 (i.e., 1+x ≤ 0)
     error Log1pLowerBoundError();
-
-    /// @notice Thrown when input to cbrt() exceeds the upper bound (~2^76)
-    error CbrtUpperBoundError();
 
     /// @notice Thrown when |a| in pow(x, a) exceeds MAX_POW_EXPONENT, where the
     ///         internal `a · ln(x)` multiplication could silently overflow int256.
@@ -420,28 +413,45 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes cbrt(x) using Newton's method
-    /// @dev Single-branch: result = integer_cbrt(x · 1e36), exact at the 1e18-FP scale
+    /// @notice Computes cbrt(x) using CLZ-derived initial guess + 6 Newton iterations
     /// @param x Input in 18-decimal fixed-point format
     /// @return y Cube root in 18-decimal fixed-point format
     function cbrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
-            if (x >= CBRT_UPPER_BOUND) revert CbrtUpperBoundError(); // up to 2^76
+            if (x <= type(uint128).max) {
+                // lower 128 bits of uint256
+                assembly ("memory-safe") {
+                    // pre-scale to 1e54 base (because x can be small)
+                    x := mul(x, 1000000000000000000000000000000000000)
 
-            assembly ("memory-safe") {
-                // pre-scale to 1e54 base
-                x := mul(x, 1000000000000000000000000000000000000) // shift to 1e54 base
+                    // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
+                    y := shl(div(add(sub(256, clz(x)), 2), 3), 1)
 
-                // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
-                y := shl(div(add(sub(256, clz(x)), 2), 3), 1)
+                    // 6x Newton method: y = (2y + x/y²) / 3
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                }
+            } else {
+                // higher 128 bits of uint256
+                assembly ("memory-safe") {
+                    // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
+                    y := shl(div(add(sub(256, clz(x)), 2), 3), 1)
 
-                // 6x Newton method: y = (2y + x/y²) / 3
-                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
-                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
-                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
-                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
-                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
-                y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    // 6x Newton method: y = (2y + x/y²) / 3
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+                    y := div(add(shl(1, y), div(x, mul(y, y))), 3)
+
+                    // Post-scale to 1e18 base 
+                    y := mul(y, 1000000000000)
+                }
             }
         }
     }
