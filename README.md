@@ -148,12 +148,12 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `geometricMean`            | 330                | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
+| `geometricMean`            | 305                | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
 | `mean`                     | 6,980 @ 30 elem    | 1.7e-16 | Arithmetic mean |
 | `stdDev`                   | 15,298 @ 30 elem   | 4.2e-16 | Sample std. dev. (Bessel-corrected) |
 | `weightedAverage`          | 15,687 @ 30 elem   | 2.8e-16 | Σ(v·w) / Σ(w) |
-| `historicalVolatility`     | 25,915 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
-| `sharpeRatio`              | 26,053 @ 30 prices | 2.2e-14 | Risk-adjusted return |
+| `historicalVolatility`     | 25,862 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
+| `sharpeRatio`              | 26,000 @ 30 prices | 2.2e-14 | Risk-adjusted return |
 | `maxDrawdown`              | 15,470 @ 30 prices | 9.9e-16 | Peak-to-trough decline |
 | `valueAtRisk`              | 34,531 @ 30 prices | 1.9e-14 | NumPy-compatible linear interpolation |
 | `conditionalValueAtRisk`   | 31,889 @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
