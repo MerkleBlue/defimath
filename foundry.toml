@@ -6,11 +6,11 @@ libs = ["lib"]
 test = "test/foundry"
 
 # Match Hardhat's compiler config exactly (see hardhat.config.js)
-solc_version = "0.8.35"
+solc_version = "0.8.36"
 evm_version = "osaka"
 via_ir = true
 optimizer = true
-optimizer_runs = 10_000_000
+optimizer_runs = 4_294_967_295
 
 # Treat the existing JS-test wrappers as out-of-scope for forge so it doesn't
 # try to deploy them in tests. The library code under contracts/{math,finance,options}
