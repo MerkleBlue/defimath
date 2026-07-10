@@ -31,8 +31,8 @@ Every function is benchmarked against existing on-chain implementations. A repre
 | `delta`           | **1,724** | 8,621 (Derivexyz)  | **5.0×** |
 | `vega`            | **1,436** | 7,490 (Derivexyz)  | **5.2×** |
 | `ln`              | **375**   | 518 (Solady)       | 1.4× |
-| `sqrt`            | **245**   | 341 (Solady)       | 1.4× |
-| `cbrt`            | **368**   | 550 (Solady)       | 1.5× |
+| `sqrt`            | **218**   | 341 (Solady)       | **1.6×** |
+| `cbrt`            | **346**   | 550 (Solady)       | **1.6×** |
 | `stdNormCDF`      | **660**   | 2,794 (SolStat)    | **4.2×** |
 
 Full per-function tables in the [defimath-compare README](https://github.com/MerkleBlue/defimath-compare#readme).
@@ -92,11 +92,11 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `ln`         | 375  | 1.5e-14 | Natural logarithm |
 | `log2`       | 391  | 1.5e-14 | Base-2 logarithm |
 | `log10`      | 391  | 1.4e-14 | Base-10 logarithm |
-| `pow`        | 748  | 5.2e-14 | Power function `x^a` |
-| `sqrt`       | 245  | 2.8e-16 | Square root |
-| `cbrt`       | 368  | 2.2e-16 | Cube root |
-| `expm1`      | 438  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
-| `log1p`      | 500  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
+| `pow`        | 788  | 5.2e-14 | Power function `x^a` |
+| `sqrt`       | 218  | 2.8e-16 | Square root |
+| `cbrt`       | 346  | 2.2e-16 | Cube root |
+| `expm1`      | 418  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | 482  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 660  | 4.7e-15 | Standard normal CDF Φ(x) |
 | `erf`        | 685  | 7.4e-15 | Error function |
 | `mulDiv`     | 155  | exact   | `(a · b) / d` with full 512-bit intermediate precision |
@@ -137,8 +137,8 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `compoundInterest`       | 467     | 2.8e-14 | Continuous compounding: `P · e^(rt)` |
 | `presentValue`           | 519     | 2.8e-14 | Discounting: `FV · e^(−rt)` |
 | `logReturn`              | 600     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
-| `continuousToDiscrete`   | 508     | 2.4e-14 | `e^apr − 1` (APR → APY) |
-| `discreteToContinuous`   | 589     | 5.1e-16 | `ln(1 + apy)` (APY → APR) |
+| `continuousToDiscrete`   | 492     | 2.4e-14 | `e^apr − 1` (APR → APY) |
+| `discreteToContinuous`   | 574     | 5.1e-16 | `ln(1 + apy)` (APY → APR) |
 | `yieldToMaturity`        | 736     | 2.7e-14 | Zero-coupon YTM (closed form) |
 | `internalRateOfReturn`   | 17k–49k | 3.7e-15 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
