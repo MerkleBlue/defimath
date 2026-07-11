@@ -1512,7 +1512,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("sqrt when x in [1e-6, 1e6] — 218 gas", async function () {
+      it("sqrt when x in [1e-6, 1e6] — 212 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
@@ -1520,7 +1520,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 218, `gas changed: ${avg} ≠ 218 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 212, `gas changed: ${avg} ≠ 212 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -1654,7 +1654,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("cbrt when x in [1e-6, 1e6] — 346 gas", async function () {
+      it("cbrt when x in [1e-6, 1e6] — 340 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
@@ -1662,7 +1662,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 346, `gas changed: ${avg} ≠ 346 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 340, `gas changed: ${avg} ≠ 340 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -2394,7 +2394,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("sqrtTime when x in [1, 252288000] — 184 gas", async function () {
+      it("sqrtTime when x in [1, 252288000] — 178 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 1; x <= 252288000; x += 1261440) {
@@ -2402,7 +2402,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 184, `gas changed: ${avg} ≠ 184 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 178, `gas changed: ${avg} ≠ 178 — deterministic, update threshold if intentional`);
       });
     });
   });

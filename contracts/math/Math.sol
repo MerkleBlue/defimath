@@ -346,7 +346,7 @@ library DeFiMath {
                     // 1) find m and k such that: X = m x 2^k, where m is in [2^30, 2^32], and k is even.
                     // 2) approximate sqrt(m) using minimax linear in reduced range.
                     // 3) reconstruct back to Y = sqrt(m) x 2^(k/2)
-                    let k := and(sub(sub(256, clz(x)), 31), not(1))
+                    let k := and(sub(225, clz(x)), not(1))
                     let m := shr(k, x)
                     let seed := add(760567125, div(m, 3))
                     y := shr(15, shl(shr(1, k), seed))
@@ -364,7 +364,7 @@ library DeFiMath {
                     // 1) find m and k such that: X = m x 2^k, where m is in [2^30, 2^32], and k is even.
                     // 2) approximate sqrt(m) using minimax linear in reduced range.
                     // 3) reconstruct back to Y = sqrt(m) x 2^(k/2)
-                    let k := and(sub(sub(256, clz(x)), 31), not(1))
+                    let k := and(sub(225, clz(x)), not(1))
                     let m := shr(k, x)
                     let seed := add(760567125, div(m, 3))
                     y := shr(15, shl(shr(1, k), seed))
@@ -400,7 +400,7 @@ library DeFiMath {
             // where m in [2^30, 2^32], and k is even. 2) approximate sqrt(m) using
             // minimax linear in reduced range. 3) reconstruct back to 
             // Y = sqrt(m) x 2^(k/2) 
-            let k := and(sub(sub(256, clz(x)), 31), not(1))
+            let k := and(sub(225, clz(x)), not(1))
             let m := shr(k, x)
             let seed := add(760567125, div(m, 3))
             y := shr(15, shl(shr(1, k), seed))
@@ -425,7 +425,7 @@ library DeFiMath {
                     x := mul(x, 1000000000000000000000000000000000000)
 
                     // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
-                    y := shl(div(add(sub(256, clz(x)), 2), 3), 1)
+                    y := shl(div(sub(258, clz(x)), 3), 1)
 
                     // 6x Newton method: y = (2y + x/y²) / 3
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
@@ -439,7 +439,7 @@ library DeFiMath {
                 // higher 128 bits of uint256
                 assembly ("memory-safe") {
                     // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
-                    y := shl(div(add(sub(256, clz(x)), 2), 3), 1)
+                    y := shl(div(sub(258, clz(x)), 3), 1)
 
                     // 6x Newton method: y = (2y + x/y²) / 3
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
