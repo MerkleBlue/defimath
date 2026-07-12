@@ -31,7 +31,7 @@ Every function is benchmarked against existing on-chain implementations. A repre
 | `delta`           | **1,718** | 8,621 (Derivexyz)  | **5.0×** |
 | `vega`            | **1,430** | 7,490 (Derivexyz)  | **5.2×** |
 | `ln`              | **375**   | 518 (Solady)       | 1.4× |
-| `sqrt`            | **212**   | 341 (Solady)       | **1.6×** |
+| `sqrt`            | **197**   | 341 (Solady)       | **1.7×** |
 | `cbrt`            | **340**   | 550 (Solady)       | **1.6×** |
 | `stdNormCDF`      | **660**   | 2,794 (SolStat)    | **4.2×** |
 
@@ -93,7 +93,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `log2`       | 391  | 1.5e-14 | Base-2 logarithm |
 | `log10`      | 391  | 1.4e-14 | Base-10 logarithm |
 | `pow`        | 788  | 5.2e-14 | Power function `x^a` |
-| `sqrt`       | 212  | 2.8e-16 | Square root |
+| `sqrt`       | 197  | 2.8e-16 | Square root |
 | `cbrt`       | 340  | 2.2e-16 | Cube root |
 | `expm1`      | 418  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
 | `log1p`      | 482  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
@@ -148,12 +148,12 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `geometricMean`            | 299                | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
+| `geometricMean`            | 284                | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
 | `mean`                     | 6,980 @ 30 elem    | 1.7e-16 | Arithmetic mean |
 | `stdDev`                   | 15,298 @ 30 elem   | 4.2e-16 | Sample std. dev. (Bessel-corrected) |
 | `weightedAverage`          | 15,687 @ 30 elem   | 2.8e-16 | Σ(v·w) / Σ(w) |
-| `historicalVolatility`     | 25,850 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
-| `sharpeRatio`              | 25,988 @ 30 prices | 2.2e-14 | Risk-adjusted return |
+| `historicalVolatility`     | 25,820 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
+| `sharpeRatio`              | 25,958 @ 30 prices | 2.2e-14 | Risk-adjusted return |
 | `maxDrawdown`              | 15,470 @ 30 prices | 9.9e-16 | Peak-to-trough decline |
 | `valueAtRisk`              | 34,531 @ 30 prices | 1.9e-14 | NumPy-compatible linear interpolation |
 | `conditionalValueAtRisk`   | 31,889 @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |

@@ -166,7 +166,7 @@ describe("DeFiMathStats", function () {
     });
 
     describe("performance", function () {
-      it("geometricMean across 5 representative pairs — 299 gas", async function () {
+      it("geometricMean across 5 representative pairs — 284 gas", async function () {
         const { stats } = await loadFixture(deploy);
         const pairs = [[100, 400], [1000, 1000], [0.5, 2], [1e6, 1e6], [1, 1e9]];
         let totalGas = 0, count = 0;
@@ -175,7 +175,7 @@ describe("DeFiMathStats", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 299, `gas changed: ${avg} ≠ 299 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 284, `gas changed: ${avg} ≠ 284 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -486,18 +486,18 @@ describe("DeFiMathStats", function () {
     });
 
     describe("performance", function () {
-      it("stdDev at N=10 and N=100 — 5410 / 49780 gas", async function () {
+      it("stdDev at N=10 and N=100 — 5395 / 49765 gas", async function () {
         const { stats } = await loadFixture(deploy);
 
         {
           const values = Array.from({ length: 10 }, (_, i) => tokens(100 + i));
           const gas = parseInt((await stats.stdDevMG(values)).gasUsed);
-          assert.equal(gas, 5410, `gas changed: ${gas} ≠ 5410 (N=10) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 5395, `gas changed: ${gas} ≠ 5395 (N=10) — deterministic, update threshold if intentional`);
         }
         {
           const values = Array.from({ length: 100 }, (_, i) => tokens(100 + i));
           const gas = parseInt((await stats.stdDevMG(values)).gasUsed);
-          assert.equal(gas, 49780, `gas changed: ${gas} ≠ 49780 (N=100) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 49765, `gas changed: ${gas} ≠ 49765 (N=100) — deterministic, update threshold if intentional`);
         }
       });
     });
@@ -630,7 +630,7 @@ describe("DeFiMathStats", function () {
     });
 
     describe("performance", function () {
-      it("historicalVolatility at N=30 and N=100 — 25850 / 86530 gas", async function () {
+      it("historicalVolatility at N=30 and N=100 — 25820 / 86500 gas", async function () {
         const { stats } = await loadFixture(deploy);
 
         {
@@ -639,12 +639,12 @@ describe("DeFiMathStats", function () {
                           107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
                          .map(p => tokens(p));
           const gas = parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
-          assert.equal(gas, 25850, `gas changed: ${gas} ≠ 25850 (N=30) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 25820, `gas changed: ${gas} ≠ 25820 (N=30) — deterministic, update threshold if intentional`);
         }
         {
           const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
           const gas = parseInt((await stats.historicalVolatilityMG(prices, 86400)).gasUsed);
-          assert.equal(gas, 86530, `gas changed: ${gas} ≠ 86530 (N=100) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 86500, `gas changed: ${gas} ≠ 86500 (N=100) — deterministic, update threshold if intentional`);
         }
       });
     });
@@ -782,7 +782,7 @@ describe("DeFiMathStats", function () {
     });
 
     describe("performance", function () {
-      it("sharpeRatio at N=30 and N=100, 5% rf — 25988 / 86668 gas", async function () {
+      it("sharpeRatio at N=30 and N=100, 5% rf — 25958 / 86638 gas", async function () {
         const { stats } = await loadFixture(deploy);
 
         {
@@ -791,12 +791,12 @@ describe("DeFiMathStats", function () {
                           107.5, 108.2, 107.8, 108.5, 109.1, 108.8, 109.5, 110.2, 109.8, 110.5]
                          .map(p => tokens(p));
           const gas = parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
-          assert.equal(gas, 25988, `gas changed: ${gas} ≠ 25988 (N=30) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 25958, `gas changed: ${gas} ≠ 25958 (N=30) — deterministic, update threshold if intentional`);
         }
         {
           const prices = Array.from({ length: 100 }, (_, i) => tokens(100 + 5 * Math.cos(i * 0.3)));
           const gas = parseInt((await stats.sharpeRatioMG(prices, 86400, tokens(0.05))).gasUsed);
-          assert.equal(gas, 86668, `gas changed: ${gas} ≠ 86668 (N=100) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 86638, `gas changed: ${gas} ≠ 86638 (N=100) — deterministic, update threshold if intentional`);
         }
       });
     });

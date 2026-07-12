@@ -1495,6 +1495,9 @@ describe("DeFiMath", function () {
           10n ** 60n,
           10n ** 70n,
           10n ** 76n,
+          1n << 253n,                   // worst-case seed input near uint256 ceiling
+          1n << 254n,
+          1n << 255n,
           UINT_MAX / 2n,
           UINT_MAX,
         ];
@@ -1512,7 +1515,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("sqrt when x in [1e-6, 1e6] — 212 gas", async function () {
+      it("sqrt when x in [1e-6, 1e6] — 197 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
@@ -1520,7 +1523,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 212, `gas changed: ${avg} ≠ 212 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 197, `gas changed: ${avg} ≠ 197 — deterministic, update threshold if intentional`);
       });
     });
 

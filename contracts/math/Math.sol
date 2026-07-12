@@ -337,39 +337,27 @@ library DeFiMath {
     function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x <= type(uint128).max) {
-                // lower 128 bits of uint256
                 assembly ("memory-safe") {
                     // pre-scale to 1e36 base (because x can be small)
                     x := mul(x, 1000000000000000000)
 
-                    // Approximate Y in 3 steps:
-                    // 1) find m and k such that: X = m x 2^k, where m is in [2^30, 2^32], and k is even.
-                    // 2) approximate sqrt(m) using minimax linear in reduced range.
-                    // 3) reconstruct back to Y = sqrt(m) x 2^(k/2)
-                    let k := and(sub(225, clz(x)), not(1))
-                    let m := shr(k, x)
-                    let seed := add(760567125, div(m, 3))
-                    y := shr(15, shl(shr(1, k), seed))
+                    // Centered CLZ-derived seed: 0.75 * 2^ceil(bits/2) = 3 * 2^(ceil-2).
+                    // Worst-case relative error 50% (vs 100% for pure ceil).
+                    y := shl(shr(1, sub(253, clz(x))), 3)
 
-                    // refine Y using 4x Newton's method for full precision
+                    // refine Y using 5x Newton's method
+                    y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                 }
             } else {
-                // higher 128 bits of uint256
                 assembly ("memory-safe") {
-                    // Approximate Y in 3 steps: 
-                    // 1) find m and k such that: X = m x 2^k, where m is in [2^30, 2^32], and k is even.
-                    // 2) approximate sqrt(m) using minimax linear in reduced range.
-                    // 3) reconstruct back to Y = sqrt(m) x 2^(k/2)
-                    let k := and(sub(225, clz(x)), not(1))
-                    let m := shr(k, x)
-                    let seed := add(760567125, div(m, 3))
-                    y := shr(15, shl(shr(1, k), seed))
 
-                    // refine Y using 4x Newton's method for full precision
+                    y := shl(shr(1, sub(253, clz(x))), 3)
+
+                    y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
