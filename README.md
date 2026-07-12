@@ -8,7 +8,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
 [![Solidity](https://img.shields.io/badge/Solidity-%5E0.8.31-blue.svg)](https://soliditylang.org)
 
-> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,723 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
+> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,708 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
 
 [DeFiMath](https://defimath.com) is a pure-Solidity library of DeFi math primitives. 40+ functions across four modules: low-level math, derivatives, interest rates, and statistics. No external runtime dependencies. MIT-licensed.
 
@@ -25,11 +25,11 @@ Every function is benchmarked against existing on-chain implementations. A repre
 
 | Function | DeFiMath | Next best | Multiple |
 | :------- | -------: | --------: | -------: |
-| `callOptionPrice` | **2,723** | 13,360 (Derivexyz) | **4.9×** |
-| `putOptionPrice`  | **2,733** | 13,363 (Derivexyz) | **4.9×** |
-| `binaryCallPrice` | **2,012** | 16,218 (Haptic)    | **8.1×** |
-| `delta`           | **1,718** | 8,621 (Derivexyz)  | **5.0×** |
-| `vega`            | **1,430** | 7,490 (Derivexyz)  | **5.2×** |
+| `callOptionPrice` | **2,708** | 13,360 (Derivexyz) | **4.9×** |
+| `putOptionPrice`  | **2,718** | 13,363 (Derivexyz) | **4.9×** |
+| `binaryCallPrice` | **1,997** | 16,218 (Haptic)    | **8.1×** |
+| `delta`           | **1,703** | 8,621 (Derivexyz)  | **5.1×** |
+| `vega`            | **1,415** | 7,490 (Derivexyz)  | **5.3×** |
 | `ln`              | **375**   | 518 (Solady)       | 1.4× |
 | `sqrt`            | **197**   | 341 (Solady)       | **1.7×** |
 | `cbrt`            | **340**   | 550 (Solady)       | **1.6×** |
@@ -113,19 +113,19 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Precision | Description |
 | :------- | --: | --------: | :---------- |
-| `callOptionPrice`     | 2,723  | 5.6e-12 | European call (Black-Scholes) |
-| `putOptionPrice`      | 2,733  | 5.4e-12 | European put (Black-Scholes) |
-| `delta`               | 1,718  | 6.2e-15 | First derivative w.r.t. spot |
-| `gamma`               | 1,490  | 9.1e-17 | Second derivative w.r.t. spot |
-| `theta`               | 3,284  | 3.5e-14 | Time decay (per day) |
-| `vega`                | 1,430  | 4.3e-14 | Sensitivity to volatility |
+| `callOptionPrice`     | 2,708  | 5.6e-12 | European call (Black-Scholes) |
+| `putOptionPrice`      | 2,718  | 5.4e-12 | European put (Black-Scholes) |
+| `delta`               | 1,703  | 6.2e-15 | First derivative w.r.t. spot |
+| `gamma`               | 1,475  | 9.1e-17 | Second derivative w.r.t. spot |
+| `theta`               | 3,269  | 3.5e-14 | Time decay (per day) |
+| `vega`                | 1,415  | 4.3e-14 | Sensitivity to volatility |
 | `impliedVolatility`   | 12,370 | ≤ 1e-6  | IV via Newton-Raphson |
-| `binaryCallPrice`     | 2,012  | 6.2e-15 | Cash-or-nothing call |
-| `binaryPutPrice`      | 2,017  | 5.9e-15 | Cash-or-nothing put |
-| `binaryDelta`         | 1,816  | 1.3e-16 | Binary delta (signed) |
-| `binaryGamma`         | 1,958  | 1.5e-18 | Binary gamma (signed) |
-| `binaryTheta`         | 3,344  | 8.3e-16 | Binary theta (per day) |
-| `binaryVega`          | 1,904  | 2.7e-16 | Binary vega (signed) |
+| `binaryCallPrice`     | 1,997  | 6.2e-15 | Cash-or-nothing call |
+| `binaryPutPrice`      | 2,002  | 5.9e-15 | Cash-or-nothing put |
+| `binaryDelta`         | 1,801  | 1.3e-16 | Binary delta (signed) |
+| `binaryGamma`         | 1,943  | 1.5e-18 | Binary gamma (signed) |
+| `binaryTheta`         | 3,329  | 8.3e-16 | Binary theta (per day) |
+| `binaryVega`          | 1,889  | 2.7e-16 | Binary vega (signed) |
 | `futurePrice`         | 442    | 1.2e-9 | `spot · e^(rt)` |
 
 *Precision is max absolute error vs. JS reference (at $1,000 spot for European, unit-payout for binary). `impliedVolatility` uses round-trip relative error.*
