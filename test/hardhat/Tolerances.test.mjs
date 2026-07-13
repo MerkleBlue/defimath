@@ -15,7 +15,7 @@
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_EXP        = 5.4e-14;
 export const MAX_REL_ERROR_LN         = 1.6e-15;
-export const MAX_REL_ERROR_SQRT       = 2.2e-14;
+export const MAX_REL_ERROR_SQRT       = 3.0e-16;
 export const MAX_REL_ERROR_SQRT_TIME  = 9e-15;
 export const MAX_REL_ERROR_CBRT       = 1e-14;
 export const MAX_REL_ERROR_POW        = 1e-11;

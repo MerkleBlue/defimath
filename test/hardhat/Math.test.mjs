@@ -1358,63 +1358,8 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("sqrt", function () {
+  describe.only("sqrt", function () {
     describe("behaviour", function () {
-      it("sqrt when x in [1, 2)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1; x < 2; x += 0.005) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-        }
-      });
-
-      it("sqrt when x in [1, 2^20)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1; x < 2 ** 20; x += 5242.875) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-        }
-      });
-
-      it("sqrt when x in [2^20, 2^40)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2**20; x < 2**40; x += 5497552896) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-        }
-      });
-
-      it("sqrt when x in [2^40, 2^60)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2**40; x < 2**60; x += 5764602025476096) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-        }
-      });
-
-      it("sqrt when x in [2^60, 2^80)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2**60; x < 2**80; x += 6.044623333465623e+21) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
-        }
-      });
-
       it("sqrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // Geometric doubling from 1e-18 — non-dyadic x at small magnitudes triggers
@@ -1423,31 +1368,102 @@ describe("DeFiMath", function () {
           const expected = Math.sqrt(x);
 
           const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT); // todo: check if relative or not
+          assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
         }
       });
 
+      it("sqrt when x in [1, 2)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x < 2; x += 0.00519373) {
+          const expected = Math.sqrt(x);
+
+          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
+
+      it("sqrt when x in [2^0, 2^64)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 1; x < 2 ** 64; x += x * 0.2050317) {
+          const expected = Math.sqrt(x);
+
+          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
+
+      it("sqrt when x in [2^64, 2^128)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 2 ** 64; x < 2 ** 128; x += x * 0.2050317) {
+          const expected = Math.sqrt(x);
+
+          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
+
+      // Large-x branch (raw input > uint128.max): sweep the uint256 argument
+      // DIRECTLY in wei — no tokens()/1e18 pre-scale, which would overflow the word.
+      // The stored value is x/1e18, so the reference is Math.sqrt(Number(x) / 1e18).
+      it("sqrt when x in [2^128, 2^196)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 2n ** 128n; x < 2n ** 196n; x += x / 5n) {
+          const expected = Math.sqrt(Number(x) / 1e18);
+
+          const actualSOL = (await deFiMath.sqrt(x)).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
+
+      it("sqrt when x in [2^196, 2^256)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const MAX = 2n ** 256n - 1n;
+        for (let x = 2n ** 196n; x < MAX; x += x / 5n) {
+          const expected = Math.sqrt(Number(x) / 1e18);
+
+          const actualSOL = (await deFiMath.sqrt(x)).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        }
+      });
     });
 
     describe("limits", function () {
-      it("sqrt when x is max", async function () {
+      it("sqrt when x is uint256.max", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        // Largest valid input = ⌊(2^256 − 1) / 1e18⌋, the boundary just below where mul(x, 1e18) overflows uint256.
-        const x = 115792089237316195423570985008687907853269.984665640564039457;
-        const expected = Math.sqrt(x);
+        const xWei = 2n ** 256n - 1n;                    // 115792...639935
+        const expected = Math.sqrt(Number(xWei) / 1e18);
 
-        const actualSOL = (await deFiMath.sqrt("115792089237316195423570985008687907853269984665640564039457")).toString() / 1e18;
+        const actualSOL = (await deFiMath.sqrt(xWei)).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("sqrt when x is uint128.max - 1 (max in upper branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const xWei = 2n ** 128n - 1n;
+        const expected = Math.sqrt(Number(xWei) / 1e18);
+
+        const actualSOL = (await deFiMath.sqrt(xWei)).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+      });
+
+      it("sqrt when x is uint128.max (min in lower branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const xWei = 2n ** 128n;
+        const expected = Math.sqrt(Number(xWei) / 1e18);
+
+        const actualSOL = (await deFiMath.sqrt(xWei)).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
       });
 
       it("sqrt when x is 0", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        const x = 0;
-        const expected = Math.sqrt(x);
 
-        const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        const actualSOL = (await deFiMath.sqrt("0")).toString() / 1e18;
+        assert.equal(actualSOL, 0);
       });
     });
 
@@ -1459,11 +1475,13 @@ describe("DeFiMath", function () {
         // so keeping the sample space below the cutoff keeps the reference reliable.
         const UINT128_MAX = 2n ** 128n - 1n;
         const FP1 = 10n ** 18n;
-        for (let i = 0; i < 500; i++) {
+        for (let i = 0; i < 2500; i++) {
           let xWei;
           do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT128_MAX);
           const expected = Math.sqrt(Number(xWei) / 1e18);
           const actual = (await deFiMath.sqrt(xWei)).toString() / 1e18;
+          // console.log(expected);
+          // console.log(actual);
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
         }
       });

@@ -344,6 +344,7 @@ library DeFiMath {
 
                     // generate seed using clz, then center it: 0.75 * 2^(bits/2)
                     y := shl(shr(1, sub(253, clz(x))), 3)
+                    // y := shl(shr(1, sub(256, clz(x))), 1)
 
                     // refine Y using 5x Newton's method
                     y := shr(1, add(y, div(x, y)))
@@ -351,11 +352,14 @@ library DeFiMath {
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
+                    // y := shr(1, add(y, div(x, y)))
+                    // y := shr(1, add(y, div(x, y)))
                 }
             } else {
                 assembly ("memory-safe") {
                     // generate seed using clz, then center it: 0.75 * 2^(bits/2)
                     y := shl(shr(1, sub(253, clz(x))), 3)
+                    // y := shl(shr(1, sub(256, clz(x))), 1)
 
                     // refine Y using 5x Newton's method
                     y := shr(1, add(y, div(x, y)))
@@ -363,6 +367,8 @@ library DeFiMath {
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
+                    // y := shr(1, add(y, div(x, y)))
+                    // y := shr(1, add(y, div(x, y)))
 
                     // post-scale y to 1e18 base
                     y := mul(y, 1000000000)
