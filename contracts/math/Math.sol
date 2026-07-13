@@ -331,18 +331,18 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes sqrt(x) using seeding combined with Newton's method
+    /// @notice Computes square root of x in 18-decimal fixed-point. 
+    /// @dev Accepts the full uint256 domain — never reverts.
     /// @param x Input in 18-decimal fixed-point format
     /// @return y Square root in 18-decimal fixed-point format
     function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x <= type(uint128).max) {
                 assembly ("memory-safe") {
-                    // pre-scale to 1e36 base (because x can be small)
+                    // pre-scale x to 1e36 base (because x can be small)
                     x := mul(x, 1000000000000000000)
 
-                    // Centered CLZ-derived seed: 0.75 * 2^ceil(bits/2) = 3 * 2^(ceil-2).
-                    // Worst-case relative error 50% (vs 100% for pure ceil).
+                    // generate seed using clz, then center it: 0.75 * 2^(bits/2)
                     y := shl(shr(1, sub(253, clz(x))), 3)
 
                     // refine Y using 5x Newton's method
@@ -354,23 +354,25 @@ library DeFiMath {
                 }
             } else {
                 assembly ("memory-safe") {
+                    // generate seed using clz, then center it: 0.75 * 2^(bits/2)
                     y := shl(shr(1, sub(253, clz(x))), 3)
 
+                    // refine Y using 5x Newton's method
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
 
-                    // post-scale to 1e18 base
+                    // post-scale y to 1e18 base
                     y := mul(y, 1000000000)
                 }
             }
         }
     }
 
-    /// @notice Computes sqrt(x) with fixed-point precision for time values
-    /// @dev Optimized for values up to 32 years
+    /// @notice Computes square root of x in 18-decimal fixed-point for time values.
+    /// @dev Silently overflows for large x. Optimized for values up to 32 years
     /// @param x Time in years, in 18-decimal fixed-point format (e.g. 1e18 = 1 year)
     /// @return y Resulting sqrt in 18-decimal fixed-point format (sqrt(years))
     function sqrtTime(uint256 x) internal pure returns (uint256 y) {
@@ -380,11 +382,10 @@ library DeFiMath {
         // external use; outside the [1s, 32y] range precision is not guaranteed.
         // Also, it will OVERFLOW if x is large.
         assembly ("memory-safe") {
-            // pre-scale to 1e36 base (because x can be small)
+            // pre-scale x to 1e36 base (because x can be small)
             x := mul(x, 1000000000000000000)
 
-            // Centered CLZ-derived seed: 0.75 * 2^ceil(bits/2) = 3 * 2^(ceil-2).
-            // Worst-case relative error 50% (vs 100% for pure ceil).
+            // generate seed using clz, then center it: 0.75 * 2^(bits/2)
             y := shl(shr(1, sub(253, clz(x))), 3)
 
             // refine Y using 5x Newton's method
