@@ -20,6 +20,7 @@ import {DeFiMath} from "../../contracts/math/Math.sol";
 ///
 ///      Foundry tolerances are in 1e18-scaled fixed-point. Some helpers:
 ///          REL_1e_12 = 1e6   → 1e-12 relative
+///          REL_1e_11 = 1e7   → 1e-11 relative
 ///          REL_1e_10 = 1e8   → 1e-10 relative
 ///          REL_1e_8  = 1e10  → 1e-8  relative
 ///      Property tests use slightly looser tolerances than behaviour tests because
@@ -33,6 +34,7 @@ contract MathPropertyTest is Test {
     // Relative-error tolerances (1e18-scaled per forge-std assertApproxEqRel convention)
     uint256 private constant REL_1e_8  = 1e10;  // 1e-8  relative
     uint256 private constant REL_1e_10 = 1e8;   // 1e-10 relative
+    uint256 private constant REL_1e_11 = 1e7;   // 1e-11 relative
     uint256 private constant REL_1e_12 = 1e6;   // 1e-12 relative
 
     // ====================================================================
@@ -81,16 +83,20 @@ contract MathPropertyTest is Test {
         uint256 r = DeFiMath.sqrt(x);
         if (x <= type(uint128).max) {
             // Small branch: r is FP18 sqrt(x). r² / 1e18 ≈ x within FP18 tolerance.
+            // Worst case is the domain floor x = 1e12: the ±1-wei mulDiv rounding is a
+            // 1/x ≈ 1e-12 relative miss, so REL_1e_11 holds with ~10× margin. (Above the
+            // floor the relative rounding shrinks as 1/x, so error only improves.)
             uint256 back = DeFiMath.mulDiv(r, r, FP_ONE);
-            assertApproxEqRel(back, x, REL_1e_10, "sqrt(x)^2 != x");
+            assertApproxEqRel(back, x, REL_1e_11, "sqrt(x)^2 != x");
         } else {
             // Large branch: r ≈ floor(sqrt(x)) · 1e9. Sqrt guarantees FP18 relative
             // precision, not strict floor — Newton at this scale can overshoot by
             // hundreds of ULPs on the raw uint but stays within 1e-27 relative error.
-            // Assert the round-trip with the same REL_1e_10 tolerance the small branch
-            // uses. s * s stays in uint256 given x ≤ 2^254 - 1.
+            // The ⌊√x⌋² ≤ x bracket makes the round-trip trivially tight here (≤ 1e-35),
+            // so the same REL_1e_11 tolerance the small branch uses has enormous margin.
+            // s * s stays in uint256 given x ≤ 2^254 - 1.
             uint256 s = r / 1e9;
-            assertApproxEqRel(s * s, x, REL_1e_10, "sqrt(x)^2 != x (large branch)");
+            assertApproxEqRel(s * s, x, REL_1e_11, "sqrt(x)^2 != x (large branch)");
         }
     }
 
