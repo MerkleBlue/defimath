@@ -397,7 +397,8 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes cbrt(x) using CLZ-derived initial guess + 6 Newton iterations
+    /// @notice Computes cube root of x in 18-decimal fixed-point.
+    /// @dev Accepts the full uint256 domain — never reverts.
     /// @param x Input in 18-decimal fixed-point format
     /// @return y Cube root in 18-decimal fixed-point format
     function cbrt(uint256 x) internal pure returns (uint256 y) {
@@ -405,13 +406,13 @@ library DeFiMath {
             if (x <= type(uint128).max) {
                 // lower 128 bits of uint256
                 assembly ("memory-safe") {
-                    // pre-scale to 1e54 base (because x can be small)
+                    // pre-scale x to 1e54 base (because x can be small)
                     x := mul(x, 1000000000000000000000000000000000000)
 
-                    // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
+                    // generate seed using clz: y = 2^(bits/3), within factor ∛2 of cbrt(x)
                     y := shl(div(sub(258, clz(x)), 3), 1)
 
-                    // 6x Newton method: y = (2y + x/y²) / 3
+                    // refine Y using 6x Newton method: y = (2y + x/y²) / 3
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
@@ -422,10 +423,10 @@ library DeFiMath {
             } else {
                 // higher 128 bits of uint256
                 assembly ("memory-safe") {
-                    // CLZ-derived initial guess: y = 2^ceil(bits/3), within factor ∛2 of cbrt(x)
+                    // generate seed using clz: y = 2^(bits/3), within factor ∛2 of cbrt(x)
                     y := shl(div(sub(258, clz(x)), 3), 1)
 
-                    // 6x Newton method: y = (2y + x/y²) / 3
+                    // refine Y using 6x Newton method: y = (2y + x/y²) / 3
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
@@ -433,7 +434,7 @@ library DeFiMath {
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
 
-                    // Post-scale to 1e18 base 
+                    // Post-scale y to 1e18 base 
                     y := mul(y, 1000000000000)
                 }
             }
