@@ -333,8 +333,8 @@ library DeFiMath {
 
     /// @notice Computes square root of x in 18-decimal fixed-point. 
     /// @dev Accepts the full uint256 domain, never reverts.
-    ///      Max relative error: less than 3e-16 for any x >= 1e18.
-    ///      Max absolute error: less than 3e-16 for any x < 1e18.
+    ///      Max relative error: < 2e-18 for any x >= 1e18.
+    ///      Max absolute error: bit-exact for any x < 1e18.
     /// @param x Input in 18-decimal fixed-point format.
     /// @return y Square root in 18-decimal fixed-point format.
     function sqrt(uint256 x) internal pure returns (uint256 y) {
@@ -388,7 +388,7 @@ library DeFiMath {
             x := mul(x, 1000000000000000000)
 
             // generate seed y using clz
-            y := shl(shr(1, sub(253, clz(x))), 3)
+            y := shl(shr(1, sub(254, clz(x))), 2)
 
             // refine y using 5x Newton's method
             y := shr(1, add(y, div(x, y)))
