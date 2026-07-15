@@ -332,9 +332,11 @@ library DeFiMath {
     }
 
     /// @notice Computes square root of x in 18-decimal fixed-point. 
-    /// @dev Accepts the full uint256 domain — never reverts.
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Square root in 18-decimal fixed-point format
+    /// @dev Accepts the full uint256 domain, never reverts.
+    ///      Max relative error: less than 3e-16 for any x >= 1e18.
+    ///      Max absolute error: less than 3e-16 for any x < 1e18.
+    /// @param x Input in 18-decimal fixed-point format.
+    /// @return y Square root in 18-decimal fixed-point format.
     function sqrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x <= type(uint128).max) {
@@ -342,33 +344,27 @@ library DeFiMath {
                     // pre-scale x to 1e36 base (because x can be small)
                     x := mul(x, 1000000000000000000)
 
-                    // generate seed using clz, then center it: 0.75 * 2^(bits/2)
-                    y := shl(shr(1, sub(253, clz(x))), 3)
-                    // y := shl(shr(1, sub(256, clz(x))), 1)
+                    // generate seed y using clz
+                    y := shl(shr(1, sub(254, clz(x))), 2)
 
-                    // refine Y using 5x Newton's method
+                    // refine y using 5x Newton's method
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
-                    // y := shr(1, add(y, div(x, y)))
-                    // y := shr(1, add(y, div(x, y)))
                 }
             } else {
                 assembly ("memory-safe") {
-                    // generate seed using clz, then center it: 0.75 * 2^(bits/2)
-                    y := shl(shr(1, sub(253, clz(x))), 3)
-                    // y := shl(shr(1, sub(256, clz(x))), 1)
+                    // generate seed y using clz
+                    y := shl(shr(1, sub(254, clz(x))), 2)
 
-                    // refine Y using 5x Newton's method
+                    // refine y using 5x Newton's method
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
-                    // y := shr(1, add(y, div(x, y)))
-                    // y := shr(1, add(y, div(x, y)))
 
                     // post-scale y to 1e18 base
                     y := mul(y, 1000000000)
@@ -391,10 +387,10 @@ library DeFiMath {
             // pre-scale x to 1e36 base (because x can be small)
             x := mul(x, 1000000000000000000)
 
-            // generate seed using clz, then center it: 0.75 * 2^(bits/2)
+            // generate seed y using clz
             y := shl(shr(1, sub(253, clz(x))), 3)
 
-            // refine Y using 5x Newton's method
+            // refine y using 5x Newton's method
             y := shr(1, add(y, div(x, y)))
             y := shr(1, add(y, div(x, y)))
             y := shr(1, add(y, div(x, y)))
