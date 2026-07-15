@@ -4,10 +4,32 @@ import bs from "black-scholes";
 import erf from 'math-erf';
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32, randomInt256, randomUint256, tokens } from "./Common.test.mjs";
 import { assert } from "chai";
+import Decimal from "decimal.js";
 import {
     MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_REL_ERROR_SQRT_TIME,
     MAX_REL_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
+
+// ── Full-precision sqrt accuracy check (decimal.js) ────────────────────────────
+// Float64 Math.sqrt caps measurable error at ~3e-16 (machine epsilon). decimal.js
+// at 60 digits computes the exact reference, so we can assert the TRUE accuracy:
+// the result is correctly rounded to ≤1 wei (small values, FP18-quantization limited)
+// or within SQRT_REL_TOL relative (large values). This reveals ~1e-18 (60-bit) accuracy.
+Decimal.set({ precision: 60 });
+const sqrtExactWei = (xWei) => new Decimal(xWei.toString()).times("1e18").sqrt(); // exact √(x·1e18) in wei
+// Relative-error check — for x > 1e18 wei (real value > 1), where the FP18 result
+// carries ≥18 significant digits so relative error is the meaningful metric.
+function assertSqrtAccurate(actual, expected) {
+  const rel = new Decimal(actual.toString()).minus(expected).abs().div(expected);
+  assert.ok(rel.lt(MAX_REL_ERROR_SQRT),
+    `relErr ${rel.toExponential(3)} ≥ ${MAX_REL_ERROR_SQRT.toExponential(0)}`);
+}
+// Absolute (bit-exact) check — for x ≤ 1e18 wei (real value ≤ 1), where the result has
+// few significant wei and error is FP18-quantization-dominated (relative is meaningless).
+function assertSqrtBitExact(actual, expected) {
+  const absErr = new Decimal(actual.toString()).minus(expected).abs();
+  assert.ok(absErr.lte(1), `sqrt off by ${absErr.toFixed(3)} wei (> 1)`);
+}
 
 describe("DeFiMath", function () {
 
@@ -1365,10 +1387,29 @@ describe("DeFiMath", function () {
         // Geometric doubling from 1e-18 — non-dyadic x at small magnitudes triggers
         // precision drift that exceeds the threshold; doubling keeps inputs dyadic.
         for (let x = 1e-18; x < 1; x += x) {
-          const expected = Math.sqrt(x);
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrt(tokens(x));
+          assertSqrtBitExact(actual, expected);
+        }
+      });
 
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+      it("sqrt when x is just below 1 - [0.9999, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.9999; x < 1; x += 0.000000519373) {
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrt(tokens(x));
+          assertSqrtBitExact(actual, expected);
+        }
+      });
+
+      it("sqrt when x is just above 1 - [1, 1.0001)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x < 1.0001; x += 0.000000519373) {
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrt(tokens(x));
+          assertSqrtAccurate(actual, expected);
         }
       });
 
@@ -1376,43 +1417,38 @@ describe("DeFiMath", function () {
         const { deFiMath } = await loadFixture(deploy);
 
         for (let x = 1; x < 2; x += 0.00519373) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrt(tokens(x));
+          assertSqrtAccurate(actual, expected);
         }
       });
 
       it("sqrt when x in [2^0, 2^64)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = 1; x < 2 ** 64; x += x * 0.2050317) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrt(tokens(x));
+          assertSqrtAccurate(actual, expected);
         }
       });
 
       it("sqrt when x in [2^64, 2^128)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = 2 ** 64; x < 2 ** 128; x += x * 0.2050317) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrt(tokens(x));
+          assertSqrtAccurate(actual, expected);
         }
       });
 
       // Large-x branch (raw input > uint128.max): sweep the uint256 argument
       // DIRECTLY in wei — no tokens()/1e18 pre-scale, which would overflow the word.
-      // The stored value is x/1e18, so the reference is Math.sqrt(Number(x) / 1e18).
       it("sqrt when x in [2^128, 2^196)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = 2n ** 128n; x < 2n ** 196n; x += x / 5n) {
-          const expected = Math.sqrt(Number(x) / 1e18);
-
-          const actualSOL = (await deFiMath.sqrt(x)).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+          const expected = sqrtExactWei(x);
+          const actual = await deFiMath.sqrt(x);
+          assertSqrtAccurate(actual, expected);
         }
       });
 
@@ -1420,10 +1456,9 @@ describe("DeFiMath", function () {
         const { deFiMath } = await loadFixture(deploy);
         const MAX = 2n ** 256n - 1n;
         for (let x = 2n ** 196n; x < MAX; x += x / 5n) {
-          const expected = Math.sqrt(Number(x) / 1e18);
-
-          const actualSOL = (await deFiMath.sqrt(x)).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+          const expected = sqrtExactWei(x);
+          const actual = await deFiMath.sqrt(x);
+          assertSqrtAccurate(actual, expected);
         }
       });
     });
@@ -1431,32 +1466,26 @@ describe("DeFiMath", function () {
     describe("limits", function () {
       it("sqrt when x is uint256.max", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        const xWei = 2n ** 256n - 1n;                    // 115792...639935
-        const expected = Math.sqrt(Number(xWei) / 1e18);
-
-        const actualSOL = (await deFiMath.sqrt(xWei)).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        const xWei = 2n ** 256n - 1n;
+        const expected = sqrtExactWei(xWei);
+        const actual = await deFiMath.sqrt(xWei);
+        assertSqrtAccurate(actual, expected);
       });
 
       it("sqrt when x is uint128.max - 1 (max in upper branch)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         const xWei = 2n ** 128n - 1n;
-        const expected = Math.sqrt(Number(xWei) / 1e18);
-
-        const actualSOL = (await deFiMath.sqrt(xWei)).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        const expected = sqrtExactWei(xWei);
+        const actual = await deFiMath.sqrt(xWei);
+        assertSqrtAccurate(actual, expected);
       });
 
       it("sqrt when x is uint128.max (min in lower branch)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
         const xWei = 2n ** 128n;
-        const expected = Math.sqrt(Number(xWei) / 1e18);
-
-        const actualSOL = (await deFiMath.sqrt(xWei)).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
+        const expected = sqrtExactWei(xWei);
+        const actual = await deFiMath.sqrt(xWei);
+        assertSqrtAccurate(actual, expected);
       });
 
       it("sqrt when x is 0", async function () {
@@ -1468,21 +1497,19 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
-      it("matches Math.sqrt on 500 random inputs (small-x branch, x ≤ uint128.max)", async function () {
+      it("matches exact sqrt on 2500 random inputs across the full uint256 domain", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Small-x branch cutoff: sqrt uses the pre-scale path when x ≤ uint128.max.
-        // JS Math.sqrt also loses precision on inputs above this range (Number → f64),
-        // so keeping the sample space below the cutoff keeps the reference reliable.
-        const UINT128_MAX = 2n ** 128n - 1n;
+        // decimal.js reference is exact at any magnitude, so — unlike the old f64
+        // Math.sqrt reference — we can sample the whole uint256 range, not just the
+        // small branch.
         const FP1 = 10n ** 18n;
+        const UINT_MAX = 2n ** 256n - 1n;
         for (let i = 0; i < 2500; i++) {
           let xWei;
-          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT128_MAX);
-          const expected = Math.sqrt(Number(xWei) / 1e18);
-          const actual = (await deFiMath.sqrt(xWei)).toString() / 1e18;
-          // console.log(expected);
-          // console.log(actual);
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT_MAX);
+          const expected = sqrtExactWei(xWei);
+          const actual = await deFiMath.sqrt(xWei);
+          assertSqrtAccurate(actual, expected);
         }
       });
     });

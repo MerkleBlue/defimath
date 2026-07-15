@@ -3,7 +3,7 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import * as ss from "simple-statistics";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
-import { MAX_REL_ERROR_SQRT, MAX_REL_ERROR_AGG } from "./Tolerances.test.mjs";
+import { MAX_REL_ERROR_STATS, MAX_REL_ERROR_AGG } from "./Tolerances.test.mjs";
 
 // JS reference helpers
 function jsMean(arr) {
@@ -97,19 +97,18 @@ describe("DeFiMathStats", function () {
   }
 
   describe("geometricMean", function () {
-
     describe("behaviour", function () {
       it("sqrt(a · b) for known inputs", async function () {
         const { stats } = await loadFixture(deploy);
         // sqrt(100 · 400) = sqrt(40000) = 200
         const actual = (await stats.geometricMean(tokens(100), tokens(400))).toString() / 1e18;
-        assertRelativeBelow(actual, 200, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, 200, MAX_REL_ERROR_STATS);
       });
 
       it("returns a when a == b", async function () {
         const { stats } = await loadFixture(deploy);
         const actual = (await stats.geometricMean(tokens(1000), tokens(1000))).toString() / 1e18;
-        assertRelativeBelow(actual, 1000, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, 1000, MAX_REL_ERROR_STATS);
       });
 
       it("typical range", async function () {
@@ -118,7 +117,7 @@ describe("DeFiMathStats", function () {
         for (const [a, b] of pairs) {
           const expected = Math.sqrt(a * b);
           const actual = (await stats.geometricMean(tokens(a), tokens(b))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
         }
       });
     });
@@ -140,7 +139,7 @@ describe("DeFiMathStats", function () {
         // is the per-input MAX_VALUE check.
         const MAX = "1000000000000000000000000000000000";  // 1e15 FP
         const actual = (await stats.geometricMean(MAX, tokens(1e9))).toString() / 1e18;
-        assertRelativeBelow(actual, Math.sqrt(1e15 * 1e9), MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, Math.sqrt(1e15 * 1e9), MAX_REL_ERROR_STATS);
       });
 
       it("symmetric mid-range (a = b = 1e12)", async function () {
@@ -149,7 +148,7 @@ describe("DeFiMathStats", function () {
         // MAX_VALUE and the internal sqrt has no binding constraint, so this is straight functional
         // coverage of the symmetric path.
         const actual = (await stats.geometricMean(tokens(1e12), tokens(1e12))).toString() / 1e18;
-        assertRelativeBelow(actual, 1e12, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, 1e12, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -414,7 +413,7 @@ describe("DeFiMathStats", function () {
         const expected = jsStdDev(valuesJS);  // 2.138... (actually std dev of this sample is 2 with n-1)
         const values = valuesJS.map(v => tokens(v));
         const actual = (await stats.stdDev(values)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("100-element array against JS reference", async function () {
@@ -423,7 +422,7 @@ describe("DeFiMathStats", function () {
         const expected = jsStdDev(valuesJS);
         const values = valuesJS.map(v => tokens(v));
         const actual = (await stats.stdDev(values)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -434,7 +433,7 @@ describe("DeFiMathStats", function () {
         const values = [10, 14].map(v => tokens(v));
         const expected = jsStdDev([10, 14]);
         const actual = (await stats.stdDev(values)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("array of equal values returns 0", async function () {
@@ -450,7 +449,7 @@ describe("DeFiMathStats", function () {
         const expected = jsStdDev(valuesJS);
         const values = valuesJS.map(v => tokens(v));
         const actual = (await stats.stdDev(values)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("values at MAX_VALUE (1e15) — all equal returns 0", async function () {
@@ -517,7 +516,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("hourly prices, 3600-sec interval", async function () {
@@ -527,7 +526,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, 3600);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, 3600)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("yearly prices: factor = 1, annualizedVol == periodStdDev", async function () {
@@ -536,7 +535,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, SEC_PER_YEAR_LOCAL);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, SEC_PER_YEAR_LOCAL)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("declining-price series (negative log returns)", async function () {
@@ -545,7 +544,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("100-element array against JS reference", async function () {
@@ -554,7 +553,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -572,7 +571,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("at MAX_ARRAY_LENGTH (1024 prices)", async function () {
@@ -581,7 +580,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, SEC_PER_DAY);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, SEC_PER_DAY)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("intervalSec = 1 (smallest valid interval)", async function () {
@@ -590,7 +589,7 @@ describe("DeFiMathStats", function () {
         const expected = jsHistoricalVolatility(pricesJS, 1);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.historicalVolatility(prices, 1)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -665,7 +664,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
         assert.isAbove(actual, 0, "Sharpe should be positive for upward trend");
       });
 
@@ -676,7 +675,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
         assert.isBelow(actual, 0, "Sharpe should be negative for downward trend");
       });
 
@@ -686,7 +685,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, 0);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, 0)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("hourly prices, 3600-sec interval", async function () {
@@ -696,7 +695,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, 3600, rfAnnual);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, 3600, tokens(rfAnnual))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("100-element array against JS reference", async function () {
@@ -706,7 +705,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -718,7 +717,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("at MAX_ARRAY_LENGTH (1024 prices)", async function () {
@@ -728,7 +727,7 @@ describe("DeFiMathStats", function () {
         const expected = jsSharpeRatio(pricesJS, SEC_PER_DAY, rfAnnual);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.sharpeRatio(prices, SEC_PER_DAY, tokens(rfAnnual))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("rfAnnual just below MAX_RATE (4 = 400%)", async function () {
@@ -931,7 +930,7 @@ describe("DeFiMathStats", function () {
         const expected = jsValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("99% VaR is lower (more negative) than 95% VaR", async function () {
@@ -949,7 +948,7 @@ describe("DeFiMathStats", function () {
         const expected = jsValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
     });
@@ -959,7 +958,7 @@ describe("DeFiMathStats", function () {
         const { stats } = await loadFixture(deploy);
         // 2 prices → 1 log return; k clamps to n-1=0, K=0 ≠ k+1 → exercises the boundary (no-interp) path
         const actual = (await stats.valueAtRisk([tokens(100), tokens(90)], tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, Math.log(90 / 100), MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, Math.log(90 / 100), MAX_REL_ERROR_STATS);
       });
 
       it("confidence just above 0 (1 wei = 1e-18) — returns max log return", async function () {
@@ -988,7 +987,7 @@ describe("DeFiMathStats", function () {
         const expected = jsValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.valueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -1043,7 +1042,7 @@ describe("DeFiMathStats", function () {
         const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("CVaR is ≤ VaR (more conservative)", async function () {
@@ -1061,7 +1060,7 @@ describe("DeFiMathStats", function () {
         const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 
@@ -1073,7 +1072,7 @@ describe("DeFiMathStats", function () {
         const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
 
       it("confidence just above 0 (1 wei) — averages all-but-one worst returns", async function () {
@@ -1107,7 +1106,7 @@ describe("DeFiMathStats", function () {
         const expected = jsConditionalValueAtRisk(pricesJS, 0.95);
         const prices = pricesJS.map(p => tokens(p));
         const actual = (await stats.conditionalValueAtRisk(prices, tokens(0.95))).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_STATS);
       });
     });
 

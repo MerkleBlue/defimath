@@ -15,7 +15,7 @@
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_EXP        = 5.4e-14;
 export const MAX_REL_ERROR_LN         = 1.6e-15;
-export const MAX_REL_ERROR_SQRT       = 3.0e-16;
+export const MAX_REL_ERROR_SQRT       = 2e-18;   // FP18 floor: 1 wei of the smallest in-range result (1e18) ≈ 1e-18 relative; measured vs decimal.js (exact)
 export const MAX_REL_ERROR_SQRT_TIME  = 9e-15;
 export const MAX_REL_ERROR_CBRT       = 1e-14;
 export const MAX_REL_ERROR_POW        = 1e-11;
@@ -47,5 +47,6 @@ export const MAX_REL_ERROR_LOG_RETURN = 1.6e-15;   // inherits ln's relative err
 export const MAX_ABS_ERROR_RATE_CONV  = 1e-15;     // Taylor branch precision for rate conversions
 export const MAX_REL_ERROR_IRR        = 1e-9;      // Newton-Raphson convergence tolerance
 
-// ── Stats (arithmetic aggregation; sqrt re-exported above) ───────────────────────────────
+// ── Stats (arithmetic aggregation) ───────────────────────────────────────────────────────
 export const MAX_REL_ERROR_AGG        = 1e-15;     // arithmetic-only operations: essentially exact
+export const MAX_REL_ERROR_STATS      = 2.2e-14;   // multi-step stats (variance→vol→sharpe) accumulate ~1.5e-14 vs the f64 reference
