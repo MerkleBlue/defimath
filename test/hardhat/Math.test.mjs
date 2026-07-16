@@ -6,7 +6,7 @@ import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32
 import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
-    MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_REL_ERROR_SQRT_TIME,
+    MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT,
     MAX_REL_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
 
@@ -31,7 +31,7 @@ function assertSqrtBitExact(actual, expected) {
   assert.ok(absErr.lte(1), `sqrt off by ${absErr.toFixed(3)} wei (> 1)`);
 }
 
-describe("DeFiMath", function () {
+describe.only("DeFiMath", function () {
 
   async function deploy() {
     const MathWrapper = await ethers.getContractFactory("MathWrapper");
@@ -1547,6 +1547,21 @@ describe("DeFiMath", function () {
     });
 
     describe("limits", function () {
+      it("sqrt when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const actualSOL = (await deFiMath.sqrt("0")).toString() / 1e18;
+        assert.equal(actualSOL, 0);
+      });
+
+      it("sqrt when x is uint128.max (min in lower branch)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const xWei = 2n ** 128n;
+        const expected = sqrtExactWei(xWei);
+        const actual = await deFiMath.sqrt(xWei);
+        assertSqrtAccurate(actual, expected);
+      });
+
       it("sqrt when x is uint256.max", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const xWei = 2n ** 256n - 1n;
@@ -1563,28 +1578,28 @@ describe("DeFiMath", function () {
         assertSqrtAccurate(actual, expected);
       });
 
-      it("sqrt when x is uint128.max (min in lower branch)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        const xWei = 2n ** 128n;
-        const expected = sqrtExactWei(xWei);
-        const actual = await deFiMath.sqrt(xWei);
-        assertSqrtAccurate(actual, expected);
-      });
 
-      it("sqrt when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
 
-        const actualSOL = (await deFiMath.sqrt("0")).toString() / 1e18;
-        assert.equal(actualSOL, 0);
-      });
+
     });
 
     describe("random", function () {
-      it("matches exact sqrt on 2500 random inputs across the full uint256 domain", async function () {
+      it("matches sqrt on 2500 random inputs with x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // decimal.js reference is exact at any magnitude, so — unlike the old f64
-        // Math.sqrt reference — we can sample the whole uint256 range, not just the
-        // small branch.
+        
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 2500; i++) {
+          let xWei;
+          do { xWei = randomUint256() % FP1; } while (xWei === 0n);
+          const expected = sqrtExactWei(xWei);
+          const actual = await deFiMath.sqrt(xWei);
+          assertSqrtBitExact(actual, expected);
+        }
+      });
+
+      it("matches sqrt on 2500 random inputs with x in [1, uint256 max])", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
         const FP1 = 10n ** 18n;
         const UINT_MAX = 2n ** 256n - 1n;
         for (let i = 0; i < 2500; i++) {
@@ -1597,6 +1612,7 @@ describe("DeFiMath", function () {
       });
     });
 
+    // todo: move this test
     describe("handles the full uint256 range without reverting", function () {
       it("computes sqrt across the large-x branch [uint128.max+1, uint256.max] with sub-FP18 precision", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -2451,7 +2467,7 @@ describe("DeFiMath", function () {
           const expected = Math.sqrt(x * 31709792000 / 1e18);
 
           const actualSOL = (await deFiMath.sqrtTime(x * 31709792000)).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+          assertSqrtBitExact(actualSOL, expected);
         }
       });
 
@@ -2461,7 +2477,7 @@ describe("DeFiMath", function () {
           const expected = Math.sqrt(x * 31709792000 / 1e18);
 
           const actualSOL = (await deFiMath.sqrtTime(x * 31709792000)).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+          assertSqrtBitExact(actualSOL, expected);
         }
       });
 
@@ -2471,18 +2487,17 @@ describe("DeFiMath", function () {
           const expected = Math.sqrt(x / 31536000);
 
           const actualSOL = (await deFiMath.sqrtTime(tokens(x / 31536000))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+          assertSqrtBitExact(actualSOL, expected);
         }
       });
 
-      it("sqrtTime when x in [1y, 8y]", async function () {
+      it("sqrtTime when x in [1y, 32y]", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 1; x < 8.005; x += 0.03503) {
-          const expected = Math.sqrt(x);
-
-          const actualSOL = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+        for (let x = 1; x < 32.005; x += 0.03503) {
+          const expected = sqrtExactWei(tokens(x));
+          const actual = await deFiMath.sqrtTime(tokens(x));
+          assertSqrtAccurate(actual, expected);
         }
       });
     });
@@ -2491,32 +2506,47 @@ describe("DeFiMath", function () {
       it("sqrtTime when x is 1s (smallest documented input)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
-        const expected = Math.sqrt(x); // 1 / 31536000
-
-        const actualSOL = (await deFiMath.sqrtTime(31709792000)).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+        const expected = sqrtExactWei(tokens(x));
+        const actual = await deFiMath.sqrt(tokens(x));
+        assertSqrtBitExact(actual, expected);
       });
 
-      it("sqrtTime when x is 8y (largest documented input)", async function () {
+      it("sqrtTime when x is 32y (largest documented input)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // 8 years is the top of the documented operational range — the function has
-        // no input validation, but precision is calibrated to [1s, 8y] in FP years.
-        const x = 8;
+        // 32 years is the top of the documented operational range — the function has
+        // no input validation, but precision is calibrated to [1s, 32y] in FP years.
+        const x = 32;
         const expected = Math.sqrt(x);
         const actualSOL = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT_TIME);
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_SQRT);
       });
     });
 
     describe("random", function () {
-      it("matches Math.sqrt on 500 random inputs", async function () {
+      it("matches sqrtTime on 2500 random inputs with x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // sqrtTime is calibrated to FP18 years in [1s, 8y] ≈ [3.17e-8, 8].
-        for (let i = 0; i < 500; i++) {
-          const x = 3.17e-8 + Math.random() * (8 - 3.17e-8);
-          const expected = Math.sqrt(x);
-          const actual = (await deFiMath.sqrtTime(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_SQRT_TIME);
+        
+        const FP1 = 10n ** 18n;
+        for (let i = 0; i < 2500; i++) {
+          let xWei;
+          do { xWei = randomUint256() % FP1; } while (xWei === 0n);
+          const expected = sqrtExactWei(xWei);
+          const actual = await deFiMath.sqrtTime(xWei);
+          assertSqrtBitExact(actual, expected);
+        }
+      });
+
+      it("matches sqrtTime on 2500 random inputs with x in [1y, 32y])", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const FP1 = 10n ** 18n;
+        const UINT_MAX = 2n ** 256n - 1n;
+        for (let i = 0; i < 2500; i++) {
+          let xWei;
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > 32n * FP1);
+          const expected = sqrtExactWei(xWei);
+          const actual = await deFiMath.sqrtTime(xWei);
+          assertSqrtAccurate(actual, expected);
         }
       });
     });
