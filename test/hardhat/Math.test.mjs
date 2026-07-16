@@ -661,28 +661,44 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("log1p when x in [0.01, 1) (naive branch transition)", async function () {
+      // Error-metric rule: absolute where |log1p(x)| < 1, relative where >= 1.
+      // log1p(x) = ln(1+x) crosses |result| = 1 at x = 1/e - 1 and x = e - 1, so grids
+      // split there. (The |x| < 0.01 Taylor grid above sits inside the absolute band.)
+
+      // ── absolute band: x in [1/e - 1, e - 1), where |log1p(x)| <= 1 ──
+      it("log1p when x in [1/e - 1, -0.01]", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        for (let x = 0.01; x < 1; x += 0.00495) {
+        for (let x = 1 / Math.E - 1; x <= -0.01; x += 0.003) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LN);
+        }
+      });
+
+      it("log1p when x in [0.01, e - 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 0.01; x < Math.E - 1; x += 0.0085) {
+          const expected = Math.log1p(x);
+          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LN);
+        }
+      });
+
+      // ── relative band: x <= 1/e - 1 (down to -1) ──
+      it("log1p when x in [-0.99, 1/e - 1]", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = -0.99; x <= 1 / Math.E - 1; x += 0.0018) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log1p when x in [-0.99, -0.01]", async function () {
+      // ── relative band: x >= e - 1 (large positive) ──
+      it("log1p when x in [e - 1, 1e6]", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        for (let x = -0.99; x <= -0.01; x += 0.0049) {
-          const expected = Math.log1p(x);
-          const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log1p when x in [1, 1e6] (large positive)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // Log-spaced 200 samples across 6 decades.
-        for (let x = 1; x <= 1e6; x *= 1.0717734625361896) {
+        // Log-spaced ~185 samples across the tail.
+        for (let x = Math.E - 1; x <= 1e6; x *= 1.0717734625361896) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
@@ -734,12 +750,15 @@ describe("DeFiMath", function () {
       it("matches Math.log1p on 500 random inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const NEG_ONE_FP18 = -(10n ** 18n);
-        const SMALL_FP18 = 10n ** 16n;  // |x| < 0.01 ⇒ log1p(x) ≈ x, rel-error metric breaks
+        // Reject x ≤ -1 (tested in failure) and the near-root band x in (1/e - 1, e - 1)
+        // where |log1p(x)| < 1 — that band (Taylor + naive) is covered by the
+        // absolute-error behaviour grids. What's kept has |log1p(x)| >= 1, so relative
+        // error is the correct metric. xWei is int256, valid range is (-1e18, +∞).
+        const LO = BigInt(Math.round((1 / Math.E - 1) * 1e18));   // 1/e - 1
+        const HI = BigInt(Math.round((Math.E - 1) * 1e18));       // e - 1
         for (let i = 0; i < 500; i++) {
           let xWei;
-          // Reject x ≤ -1 (tested in failure) and |x| < 0.01 (Taylor band: log1p(x) ≈ x,
-          // covered by behaviour). xWei is int256, valid range is (-1e18, +∞).
-          do { xWei = randomInt256(); } while (xWei <= NEG_ONE_FP18 || (xWei > -SMALL_FP18 && xWei < SMALL_FP18));
+          do { xWei = randomInt256(); } while (xWei <= NEG_ONE_FP18 || (xWei > LO && xWei < HI));
           const expected = Math.log1p(Number(xWei) / 1e18);
           const actual = (await deFiMath.log1p(xWei)).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
