@@ -13,15 +13,16 @@
 // convergence target, FP18 quantization, etc.).
 
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
-export const MAX_REL_ERROR_EXP        = 7.2e-14;   // used where |exp(x)| ≥ 1
-export const MAX_ABS_ERROR_EXP        = 5.0e-14;   // used where |exp(x)| < 1 (near the root x=0)
+export const MAX_REL_ERROR_EXP        = 7.2e-14;   // when |exp(x)| ≥ 1
+export const MAX_ABS_ERROR_EXP        = 5.0e-14;   // when |exp(x)| < 1 (near the root x=0)
 
-export const MAX_REL_ERROR_LN         = 1.6e-15;   // used where |ln(x)| ≥ 1
-export const MAX_ABS_ERROR_LN         = 1.0e-15;   // used where |ln(x)| < 1 (near the root x=1); float64 measurement floor ≈ 3.3e-16
+export const MAX_REL_ERROR_LN         = 1.6e-15;   // when |ln(x)| ≥ 1
+export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when |ln(x)| < 1 (near the root x=1)
 
-export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // FP18 floor: 1 wei of the smallest in-range result (1e18) ≈ 1e-18 relative; measured vs decimal.js (exact)
+export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when sqrt(x) ≥ 1, measured vs decimal.js (exact)
 
-export const MAX_REL_ERROR_CBRT       = 1.0e-14;
+export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when cbrt(x) ≥ 1
+export const MAX_ABS_ERROR_CBRT       = 3.0e-16;   // when cbrt(x) < 1 
 
 export const MAX_REL_ERROR_POW        = 1.0e-11;
 

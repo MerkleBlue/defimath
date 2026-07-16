@@ -7,7 +7,7 @@ import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
     MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT,
-    MAX_REL_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
+    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
 
 // ── Full-precision sqrt accuracy check (decimal.js) ────────────────────────────
@@ -29,6 +29,28 @@ function assertSqrtAccurate(actual, expected) {
 function assertSqrtBitExact(actual, expected) {
   const absErr = new Decimal(actual.toString()).minus(expected).abs();
   assert.ok(absErr.lte(1), `sqrt off by ${absErr.toFixed(3)} wei (> 1)`);
+}
+
+// ── Full-precision cbrt accuracy check (decimal.js) ────────────────────────────
+// Same rule as sqrt: relative where cbrt(x) ≥ 1 (x ≥ 1e18 wei), absolute where
+// cbrt(x) < 1 (near 0, where the result is quantization-dominated). Unlike sqrt,
+// cbrt is not correctly-rounded sub-1 (~85 wei worst), so the small-x check is an
+// absolute-wei bound, not ≤1 wei. cbrtExactWei = exact cbrt(x)·1e18 in wei:
+// cbrt(x)·1e18 = cbrt(x · 1e54) = cbrt(xWei · 1e36).
+const cbrtExactWei = (xWei) => new Decimal(xWei.toString()).times("1e36").cbrt();
+// Relative-error check — for x ≥ 1e18 wei (result ≥ 1). One bound covers both the
+// small-x branch (~1.4e-16) and the large-x post-scale branch (~1.1e-13).
+function assertCbrtAccurate(actual, expected) {
+  const rel = new Decimal(actual.toString()).minus(expected).abs().div(expected);
+  assert.ok(rel.lt(MAX_REL_ERROR_CBRT),
+    `relErr ${rel.toExponential(3)} ≥ ${MAX_REL_ERROR_CBRT.toExponential(0)}`);
+}
+// Absolute check — for x < 1e18 wei (result < 1), where relative error blows up at
+// the tiny end while the absolute error stays tiny. Error is measured in real-value
+// (FP18) terms — wei difference ÷ 1e18 — to match the other MAX_ABS_ERROR_* bounds.
+function assertCbrtAbsolute(actual, expected) {
+  const absErr = new Decimal(actual.toString()).minus(expected).abs().div("1e18");
+  assert.ok(absErr.lte(MAX_ABS_ERROR_CBRT), `cbrt off by ${absErr.toExponential(2)} (> ${MAX_ABS_ERROR_CBRT.toExponential(0)})`);
 }
 
 describe.only("DeFiMath", function () {
@@ -1675,44 +1697,84 @@ describe.only("DeFiMath", function () {
 
   describe("cbrt", function () {
     describe("behaviour", function () {
+      // Metric by result magnitude (same rule as sqrt): absolute (wei) where cbrt(x) < 1
+      // (x < 1e18 wei), relative where cbrt(x) ≥ 1. Reference is decimal.js exact.
+      it("cbrt when x in [1e-18, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Geometric doubling keeps inputs dyadic; result < 1 ⇒ absolute-wei check.
+        for (let x = 1e-18; x < 1; x += x) {
+          const expected = cbrtExactWei(tokens(x));
+          const actual = await deFiMath.cbrt(tokens(x));
+          assertCbrtAbsolute(actual, expected);
+        }
+      });
+
+      it("cbrt when x is just below 1 - [0.9999, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.9999; x < 1; x += 0.000000519373) {
+          const expected = cbrtExactWei(tokens(x));
+          const actual = await deFiMath.cbrt(tokens(x));
+          assertCbrtAbsolute(actual, expected);
+        }
+      });
+
+      it("cbrt when x is just above 1 - [1, 1.0001)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x < 1.0001; x += 0.000000519373) {
+          const expected = cbrtExactWei(tokens(x));
+          const actual = await deFiMath.cbrt(tokens(x));
+          assertCbrtAccurate(actual, expected);
+        }
+      });
+
       it("cbrt when x in [1, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
         for (let x = 1; x < 2; x += 0.005) {
-          const expected = Math.cbrt(x);
-          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+          const expected = cbrtExactWei(tokens(x));
+          const actual = await deFiMath.cbrt(tokens(x));
+          assertCbrtAccurate(actual, expected);
         }
       });
 
-      it("cbrt when x in [1, 2^30)", async function () {
+      it("cbrt when x in [2^0, 2^64)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1; x < 2 ** 30; x += 5368709.115) {
-          const expected = Math.cbrt(x);
-          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        for (let x = 1; x < 2 ** 64; x += x * 0.2050317) {
+          const expected = cbrtExactWei(tokens(x));
+          const actual = await deFiMath.cbrt(tokens(x));
+          assertCbrtAccurate(actual, expected);
         }
       });
 
-      it("cbrt when x in [2^30, 2^60)", async function () {
+      it("cbrt when x in [2^64, 2^128)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 30; x < 2 ** 60; x += 5764607517665526) {
-          const expected = Math.cbrt(x);
-          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        for (let x = 2 ** 64; x < 2 ** 128; x += x * 0.2050317) {
+          const expected = cbrtExactWei(tokens(x));
+          const actual = await deFiMath.cbrt(tokens(x));
+          assertCbrtAccurate(actual, expected);
         }
       });
 
-      it("cbrt when x in (0, 1)", async function () {
+      // Large-x branch (raw input > uint128.max): sweep the uint256 argument DIRECTLY
+      // in wei — no tokens()/1e18 pre-scale, which would overflow the word.
+      it("cbrt when x in [2^128, 2^196)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Geometric doubling from 1e-12 — non-dyadic x at small magnitudes triggers
-        // precision drift that exceeds the threshold; doubling keeps inputs dyadic.
-        for (let x = 1e-12; x < 1; x += x) {
-          const expected = Math.cbrt(x);
-          const actualSOL = (await deFiMath.cbrt(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
+        for (let x = 2n ** 128n; x < 2n ** 196n; x += x / 5n) {
+          const expected = cbrtExactWei(x);
+          const actual = await deFiMath.cbrt(x);
+          assertCbrtAccurate(actual, expected);
+        }
+      });
+
+      it("cbrt when x in [2^196, 2^256)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const MAX = 2n ** 256n - 1n;
+        for (let x = 2n ** 196n; x < MAX; x += x / 5n) {
+          const expected = cbrtExactWei(x);
+          const actual = await deFiMath.cbrt(x);
+          assertCbrtAccurate(actual, expected);
         }
       });
 
@@ -1720,42 +1782,70 @@ describe.only("DeFiMath", function () {
         const { deFiMath } = await loadFixture(deploy);
         for (const n of [1, 2, 3, 8, 10, 27, 100, 1000, 1000000]) {
           const cube = n * n * n;
-          const actualSOL = (await deFiMath.cbrt(tokens(cube))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, n, MAX_REL_ERROR_CBRT);
+          const expected = cbrtExactWei(tokens(cube));
+          const actual = await deFiMath.cbrt(tokens(cube));
+          assertCbrtAccurate(actual, expected);
         }
       });
     });
 
     describe("limits", function () {
-      it("cbrt when x is in the small-x branch top (near uint128.max)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        // Small-x branch: x ≤ type(uint128).max ≈ 3.4e38. In true (FP18) value that's ~3.4e20.
-        const xWei = 2n ** 128n - 1n;
-        const expected = Math.cbrt(Number(xWei) / 1e18);
-        const actualSOL = (await deFiMath.cbrt(xWei)).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_CBRT);
-      });
-
       it("cbrt when x is 0", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const actualSOL = (await deFiMath.cbrt(0)).toString();
         assert.equal(actualSOL, "0");
       });
+
+      it("cbrt when x is uint128.max (small-x branch top)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const xWei = 2n ** 128n - 1n;
+        const expected = cbrtExactWei(xWei);
+        const actual = await deFiMath.cbrt(xWei);
+        assertCbrtAccurate(actual, expected);
+      });
+
+      it("cbrt when x is uint128.max + 1 (large-x branch bottom)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const xWei = 2n ** 128n;
+        const expected = cbrtExactWei(xWei);
+        const actual = await deFiMath.cbrt(xWei);
+        assertCbrtAccurate(actual, expected);
+      });
+
+      it("cbrt when x is uint256.max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const xWei = 2n ** 256n - 1n;
+        const expected = cbrtExactWei(xWei);
+        const actual = await deFiMath.cbrt(xWei);
+        assertCbrtAccurate(actual, expected);
+      });
     });
 
     describe("random", function () {
-      it("matches Math.cbrt on 500 random inputs (small-x branch, x ≤ uint128.max)", async function () {
+      it("matches cbrt on 2500 random inputs with x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Small-x branch cutoff. JS Math.cbrt also loses precision on inputs above this range,
-        // so keeping the sample space below the cutoff keeps the reference reliable.
-        const UINT128_MAX = 2n ** 128n - 1n;
+
         const FP1 = 10n ** 18n;
-        for (let i = 0; i < 500; i++) {
+        for (let i = 0; i < 2500; i++) {
           let xWei;
-          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT128_MAX);
-          const expected = Math.cbrt(Number(xWei) / 1e18);
-          const actual = (await deFiMath.cbrt(xWei)).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_CBRT);
+          do { xWei = randomUint256() % FP1; } while (xWei === 0n);
+          const expected = cbrtExactWei(xWei);
+          const actual = await deFiMath.cbrt(xWei);
+          assertCbrtAbsolute(actual, expected);
+        }
+      });
+
+      it("matches cbrt on 2500 random inputs with x in [1, uint256 max])", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const FP1 = 10n ** 18n;
+        const UINT_MAX = 2n ** 256n - 1n;
+        for (let i = 0; i < 2500; i++) {
+          let xWei;
+          do { xWei = randomUint256(); } while (xWei < FP1 || xWei > UINT_MAX);
+          const expected = cbrtExactWei(xWei);
+          const actual = await deFiMath.cbrt(xWei);
+          assertCbrtAccurate(actual, expected);
         }
       });
     });
