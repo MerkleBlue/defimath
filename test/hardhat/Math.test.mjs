@@ -6,7 +6,7 @@ import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32
 import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
-    MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_REL_ERROR_SQRT_TIME,
+    MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_REL_ERROR_SQRT_TIME,
     MAX_REL_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
 
@@ -152,7 +152,7 @@ describe("DeFiMath", function () {
           const expected = Math.exp(-x);
 
           const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
-          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
         }
       });
     });
@@ -196,13 +196,12 @@ describe("DeFiMath", function () {
     describe("random", function () {
       it("matches Math.exp on 500 random positive inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Sample x ∈ [0, 130). Threshold is 2× MAX_REL_ERROR_EXP — the behaviour grid is
-        // calibrated to its stride; random sampling occasionally lands on worse non-dyadic spots.
+        // Sample x ∈ [0, 130)
         for (let i = 0; i < 500; i++) {
           const x = Math.random() * 130;
           const expected = Math.exp(x);
           const actual = (await deFiMath.exp(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, 2 * MAX_REL_ERROR_EXP);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXP);
         }
       });
 
@@ -214,7 +213,7 @@ describe("DeFiMath", function () {
           const x = -Math.random() * 40;
           const expected = Math.exp(x);
           const actual = (await deFiMath.exp(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_ERF);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXP);
         }
       });
     });
