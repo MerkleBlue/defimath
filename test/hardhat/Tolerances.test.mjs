@@ -14,7 +14,8 @@
 
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_EXP        = 5.4e-14;
-export const MAX_REL_ERROR_LN         = 1.6e-15;
+export const MAX_REL_ERROR_LN         = 1.6e-15;   // used where |ln(x)| ≥ 1
+export const MAX_ABS_ERROR_LN         = 1e-15;     // used where |ln(x)| < 1 (near the root x=1); float64 measurement floor ≈ 3.3e-16
 export const MAX_REL_ERROR_SQRT       = 2e-18;   // FP18 floor: 1 wei of the smallest in-range result (1e18) ≈ 1e-18 relative; measured vs decimal.js (exact)
 export const MAX_REL_ERROR_SQRT_TIME  = 9e-15;
 export const MAX_REL_ERROR_CBRT       = 1e-14;

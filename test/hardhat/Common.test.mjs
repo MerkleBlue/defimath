@@ -18,9 +18,16 @@ export function assertRelativeBelow(actual, expected, maxRelError = 100) {
   if (actual === 0 && expected === 0) {
     return;
   }
-  
+
+  // expected === 0 with actual !== 0 means relative error is undefined (÷0). That is
+  // never a pass — it means the point was routed to the wrong metric. Use
+  // assertAbsoluteBelow instead for results at/near a root.
+  if (expected === 0) {
+    assert.fail(`Relative error undefined: expected === 0 but actual === ${actual} (use absolute error near roots)`);
+  }
+
   const absError = Math.abs(actual - expected);
-  const relError = (expected !== 0) ? Math.abs(absError / expected) : 0;
+  const relError = Math.abs(absError / expected);
 
   assert.isBelow(relError, maxRelError, "Relative error is above the threshold");
 }
