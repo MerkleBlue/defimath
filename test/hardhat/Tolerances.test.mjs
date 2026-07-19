@@ -7,10 +7,6 @@
 // Naming convention:
 //   MAX_REL_ERROR_*  — relative error bound (|actual − expected| / |expected|)
 //   MAX_ABS_ERROR_*  — absolute error bound (|actual − expected|)
-//
-// Most thresholds are empirically calibrated against the typical test grid; comments
-// note the dominant source of imprecision (JS reference ULP drift, Newton-Raphson
-// convergence target, FP18 quantization, etc.).
 
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_EXP        = 7.2e-14;   // when exp(x) ≥ 1
