@@ -16,10 +16,17 @@
 export const MAX_REL_ERROR_EXP        = 7.2e-14;   // when |exp(x)| ≥ 1
 export const MAX_ABS_ERROR_EXP        = 5.0e-14;   // when |exp(x)| < 1 (near the root x=0)
 
+// expm1 crosses |result| = 1 at x = ln2 (it never reaches -1, so x < ln2 is the whole
+// absolute band). It cannot reuse exp's bounds: its absolute band runs up to x = ln2
+// where exp(x) → 2, so it carries ~2× exp's absolute error.
+export const MAX_REL_ERROR_EXPM1      = 1.0e-13;   // when expm1(x) ≥ 1  (x ≥ ln2)
+export const MAX_ABS_ERROR_EXPM1      = 1.5e-13;   // when expm1(x) < 1  (x < ln2, incl. the root x=0)
+
 export const MAX_REL_ERROR_LN         = 1.6e-15;   // when |ln(x)| ≥ 1
 export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when |ln(x)| < 1 (near the root x=1)
 
 export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when sqrt(x) ≥ 1, measured vs decimal.js (exact)
+export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when sqrt(x) < 1 — correctly rounded, i.e. off by at most 1 wei
 
 export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when cbrt(x) ≥ 1
 export const MAX_ABS_ERROR_CBRT       = 3.0e-16;   // when cbrt(x) < 1 
@@ -36,6 +43,7 @@ export const MAX_ABS_ERROR_DELTA      = 1.2e-13;
 export const MAX_ABS_ERROR_GAMMA      = 3.2e-15;
 export const MAX_ABS_ERROR_THETA      = 1.9e-12;
 export const MAX_ABS_ERROR_VEGA       = 4e-13;
+export const MAX_REL_ERROR_IV         = 1.0e-6;    // round-trip relative: price → impliedVolatility → vol; Newton-Raphson convergence target
 
 // ── Binary (cash-or-nothing, unit-payout) ────────────────────────────────────────────────
 // Price worst-case ~9.5e-13: deep-OTM under 400% rate / 1844% vol, where true normCDF

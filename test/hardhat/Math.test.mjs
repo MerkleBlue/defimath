@@ -6,15 +6,16 @@ import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32
 import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
-    MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT,
+    MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_EXPM1, MAX_ABS_ERROR_EXPM1, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_ABS_ERROR_SQRT,
     MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
 
 // ── Full-precision sqrt accuracy check (decimal.js) ────────────────────────────
 // Float64 Math.sqrt caps measurable error at ~3e-16 (machine epsilon). decimal.js
 // at 60 digits computes the exact reference, so we can assert the TRUE accuracy:
-// the result is correctly rounded to ≤1 wei (small values, FP18-quantization limited)
-// or within SQRT_REL_TOL relative (large values). This reveals ~1e-18 (60-bit) accuracy.
+// the result is correctly rounded to 1 wei = MAX_ABS_ERROR_SQRT (small values, where FP18
+// quantization dominates) or within MAX_REL_ERROR_SQRT relative (large values). This
+// reveals ~1e-18 (60-bit) accuracy.
 Decimal.set({ precision: 60 });
 const sqrtExactWei = (xWei) => new Decimal(xWei.toString()).times("1e18").sqrt(); // exact √(x·1e18) in wei
 // Relative-error check — for x > 1e18 wei (real value > 1), where the FP18 result
@@ -24,18 +25,20 @@ function assertSqrtAccurate(actual, expected) {
   assert.ok(rel.lt(MAX_REL_ERROR_SQRT),
     `relErr ${rel.toExponential(3)} ≥ ${MAX_REL_ERROR_SQRT.toExponential(0)}`);
 }
-// Absolute (bit-exact) check — for x ≤ 1e18 wei (real value ≤ 1), where the result has
-// few significant wei and error is FP18-quantization-dominated (relative is meaningless).
-function assertSqrtBitExact(actual, expected) {
-  const absErr = new Decimal(actual.toString()).minus(expected).abs();
-  assert.ok(absErr.lte(1), `sqrt off by ${absErr.toFixed(3)} wei (> 1)`);
+// Absolute check — for x < 1e18 wei (result < 1), where the result has few significant
+// wei and error is FP18-quantization-dominated (relative is meaningless). Measured in
+// real-value (FP18) terms — wei difference ÷ 1e18 — to match the other MAX_ABS_ERROR_*
+// bounds. sqrt is correctly rounded here, so the bound is 1 wei = 1e-18.
+function assertSqrtAbsolute(actual, expected) {
+  const absErr = new Decimal(actual.toString()).minus(expected).abs().div("1e18");
+  assert.ok(absErr.lte(MAX_ABS_ERROR_SQRT), `sqrt off by ${absErr.toExponential(2)} (> ${MAX_ABS_ERROR_SQRT.toExponential(0)})`);
 }
 
 // ── Full-precision cbrt accuracy check (decimal.js) ────────────────────────────
 // Same rule as sqrt: relative where cbrt(x) ≥ 1 (x ≥ 1e18 wei), absolute where
 // cbrt(x) < 1 (near 0, where the result is quantization-dominated). Unlike sqrt,
-// cbrt is not correctly-rounded sub-1 (~85 wei worst), so the small-x check is an
-// absolute-wei bound, not ≤1 wei. cbrtExactWei = exact cbrt(x)·1e18 in wei:
+// cbrt is not correctly-rounded sub-1 (~8.5e-17 worst, ≈85 wei), so MAX_ABS_ERROR_CBRT
+// is looser than sqrt's 1-wei rounding. cbrtExactWei = exact cbrt(x)·1e18 in wei:
 // cbrt(x)·1e18 = cbrt(x · 1e54) = cbrt(xWei · 1e36).
 const cbrtExactWei = (xWei) => new Decimal(xWei.toString()).times("1e36").cbrt();
 // Relative-error check — for x ≥ 1e18 wei (result ≥ 1). One bound covers both the
@@ -53,7 +56,7 @@ function assertCbrtAbsolute(actual, expected) {
   assert.ok(absErr.lte(MAX_ABS_ERROR_CBRT), `cbrt off by ${absErr.toExponential(2)} (> ${MAX_ABS_ERROR_CBRT.toExponential(0)})`);
 }
 
-describe.only("DeFiMath", function () {
+describe("DeFiMath", function () {
 
   async function deploy() {
     const MathWrapper = await ethers.getContractFactory("MathWrapper");
@@ -262,7 +265,6 @@ describe.only("DeFiMath", function () {
         assert.equal(avg, 327, `gas changed: ${avg} ≠ 327 — deterministic, update threshold if intentional`);
       });
     });
-
   });
 
   describe("expPositive", function () {
@@ -360,34 +362,44 @@ describe.only("DeFiMath", function () {
 
   describe("expm1", function () {
     describe("behaviour", function () {
+      // Error-metric rule: absolute where |expm1(x)| < 1, relative where >= 1.
+      // expm1 crosses |result| = 1 at x = ln2 only — it approaches -1 asymptotically but
+      // never reaches it, so every x < ln2 (all negatives included) is the absolute band.
       it("expm1 when |x| < 0.01 (Taylor branch, precision-critical for small x)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let x = -0.01; x <= 0.01; x += 0.0001) {
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          // small inputs require absolute tolerance, not relative (since true value can be tiny)
-          assertAbsoluteBelow(actual, expected, 1e-15);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
         }
       });
 
-      it("expm1 when x in [0.01, 1) (naive branch transition)", async function () {
+      it("expm1 when x in [-41, -0.01] (negative, approaches -1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // naive branch inherits exp's rel error; absolute error stays small even when (exp-1) is small
-        // Step 0.0101 (~99 iterations) — denser sampling hits non-dyadic x where the
-        // absolute error briefly exceeds 1e-13, so we keep the original grid here.
-        for (let x = 0.01; x < 1; x += 0.0101) {
+        for (let x = -0.01; x >= -41; x -= 0.2) {
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, 1e-13);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
         }
       });
 
-      it("expm1 when x in [1, 135) (large positive)", async function () {
+      it("expm1 when x in [0.01, ln2) (naive branch transition)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        for (let x = 1; x < 135; x += 0.67) {
+        // Absolute band's worst case sits just under ln2, where exp(x) → 2 and expm1
+        // inherits ~2× exp's absolute error.
+        for (let x = 0.01; x < Math.LN2; x += 0.0007) {
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, 1e-13);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [ln2, 135) (large positive)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = Math.LN2; x < 135; x += 0.67) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
         }
       });
     });
@@ -400,15 +412,6 @@ describe.only("DeFiMath", function () {
         assert.equal(actualA, 1e-18);
         const actualB = (await deFiMath.expm1("1000")).toString() / 1e18;
         assert.equal(actualB, 1e-15);
-      });
-
-      it("expm1 when x is very negative (approaches -1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        for (let x = -1; x >= -41; x -= 0.2) {
-          const expected = Math.expm1(x);
-          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, 1e-14);
-        }
       });
 
       it("expm1 when x is 0", async function () {
@@ -430,35 +433,32 @@ describe.only("DeFiMath", function () {
         const x = "135305999368893231588";
         const expected = Math.exp(135.305999368893231588) - 1;
         const actual = (await deFiMath.expm1(x)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXP);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
       });
     });
 
     describe("random", function () {
-      it("matches Math.expm1 on 500 random positive inputs", async function () {
+      it("matches Math.expm1 on 500 random inputs with expm1(x) < 1 (x < ln2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // TODO(flaky): seeds with Math.random(), so it's non-deterministic; the 1e-13
-        // threshold occasionally trips (~1.04e-13 near the naive-branch transition).
-        // Make deterministic via mulberry32 and set the threshold from the true worst
-        // case instead of loosening the number.
-        // Sample x ∈ [0.01, 134) — above the small-x Taylor band, with headroom from the upper bound.
+        // Absolute band: x ∈ (-41, ln2). Sampling this band with a RELATIVE metric is what
+        // made the old positive-random test flaky — near the root expm1 → 0, so relative
+        // error blows up (it peaked at ~1.04e-13, right at the band's true absolute worst).
         for (let i = 0; i < 500; i++) {
-          const x = 0.01 + Math.random() * 133.99;
+          const x = -41 + Math.random() * (Math.LN2 + 41);
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, 1e-13);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
         }
       });
 
-      it("matches Math.expm1 on 500 random negative inputs", async function () {
+      it("matches Math.expm1 on 500 random inputs with expm1(x) >= 1 (x >= ln2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Sample x ∈ (-40, -0.01). expm1 approaches -1; abs error matches behaviour convention,
-        // with 3× the behaviour-stride threshold to absorb random sampling on non-dyadic spots.
+        // Relative band: x ∈ [ln2, 135.3), with headroom from exp's upper bound.
         for (let i = 0; i < 500; i++) {
-          const x = -0.01 - Math.random() * 39.99;
+          const x = Math.LN2 + Math.random() * (134 - Math.LN2);
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, 3e-14);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
         }
       });
     });
@@ -1494,7 +1494,7 @@ describe.only("DeFiMath", function () {
         for (let x = 1e-18; x < 1; x += x) {
           const expected = sqrtExactWei(tokens(x));
           const actual = await deFiMath.sqrt(tokens(x));
-          assertSqrtBitExact(actual, expected);
+          assertSqrtAbsolute(actual, expected);
         }
       });
 
@@ -1504,7 +1504,7 @@ describe.only("DeFiMath", function () {
         for (let x = 0.9999; x < 1; x += 0.000000519373) {
           const expected = sqrtExactWei(tokens(x));
           const actual = await deFiMath.sqrt(tokens(x));
-          assertSqrtBitExact(actual, expected);
+          assertSqrtAbsolute(actual, expected);
         }
       });
 
@@ -1615,7 +1615,7 @@ describe.only("DeFiMath", function () {
           do { xWei = randomUint256() % FP1; } while (xWei === 0n);
           const expected = sqrtExactWei(xWei);
           const actual = await deFiMath.sqrt(xWei);
-          assertSqrtBitExact(actual, expected);
+          assertSqrtAbsolute(actual, expected);
         }
       });
 
@@ -2557,7 +2557,7 @@ describe.only("DeFiMath", function () {
           const expected = Math.sqrt(x * 31709792000 / 1e18);
 
           const actualSOL = (await deFiMath.sqrtTime(x * 31709792000)).toString() / 1e18;
-          assertSqrtBitExact(actualSOL, expected);
+          assertSqrtAbsolute(actualSOL, expected);
         }
       });
 
@@ -2567,7 +2567,7 @@ describe.only("DeFiMath", function () {
           const expected = Math.sqrt(x * 31709792000 / 1e18);
 
           const actualSOL = (await deFiMath.sqrtTime(x * 31709792000)).toString() / 1e18;
-          assertSqrtBitExact(actualSOL, expected);
+          assertSqrtAbsolute(actualSOL, expected);
         }
       });
 
@@ -2577,7 +2577,7 @@ describe.only("DeFiMath", function () {
           const expected = Math.sqrt(x / 31536000);
 
           const actualSOL = (await deFiMath.sqrtTime(tokens(x / 31536000))).toString() / 1e18;
-          assertSqrtBitExact(actualSOL, expected);
+          assertSqrtAbsolute(actualSOL, expected);
         }
       });
 
@@ -2598,7 +2598,7 @@ describe.only("DeFiMath", function () {
         const x = 31709792000 / 1e18; // around 1 / 31536000 = 3.1709791984e-8
         const expected = sqrtExactWei(tokens(x));
         const actual = await deFiMath.sqrt(tokens(x));
-        assertSqrtBitExact(actual, expected);
+        assertSqrtAbsolute(actual, expected);
       });
 
       it("sqrtTime when x is 32y (largest documented input)", async function () {
@@ -2622,7 +2622,7 @@ describe.only("DeFiMath", function () {
           do { xWei = randomUint256() % FP1; } while (xWei === 0n);
           const expected = sqrtExactWei(xWei);
           const actual = await deFiMath.sqrtTime(xWei);
-          assertSqrtBitExact(actual, expected);
+          assertSqrtAbsolute(actual, expected);
         }
       });
 

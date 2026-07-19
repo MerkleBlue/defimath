@@ -17,7 +17,7 @@
 - **Unlocks new use cases.** Gas-efficient enough to make real-time options pricing, on-chain IV solving on every quote, and risk-adjusted vault fees economically viable. Use cases that were previously off-chain workarounds now fit in a single transaction.
 - **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
 - **Pure Solidity.** ~16KB published, zero runtime dependencies, easy to audit.
-- **Validated precision.** Sub-1e-10 absolute error on options pricing; sub-1e-12 relative error on math primitives (absolute error for bounded functions like `stdNormCDF` and `erf`). Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
+- **Validated precision.** Sub-1e-10 absolute error on options pricing. Every math primitive carries an explicit, enforced error bound — from 2e-18 (`sqrt`) to 1e-11 (`pow`) — measured as relative error where the result is ≥ 1 and absolute error near a root or for bounded functions like `stdNormCDF` and `erf`; see the per-function tables below. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
 
 ## Benchmarks
 
@@ -30,8 +30,8 @@ Every function is benchmarked against existing on-chain implementations. A repre
 | `binaryCallPrice` | **1,997** | 16,218 (Haptic)    | **8.1×** |
 | `delta`           | **1,703** | 8,621 (Derivexyz)  | **5.1×** |
 | `vega`            | **1,415** | 7,490 (Derivexyz)  | **5.3×** |
-| `ln`              | **375**   | 518 (Solady)       | 1.4× |
-| `sqrt`            | **197**   | 341 (Solady)       | **1.7×** |
+| `ln`              | **373**   | 518 (Solady)       | 1.4× |
+| `sqrt`            | **197**   | 384 (Solady)       | **1.9×** |
 | `cbrt`            | **340**   | 550 (Solady)       | **1.6×** |
 | `stdNormCDF`      | **660**   | 2,794 (SolStat)    | **4.2×** |
 
@@ -86,88 +86,88 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 ### Math primitives — `DeFiMath` (Math.sol)
 
-| Function | Gas | Precision | Description |
-| :------- | --: | --------: | :---------- |
-| `exp`        | 331  | 5.1e-14 | Exponential function `e^x` |
-| `ln`         | 375  | 1.5e-14 | Natural logarithm |
-| `log2`       | 391  | 1.5e-14 | Base-2 logarithm |
-| `log10`      | 391  | 1.4e-14 | Base-10 logarithm |
-| `pow`        | 788  | 5.2e-14 | Power function `x^a` |
-| `sqrt`       | 197  | 2.8e-16 | Square root |
-| `cbrt`       | 340  | 2.2e-16 | Cube root |
-| `expm1`      | 418  | 9.9e-14 | `e^x − 1` (precision-preserving for small x) |
-| `log1p`      | 482  | 7.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
-| `stdNormCDF` | 660  | 4.7e-15 | Standard normal CDF Φ(x) |
-| `erf`        | 685  | 7.4e-15 | Error function |
-| `mulDiv`     | 155  | exact   | `(a · b) / d` with full 512-bit intermediate precision |
-| `mul`        | 130  | exact   | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
-| `abs`        | 17   | exact   | Branchless `\|int256\|` (handles `int256.min` cleanly) |
-| `min`        | 23   | exact   | Branchless minimum of two `uint256` |
-| `max`        | 23   | exact   | Branchless maximum of two `uint256` |
-| `clamp`      | 78   | exact   | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
-| `avg`        | 21   | exact   | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `exp`        | 327  | 5.0e-14 | 7.2e-14 | Exponential function `e^x` |
+| `ln`         | 390  | 1.0e-15 | 1.6e-15 | Natural logarithm |
+| `log2`       | 406  | 1.0e-15 | 1.6e-15 | Base-2 logarithm |
+| `log10`      | 406  | 1.0e-15 | 1.6e-15 | Base-10 logarithm |
+| `pow`        | 803  |       — | 1.0e-11 | Power function `x^a` |
+| `sqrt`       | 197  | 1.0e-18 | 2.0e-18 | Square root |
+| `cbrt`       | 340  | 3.0e-16 | 2.0e-13 | Cube root |
+| `expm1`      | 407  | 1.5e-13 | 1.0e-13 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | 476  | 1.0e-15 | 1.6e-15 | `ln(1 + x)` (precision-preserving for small x) |
+| `stdNormCDF` | 660  | 6.4e-15 |       — | Standard normal CDF Φ(x) |
+| `erf`        | 691  | 2.0e-14 |       — | Error function |
+| `mulDiv`     | 155  |   exact |   exact | `(a · b) / d` with full 512-bit intermediate precision |
+| `mul`        | 130  |   exact |   exact | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
+| `abs`        | 17   |   exact |   exact | Branchless `\|int256\|` (handles `int256.min` cleanly) |
+| `min`        | 23   |   exact |   exact | Branchless minimum of two `uint256` |
+| `max`        | 23   |   exact |   exact | Branchless maximum of two `uint256` |
+| `clamp`      | 78   |   exact |   exact | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
+| `avg`        | 21   |   exact |   exact | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
 
-*Precision is max relative error vs. JS reference implementation, except `stdNormCDF` and `erf` — both bounded in [0, 1] and [−1, 1] respectively, where the test suite measures max absolute error. `exact` denotes integer-arithmetic functions with no approximation error.*
+*Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful; `pow` is relative-only for now. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
 ### Derivatives — `DeFiMathOptions`, `DeFiMathBinary`, `DeFiMathFutures`
 
-| Function | Gas | Precision | Description |
-| :------- | --: | --------: | :---------- |
-| `callOptionPrice`     | 2,708  | 5.6e-12 | European call (Black-Scholes) |
-| `putOptionPrice`      | 2,718  | 5.4e-12 | European put (Black-Scholes) |
-| `delta`               | 1,703  | 6.2e-15 | First derivative w.r.t. spot |
-| `gamma`               | 1,475  | 9.1e-17 | Second derivative w.r.t. spot |
-| `theta`               | 3,269  | 3.5e-14 | Time decay (per day) |
-| `vega`                | 1,415  | 4.3e-14 | Sensitivity to volatility |
-| `impliedVolatility`   | 12,370 | ≤ 1e-6  | IV via Newton-Raphson |
-| `binaryCallPrice`     | 1,997  | 6.2e-15 | Cash-or-nothing call |
-| `binaryPutPrice`      | 2,002  | 5.9e-15 | Cash-or-nothing put |
-| `binaryDelta`         | 1,801  | 1.3e-16 | Binary delta (signed) |
-| `binaryGamma`         | 1,943  | 1.5e-18 | Binary gamma (signed) |
-| `binaryTheta`         | 3,329  | 8.3e-16 | Binary theta (per day) |
-| `binaryVega`          | 1,889  | 2.7e-16 | Binary vega (signed) |
-| `futurePrice`         | 442    | 1.2e-9 | `spot · e^(rt)` |
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `callOptionPrice`     | 2,708  | 1.3e-10 |       — | European call (Black-Scholes) |
+| `putOptionPrice`      | 2,718  | 1.3e-10 |       — | European put (Black-Scholes) |
+| `delta`               | 1,703  | 1.2e-13 |       — | First derivative w.r.t. spot |
+| `gamma`               | 1,475  | 3.2e-15 |       — | Second derivative w.r.t. spot |
+| `theta`               | 3,269  | 1.9e-12 |       — | Time decay (per day) |
+| `vega`                | 1,415  |   4e-13 |       — | Sensitivity to volatility |
+| `impliedVolatility`   | 12,334 |       — |  1.0e-6 | IV via Newton-Raphson |
+| `binaryCallPrice`     | 1,997  |   2e-12 |       — | Cash-or-nothing call |
+| `binaryPutPrice`      | 2,002  |   2e-12 |       — | Cash-or-nothing put |
+| `binaryDelta`         | 1,801  |   1e-13 |       — | Binary delta (signed) |
+| `binaryGamma`         | 1,943  |   1e-15 |       — | Binary gamma (signed) |
+| `binaryTheta`         | 3,329  |   1e-14 |       — | Binary theta (per day) |
+| `binaryVega`          | 1,889  |   1e-14 |       — | Binary vega (signed) |
+| `futurePrice`         | 442    |  1.2e-9 |       — | `spot · e^(rt)` |
 
-*Precision is max absolute error vs. JS reference (at $1,000 spot for European, unit-payout for binary). `impliedVolatility` uses round-trip relative error.*
+*Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Absolute error is the metric throughout: option prices are quoted at a $1,000 spot (so `1.3e-10` is in dollars), binaries at unit payout, `theta` per day and `vega` per 1% vol. `impliedVolatility` is the exception — it is bounded by round-trip **relative** error against its Newton-Raphson convergence target.*
 
 ### Interest & rates — `DeFiMathRates` (Rates.sol)
 
-| Function | Gas | Precision | Description |
-| :------- | --: | --------: | :---------- |
-| `compoundInterest`       | 467     | 2.8e-14 | Continuous compounding: `P · e^(rt)` |
-| `presentValue`           | 519     | 2.8e-14 | Discounting: `FV · e^(−rt)` |
-| `logReturn`              | 600     | 7.1e-16 | `ln(currentPrice / previousPrice)` |
-| `continuousToDiscrete`   | 492     | 2.4e-14 | `e^apr − 1` (APR → APY) |
-| `discreteToContinuous`   | 574     | 5.1e-16 | `ln(1 + apy)` (APY → APR) |
-| `yieldToMaturity`        | 736     | 2.7e-14 | Zero-coupon YTM (closed form) |
-| `internalRateOfReturn`   | 17k–49k | 3.7e-15 | IRR via Newton-Raphson (cost scales with cashflow count) |
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `compoundInterest`       | 467     |       — | 5.4e-14 | Continuous compounding: `P · e^(rt)` |
+| `presentValue`           | 519     |       — | 5.4e-14 | Discounting: `FV · e^(−rt)` |
+| `logReturn`              | 600     |       — | 1.6e-15 | `ln(currentPrice / previousPrice)` |
+| `continuousToDiscrete`   | 491     |   1e-15 |       — | `e^apr − 1` (APR → APY) |
+| `discreteToContinuous`   | 574     |   1e-15 |       — | `ln(1 + apy)` (APY → APR) |
+| `yieldToMaturity`        | 736     |       — | 5.4e-14 | Zero-coupon YTM (closed form) |
+| `internalRateOfReturn`   | 17k–49k |       — |    1e-9 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
-*Precision is max relative error vs. JS reference; inherits the underlying `exp`/`ln`/`expm1`/`log1p` primitives. `internalRateOfReturn` is worst-case bounded by the Newton-Raphson convergence tolerance (1e-8); the listed number is post-convergence agreement with the JS reference.*
+*Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Compounding and discounting inherit `exp`'s relative bound, `logReturn` inherits `ln`'s. The two rate conversions are bounded **absolutely** (`1e-15`) because they run a Taylor branch through their root at `r = 0`, where relative error is undefined. `internalRateOfReturn` is bounded by its Newton-Raphson convergence tolerance.*
 
 ### Statistics — `DeFiMathStats` (Stats.sol)
 
-| Function | Gas | Precision | Description |
-| :------- | --: | --------: | :---------- |
-| `geometricMean`            | 284                | 1.2e-16 | `sqrt(a · b)` — Uniswap V2 invariant |
-| `mean`                     | 6,980 @ 30 elem    | 1.7e-16 | Arithmetic mean |
-| `stdDev`                   | 15,298 @ 30 elem   | 4.2e-16 | Sample std. dev. (Bessel-corrected) |
-| `weightedAverage`          | 15,687 @ 30 elem   | 2.8e-16 | Σ(v·w) / Σ(w) |
-| `historicalVolatility`     | 25,820 @ 30 prices | 1.6e-14 | Annualized vol from log returns |
-| `sharpeRatio`              | 25,958 @ 30 prices | 2.2e-14 | Risk-adjusted return |
-| `maxDrawdown`              | 15,470 @ 30 prices | 9.9e-16 | Peak-to-trough decline |
-| `valueAtRisk`              | 34,531 @ 30 prices | 1.9e-14 | NumPy-compatible linear interpolation |
-| `conditionalValueAtRisk`   | 31,889 @ 30 prices | 2.5e-14 | Expected shortfall (left tail mean) |
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `geometricMean`            | 284                |       — | 2.2e-14 | `sqrt(a · b)` — Uniswap V2 invariant |
+| `mean`                     | 6,980 @ 30 elem    |       — |   1e-15 | Arithmetic mean |
+| `stdDev`                   | 15,298 @ 30 elem   |       — | 2.2e-14 | Sample std. dev. (Bessel-corrected) |
+| `weightedAverage`          | 15,687 @ 30 elem   |       — |   1e-15 | Σ(v·w) / Σ(w) |
+| `historicalVolatility`     | 25,820 @ 30 prices |       — | 2.2e-14 | Annualized vol from log returns |
+| `sharpeRatio`              | 25,958 @ 30 prices |       — | 2.2e-14 | Risk-adjusted return |
+| `maxDrawdown`              | 15,470 @ 30 prices |       — |   1e-15 | Peak-to-trough decline |
+| `valueAtRisk`              | 34,531 @ 30 prices |       — | 2.2e-14 | NumPy-compatible linear interpolation |
+| `conditionalValueAtRisk`   | 31,889 @ 30 prices |       — | 2.2e-14 | Expected shortfall (left tail mean) |
 
-*Precision is max relative error vs. JS reference (`simple-statistics` for `valueAtRisk`). Sub-1e-15 values are at IEEE 754 machine-epsilon precision (arithmetic-only operations).*
+*Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). All results are ≥ 1 in practice, so relative error is the metric throughout. `1e-15` marks arithmetic-only aggregation (essentially exact, at IEEE 754 machine epsilon); `2.2e-14` covers the multi-step paths (variance → vol → Sharpe) that accumulate rounding. `valueAtRisk` is validated against `simple-statistics`.*
 
 ## Testing
 
 Two independent layers:
 
-- **Hardhat** — 589 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
+- **Hardhat** — 623 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
 - **Foundry** — 92 mathematical properties × 32,000 random runs each = **2,944,000 random executions per CI run**. Validates the algebraic structure (round-trips, monotonicity, identities, output bounds, symmetries) with automatic counterexample shrinking.
 
-681 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
+715 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
 
 ## Precision
 
