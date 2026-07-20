@@ -70,10 +70,13 @@ library DeFiMath {
     /// @notice Thrown when mul() result would overflow uint256
     error MulOverflowError();
 
-    /// @notice Computes exp(x) for signed input x
-    /// @dev Automatically handles negative inputs via reciprocal logic
-    /// @param x Signed input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
+    /// @notice Computes the natural exponential e^x in 18-decimal fixed-point.
+    /// @dev Reverts with ExpUpperBoundError when x >= EXP_UPPER_BOUND (135e18);
+    ///      returns 0 silently when x <= EXP_LOWER_BOUND (~-41.446e18).
+    ///      Max relative error: < 3e-14 for any x >= 0.
+    ///      Max absolute error: < 1e-15 for any x < 0.
+    /// @param x Signed input in 18-decimal fixed-point format.
+    /// @return y Result e^x in 18-decimal fixed-point format.
     function exp(int256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x >= 0) {
@@ -335,7 +338,7 @@ library DeFiMath {
                 return 1e18;
             } 
 
-            // do the math
+            // compute using identity: x^a = exp(a * ln(x))
             y = exp(a * ln(x) / 1e18);
         }
     }
