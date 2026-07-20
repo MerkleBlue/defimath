@@ -200,10 +200,10 @@ describe("DeFiMath", function () {
 
       it("exp when x is largest positive", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // 135305999368893231588 wei is the largest input that does not revert
-        // (135305999368893231589 hits ExpUpperBoundError; see failure block).
-        const x = "135305999368893231588";
-        const expected = Math.exp(135.305999368893231588);
+        // 134999999999999999999 wei is the largest input that does not revert
+        // (135e18 hits ExpUpperBoundError; see failure block).
+        const x = "134999999999999999999";
+        const expected = Math.exp(134.999999999999999999);
         const actualSOL = (await deFiMath.exp(x)).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
       });
@@ -247,14 +247,14 @@ describe("DeFiMath", function () {
       it("rejects when x >= max", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        await assertRevertError(deFiMath, deFiMath.exp("135305999368893231589"), "ExpUpperBoundError");
-        await deFiMath.exp("135305999368893231588");
-        await assertRevertError(deFiMath, deFiMath.exp("136305999368893231589"), "ExpUpperBoundError");
+        await assertRevertError(deFiMath, deFiMath.exp("135000000000000000000"), "ExpUpperBoundError");
+        await deFiMath.exp("134999999999999999999");
+        await assertRevertError(deFiMath, deFiMath.exp("136000000000000000000"), "ExpUpperBoundError");
       });
     });
 
     describe("performance", function () {
-      it("exp when x in [-40, 130] — 295 gas", async function () {
+      it("exp when x in [-40, 130] — 285 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -40; x <= 130; x += 0.85) {
@@ -262,9 +262,10 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 295, `gas changed: ${avg} ≠ 295 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 285, `gas changed: ${avg} ≠ 285 — deterministic, update threshold if intentional`);
       });
     });
+
   });
 
   describe("expPositive", function () {
@@ -322,8 +323,8 @@ describe("DeFiMath", function () {
         const { deFiMath } = await loadFixture(deploy);
         // expPositive has no input validation by design (see Math.sol comment), so the
         // same value that's "just below" exp's upper bound is the largest meaningful input.
-        const x = "135305999368893231588";
-        const expected = Math.exp(135.305999368893231588);
+        const x = "134999999999999999999";
+        const expected = Math.exp(134.999999999999999999);
         const actualSOL = (await deFiMath.expPositive(x)).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
       });
@@ -347,7 +348,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expPositive when x in [0, 130] — 233 gas", async function () {
+      it("expPositive when x in [0, 130] — 223 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 0; x <= 130; x += 0.65) {
@@ -355,7 +356,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 233, `gas changed: ${avg} ≠ 233 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 223, `gas changed: ${avg} ≠ 223 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -427,11 +428,11 @@ describe("DeFiMath", function () {
         assert.equal(actual, "-1");
       });
 
-      it("expm1 when x is largest positive (just below upper bound, 135.305999368893231588)", async function () {
+      it("expm1 when x is largest positive (just below upper bound, 134.999999999999999999)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // Above this, expm1 reverts via exp's ExpUpperBoundError (see failure block).
-        const x = "135305999368893231588";
-        const expected = Math.exp(135.305999368893231588) - 1;
+        const x = "134999999999999999999";
+        const expected = Math.exp(134.999999999999999999) - 1;
         const actual = (await deFiMath.expm1(x)).toString() / 1e18;
         assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
       });
@@ -466,13 +467,13 @@ describe("DeFiMath", function () {
     describe("failure", function () {
       it("rejects when x >= exp upper bound", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        await assertRevertError(deFiMath, deFiMath.expm1("135305999368893231589"), "ExpUpperBoundError");
-        await deFiMath.expm1("135305999368893231588");
+        await assertRevertError(deFiMath, deFiMath.expm1("135000000000000000000"), "ExpUpperBoundError");
+        await deFiMath.expm1("134999999999999999999");
       });
     });
 
     describe("performance", function () {
-      it("expm1 when x in [-40, 130] — 375 gas", async function () {
+      it("expm1 when x in [-40, 130] — 365 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -40; x <= 130; x += 0.85) {
@@ -480,7 +481,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 375, `gas changed: ${avg} ≠ 375 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 365, `gas changed: ${avg} ≠ 365 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -1307,13 +1308,13 @@ describe("DeFiMath", function () {
         assert.equal(actualUnderflow, 0);
       });
 
-      it("pow near exp upper bound (a * ln(x) ≈ 135.3)", async function () {
+      it("pow near exp upper bound (a * ln(x) ≈ 135)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        // max safe: a * ln(2) / 1e18 < 135.305999368893231589e18
-        // ln(2) ≈ 0.693147... → max a ≈ 195.245
-        const expected = Math.pow(2, 195);
-        const actualSOL = (await deFiMath.pow(tokens(2), tokens(195))).toString() / 1e18;
+        // max safe: a * ln(2) / 1e18 < 135e18
+        // ln(2) ≈ 0.693147... → max a ≈ 194.859
+        const expected = Math.pow(2, 194);
+        const actualSOL = (await deFiMath.pow(tokens(2), tokens(194))).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
       });
 
@@ -1395,11 +1396,11 @@ describe("DeFiMath", function () {
         await assertRevertError(deFiMath, deFiMath.pow(tokens(10), tokens(100)), "ExpUpperBoundError");
       });
 
-      it("rejects pow(2, 196) — just above exp upper bound", async function () {
+      it("rejects pow(2, 195) — just above exp upper bound", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        // 196 * ln(2) ≈ 135.85e18, just over 135.305999...e18 upper bound
-        await assertRevertError(deFiMath, deFiMath.pow(tokens(2), tokens(196)), "ExpUpperBoundError");
+        // 195 * ln(2) ≈ 135.16e18, just over 135e18 upper bound
+        await assertRevertError(deFiMath, deFiMath.pow(tokens(2), tokens(195)), "ExpUpperBoundError");
       });
 
       it("rejects pow(uint256 max, 1)", async function () {
@@ -1469,7 +1470,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 771 gas", async function () {
+      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 761 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = 1e-3; x <= 1e3; x *= 2.0691380811147901) {  // 20 steps over 6 decades
@@ -1479,7 +1480,7 @@ describe("DeFiMath", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 771, `gas changed: ${avg} ≠ 771 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 761, `gas changed: ${avg} ≠ 761 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -2743,7 +2744,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("stdNormCDF when x in [-11.63, 11.63] — 628 gas", async function () {
+      it("stdNormCDF when x in [-11.63, 11.63] — 618 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -11.63; x <= 11.63; x += 0.1163) {
@@ -2751,7 +2752,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 628, `gas changed: ${avg} ≠ 628 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 618, `gas changed: ${avg} ≠ 618 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -2849,7 +2850,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("erf when x in [-10, 10] — 659 gas", async function () {
+      it("erf when x in [-10, 10] — 649 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -10; x <= 10; x += 0.1) {
@@ -2857,7 +2858,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 659, `gas changed: ${avg} ≠ 659 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 649, `gas changed: ${avg} ≠ 649 — deterministic, update threshold if intentional`);
       });
     });
 

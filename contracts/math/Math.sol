@@ -8,9 +8,11 @@ pragma solidity ^0.8.31;
 library DeFiMath {
 
     // limits
-    /// @notice Largest x where exp(x) still fits in uint256 fixed-point — exp reverts at or above this.
-    ///         Equals ⌊ln(2^256 / 1e18) · 1e18⌋ + 1 = floor(ln(2^256) · 1e18) at the wrap point.
-    uint256 internal constant EXP_UPPER_BOUND = 135.305999368893231589e18;
+    /// @notice Positive-input ceiling for exp — reverts at or above this.
+    ///         Chosen at 135 (not the ~135.306 uint256 wrap point) so `int256(exp(x))` in expm1
+    ///         stays comfortably below int256.max even after the ~1.2e-14 approx-error headroom
+    ///         on top-of-range inputs. exp(135) ≈ 4.3e58 is already astronomically large.
+    uint256 internal constant EXP_UPPER_BOUND = 135e18;
 
     /// @notice Lowest x where e^x is still representable in 18-decimal fixed-point.
     ///         Equals −⌊ln(1e18) · 1e18⌋ − 1 — at or below this, exp(x) silently returns 0.
@@ -82,33 +84,31 @@ library DeFiMath {
 
                 uint256 k = absX / LN_2;             // find integer k
                 absX -= k * LN_2;                    // reduce x to [0, ln(2)]
-                absX >>= 8;                                        // reduce x to [0, 0.0027]
+                absX >>= 6;                                        // reduce x to [0, 0.0108]
 
-
-                // The function then uses a rational approximation formula to calculate
-                // exp(x) in the range [0, 0.0027]. The formula is given by:
-                // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-                uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
-                absX *= 1e9;
-                uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+                // Padé[3/3]: exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
+                // Split into even/odd: A = 120 + 12x², B = x(60 + x²); num = A+B, denom = A-B.
+                // Error O(x^7) at reduced range → ~1.7e-14 at x = 0.0108 (before amp).
+                uint256 xx = absX * absX;                                                   // x² · 1e36
+                uint256 A = 120e54 + xx * 12e18;                                            // (120 + 12x²) · 1e54
+                uint256 B = absX * (60e36 + xx);                                            // x·(60 + x²) · 1e54
+                uint256 p = (A + B) * 1e18;                                                 // FP72 numerator
+                uint256 q = A - B;                                                          // FP54 denominator
 
                 assembly ("memory-safe") {
                     y := div(p, q)                              // assembly for gas savings
                 }
 
 
-                // The result is then raised to the power of 256 to account for the
-                // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
-                // raise to the power of 4 in one expression. Finally, the result is 
-                // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+                // The result is then raised to the power of 64 to account for the
+                // earlier division of x by 64. Three rounds of (y·y)·(y·y)/1e54 → y^64.
+                // Finally, multiply by 2^k to reverse the ln(2) factoring.
                 y = y * y;
-                y = y * y / 1e54;                       // y ** 4 
+                y = y * y / 1e54;                       // y ** 4
                 y = y * y;
                 y = y * y / 1e54;                       // y ** 16
                 y = y * y;
                 y = y * y / 1e54;                       // y ** 64
-                y = y * y;
-                y = y * y / 1e54;                       // y ** 256
 
                 y <<= k;                                        // multiply y by 2 ** k
             } else {
@@ -118,33 +118,31 @@ library DeFiMath {
 
                 uint256 k = absX / LN_2;             // find integer k
                 absX -= k * LN_2;                    // reduce x to [0, ln(2)]
-                absX >>= 8;                                        // reduce x to [0, 0.0027]
+                absX >>= 6;                                        // reduce x to [0, 0.0108]
 
-
-                // The function then uses a rational approximation formula to calculate
-                // exp(x) in the range [0, 0.0027]. The formula is given by:
-                // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-                uint256 q = (absX - 3e18) * (absX - 3e18) + 3e36;
-                absX *= 1e9;
-                uint256 p = (3e27 + absX) * (3e27 + absX) + 3e54;
+                // Padé[3/3]: exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
+                // Split into even/odd: A = 120 + 12x², B = x(60 + x²); num = A+B, denom = A-B.
+                // Error O(x^7) at reduced range → ~1.7e-14 at x = 0.0108 (before amp).
+                uint256 xx = absX * absX;                                                   // x² · 1e36
+                uint256 A = 120e54 + xx * 12e18;                                            // (120 + 12x²) · 1e54
+                uint256 B = absX * (60e36 + xx);                                            // x·(60 + x²) · 1e54
+                uint256 p = (A + B) * 1e18;                                                 // FP72 numerator
+                uint256 q = A - B;                                                          // FP54 denominator
 
                 assembly ("memory-safe") {
                     y := div(p, q)                              // assembly for gas savings
                 }
 
 
-                // The result is then raised to the power of 256 to account for the
-                // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
-                // raise to the power of 4 in one expression. Finally, the result is 
-                // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+                // The result is then raised to the power of 64 to account for the
+                // earlier division of x by 64. Three rounds of (y·y)·(y·y)/1e54 → y^64.
+                // Finally, multiply by 2^k to reverse the ln(2) factoring.
                 y = y * y;
-                y = y * y / 1e54;                       // y ** 4 
+                y = y * y / 1e54;                       // y ** 4
                 y = y * y;
                 y = y * y / 1e54;                       // y ** 16
                 y = y * y;
-                y = y * y / 1e54;                       // y ** 64
-                y = y * y;
-                y = y * y / 1e54;                       // y ** 256
+                y = y * y / 1e54;                       // y ** 64                                  // multiply y by 2 ** k
                 y <<= k;                                        // multiply y by 2 ** k
 
                 assembly ("memory-safe") {
@@ -745,33 +743,32 @@ library DeFiMath {
             // The range is then reduced to [0, 0.0027] by dividing x by 256. 
             uint256 k = x / LN_2;             // find integer k
             x -= k * LN_2;                    // reduce x to [0, ln(2)]
-            x >>= 8;                                        // reduce x to [0, 0.0027]
+            x >>= 6;                                        // reduce x to [0, 0.0108]
 
-
-            // The function then uses a rational approximation formula to calculate
-            // exp(x) in the range [0, 0.0027]. The formula is given by:
-            // exp(x) ≈ ((x + 3) ^ 2 + 3) / ((x - 3) ^ 2 + 3)
-            uint256 q = (x - 3e18) * (x - 3e18) + 3e36;
-            x *= 1e9;
-            uint256 p = (3e27 + x) * (3e27 + x) + 3e54;
+            // Padé[3/3]: exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
+            // Split into even/odd: A = 120 + 12x², B = x(60 + x²); num = A+B, denom = A-B.
+            // Error O(x^7) at reduced range → ~1.7e-14 at x = 0.0108 (before amp).
+            uint256 xx = x * x;                                                   // x² · 1e36
+            uint256 A = 120e54 + xx * 12e18;                                            // (120 + 12x²) · 1e54
+            uint256 B = x * (60e36 + xx);                                            // x·(60 + x²) · 1e54
+            uint256 p = (A + B) * 1e18;                                                 // FP72 numerator
+            uint256 q = A - B;                                                          // FP54 denominator
 
             assembly ("memory-safe") {
                 y := div(p, q)                              // assembly for gas savings
             }
 
 
-            // The result is then raised to the power of 256 to account for the
-            // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
-            // raise to the power of 4 in one expression. Finally, the result is 
-            // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
+            // The result is then raised to the power of 64 to account for the
+            // earlier division of x by 64. Three rounds of (y·y)·(y·y)/1e54 → y^64.
+            // Finally, multiply by 2^k to reverse the ln(2) factoring.
             y = y * y;
-            y = y * y / 1e54;                       // y ** 4 
+            y = y * y / 1e54;                       // y ** 4
             y = y * y;
             y = y * y / 1e54;                       // y ** 16
             y = y * y;
             y = y * y / 1e54;                       // y ** 64
-            y = y * y;
-            y = y * y / 1e54;                       // y ** 256
+
             y <<= k;                                        // multiply y by 2 ** k
         }
     }

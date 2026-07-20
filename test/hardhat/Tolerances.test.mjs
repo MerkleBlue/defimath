@@ -9,8 +9,8 @@
 //   MAX_ABS_ERROR_*  — absolute error bound (|actual − expected|)
 
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
-export const MAX_REL_ERROR_EXP        = 7.2e-14;   // when exp(x) ≥ 1
-export const MAX_ABS_ERROR_EXP        = 5.0e-14;   // when exp(x) < 1 (near the root x=0)
+export const MAX_REL_ERROR_EXP        = 3.0e-14;   // when exp(x) ≥ 1
+export const MAX_ABS_ERROR_EXP        = 1.0e-15;   // when exp(x) < 1 (near the root x=0)
 
 // expm1 crosses |result| = 1 at x = ln2 (it never reaches -1, so x < ln2 is the whole
 // absolute band). It cannot reuse exp's bounds: its absolute band runs up to x = ln2

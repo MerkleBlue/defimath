@@ -57,7 +57,7 @@ contract MathPropertyTest is Test {
         // budget to admit even a single wei of LSB rounding, x must exceed 1e10 wei. We use
         // 1e11 (1e-7 FP) for ~10× margin — without it, fuzz seeds near x ≈ 1.83e9 hit a 1-wei
         // round-trip miss that's a fundamental fixed-point ULP effect, not a bug.
-        // Upper bound 1e30 (1e12 FP) keeps ln output safely under exp's upper bound (135.3e18).
+        // Upper bound 1e30 (1e12 FP) keeps ln output safely under exp's upper bound (135e18).
         x = bound(x, 1e11, 1e30);
         int256 logged = DeFiMath.ln(x);
         if (logged >= 135e18) return;
@@ -172,7 +172,7 @@ contract MathPropertyTest is Test {
 
     /// For |x| ≥ 0.01, expm1(x) ≈ exp(x) - 1e18 (the naive branch).
     function test_ID_expm1MatchesExpMinus1(int256 x) public pure {
-        x = bound(x, int256(0.01e18), int256(135e18));
+        x = bound(x, int256(0.01e18), int256(135e18) - 1);
         int256 viaExpm1 = DeFiMath.expm1(x);
         int256 viaExpMinus1 = int256(DeFiMath.exp(x)) - FP_ONE_INT;
         assertApproxEqRel(viaExpm1, viaExpMinus1, REL_1e_12, "expm1 != exp - 1 (large +x)");

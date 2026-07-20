@@ -550,7 +550,7 @@ describe("DeFiMathBinary", function () {
     });
 
     describe("performance", function () {
-      it("binary call across 5×5×3×3 strikes/times/vols/rates — 1933 gas", async function () {
+      it("binary call across 5×5×3×3 strikes/times/vols/rates — 1913 gas", async function () {
         const { binary } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -570,7 +570,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1933, `gas changed: ${avg} ≠ 1933 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 1913, `gas changed: ${avg} ≠ 1913 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -759,7 +759,7 @@ describe("DeFiMathBinary", function () {
     });
 
     describe("performance", function () {
-      it("binary put across 5×5×3×3 strikes/times/vols/rates — 1938 gas", async function () {
+      it("binary put across 5×5×3×3 strikes/times/vols/rates — 1918 gas", async function () {
         const { binary } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -779,7 +779,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1938, `gas changed: ${avg} ≠ 1938 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 1918, `gas changed: ${avg} ≠ 1918 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -960,7 +960,7 @@ describe("DeFiMathBinary", function () {
     });
 
     describe("performance", function () {
-      it("binary delta across 5×5×3×3 strikes/times/vols/rates — 1737 gas", async function () {
+      it("binary delta across 5×5×3×3 strikes/times/vols/rates — 1717 gas", async function () {
         const { binary } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -980,7 +980,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1737, `gas changed: ${avg} ≠ 1737 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 1717, `gas changed: ${avg} ≠ 1717 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1171,7 +1171,7 @@ describe("DeFiMathBinary", function () {
     });
 
     describe("performance", function () {
-      it("binary gamma across 5×5×3×3 strikes/times/vols/rates — 1879 gas", async function () {
+      it("binary gamma across 5×5×3×3 strikes/times/vols/rates — 1859 gas", async function () {
         const { binary } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1191,7 +1191,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1879, `gas changed: ${avg} ≠ 1879 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 1859, `gas changed: ${avg} ≠ 1859 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1363,7 +1363,7 @@ describe("DeFiMathBinary", function () {
     });
 
     describe("performance", function () {
-      it("binary theta across 5×5×3×3 strikes/times/vols/rates — 3201 gas", async function () {
+      it("binary theta across 5×5×3×3 strikes/times/vols/rates — 3161 gas", async function () {
         const { binary } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1383,7 +1383,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 3201, `gas changed: ${avg} ≠ 3201 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 3161, `gas changed: ${avg} ≠ 3161 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1564,7 +1564,7 @@ describe("DeFiMathBinary", function () {
     });
 
     describe("performance", function () {
-      it("binary vega across 5×5×3×3 strikes/times/vols/rates — 1825 gas", async function () {
+      it("binary vega across 5×5×3×3 strikes/times/vols/rates — 1805 gas", async function () {
         const { binary } = await loadFixture(deploy);
 
         const strikes = [800, 900, 1000.01, 1100, 1200];
@@ -1584,7 +1584,7 @@ describe("DeFiMathBinary", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1825, `gas changed: ${avg} ≠ 1825 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 1805, `gas changed: ${avg} ≠ 1805 — deterministic, update threshold if intentional`);
       });
     });
   });
