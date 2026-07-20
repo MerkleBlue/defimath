@@ -12,7 +12,7 @@ library DeFiMath {
     ///         Chosen at 135 (not the ~135.306 uint256 wrap point) so `int256(exp(x))` in expm1
     ///         stays comfortably below int256.max even after the ~1.2e-14 approx-error headroom
     ///         on top-of-range inputs. exp(135) ≈ 4.3e58 is already astronomically large.
-    uint256 internal constant EXP_UPPER_BOUND = 135e18;
+    int256 internal constant EXP_UPPER_BOUND = 135e18;
 
     /// @notice Lowest x where e^x is still representable in 18-decimal fixed-point.
     ///         Equals −⌊ln(1e18) · 1e18⌋ − 1 — at or below this, exp(x) silently returns 0.
@@ -77,10 +77,11 @@ library DeFiMath {
     function exp(int256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x >= 0) {
-                // positive
+                // check input
+                if (x >= EXP_UPPER_BOUND) revert ExpUpperBoundError();
+
                 uint256 absX = uint256(x);                         // since x is positive, absX = x
 
-                if (absX >= EXP_UPPER_BOUND) revert ExpUpperBoundError();
 
                 uint256 k = absX / LN_2;             // find integer k
                 absX -= k * LN_2;                    // reduce x to [0, ln(2)]
@@ -112,8 +113,9 @@ library DeFiMath {
 
                 y <<= k;                                        // multiply y by 2 ** k
             } else {
-                // negative — check input first, then compute absX for the math
+                // check input
                 if (x <= EXP_LOWER_BOUND) return 0;
+
                 uint256 absX = uint256(-x);
 
                 uint256 k = absX / LN_2;             // find integer k
