@@ -130,7 +130,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("compoundInterest across 3×4×4 principals/rates/times — 467 gas", async function () {
+      it("compoundInterest across 3×4×4 principals/rates/times — 435 gas", async function () {
         const { rates } = await loadFixture(deploy);
         const principals = [100, 1000, 10000];
         const ratesArr = [0.01, 0.05, 0.10, 0.20];
@@ -145,7 +145,7 @@ describe("DeFiMathRates", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 467, `gas changed: ${avg} ≠ 467 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 435, `gas changed: ${avg} ≠ 435 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -236,7 +236,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("presentValue across 3×4×4 FVs/rates/times — 519 gas", async function () {
+      it("presentValue across 3×4×4 FVs/rates/times — 487 gas", async function () {
         const { rates } = await loadFixture(deploy);
         const fvs = [100, 1000, 10000];
         const ratesArr = [0.01, 0.05, 0.10, 0.20];
@@ -251,7 +251,7 @@ describe("DeFiMathRates", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 519, `gas changed: ${avg} ≠ 519 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 487, `gas changed: ${avg} ≠ 487 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -393,7 +393,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("continuousToDiscrete across r in [-0.5, 0.5] — 491 gas", async function () {
+      it("continuousToDiscrete across r in [-0.5, 0.5] — 460 gas", async function () {
         const { rates } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let r = -0.5; r <= 0.5; r += 0.01) {
@@ -401,7 +401,7 @@ describe("DeFiMathRates", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 491, `gas changed: ${avg} ≠ 491 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 460, `gas changed: ${avg} ≠ 460 — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -641,7 +641,7 @@ describe("DeFiMathRates", function () {
     });
 
     describe("performance", function () {
-      it("internalRateOfReturn on 4-cashflow annuity + 12-cashflow bond — 16995 / 49120 gas", async function () {
+      it("internalRateOfReturn on 4-cashflow annuity + 12-cashflow bond — 16355 / 47200 gas", async function () {
         const { rates } = await loadFixture(deploy);
 
         // 4-cashflow annuity: invest 1000, receive 300 at each of years 1, 2, 3, 4
@@ -649,7 +649,7 @@ describe("DeFiMathRates", function () {
           const cashflows = [-1000, 300, 300, 300, 300].map(c => tokens(c));
           const times = [0, SEC_IN_YEAR, 2 * SEC_IN_YEAR, 3 * SEC_IN_YEAR, 4 * SEC_IN_YEAR];
           const gas = parseInt((await rates.internalRateOfReturnMG(cashflows, times, tokens(0.05))).gasUsed);
-          assert.equal(gas, 16995, `gas changed: ${gas} ≠ 16995 (4-cashflow) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 16355, `gas changed: ${gas} ≠ 16355 (4-cashflow) — deterministic, update threshold if intentional`);
         }
 
         // 12-cashflow bond: invest 10000, receive 1000 per month for 12 months
@@ -657,7 +657,7 @@ describe("DeFiMathRates", function () {
           const cashflows = [-10000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000].map(c => tokens(c));
           const times = Array.from({length: 12}, (_, i) => i === 0 ? 0 : (i * SEC_IN_DAY * 30));
           const gas = parseInt((await rates.internalRateOfReturnMG(cashflows, times, tokens(0.05))).gasUsed);
-          assert.equal(gas, 49120, `gas changed: ${gas} ≠ 49120 (12-cashflow) — deterministic, update threshold if intentional`);
+          assert.equal(gas, 47200, `gas changed: ${gas} ≠ 47200 (12-cashflow) — deterministic, update threshold if intentional`);
         }
       });
     });

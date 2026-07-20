@@ -101,10 +101,15 @@ library DeFiMath {
                 // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
                 // raise to the power of 4 in one expression. Finally, the result is 
                 // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
-                y = y * y * y * y / 1e54;                       // y ** 4 
-                y = y * y * y * y / 1e54;                       // y ** 16
-                y = y * y * y * y / 1e54;                       // y ** 64
-                y = y * y * y * y / 1e54;                       // y ** 256
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 4 
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 16
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 64
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 256
+
                 y <<= k;                                        // multiply y by 2 ** k
             } else {
                 // negative — check input first, then compute absX for the math
@@ -132,10 +137,14 @@ library DeFiMath {
                 // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
                 // raise to the power of 4 in one expression. Finally, the result is 
                 // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
-                y = y * y * y * y / 1e54;                       // y ** 4 
-                y = y * y * y * y / 1e54;                       // y ** 16
-                y = y * y * y * y / 1e54;                       // y ** 64
-                y = y * y * y * y / 1e54;                       // y ** 256
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 4 
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 16
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 64
+                y = y * y;
+                y = y * y / 1e54;                       // y ** 256
                 y <<= k;                                        // multiply y by 2 ** k
 
                 assembly ("memory-safe") {
@@ -755,10 +764,14 @@ library DeFiMath {
             // earlier division of x by 256. Since y is in [1, exp(0.0027), we can safely 
             // raise to the power of 4 in one expression. Finally, the result is 
             // multiplied by 2 ** k, to account for the earlier factorization of powers of two.
-            y = y * y * y * y / 1e54;                       // y ^ 4 
-            y = y * y * y * y / 1e54;                       // y ^ 16
-            y = y * y * y * y / 1e54;                       // y ^ 64
-            y = y * y * y * y / 1e54;                       // y ^ 256
+            y = y * y;
+            y = y * y / 1e54;                       // y ** 4 
+            y = y * y;
+            y = y * y / 1e54;                       // y ** 16
+            y = y * y;
+            y = y * y / 1e54;                       // y ** 64
+            y = y * y;
+            y = y * y / 1e54;                       // y ** 256
             y <<= k;                                        // multiply y by 2 ** k
         }
     }

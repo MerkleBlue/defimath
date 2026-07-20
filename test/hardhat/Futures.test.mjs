@@ -140,7 +140,7 @@ describe("DeFiMathFutures", function () {
     });
 
     describe("performance", function () {
-      it("future across 6×5×3 spots/times/rates — 442 gas", async function () {
+      it("future across 6×5×3 spots/times/rates — 410 gas", async function () {
         const { futures } = await loadFixture(deploy);
 
         const spots = [10, 100, 500, 1000, 100000, 1000000];
@@ -157,7 +157,7 @@ describe("DeFiMathFutures", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 442, `gas changed: ${avg} ≠ 442 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 410, `gas changed: ${avg} ≠ 410 — deterministic, update threshold if intentional`);
       });
     });
   });
