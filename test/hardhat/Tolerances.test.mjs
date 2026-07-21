@@ -25,7 +25,7 @@ export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when y = sqrt(x) ≥ 1, me
 export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when y = sqrt(x) < 1 — correctly rounded, i.e. off by at most 1 wei
 
 export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when y = cbrt(x) ≥ 1
-export const MAX_ABS_ERROR_CBRT       = 3.0e-16;   // when y = cbrt(x) < 1 
+export const MAX_ABS_ERROR_CBRT       = 1.0e-16;   // when y = cbrt(x) < 1 
 
 export const MAX_REL_ERROR_POW        = 1.0e-11;   // todo: switch to abs/rel errors for functions below 
 

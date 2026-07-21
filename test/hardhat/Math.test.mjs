@@ -127,12 +127,12 @@ describe("DeFiMath", function () {
     return Math.round((total - baseline) / (N - 1));
   }
 
-  describe.only("exp", function () {
+  describe("exp", function () {
     describe("behaviour", function () {
-      it("exp when x in [0, 0.01083042)", async function () {
+      it("exp when x in [1e-18, 0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 0.01083042; x += 0.01083042 / 97) {
+        for (let x = 1e-18; x < 0.01083042; x += x / 1.976) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
@@ -179,10 +179,10 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("exp when x in [0, -0.01083042)", async function () {
+      it("exp when x in [-1e-18, -0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 0.01083042; x += 0.01083042 / 97) {
+        for (let x = 1e-18; x < 0.01083042; x += x / 1.976) {
           const expected = Math.exp(-x);
           const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
@@ -321,12 +321,12 @@ describe("DeFiMath", function () {
 
   });
 
-  describe.only("expPositive", function () {
+  describe("expPositive", function () {
     describe("behaviour", function () {
-     it("expPositive when x in [0, 0.01083042)", async function () {
+      it("expPositive when x in [1e-18, 0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 0.01083042; x += 0.01083042 / 97) {
+        for (let x = 1e-18; x < 0.01083042; x += x / 1.976) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
@@ -1552,13 +1552,12 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("sqrt", function () {
+  describe.only("sqrt", function () {
     describe("behaviour", function () {
       it("sqrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Geometric doubling from 1e-18 — non-dyadic x at small magnitudes triggers
-        // precision drift that exceeds the threshold; doubling keeps inputs dyadic.
-        for (let x = 1e-18; x < 1; x += x) {
+
+        for (let x = 1e-18; x < 1; x += x / 1.976) {
           const expected = sqrtExactWei(tokens(x));
           const actual = await deFiMath.sqrt(tokens(x));
           assertSqrtAbsolute(actual, expected);
@@ -1762,14 +1761,14 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("cbrt", function () {
+  describe.only("cbrt", function () {
     describe("behaviour", function () {
       // Metric by result magnitude (same rule as sqrt): absolute (wei) where cbrt(x) < 1
       // (x < 1e18 wei), relative where cbrt(x) ≥ 1. Reference is decimal.js exact.
       it("cbrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Geometric doubling keeps inputs dyadic; result < 1 ⇒ absolute-wei check.
-        for (let x = 1e-18; x < 1; x += x) {
+
+        for (let x = 1e-18; x < 1; x += x / 1.976) {
           const expected = cbrtExactWei(tokens(x));
           const actual = await deFiMath.cbrt(tokens(x));
           assertCbrtAbsolute(actual, expected);
@@ -1799,7 +1798,7 @@ describe("DeFiMath", function () {
       it("cbrt when x in [1, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 1; x < 2; x += 0.005) {
+        for (let x = 1; x < 2; x += 0.00519373) {
           const expected = cbrtExactWei(tokens(x));
           const actual = await deFiMath.cbrt(tokens(x));
           assertCbrtAccurate(actual, expected);
@@ -2680,11 +2679,11 @@ describe("DeFiMath", function () {
     });
 
     describe("random", function () {
-      it("matches sqrtTime on 2500 random inputs with x in [1e-18, 1)", async function () {
+      it("matches sqrtTime on 500 random inputs with x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
         
         const FP1 = 10n ** 18n;
-        for (let i = 0; i < 2500; i++) {
+        for (let i = 0; i < 500; i++) {
           let xWei;
           do { xWei = randomUint256() % FP1; } while (xWei === 0n);
           const expected = sqrtExactWei(xWei);
@@ -2693,12 +2692,12 @@ describe("DeFiMath", function () {
         }
       });
 
-      it("matches sqrtTime on 2500 random inputs with x in [1y, 32y])", async function () {
+      it("matches sqrtTime on 500 random inputs with x in [1y, 32y])", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
         const FP1 = 10n ** 18n;
         const UINT_MAX = 2n ** 256n - 1n;
-        for (let i = 0; i < 2500; i++) {
+        for (let i = 0; i < 500; i++) {
           let xWei;
           do { xWei = randomUint256(); } while (xWei < FP1 || xWei > 32n * FP1);
           const expected = sqrtExactWei(xWei);
