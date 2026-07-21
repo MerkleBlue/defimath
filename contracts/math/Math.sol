@@ -363,7 +363,7 @@ library DeFiMath {
                     // generate seed y using clz
                     y := shl(shr(1, sub(254, clz(x))), 2)
 
-                    // refine y using 5x Newton's method
+                    // refine y using 5 iterations of Newton's method
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
@@ -375,7 +375,7 @@ library DeFiMath {
                     // generate seed y using clz
                     y := shl(shr(1, sub(254, clz(x))), 2)
 
-                    // refine y using 5x Newton's method
+                    // refine y using 5 iterations of Newton's method
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
                     y := shr(1, add(y, div(x, y)))
@@ -406,7 +406,7 @@ library DeFiMath {
             // generate seed y using clz
             y := shl(shr(1, sub(254, clz(x))), 2)
 
-            // refine y using 5x Newton's method
+            // refine y using 5 iterations of Newton's method
             y := shr(1, add(y, div(x, y)))
             y := shr(1, add(y, div(x, y)))
             y := shr(1, add(y, div(x, y)))
@@ -422,7 +422,6 @@ library DeFiMath {
     function cbrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x <= type(uint128).max) {
-                // lower 128 bits of uint256
                 assembly ("memory-safe") {
                     // pre-scale x to 1e54 base (because x can be small)
                     x := mul(x, 1000000000000000000000000000000000000)
@@ -430,7 +429,7 @@ library DeFiMath {
                     // generate seed using clz: y = 2^(bits/3), within factor ∛2 of cbrt(x)
                     y := shl(div(sub(258, clz(x)), 3), 1)
 
-                    // refine Y using 6x Newton method: y = (2y + x/y²) / 3
+                    // refine y using 6 iterations of Newton's method: y = (2y + x/y²) / 3
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
@@ -439,12 +438,11 @@ library DeFiMath {
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                 }
             } else {
-                // higher 128 bits of uint256
                 assembly ("memory-safe") {
                     // generate seed using clz: y = 2^(bits/3), within factor ∛2 of cbrt(x)
                     y := shl(div(sub(258, clz(x)), 3), 1)
 
-                    // refine Y using 6x Newton method: y = (2y + x/y²) / 3
+                    // refine y using 6 iterations of Newton's method: y = (2y + x/y²) / 3
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
@@ -452,7 +450,7 @@ library DeFiMath {
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
                     y := div(add(shl(1, y), div(x, mul(y, y))), 3)
 
-                    // Post-scale y to 1e18 base 
+                    // post-scale y to 1e18 base 
                     y := mul(y, 1000000000000)
                 }
             }
