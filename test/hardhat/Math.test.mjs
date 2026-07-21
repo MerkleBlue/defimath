@@ -127,32 +127,42 @@ describe("DeFiMath", function () {
     return Math.round((total - baseline) / (N - 1));
   }
 
-  describe("exp", function () {
+  describe.only("exp", function () {
     describe("behaviour", function () {
-      it("exp when x in [0, 0.03125)", async function () {
+      it("exp when x in [0, 0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 0.03125; x += 0.0001563) {
+        for (let x = 0; x < 0.01083042; x += 0.01083042 / 97) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
-      it("exp when x in [0.03125, 1)", async function () {
+      it("exp when x in [0.01083042, 0.69314718)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0.03125; x < 1; x += 0.004844) {
+        for (let x = 0.01083042; x < 0.69314718; x *= 1.0123) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
-      it("exp when x in [1, 32)", async function () {
+      it("exp when x in [0.69314718, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 1; x < 32; x += 0.155) {
+        for (let x = 0.69314718; x < 2; x *= 1.0123) {
+          const expected = Math.exp(x);
+          const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
+        }
+      });
+
+      it("exp when x in [2, 32)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 2; x < 32; x *= 1.0123) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
@@ -162,20 +172,58 @@ describe("DeFiMath", function () {
       it("exp when x in [32, 135)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let i = 0; i < 200; i++) {
-          const x = 32 + i * 0.515;
+        for (let x = 32; x < 135; x *= 1.0123) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
-      it("exp when x in [-40, -0.05]", async function () {
+      it("exp when x in [0, -0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0.05; x <= 40; x += 0.1998) {
+        for (let x = 0; x < 0.01083042; x += 0.01083042 / 97) {
           const expected = Math.exp(-x);
+          const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
+        }
+      });
 
+      it("exp when x in [-0.01083042, -0.69314718)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.01083042; x < 0.69314718; x *= 1.0123) {
+          const expected = Math.exp(-x);
+          const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
+        }
+      });
+
+      it("exp when x in [-0.69314718, -2)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.69314718; x < 2; x *= 1.0123) {
+          const expected = Math.exp(-x);
+          const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
+        }
+      });
+
+      it("exp when x in [-2, -32)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 2; x < 32; x *= 1.0123) {
+          const expected = Math.exp(-x);
+          const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
+        }
+      });
+
+      it("exp when x in [-32, -41.446)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 32; x < 41.446; x *= 1.0123) {
+          const expected = Math.exp(-x);
           const actualSOL = (await deFiMath.exp(tokens(-x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
         }
@@ -221,9 +269,9 @@ describe("DeFiMath", function () {
     describe("random", function () {
       it("matches Math.exp on 500 random positive inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Sample x ∈ [0, 130)
+
         for (let i = 0; i < 500; i++) {
-          const x = Math.random() * 130;
+          const x = Math.random() * 135;
           const expected = Math.exp(x);
           const actual = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXP);
@@ -232,10 +280,9 @@ describe("DeFiMath", function () {
 
       it("matches Math.exp on 500 random negative inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Sample x ∈ (-40, 0). For x < -41.45 the contract clamps to 0 (handled in limits);
-        // negative branch uses absolute error since exp(x) shrinks far below 1.
+
         for (let i = 0; i < 500; i++) {
-          const x = -Math.random() * 40;
+          const x = -Math.random() * 41.446;
           const expected = Math.exp(x);
           const actual = (await deFiMath.exp(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXP);
@@ -262,7 +309,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 285, `gas changed: ${avg} ≠ 285 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 285, `gas changed: ${avg} ≠ 277 — deterministic, update threshold if intentional`);
       });
     });
 

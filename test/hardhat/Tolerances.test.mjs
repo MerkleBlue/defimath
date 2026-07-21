@@ -9,23 +9,23 @@
 //   MAX_ABS_ERROR_*  — absolute error bound (|actual − expected|)
 
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
-export const MAX_REL_ERROR_EXP        = 3.0e-14;   // when exp(x) ≥ 1
-export const MAX_ABS_ERROR_EXP        = 1.0e-15;   // when exp(x) < 1 (near the root x=0)
+export const MAX_REL_ERROR_EXP        = 2.2e-14;   // when y = exp(x) ≥ 1
+export const MAX_ABS_ERROR_EXP        = 3.0e-16;   // when y = exp(x) < 1 (near the root x=0)
 
 // expm1 crosses |result| = 1 at x = ln2 (it never reaches -1, so x < ln2 is the whole
 // absolute band). It cannot reuse exp's bounds: its absolute band runs up to x = ln2
 // where exp(x) → 2, so it carries ~2× exp's absolute error.
-export const MAX_REL_ERROR_EXPM1      = 1.0e-13;   // when expm1(x) ≥ 1  (x ≥ ln2)
-export const MAX_ABS_ERROR_EXPM1      = 1.5e-13;   // when expm1(x) < 1  (x < ln2, incl. the root x=0)
+export const MAX_REL_ERROR_EXPM1      = 1.0e-13;   // when y = expm1(x) ≥ 1  (x ≥ ln2)
+export const MAX_ABS_ERROR_EXPM1      = 1.5e-13;   // when y = expm1(x) < 1  (x < ln2, incl. the root x=0)
 
-export const MAX_REL_ERROR_LN         = 1.6e-15;   // when |ln(x)| ≥ 1
-export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when |ln(x)| < 1 (near the root x=1)
+export const MAX_REL_ERROR_LN         = 1.6e-15;   // when y = |ln(x)| ≥ 1
+export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when y = |ln(x)| < 1 (near the root x=1)
 
-export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when sqrt(x) ≥ 1, measured vs decimal.js (exact)
-export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when sqrt(x) < 1 — correctly rounded, i.e. off by at most 1 wei
+export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when y = sqrt(x) ≥ 1, measured vs decimal.js (exact)
+export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when y = sqrt(x) < 1 — correctly rounded, i.e. off by at most 1 wei
 
-export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when cbrt(x) ≥ 1
-export const MAX_ABS_ERROR_CBRT       = 3.0e-16;   // when cbrt(x) < 1 
+export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when y = cbrt(x) ≥ 1
+export const MAX_ABS_ERROR_CBRT       = 3.0e-16;   // when y = cbrt(x) < 1 
 
 export const MAX_REL_ERROR_POW        = 1.0e-11;   // todo: switch to abs/rel errors for functions below 
 
