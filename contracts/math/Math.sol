@@ -416,9 +416,11 @@ library DeFiMath {
     }
 
     /// @notice Computes cube root of x in 18-decimal fixed-point.
-    /// @dev Accepts the full uint256 domain — never reverts.
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Cube root in 18-decimal fixed-point format
+    /// @dev Accepts the full uint256 domain, never reverts.
+    ///      Max relative error: < 2e-13 for any y >= 1e18.
+    ///      Max absolute error: < 1e-16 for any y < 1e18.
+    /// @param x Input in 18-decimal fixed-point format.
+    /// @return y Cube root in 18-decimal fixed-point format.
     function cbrt(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x <= type(uint128).max) {
