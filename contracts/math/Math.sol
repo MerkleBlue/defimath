@@ -70,11 +70,11 @@ library DeFiMath {
     /// @notice Thrown when mul() result would overflow uint256
     error MulOverflowError();
 
-    /// @notice Computes the natural exponential e^x in 18-decimal fixed-point.
+    /// @notice Computes the natural exponential of x in 18-decimal fixed-point.
     /// @dev Reverts with ExpUpperBoundError when x >= EXP_UPPER_BOUND (135e18);
-    ///      returns 0 silently when x <= EXP_LOWER_BOUND (~-41.446e18).
-    ///      Max relative error: < 3e-14 for any x >= 0.
-    ///      Max absolute error: < 1e-15 for any x < 0.
+    ///      returns 0 when x <= EXP_LOWER_BOUND (~-41.446e18).
+    ///      Max relative error: < 3e-14 for any y >= 1e18.
+    ///      Max absolute error: < 1e-15 for any y < 1e18.
     /// @param x Signed input in 18-decimal fixed-point format.
     /// @return y Result e^x in 18-decimal fixed-point format.
     function exp(int256 x) internal pure returns (uint256 y) {
@@ -83,73 +83,77 @@ library DeFiMath {
                 // check input
                 if (x >= EXP_UPPER_BOUND) revert ExpUpperBoundError();
 
-                uint256 absX = uint256(x);                         // since x is positive, absX = x
+                uint256 x_ = uint256(x);
 
+                // The algorithm works in 3 steps:
+                // 1) reduce the range of X to [0, ln(2)/64]
+                // 2) approximate result in a narrow range
+                // 3) recover reduction
+                //
+                // Two-stage range reduction:
+                //   stage 1 — split x = k·ln(2) + r with integer k, r ∈ [0, ln(2)).
+                //             Then exp(x) = exp(k·ln(2)) · exp(r) = 2^k · exp(r).
+                //   stage 2 — divide r by 64 (right-shift by 6): r' = r/64 ∈ [0, ~0.0108].
+                uint256 k = x_ / LN_2;
+                x_ -= k * LN_2;
+                x_ >>= 6;
 
-                uint256 k = absX / LN_2;             // find integer k
-                absX -= k * LN_2;                    // reduce x to [0, ln(2)]
-                absX >>= 6;                                        // reduce x to [0, 0.0108]
-
-                // Padé[3/3]: exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
-                // Split into even/odd: A = 120 + 12x², B = x(60 + x²); num = A+B, denom = A-B.
-                // Error O(x^7) at reduced range → ~1.7e-14 at x = 0.0108 (before amp).
-                uint256 xx = absX * absX;                                                   // x² · 1e36
-                uint256 A = 120e54 + xx * 12e18;                                            // (120 + 12x²) · 1e54
-                uint256 B = absX * (60e36 + xx);                                            // x·(60 + x²) · 1e54
-                uint256 p = (A + B) * 1e18;                                                 // FP72 numerator
-                uint256 q = A - B;                                                          // FP54 denominator
+                // Next, we use Padé[3/3] approximant using the following formula:
+                // exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
+                uint256 x2 = x_ * x_;
+                uint256 even = 120e54 + x2 * 12e18;    // 120 + 12x²  (even powers of x)
+                uint256 odd  = x_ * (60e36 + x2);      // 60x + x³    (odd powers of x)
+                uint256 p = (even + odd) * 1e18;       // numerator:   120 + 60x + 12x² + x³
+                uint256 q = even - odd;                // denominator: 120 − 60x + 12x² − x³
 
                 assembly ("memory-safe") {
-                    y := div(p, q)                              // assembly for gas savings
+                    y := div(p, q)
                 }
 
-
-                // The result is then raised to the power of 64 to account for the
-                // earlier division of x by 64. Three rounds of (y·y)·(y·y)/1e54 → y^64.
-                // Finally, multiply by 2^k to reverse the ln(2) factoring.
+                // Finally, undo both reductions in reverse order:
+                //   stage 2 — raise y to the 64th power to recover exp(r) from exp(r/64).
+                //   stage 1 — left-shift by k to multiply by 2^k and undo the ln(2) factoring.
                 y = y * y;
-                y = y * y / 1e54;                       // y ** 4
+                y = y * y / 1e54;
                 y = y * y;
-                y = y * y / 1e54;                       // y ** 16
+                y = y * y / 1e54;
                 y = y * y;
-                y = y * y / 1e54;                       // y ** 64
-
-                y <<= k;                                        // multiply y by 2 ** k
+                y = y * y / 1e54;
+                y <<= k;
             } else {
                 // check input
                 if (x <= EXP_LOWER_BOUND) return 0;
 
-                uint256 absX = uint256(-x);
+                // Negative branch: exp(x) = 1 / exp(|x|). Runs the same algorithm as the
+                // positive branch on x_ = |x|
+                uint256 x_ = uint256(-x);
 
-                uint256 k = absX / LN_2;             // find integer k
-                absX -= k * LN_2;                    // reduce x to [0, ln(2)]
-                absX >>= 6;                                        // reduce x to [0, 0.0108]
+                // range reduction (see positive branch)
+                uint256 k = x_ / LN_2;
+                x_ -= k * LN_2;
+                x_ >>= 6;
 
-                // Padé[3/3]: exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
-                // Split into even/odd: A = 120 + 12x², B = x(60 + x²); num = A+B, denom = A-B.
-                // Error O(x^7) at reduced range → ~1.7e-14 at x = 0.0108 (before amp).
-                uint256 xx = absX * absX;                                                   // x² · 1e36
-                uint256 A = 120e54 + xx * 12e18;                                            // (120 + 12x²) · 1e54
-                uint256 B = absX * (60e36 + xx);                                            // x·(60 + x²) · 1e54
-                uint256 p = (A + B) * 1e18;                                                 // FP72 numerator
-                uint256 q = A - B;                                                          // FP54 denominator
+                // Padé[3/3] approximant (see positive branch)
+                uint256 x2 = x_ * x_;
+                uint256 even = 120e54 + x2 * 12e18;    // 120 + 12x²  (even powers of x)
+                uint256 odd  = x_ * (60e36 + x2);      // 60x + x³    (odd powers of x)
+                uint256 p = (even + odd) * 1e18;       // numerator:   120 + 60x + 12x² + x³
+                uint256 q = even - odd;                // denominator: 120 − 60x + 12x² − x³
 
                 assembly ("memory-safe") {
-                    y := div(p, q)                              // assembly for gas savings
+                    y := div(p, q)
                 }
 
+                // undo reductions (see positive branch)
+                y = y * y;
+                y = y * y / 1e54;
+                y = y * y;
+                y = y * y / 1e54;
+                y = y * y;
+                y = y * y / 1e54;
+                y <<= k;
 
-                // The result is then raised to the power of 64 to account for the
-                // earlier division of x by 64. Three rounds of (y·y)·(y·y)/1e54 → y^64.
-                // Finally, multiply by 2^k to reverse the ln(2) factoring.
-                y = y * y;
-                y = y * y / 1e54;                       // y ** 4
-                y = y * y;
-                y = y * y / 1e54;                       // y ** 16
-                y = y * y;
-                y = y * y / 1e54;                       // y ** 64                                  // multiply y by 2 ** k
-                y <<= k;                                        // multiply y by 2 ** k
-
+                // reciprocate: exp(-|x|) = 1 / exp(|x|)
                 assembly ("memory-safe") {
                     y := div(1000000000000000000000000000000000000, y)
                 }
@@ -345,8 +349,8 @@ library DeFiMath {
 
     /// @notice Computes square root of x in 18-decimal fixed-point. 
     /// @dev Accepts the full uint256 domain, never reverts.
-    ///      Max relative error: < 2e-18 for any x >= 1e18.
-    ///      Max absolute error: bit-exact for any x < 1e18.
+    ///      Max relative error: < 2e-18 for any y >= 1e18.
+    ///      Max absolute error: bit-exact for any y < 1e18.
     /// @param x Input in 18-decimal fixed-point format.
     /// @return y Square root in 18-decimal fixed-point format.
     function sqrt(uint256 x) internal pure returns (uint256 y) {
@@ -729,52 +733,52 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes exp(x) for a positive fixed-point input x in range [0, ~135]
-    /// @dev Uses range reduction and rational approximation for gas efficiency
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
+    /// @notice Computes the natural exponential of x in 18-decimal fixed-point (positive input only).
+    /// @dev Internal fast path — does NOT validate input; caller must guarantee x < EXP_UPPER_BOUND (135e18).
+    ///      Max relative error: < 3e-14 for any y >= 1e18.
+    /// @param x Unsigned input in 18-decimal fixed-point format.
+    /// @return y Result e^x in 18-decimal fixed-point format.
     function expPositive(uint256 x) internal pure returns (uint256 y) {
         unchecked {
             // WARNING: this function doesn't check input parameter x, and should 
             // not be called directly if x is not in the range [0, 135]. This
             // function is used only for internal calculations.
+            //
+            // The algorithm works in 3 steps:
+            // 1) reduce the range of X to [0, ln(2)/64]
+            // 2) approximate result in a narrow range
+            // 3) recover reduction
+            //
+            // Two-stage range reduction:
+            //   stage 1 — split x = k·ln(2) + r with integer k, r ∈ [0, ln(2)).
+            //             Then exp(x) = exp(k·ln(2)) · exp(r) = 2^k · exp(r).
+            //   stage 2 — divide r by 64 (right-shift by 6): r' = r/64 ∈ [0, ~0.0108].
+            uint256 k = x / LN_2;
+            x -= k * LN_2;
+            x >>= 6;
 
-            // How it works: it starts by reducing the range of x from [0, 135] down to
-            // [0, ln(2)] by factoring out powers of two using the formula
-            // exp(x) = exp(x') * 2 ** k, where k is an integer. k is calculated
-            // simply by dividing x by ln(2) and rounding down to the nearest integer.
-            // The value of x' is calculated by subtracting k * ln(2) from x.
-            // Credit for this method: https://xn--2-umb.com/22/exp-ln/
-            // The range is then reduced to [0, 0.0027] by dividing x by 256. 
-            uint256 k = x / LN_2;             // find integer k
-            x -= k * LN_2;                    // reduce x to [0, ln(2)]
-            x >>= 6;                                        // reduce x to [0, 0.0108]
-
-            // Padé[3/3]: exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
-            // Split into even/odd: A = 120 + 12x², B = x(60 + x²); num = A+B, denom = A-B.
-            // Error O(x^7) at reduced range → ~1.7e-14 at x = 0.0108 (before amp).
-            uint256 xx = x * x;                                                   // x² · 1e36
-            uint256 A = 120e54 + xx * 12e18;                                            // (120 + 12x²) · 1e54
-            uint256 B = x * (60e36 + xx);                                            // x·(60 + x²) · 1e54
-            uint256 p = (A + B) * 1e18;                                                 // FP72 numerator
-            uint256 q = A - B;                                                          // FP54 denominator
+            // Next, we use Padé[3/3] approximant using the following formula:
+            // exp(x) ≈ (120 + 60x + 12x² + x³) / (120 - 60x + 12x² - x³)
+            uint256 x2 = x * x;
+            uint256 even = 120e54 + x2 * 12e18;    // 120 + 12x²  (even powers of x)
+            uint256 odd  = x * (60e36 + x2);       // 60x + x³    (odd powers of x)
+            uint256 p = (even + odd) * 1e18;       // numerator:   120 + 60x + 12x² + x³
+            uint256 q = even - odd;                // denominator: 120 − 60x + 12x² − x³
 
             assembly ("memory-safe") {
-                y := div(p, q)                              // assembly for gas savings
+                y := div(p, q)
             }
 
-
-            // The result is then raised to the power of 64 to account for the
-            // earlier division of x by 64. Three rounds of (y·y)·(y·y)/1e54 → y^64.
-            // Finally, multiply by 2^k to reverse the ln(2) factoring.
+            // Finally, undo both reductions in reverse order:
+            //   stage 2 — raise y to the 64th power to recover exp(r) from exp(r/64).
+            //   stage 1 — left-shift by k to multiply by 2^k and undo the ln(2) factoring.
             y = y * y;
-            y = y * y / 1e54;                       // y ** 4
+            y = y * y / 1e54;
             y = y * y;
-            y = y * y / 1e54;                       // y ** 16
+            y = y * y / 1e54;
             y = y * y;
-            y = y * y / 1e54;                       // y ** 64
-
-            y <<= k;                                        // multiply y by 2 ** k
+            y = y * y / 1e54;
+            y <<= k;
         }
     }
 }
