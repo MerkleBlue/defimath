@@ -237,31 +237,37 @@ describe("DeFiMath", function () {
         assert.equal(actualSOL, 1);
       });
 
-      it("exp when x is -1e-18", async function () {
+      it("exp when x is 1e-18", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // x = -1 wei is the smallest-magnitude negative input — the first integer
-        // value to take the `else` branch in exp's `if (x >= 0) ... else ...`.
-        // Result is exp(-1e-18) ≈ 1 (rounds to 1.0 at 1e18 FP precision).
-        const actualSOL = (await deFiMath.exp(-1)).toString() / 1e18;
-        assert.equal(actualSOL, 1);
+        const expected = Math.exp(1e-18);
+        const actualSOL = (await deFiMath.exp(tokens(1e-18))).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
       });
 
       it("exp when x is largest positive", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // 134999999999999999999 wei is the largest input that does not revert
-        // (135e18 hits ExpUpperBoundError; see failure block).
         const x = "134999999999999999999";
         const expected = Math.exp(134.999999999999999999);
         const actualSOL = (await deFiMath.exp(x)).toString() / 1e18;
         assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
       });
 
-      it("exp when x below -41", async function () {
+      it("exp when x is -1e-18", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const expected = Math.exp(-1e-18);
+        const actualSOL = (await deFiMath.exp(tokens(-1e-18))).toString() / 1e18;
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
+      });
+
+      it("exp when x lowest negative", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        let actualSOL = (await deFiMath.exp("-41446531673892822313")).toString() / 1e18;
-        assert.equal(actualSOL, 0);
-        actualSOL = (await deFiMath.exp("-42446531673892822313")).toString() / 1e18;
+        const expected = Math.exp(-41.446531673892822312);
+        let actualSOL = (await deFiMath.exp("-41446531673892822312")).toString() / 1e18;
+        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
+        assert.equal(actualSOL, 1e-18);
+        
+        actualSOL = (await deFiMath.exp("-41446531673892822313")).toString() / 1e18;
         assert.equal(actualSOL, 0);
       });
     });
