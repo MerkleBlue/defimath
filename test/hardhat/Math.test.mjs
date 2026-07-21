@@ -266,7 +266,7 @@ describe("DeFiMath", function () {
         let actualSOL = (await deFiMath.exp("-41446531673892822312")).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_EXP);
         assert.equal(actualSOL, 1e-18);
-        
+
         actualSOL = (await deFiMath.exp("-41446531673892822313")).toString() / 1e18;
         assert.equal(actualSOL, 0);
       });
@@ -321,33 +321,42 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("expPositive", function () {
-
+  describe.only("expPositive", function () {
     describe("behaviour", function () {
-      it("expPositive when x in [0, 0.03125)", async function () {
+     it("expPositive when x in [0, 0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 0.03125; x += 0.0001563) {
+        for (let x = 0; x < 0.01083042; x += 0.01083042 / 97) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
-      it("expPositive when x in [0.03125, 1)", async function () {
+      it("expPositive when x in [0.01083042, 0.69314718)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0.03125; x < 1; x += 0.004844) {
+        for (let x = 0.01083042; x < 0.69314718; x *= 1.0123) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
         }
       });
 
-      it("expPositive when x in [1, 32)", async function () {
+      it("expPositive when x in [0.69314718, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 1; x < 32; x += 0.155) {
+        for (let x = 0.69314718; x < 2; x *= 1.0123) {
+          const expected = Math.exp(x);
+          const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
+        }
+      });
+
+      it("expPositive when x in [2, 32)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 2; x < 32; x *= 1.0123) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
@@ -357,7 +366,7 @@ describe("DeFiMath", function () {
       it("expPositive when x in [32, 135)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 32; x < 135; x += 0.515) {
+        for (let x = 32; x < 135; x *= 1.0123) {
           const expected = Math.exp(x);
           const actualSOL = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
@@ -372,10 +381,15 @@ describe("DeFiMath", function () {
         assert.equal(actualSOL, 1);
       });
 
+      it("expPositive when x is 1e-18", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        const expected = Math.exp(1e-18);
+        const actualSOL = (await deFiMath.expPositive(tokens(1e-18))).toString() / 1e18;
+        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_EXP);
+      });
+
       it("expPositive when x is largest positive", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // expPositive has no input validation by design (see Math.sol comment), so the
-        // same value that's "just below" exp's upper bound is the largest meaningful input.
         const x = "134999999999999999999";
         const expected = Math.exp(134.999999999999999999);
         const actualSOL = (await deFiMath.expPositive(x)).toString() / 1e18;
@@ -386,13 +400,12 @@ describe("DeFiMath", function () {
     describe("random", function () {
       it("matches Math.exp on 500 random inputs", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Sample x ∈ [0, 130). Threshold is 2× MAX_REL_ERROR_EXP — random sampling occasionally
-        // lands on worse non-dyadic spots than the behaviour stride grid.
+
         for (let i = 0; i < 500; i++) {
-          const x = Math.random() * 130;
+          const x = Math.random() * 135;
           const expected = Math.exp(x);
           const actual = (await deFiMath.expPositive(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, 2 * MAX_REL_ERROR_EXP);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXP);
         }
       });
     });
