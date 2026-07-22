@@ -1315,7 +1315,7 @@ describe("DeFiMath", function () {
 
   });
 
-  describe.only("pow", function () {
+  describe("pow", function () {
     describe("behaviour", function () {
       it("pow when a = 0", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -2788,7 +2788,7 @@ describe("DeFiMath", function () {
     });
   });
 
-  describe("stdNormCDF", function () {
+  describe.only("stdNormCDF", function () {
     describe("behaviour", function () {
       it("stdNormCDF when x in [0, 16.447)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -2887,26 +2887,51 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("erf", function () {
+  describe.only("erf", function () {
     describe("behaviour", function () {
-      it("erf when x in [0, 11.63)", async function () {
+      it("erf when x is 0", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x <= 11.63; x += 0.05815) {
-          const expected = erf(x);
+        const actualSOL = (await deFiMath.erf(tokens(0))).toString() / 1e18;
+        assert.equal(0, actualSOL);
+      });
 
+      it("erf when x in [1e-18, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x <= 1; x += x / 1.976) {
+          const expected = erf(x);
           const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
         }
       });
 
-      it("erf when x in [-11.63, 0)", async function () {
+      it("erf when x in [1, 11.63)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = -11.63; x <= 0; x += 0.05815) {
+        for (let x = 1; x <= 11.63; x += x * 0.02050317) {
           const expected = erf(x);
-
           const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
+        }
+      });
+
+      it("erf when x in [-1e-18, -1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x <= 1; x += x / 1.976) {
+          const expected = erf(-x);
+          const actualSOL = (await deFiMath.erf(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
+        }
+      });
+
+      it("erf when x in [-1, -11.63)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x <= 11.63; x += x * 0.02050317) {
+          const expected = erf(-x);
+          const actualSOL = (await deFiMath.erf(tokens(-x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
         }
       });
@@ -2951,13 +2976,6 @@ describe("DeFiMath", function () {
 
         const actualSOL = (await deFiMath.erf(tokens(x))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_ERF);
-      });
-
-      it("erf when x is 0", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        const actualSOL = (await deFiMath.erf(tokens(0))).toString() / 1e18;
-        assert.equal(0, actualSOL);
       });
     });
 
