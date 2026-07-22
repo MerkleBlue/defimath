@@ -604,23 +604,22 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes standard normal cumulative distribution function Φ(x)
-    /// @dev Inlines West's half-erf approximation directly — see
-    ///      https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf.
-    ///      West parameterizes by t = z · √2; here z = |x| · (1/√2), so t = |x| directly
-    ///      (the 1/√2 and √2 conversions cancel — no pre-scaling needed). Caps at ±16.447
-    ///      since Φ(x) is within 1e-18 of {0, 1} beyond that.
-    /// @param x Input value in 18-decimal fixed-point format
-    /// @return y Result in range [0, 1e18]
+    /// @notice Computes the standard normal cumulative distribution function of x in 18-decimal fixed-point.
+    /// @dev Accepts the full int256 domain, never reverts.
+    ///      Max absolute error: < 3e-15 for any x.
+    /// @param x Signed input in 18-decimal fixed-point format.
+    /// @return y Result Φ(x) in 18-decimal fixed-point format, in range [0, 1e18].
     function stdNormCDF(int256 x) internal pure returns (uint256 y) {
         unchecked {
             if (x >= 0) {
+                // handle large positive x
                 if (x >= STD_NORM_CDF_BOUND) {
                     return 1e18;
                 }
 
-                uint256 t = uint256(x);                          // since x is positive, t = x
-
+                // uses West's half-erf approximation, see
+                // https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf
+                uint256 t = uint256(x);
                 uint256 t2 = t * t / 1e18;
                 uint256 t3 = t2 * t / 1e18;
                 uint256 t4 = t3 * t / 1e18;
@@ -638,12 +637,13 @@ library DeFiMath {
                     y := sub(1000000000000000000, res)             // Φ(x) = 1 − res
                 }
             } else {
+                // handle large negative x
                 if (x <= -STD_NORM_CDF_BOUND) {
                     return 0;
                 }
 
-                uint256 t = uint256(-x);                         // since x is negative, t = -x
-
+                // see positive branch
+                uint256 t = uint256(-x);
                 uint256 t2 = t * t / 1e18;
                 uint256 t3 = t2 * t / 1e18;
                 uint256 t4 = t3 * t / 1e18;
@@ -663,17 +663,23 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes the error function erf(x)
-    /// @param x Input value in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format, in range [-1e18, 1e18]
+    /// @notice Computes the error function of x in 18-decimal fixed-point.
+    /// @dev Accepts the full int256 domain, never reverts.
+    ///      Max absolute error: < 2e-15 for any x.
+    /// @param x Signed input in 18-decimal fixed-point format.
+    /// @return y Result erf(x) in 18-decimal fixed-point format, in range [-1e18, 1e18].
     function erf(int256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 0) {
+                // handle large positive x
                 if (x >= ERF_BOUND) {
                     return 1e18;
                 }
 
-                uint256 absX = uint256(x);                         // since x is positive, absX = x
+                // Uses the identity erf(x) = 2·Φ(x·√2) − 1, 
+                // sharing the West rational approximation with stdNormCDF.
+                // See: https://s2.smu.edu/~aleskovs/emis/sqc2/accuratecumnorm.pdf
+                uint256 absX = uint256(x);
 
                 uint256 t = absX * SQRT_2 / 1e18;
                 uint256 t2 = t * t / 1e18;
@@ -694,11 +700,13 @@ library DeFiMath {
                     y := shl(1, y)
                 }
             } else {
+                // handle large negative x
                 if (x <= -ERF_BOUND) {
                     return -1e18;
                 }
 
-                uint256 absX = uint256(-x);                         // since x is negative, absX = -x
+                // see positive branch
+                uint256 absX = uint256(-x);
                 
                 uint256 t = absX * SQRT_2 / 1e18;
                 uint256 t2 = t * t / 1e18;
