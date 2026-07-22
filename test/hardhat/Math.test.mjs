@@ -2790,23 +2790,48 @@ describe("DeFiMath", function () {
 
   describe.only("stdNormCDF", function () {
     describe("behaviour", function () {
-      it("stdNormCDF when x in [0, 16.447)", async function () {
+      it("stdNormCDF when x is 0", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = 0; x < 16.447; x += 0.08224) {
-          const expected = bs.stdNormCDF(x);
+        const actualSOL = (await deFiMath.stdNormCDF(tokens(0))).toString() / 1e18;
+        assert.equal(actualSOL, 0.5);
+      });
 
+      it("stdNormCDF when x in [1e-18, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x <= 1; x += x / 1.976) {
+          const expected = bs.stdNormCDF(x);
           const actualSOL = (await deFiMath.stdNormCDF(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
         }
       });
 
-      it("stdNormCDF when x in [-16.447, 0)", async function () {
+      it("stdNormCDF when x in [1, 16.447)", async function () {
         const { deFiMath } = await loadFixture(deploy);
 
-        for (let x = -16.447; x < 0; x += 0.08224) {
-          const expected = bs.stdNormCDF(-x);
+        for (let x = 1; x <= 16.447; x += x * 0.02050317) {
+          const expected = bs.stdNormCDF(x);
+          const actualSOL = (await deFiMath.stdNormCDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
+        }
+      });
 
+      it("stdNormCDF when x in [-1e-18, -1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x <= 1; x += x / 1.976) {
+          const expected = bs.stdNormCDF(-x);
+          const actualSOL = (await deFiMath.stdNormCDF(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
+        }
+      });
+
+      it("stdNormCDF when x in [-1, -16.447)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x <= 16.447; x += x * 0.02050317) {
+          const expected = bs.stdNormCDF(-x);
           const actualSOL = (await deFiMath.stdNormCDF(tokens(-x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_CDF);
         }
@@ -3008,6 +3033,5 @@ describe("DeFiMath", function () {
         assert.equal(avg, 649, `gas changed: ${avg} ≠ 649 — deterministic, update threshold if intentional`);
       });
     });
-
   });
 });
