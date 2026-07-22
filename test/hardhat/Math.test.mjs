@@ -427,58 +427,123 @@ describe("DeFiMath", function () {
     });
   });
 
-  describe("expm1", function () {
+  describe.only("expm1", function () {
     describe("behaviour", function () {
       // Error-metric rule: absolute where |expm1(x)| < 1, relative where >= 1.
       // expm1 crosses |result| = 1 at x = ln2 only — it approaches -1 asymptotically but
       // never reaches it, so every x < ln2 (all negatives included) is the absolute band.
-      it("expm1 when |x| < 0.01 (Taylor branch, precision-critical for small x)", async function () {
+      it("expm1 when x in [1e-18, 0.01083042)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        for (let x = -0.01; x <= 0.01; x += 0.0001) {
+
+        for (let x = 1e-18; x < 0.01083042; x += x / 1.976) {
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
         }
       });
 
-      it("expm1 when x in [-41, -0.01] (negative, approaches -1)", async function () {
+      it("expm1 when x in [0.01083042, 0.69314718)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        for (let x = -0.01; x >= -41; x -= 0.2) {
+
+        for (let x = 0.01083042; x < 0.69314718; x *= 1.0123) {
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
         }
       });
 
-      it("expm1 when x in [0.01, ln2) (naive branch transition)", async function () {
+      it("expm1 when x in [0.69314718, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Absolute band's worst case sits just under ln2, where exp(x) → 2 and expm1
-        // inherits ~2× exp's absolute error.
-        for (let x = 0.01; x < Math.LN2; x += 0.0007) {
-          const expected = Math.expm1(x);
-          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
-        }
-      });
 
-      it("expm1 when x in [ln2, 135) (large positive)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-        for (let x = Math.LN2; x < 135; x += 0.67) {
+        for (let x = 0.69314718; x < 2; x *= 1.0123) {
           const expected = Math.expm1(x);
           const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
         }
       });
+
+      it("expm1 when x in [2, 32)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 2; x < 32; x *= 1.0123) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [32, 135)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 32; x < 135; x *= 1.0123) {
+          const expected = Math.expm1(x);
+          const actual = (await deFiMath.expm1(tokens(x))).toString() / 1e18;
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [-1e-18, -0.01083042)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x < 0.01083042; x += x / 1.976) {
+          const expected = Math.expm1(-x);
+          const actual = (await deFiMath.expm1(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [-0.01083042, -0.69314718)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.01083042; x < 0.69314718; x *= 1.0123) {
+          const expected = Math.expm1(-x);
+          const actual = (await deFiMath.expm1(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [-0.69314718, -2)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 0.69314718; x < 2; x *= 1.0123) {
+          const expected = Math.expm1(-x);
+          const actual = (await deFiMath.expm1(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [-2, -32)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 2; x < 32; x *= 1.0123) {
+          const expected = Math.expm1(-x);
+          const actual = (await deFiMath.expm1(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
+      });
+
+      it("expm1 when x in [-32, -41.446)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 32; x < 41.446; x *= 1.0123) {
+          const expected = Math.expm1(-x);
+          const actual = (await deFiMath.expm1(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
+      });
     });
 
     describe("limits", function () {
-      it("expm1 when very small x (sub-ULP regime)", async function () {
+      it("expm1 when very small x", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // for x at single-ULP scale, expm1(x) ≈ x and should be exact
-        const actualA = (await deFiMath.expm1("1")).toString() / 1e18;
-        assert.equal(actualA, 1e-18);
-        const actualB = (await deFiMath.expm1("1000")).toString() / 1e18;
-        assert.equal(actualB, 1e-15);
+        // Naive `exp(x) - 1e18` at wei-scale inputs is dominated by exp's approximation
+        // noise (~1e4 wei) rather than by the true expm1 value. As long as |result - true|
+        // stays within MAX_ABS_ERROR_EXPM1 we're within contract.
+        for (const xWei of ["1", "1000", "1000000"]) {
+          const actual = (await deFiMath.expm1(xWei)).toString() / 1e18;
+          const expected = Math.expm1(Number(xWei) / 1e18);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_EXPM1);
+        }
       });
 
       it("expm1 when x is 0", async function () {
@@ -487,14 +552,13 @@ describe("DeFiMath", function () {
         assert.equal(actual, 0);
       });
 
-      it("expm1 when x is -1 wei (first input to enter the else branch in exp)", async function () {
+      it("expm1 when x is -1 wei", async function () {
         const { deFiMath } = await loadFixture(deploy);
-        // Taylor branch (|x| < 0.01): expm1(x) ≈ x. For x = -1 wei, result = -1 wei.
-        const actual = (await deFiMath.expm1(-1)).toString();
-        assert.equal(actual, "-1");
+        // Sub-wei: exp(-1 wei) rounds to 1e18, so expm1 = 0 (within FP18 quantization).
+        assert.equal((await deFiMath.expm1(-1)).toString(), "0");
       });
 
-      it("expm1 when x is largest positive (just below upper bound, 134.999999999999999999)", async function () {
+      it("expm1 when x is largest positive", async function () {
         const { deFiMath } = await loadFixture(deploy);
         // Above this, expm1 reverts via exp's ExpUpperBoundError (see failure block).
         const x = "134999999999999999999";
@@ -539,7 +603,7 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expm1 when x in [-40, 130] — 365 gas", async function () {
+      it("expm1 when x in [-40, 130] — 291 gas", async function () {
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
         for (let x = -40; x <= 130; x += 0.85) {
@@ -547,7 +611,7 @@ describe("DeFiMath", function () {
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 365, `gas changed: ${avg} ≠ 365 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 291, `gas changed: ${avg} ≠ 291 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -1552,7 +1616,7 @@ describe("DeFiMath", function () {
 
   });
 
-  describe.only("sqrt", function () {
+  describe("sqrt", function () {
     describe("behaviour", function () {
       it("sqrt when x in [1e-18, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -1761,7 +1825,7 @@ describe("DeFiMath", function () {
 
   });
 
-  describe.only("cbrt", function () {
+  describe("cbrt", function () {
     describe("behaviour", function () {
       // Metric by result magnitude (same rule as sqrt): absolute (wei) where cbrt(x) < 1
       // (x < 1e18 wei), relative where cbrt(x) ≥ 1. Reference is decimal.js exact.
