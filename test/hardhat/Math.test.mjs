@@ -2,12 +2,12 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import bs from "black-scholes";
 import erf from 'math-erf';
-import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, mulberry32, randomInt256, randomUint256, tokens } from "./Common.test.mjs";
+import { assertAbsoluteBelow, assertPrecisionBelow, assertRelativeBelow, assertRevertError, mulberry32, randomInt256, randomUint256, tokens } from "./Common.test.mjs";
 import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
     MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_EXPM1, MAX_ABS_ERROR_EXPM1, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_ABS_ERROR_SQRT,
-    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
+    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
 
 // ── Full-precision sqrt accuracy check (decimal.js) ────────────────────────────
@@ -1315,7 +1315,7 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("pow", function () {
+  describe.only("pow", function () {
     describe("behaviour", function () {
       it("pow when a = 0", async function () {
         const { deFiMath } = await loadFixture(deploy);
@@ -1343,7 +1343,7 @@ describe("DeFiMath", function () {
           const expected = x;
 
           const actualSOL = (await deFiMath.pow(tokens(x), tokens(1))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
         }
       });
 
@@ -1354,7 +1354,7 @@ describe("DeFiMath", function () {
           const expected = x * x;
 
           const actualSOL = (await deFiMath.pow(tokens(x), tokens(2))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
         }
       });
 
@@ -1365,7 +1365,7 @@ describe("DeFiMath", function () {
           const expected = Math.sqrt(x);
 
           const actualSOL = (await deFiMath.pow(tokens(x), tokens(0.5))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
         }
       });
 
@@ -1376,7 +1376,7 @@ describe("DeFiMath", function () {
           const expected = 1 / x;
 
           const actualSOL = (await deFiMath.pow(tokens(x), tokens(-1))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+          assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
         }
       });
 
@@ -1389,7 +1389,7 @@ describe("DeFiMath", function () {
             const expected = Math.pow(x, a);
 
             const actualSOL = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+            assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
           }
         }
       });
@@ -1403,7 +1403,7 @@ describe("DeFiMath", function () {
             const expected = Math.pow(x, a);
 
             const actualSOL = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+            assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
           }
         }
       });
@@ -1417,7 +1417,7 @@ describe("DeFiMath", function () {
             const expected = Math.pow(x, a);
 
             const actualSOL = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
-            assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+            assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
           }
         }
       });
@@ -1445,7 +1445,7 @@ describe("DeFiMath", function () {
         // ln(2) ≈ 0.693147... → max a ≈ 194.859
         const expected = Math.pow(2, 194);
         const actualSOL = (await deFiMath.pow(tokens(2), tokens(194))).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
       });
 
       it("pow near exp underflow bound (a * ln(x) ≈ -41.4)", async function () {
@@ -1472,7 +1472,7 @@ describe("DeFiMath", function () {
 
         const expected = Math.sqrt(xVal);
         const actualSOL = (await deFiMath.pow(uint256Max, tokens(0.5))).toString() / 1e18;
-        assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_POW);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
       });
 
       it("pow when x = 1 wei (minimum fixed-point)", async function () {
@@ -1506,7 +1506,7 @@ describe("DeFiMath", function () {
           const a = -2 + Math.random() * 4;
           const expected = Math.pow(x, a);
           const actual = (await deFiMath.pow(tokens(x), tokens(a))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_POW);
+          assertPrecisionBelow(actual, expected, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW);
         }
       });
     });

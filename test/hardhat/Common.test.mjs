@@ -32,6 +32,18 @@ export function assertRelativeBelow(actual, expected, maxRelError = 100) {
   assert.isBelow(relError, maxRelError, "Relative error is above the threshold");
 }
 
+// Route to absolute bound when |expected| < 1 (near-root regime, where relative error
+// blows up as expected → 0), and to relative bound otherwise. Use for functions like pow
+// whose result crosses |y| = 1 in ways not cleanly separable by input band. Behaviour at
+// expected === 0 falls through to assertAbsoluteBelow (unambiguous near-root case).
+export function assertPrecisionBelow(actual, expected, maxRelError, maxAbsError) {
+  if (Math.abs(expected) < 1) {
+    assertAbsoluteBelow(actual, expected, maxAbsError);
+  } else {
+    assertRelativeBelow(actual, expected, maxRelError);
+  }
+}
+
 export function assertBothBelow(actual, expected, maxRelError = 100, maxAbsError = 1) {
   const absError = Math.abs(actual - expected);
   const relError = (expected !== 0 && actual !== 0) ? Math.abs(absError / expected) : 0;

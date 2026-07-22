@@ -27,7 +27,8 @@ export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when y = sqrt(x) < 1 — c
 export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when y = cbrt(x) ≥ 1
 export const MAX_ABS_ERROR_CBRT       = 1.0e-16;   // when y = cbrt(x) < 1 
 
-export const MAX_REL_ERROR_POW        = 1.0e-11;   // todo: switch to abs/rel errors for functions below 
+export const MAX_REL_ERROR_POW        = 1.0e-12;   // when y = pow(x, a), |y| >= 1
+export const MAX_ABS_ERROR_POW        = 1.0e-14;   // when y = pow(x, a), |y| < 1
 
 export const MAX_ABS_ERROR_ERF        = 2.0e-14;
 
