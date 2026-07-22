@@ -15,8 +15,8 @@ export const MAX_ABS_ERROR_EXP        = 3.0e-16;   // when y = exp(x) < 1 (near 
 // expm1 crosses |result| = 1 at x = ln2 (it never reaches -1, so x < ln2 is the whole
 // absolute band). It cannot reuse exp's bounds: its absolute band runs up to x = ln2
 // where exp(x) → 2, so it carries ~2× exp's absolute error.
-export const MAX_REL_ERROR_EXPM1      = 1.0e-13;   // when y = expm1(x) ≥ 1  (x ≥ ln2)
-export const MAX_ABS_ERROR_EXPM1      = 1.5e-13;   // when y = expm1(x) < 1  (x < ln2, incl. the root x=0)
+export const MAX_REL_ERROR_EXPM1      = 2.2e-14;   // when y = expm1(x) ≥ 1  (x ≥ ln2)
+export const MAX_ABS_ERROR_EXPM1      = 5.0e-16;   // when y = expm1(x) < 1  (x < ln2, incl. the root x=0)
 
 export const MAX_REL_ERROR_LN         = 1.6e-15;   // when y = |ln(x)| ≥ 1
 export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when y = |ln(x)| < 1 (near the root x=1)

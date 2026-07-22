@@ -163,8 +163,8 @@ library DeFiMath {
 
     /// @notice Computes exp(x) - 1 in 18-decimal fixed-point.
     /// @dev Reverts / underflows exactly like exp() at the same bounds.
-    ///      Max absolute error: < 1.5e-13 for any y < 1e18.
-    ///      Max relative error: < 1e-13 for any y >= 1e18.
+    ///      Max relative error: < 2.2e-14 for any y >= 1e18.
+    ///      Max absolute error: < 5.0e-16 for any y < 1e18.
     /// @param x Signed input in 18-decimal fixed-point format.
     /// @return y Result exp(x) - 1 in 18-decimal fixed-point format.
     function expm1(int256 x) internal pure returns (int256 y) {

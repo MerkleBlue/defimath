@@ -427,7 +427,7 @@ describe("DeFiMath", function () {
     });
   });
 
-  describe.only("expm1", function () {
+  describe("expm1", function () {
     describe("behaviour", function () {
       // Error-metric rule: absolute where |expm1(x)| < 1, relative where >= 1.
       // expm1 crosses |result| = 1 at x = ln2 only — it approaches -1 asymptotically but
