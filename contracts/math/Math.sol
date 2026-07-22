@@ -313,11 +313,14 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes x^a using the identity x^a = exp(a * ln(x))
-    /// @dev Composes ln() and exp(), with a fast path for a = 0
-    /// @param x Base in 18-decimal fixed-point format
-    /// @param a Exponent in 18-decimal fixed-point format (signed)
-    /// @return y Result in 18-decimal fixed-point format
+    /// @notice Computes x raised to the power a in 18-decimal fixed-point.
+    /// @dev Reverts with PowExponentOutOfBoundsError when |a| > MAX_POW_EXPONENT (1e54);
+    ///      reverts / underflows exactly like exp() at the composed argument a · ln(x) / 1e18.
+    ///      Max relative error: < 1e-12 for any y >= 1e18.
+    ///      Max absolute error: < 1e-14 for any y < 1e18.
+    /// @param x Base in 18-decimal fixed-point format.
+    /// @param a Signed exponent in 18-decimal fixed-point format.
+    /// @return y Result x^a in 18-decimal fixed-point format.
     function pow(uint256 x, int256 a) internal pure returns (uint256 y) {
         unchecked {
             // check input
