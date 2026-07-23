@@ -7,7 +7,7 @@ import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
     MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_EXPM1, MAX_ABS_ERROR_EXPM1, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_ABS_ERROR_SQRT,
-    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
+    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW, MAX_REL_ERROR_LOG1P, MAX_ABS_ERROR_LOG1P, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
 } from "./Tolerances.test.mjs";
 
 // ── Full-precision sqrt accuracy check (decimal.js) ────────────────────────────
@@ -781,7 +781,7 @@ describe("DeFiMath", function () {
         for (let x = 1e-18; x < 0.01; x += x / 1.976) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LN);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LOG1P);
         }
       });
 
@@ -790,7 +790,7 @@ describe("DeFiMath", function () {
         for (let x = 0.01; x < Math.E - 1; x *= 1.0123) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LN);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LOG1P);
         }
       });
 
@@ -799,7 +799,7 @@ describe("DeFiMath", function () {
         for (let x = Math.E - 1; x < 2; x *= 1.0123) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
@@ -808,7 +808,7 @@ describe("DeFiMath", function () {
         for (let x = 2; x < 32; x *= 1.0123) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
@@ -817,7 +817,7 @@ describe("DeFiMath", function () {
         for (let x = 32; x < 2 ** 64; x += x * 0.2050317) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
@@ -826,7 +826,7 @@ describe("DeFiMath", function () {
         for (let x = 2 ** 64; x < 2 ** 128; x += x * 0.2050317) {
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
@@ -837,7 +837,7 @@ describe("DeFiMath", function () {
         for (let x = 2n ** 128n; x < 2n ** 196n; x += x / 5n) {
           const expected = Math.log1p(Number(x) / 1e18);
           const actual = (await deFiMath.log1p(x)).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
@@ -848,7 +848,7 @@ describe("DeFiMath", function () {
         for (let x = 2n ** 196n; x < MAX; x += x / 5n) {
           const expected = Math.log1p(Number(x) / 1e18);
           const actual = (await deFiMath.log1p(x)).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
@@ -858,7 +858,7 @@ describe("DeFiMath", function () {
         for (let x = 1e-18; x < 0.01; x += x / 1.976) {
           const expected = Math.log1p(-x);
           const actual = (await deFiMath.log1p(tokens(-x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LN);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LOG1P);
         }
       });
 
@@ -867,29 +867,26 @@ describe("DeFiMath", function () {
         for (let x = 0.01; x < 1 - 1 / Math.E; x *= 1.0123) {
           const expected = Math.log1p(-x);
           const actual = (await deFiMath.log1p(tokens(-x))).toString() / 1e18;
-          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LN);
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_LOG1P);
         }
       });
 
       // Approaches x → -1 (log1p → -∞). Sweep log-spaced in (1 + x) so samples
       // cluster near the singularity where the rel band is most informative.
-      // Tolerance is 2× MAX_REL_ERROR_LN here: when 1 + x is small, ln's relative
-      // error slightly compounds in log1p's ln(1 + x) composition — measured
-      // worst case ~2.2e-15 at x ≈ -0.987.
       it("log1p when x in [1/e - 1, -0.99]", async function () {
         const { deFiMath } = await loadFixture(deploy);
         for (let onePlusX = 1 / Math.E; onePlusX > 1e-2; onePlusX /= 1.0123) {
           const x = onePlusX - 1;
           const expected = Math.log1p(x);
           const actual = (await deFiMath.log1p(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, 2 * MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
 
       // Continues to x → -1 down to the smallest valid input (-1 + 1 wei).
-      // Sweep (1+x) in wei directly from 1e16 down to 1n. Tolerance is
-      // 5× MAX_REL_ERROR_LN — rel error grows as ln(1+x) precision degrades
-      // for tiny arguments; even so, the ln output remains meaningfully correct.
+      // Sweeps (1+x) in wei directly for accuracy — the JS reference Math.log1p
+      // degrades as 1+x → 0, so we compute Math.log(1+x_precise) from the exact
+      // wei value instead.
       it("log1p when x in [-0.99, -1 + 1 wei]", async function () {
         const { deFiMath } = await loadFixture(deploy);
         const ONE_FP18 = 10n ** 18n;
@@ -898,7 +895,7 @@ describe("DeFiMath", function () {
           const xWei = onePlusXWei - ONE_FP18;
           const expected = Math.log(Number(onePlusXWei) / 1e18);   // ln(1+x)
           const actual = (await deFiMath.log1p(xWei)).toString() / 1e18;
-          assertRelativeBelow(actual, expected, 5 * MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
           if (onePlusXWei === 1n) break;
           const next = onePlusXWei * 4n / 5n;
           onePlusXWei = next >= 1n ? next : 1n;
@@ -931,7 +928,7 @@ describe("DeFiMath", function () {
         const x = "-999999999999999999";
         const expected = Math.log(1e-18);
         const actual = (await deFiMath.log1p(x)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
       });
 
       it("log1p when x is int256 max (largest valid input)", async function () {
@@ -942,7 +939,7 @@ describe("DeFiMath", function () {
         const intMaxFp = Number(intMax) / 1e18;
         const expected = Math.log1p(intMaxFp);
         const actual = (await deFiMath.log1p(intMax)).toString() / 1e18;
-        assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+        assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
       });
     });
 
@@ -961,7 +958,7 @@ describe("DeFiMath", function () {
           do { xWei = randomInt256(); } while (xWei <= NEG_ONE_FP18 || (xWei > LO && xWei < HI));
           const expected = Math.log1p(Number(xWei) / 1e18);
           const actual = (await deFiMath.log1p(xWei)).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LN);
+          assertRelativeBelow(actual, expected, MAX_REL_ERROR_LOG1P);
         }
       });
     });

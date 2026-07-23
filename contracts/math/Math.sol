@@ -289,10 +289,14 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes ln(1 + x) with high precision for small |x|
-    /// @dev Uses a Taylor series for |x| < 0.01 to avoid precision loss when forming 1 + x for tiny x
-    /// @param x Input in 18-decimal fixed-point format. Must satisfy x > -1e18 (i.e., 1+x > 0)
-    /// @return y Result in 18-decimal fixed-point format (signed)
+    /// @notice Computes the natural logarithm of (1 + x) in 18-decimal fixed-point.
+    /// @dev Reverts with Log1pLowerBoundError when x <= -1e18 (i.e., 1+x <= 0).
+    ///      Max relative error: < 3e-15 for any |y| >= 1e18.
+    ///      Max absolute error: < 1e-15 for any |y| < 1e18.
+    ///      Uses a Taylor series for |x| < 0.01 to avoid precision loss when forming 1 + x
+    ///      for tiny x, and delegates to ln(1 + x) elsewhere.
+    /// @param x Input in 18-decimal fixed-point format. Must satisfy x > -1e18 (i.e., 1+x > 0).
+    /// @return y Result ln(1+x) in 18-decimal fixed-point format.
     function log1p(int256 x) internal pure returns (int256 y) {
         if (x <= -1e18) revert Log1pLowerBoundError();
         unchecked {

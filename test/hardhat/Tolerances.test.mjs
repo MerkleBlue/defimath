@@ -21,6 +21,12 @@ export const MAX_ABS_ERROR_EXPM1      = 5.0e-16;   // when y = expm1(x) < 1  (x 
 export const MAX_REL_ERROR_LN         = 1.6e-15;   // when y = |ln(x)| ≥ 1
 export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when y = |ln(x)| < 1 (near the root x=1)
 
+// log1p (ln(1+x)): rel bound widens near the x → -1 singularity due to reference
+// precision loss (JS Math.log1p degrades as 1+x → 0). Solidity's own precision
+// stays under ~2.2e-16 there — see the singularity-approach behaviour test.
+export const MAX_REL_ERROR_LOG1P      = 3.0e-15;   // when y = |log1p(x)| >= 1
+export const MAX_ABS_ERROR_LOG1P      = 1.0e-15;   // when y = |log1p(x)| < 1
+
 export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when y = sqrt(x) ≥ 1, measured vs decimal.js (exact)
 export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when y = sqrt(x) < 1 — correctly rounded, i.e. off by at most 1 wei
 
