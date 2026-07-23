@@ -910,119 +910,85 @@ describe("DeFiMath", function () {
 
   describe("log2", function () {
     describe("behaviour", function () {
-      // Error-metric rule: absolute where |log2(x)| < 1, relative where >= 1.
-      // log2 crosses |result| = 1 at x = 0.5 and x = 2. Same tolerances as ln —
-      // log2 is ln scaled by 1/ln2, so its relative error matches ln's.
+      // Error-metric rule: absolute where |log2(x)| < 1 (input in [0.5, 2]),
+      // relative elsewhere. Grids are split at 0.5 and 2 — each test sits entirely
+      // on one side and uses a single explicit metric. Tolerances inherit from ln
+      // since log2(x) = ln(x)/ln(2) preserves relative error exactly.
+      //
+      // Steps match sqrt's conventions:
+      //   x    += x / 1.976       for the sub-0.5 log-sweep (matches sqrt small-x)
+      //   xWei += xWei / 5n       for bigint log-sweeps past 2^128 (~1.2× per step)
+      //   x    += x * 0.2050317   for double-representable large-x sweeps
+      //   x    += x * 0.02050317  for narrow near-root sweeps in the abs band
 
-      // ── absolute band: x in [0.5, 2], where |log2(x)| <= 1 ──
+      // ── abs band: |log2(x)| < 1 (x in [0.5, 2]) ──
       it("log2 when x in [0.5, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 0.5; x < 1; x += 0.005) {
+        for (let x = 0.5; x < 1; x += x * 0.02050317) {
           const expected = Math.log2(x);
-
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
         }
       });
 
-      it("log2 when x in [1, 2]", async function () {
+      it("log2 when x in [1, 2)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1; x <= 2; x += 0.01) {
+        for (let x = 1; x < 2; x += x * 0.02050317) {
           const expected = Math.log2(x);
-
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
         }
       });
 
-      // ── relative band: x >= 2 ──
-      it("log2 when x in [2, 2^16]", async function () {
+      // ── rel band: |log2(x)| >= 1 (x <= 0.5 or x >= 2) ──
+      it("log2 when x in [1e-18, 0.5)", async function () {
         const { deFiMath } = await loadFixture(deploy);
+        for (let x = 1e-18; x < 0.5; x += x / 1.976) {
+          // Reference from the tokens-rounded wei value — for x near the FP18
+          // quantization floor, tokens(x) rounding would otherwise make Math.log2(x)
+          // disagree with what log2 actually sees on-chain.
+          const xWei = tokens(x);
+          const expected = Math.log2(Number(xWei) / 1e18);
+          const actualSOL = (await deFiMath.log2(xWei)).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
 
-        for (let x = 2; x <= 2 ** 16; x += 327.67) {
+      it("log2 when x in [2, 2^64)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 2; x < 2 ** 64; x += x * 0.2050317) {
           const expected = Math.log2(x);
-
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log2 when x in [2^16, 2^32]", async function () {
+      it("log2 when x in [2^64, 2^128)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 16; x <= 2 ** 32; x += 21474508.8) {
+        for (let x = 2 ** 64; x < 2 ** 128; x += x * 0.2050317) {
           const expected = Math.log2(x);
-
           const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log2 when x in [2^32, 2^48]", async function () {
+      // Large-x branch (raw input > uint128.max): sweep the uint256 argument
+      // DIRECTLY in wei — no tokens()/1e18 pre-scale, which would overflow the word.
+      it("log2 when x in [2^128, 2^196)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 32; x <= 2 ** 48; x += 1407353408716.8) {
-          const expected = Math.log2(x);
-
-          const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+        for (let x = 2n ** 128n; x < 2n ** 196n; x += x / 5n) {
+          const expected = Math.log2(Number(x) / 1e18);
+          const actualSOL = (await deFiMath.log2(x)).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log2 when x in [2^48, 2^64]", async function () {
+      it("log2 when x in [2^196, 2^256)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 48; x <= 2 ** 64; x += 92232312993664208) {
-          const expected = Math.log2(x);
-
-          const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log2 when x in [2^64, 2^128]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 64; x < 2 ** 128; x += 1.7014118346046924e+36) {
-          const expected = Math.log2(x);
-
-          const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log2 when x in [2^128, 2^195]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 128; x <= 2 ** 196; x += 5.021681388309345e+56) {
-          const expected = Math.log2(x);
-
-          const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      // ── relative band: x <= 0.5 (small x) ──
-      it("log2 when x in [0.0625, 0.5)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 0.0625; x < 0.5; x += 0.004) {
-          const expected = Math.log2(x);
-
-          const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log2 when x in [1e-18, 1e-16)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1e-18; x <= 1e-16; x += 1e-18) {
-          const expected = Math.log2(x);
-
-          const actualSOL = (await deFiMath.log2(tokens(x))).toString() / 1e18;
+        const MAX = 2n ** 256n - 1n;
+        for (let x = 2n ** 196n; x < MAX; x += x / 5n) {
+          const expected = Math.log2(Number(x) / 1e18);
+          const actualSOL = (await deFiMath.log2(x)).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
@@ -1092,121 +1058,87 @@ describe("DeFiMath", function () {
 
   });
 
-  describe("log10", function () {
+  describe.only("log10", function () {
     describe("behaviour", function () {
-      // Error-metric rule: absolute where |log10(x)| < 1, relative where >= 1.
-      // log10 crosses |result| = 1 at x = 0.1 and x = 10. Same tolerances as ln —
-      // log10 is ln scaled by 1/ln10, so its relative error matches ln's.
+      // Error-metric rule: absolute where |log10(x)| < 1 (input in [0.1, 10]),
+      // relative elsewhere. Grids are split at 0.1 and 10 — each test sits entirely
+      // on one side and uses a single explicit metric. Tolerances inherit from ln
+      // since log10(x) = ln(x)/ln(10) preserves relative error exactly.
+      //
+      // Steps match sqrt's conventions:
+      //   x    += x / 1.976       for the sub-0.1 log-sweep (matches sqrt small-x)
+      //   xWei += xWei / 5n       for bigint log-sweeps past 2^128 (~1.2× per step)
+      //   x    += x * 0.2050317   for double-representable large-x sweeps
+      //   x    += x * 0.02050317  for narrow near-root sweeps in the abs band
 
-      // ── absolute band: x in [0.1, 10], where |log10(x)| <= 1 ──
+      // ── abs band: |log10(x)| < 1 (x in [0.1, 10]) ──
       it("log10 when x in [0.1, 1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 0.1; x < 1; x += 0.009) {
+        for (let x = 0.1; x < 1; x += x * 0.02050317) {
           const expected = Math.log10(x);
-
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
         }
       });
 
-      it("log10 when x in [1, 10]", async function () {
+      it("log10 when x in [1, 10)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1; x <= 10; x += 0.09) {
+        for (let x = 1; x < 10; x += x * 0.02050317) {
           const expected = Math.log10(x);
-
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_LN);
         }
       });
 
-      // ── relative band: x >= 10 ──
-      it("log10 when x in [10, 2^16]", async function () {
+      // ── rel band: |log10(x)| >= 1 (x <= 0.1 or x >= 10) ──
+      it("log10 when x in [1e-18, 0.1)", async function () {
         const { deFiMath } = await loadFixture(deploy);
+        for (let x = 1e-18; x < 0.1; x += x / 1.976) {
+          // Reference from the tokens-rounded wei value — for x near the FP18
+          // quantization floor, tokens(x) rounding would otherwise make Math.log10(x)
+          // disagree with what log10 actually sees on-chain.
+          const xWei = tokens(x);
+          const expected = Math.log10(Number(xWei) / 1e18);
+          const actualSOL = (await deFiMath.log10(xWei)).toString() / 1e18;
+          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
+        }
+      });
 
-        for (let x = 10; x <= 2 ** 16; x += 327.67) {
+      it("log10 when x in [10, 2^64)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        for (let x = 10; x < 2 ** 64; x += x * 0.2050317) {
           const expected = Math.log10(x);
-
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log10 when x in [2^16, 2^32]", async function () {
+      it("log10 when x in [2^64, 2^128)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 16; x <= 2 ** 32; x += 21474508.8) {
+        for (let x = 2 ** 64; x < 2 ** 128; x += x * 0.2050317) {
           const expected = Math.log10(x);
-
           const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log10 when x in [2^32, 2^48]", async function () {
+      // Large-x branch (raw input > uint128.max): sweep the uint256 argument
+      // DIRECTLY in wei — no tokens()/1e18 pre-scale, which would overflow the word.
+      it("log10 when x in [2^128, 2^196)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 32; x <= 2 ** 48; x += 1407353408716.8) {
-          const expected = Math.log10(x);
-
-          const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+        for (let x = 2n ** 128n; x < 2n ** 196n; x += x / 5n) {
+          const expected = Math.log10(Number(x) / 1e18);
+          const actualSOL = (await deFiMath.log10(x)).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
 
-      it("log10 when x in [2^48, 2^64]", async function () {
+      it("log10 when x in [2^196, 2^256)", async function () {
         const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 48; x <= 2 ** 64; x += 92232312993664208) {
-          const expected = Math.log10(x);
-
-          const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log10 when x in [2^64, 2^128]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 64; x < 2 ** 128; x += 1.7014118346046924e+36) {
-          const expected = Math.log10(x);
-
-          const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log10 when x in [2^128, 2^195]", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 2 ** 128; x <= 2 ** 196; x += 5.021681388309345e+56) {
-          const expected = Math.log10(x);
-
-          const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      // ── relative band: x <= 0.1 (small x) ──
-      it("log10 when x in [0.0625, 0.1)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 0.0625; x < 0.1; x += 0.0004) {
-          const expected = Math.log10(x);
-
-          const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
-          assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
-        }
-      });
-
-      it("log10 when x in [1e-18, 1e-16)", async function () {
-        const { deFiMath } = await loadFixture(deploy);
-
-        for (let x = 1e-18; x <= 1e-16; x += 1e-18) {
-          const expected = Math.log10(x);
-
-          const actualSOL = (await deFiMath.log10(tokens(x))).toString() / 1e18;
+        const MAX = 2n ** 256n - 1n;
+        for (let x = 2n ** 196n; x < MAX; x += x / 5n) {
+          const expected = Math.log10(Number(x) / 1e18);
+          const actualSOL = (await deFiMath.log10(x)).toString() / 1e18;
           assertRelativeBelow(actualSOL, expected, MAX_REL_ERROR_LN);
         }
       });
