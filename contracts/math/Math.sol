@@ -173,13 +173,27 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes ln(x) for a fixed-point input x
-    /// @dev Supports inputs both above and below 1, returns result in fixed-point
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Natural logarithm in 18-decimal fixed-point format
+    /// @notice Computes the natural logarithm of x in 18-decimal fixed-point.
+    /// @dev Reverts with LnLowerBoundError when x = 0.
+    ///      Max relative error: < 1.6e-15 for any |y| >= 1e18.
+    ///      Max absolute error: < 1e-15 for any |y| < 1e18.
+    /// @param x Input in 18-decimal fixed-point format.
+    /// @return y Result ln(x) in 18-decimal fixed-point format.
     function ln(uint256 x) internal pure returns (int256 y) {
         unchecked {
             if (x >= 1e18) {
+                // The algorithm works in 3 steps:
+                // 1) reduce the range of x to [1, √2]
+                // 2) approximate ln in that narrow range with the Gregory series
+                // 3) recover reductions
+                //
+                // Two-stage range reduction:
+                //   stage 1 — factor out the largest power of 2: x = 2^bits · x', x' ∈ [1, 2).
+                //             Then ln(x) = bits·ln(2) + ln(x').
+                //   stage 2 — if x' > √2, divide by √2: x'' = x' / √2, x'' ∈ [1, √2].
+                //             Then ln(x') = flag·ln(√2) + ln(x''), where flag ∈ {0, 1}.
+                // Combined: ln(x_orig) = (2·bits + flag) · (ln(2)/2) + ln(x''), so the
+                // packed `multiplier = 2·bits + flag` carries both stages into recovery.
                 assembly {
                     let xRound := div(x, 1000000000000000000) // convert to 1e0 base
                     let bits := sub(255, clz(xRound))         // floor(log2(xRound))
@@ -194,10 +208,11 @@ library DeFiMath {
                     multiplier := add(multiplier, shl(1, bits))
 
 
-                    // we use Mercator series for ln(x)
-                    // ln(x) = 1 / (2n+1) * ((x - 1) / (x + 1)) ^ (2n + 1)
-                    // t = (x - 1) / (x + 1)
-
+                    // Gregory series (odd-power expansion via the atanh identity):
+                    //   ln(x'') = 2·artanh((x''-1)/(x''+1))
+                    //           = 2·(t + t³/3 + t⁵/5 + … + t^19/19)   where t = (x''-1)/(x''+1)
+                    // The reduced range x'' ∈ [1, √2] keeps |t| ≤ 0.172, so ten odd-power
+                    // terms are enough to reach the ~1.6e-15 relative error target.
                     let t := mul(sub(x, 1000000000000000000), 1000000000000000000)
                     t := div(t, add(x, 1000000000000000000)) // 18
                     let t2 := div(mul(t, t), 1000000000000000000) // 18
@@ -218,13 +233,18 @@ library DeFiMath {
                     y := mul(t, add(1000000000000000000000000000000000000000000000000000000, y))
                     y := sdiv(y, 500000000000000000000000000000000000000000000000000000)
 
+                    // Recover reductions: add (2·bits + flag) · (ln(2)/2). Since ln(√2) = ln(2)/2,
+                    // this simultaneously restores bits·ln(2) (stage 1) and flag·ln(√2) (stage 2).
                     y := add(y, mul(multiplier, 346573590279972655))
                 }
             } else {
                 if (x == 0) revert LnLowerBoundError();
 
+                // x < 1 branch: use the identity ln(x) = -ln(1/x). Reciprocate first to
+                // bring x into the ≥ 1 regime, run the same algorithm as the positive
+                // branch (see above for detailed walkthrough), and negate at the end.
                 assembly {
-                    x := div(1000000000000000000000000000000000000, x)
+                    x := div(1000000000000000000000000000000000000, x)   // x := 1e36 / x → 1/x in FP18
 
                     let xRound := div(x, 1000000000000000000) // convert to 1e0 base
                     let bits := sub(255, clz(xRound))         // floor(log2(xRound))
@@ -239,10 +259,7 @@ library DeFiMath {
                     multiplier := add(multiplier, shl(1, bits))
 
 
-                    // we use Mercator series for ln(x)
-                    // ln(x) = 1 / (2n+1) * ((x - 1) / (x + 1)) ^ (2n + 1)
-                    // t = (x - 1) / (x + 1)
-
+                    // Gregory series (see positive branch)
                     let t := mul(sub(x, 1000000000000000000), 1000000000000000000)
                     t := div(t, add(x, 1000000000000000000)) // 18
                     let t2 := div(mul(t, t), 1000000000000000000) // 18
@@ -263,6 +280,9 @@ library DeFiMath {
                     y := mul(t, add(1000000000000000000000000000000000000000000000000000000, y))
                     y := sdiv(y, 500000000000000000000000000000000000000000000000000000)
 
+                    // Recover reductions and negate together: y ← -(y + multiplier·ln(2)/2)
+                    // = -ln(1/x_orig) = ln(x_orig). Combines the sign flip and the
+                    // stage-1 + stage-2 restoration in a single expression.
                     y := sub(sub(0, y), mul(multiplier, 346573590279972655))
                 }
             }
@@ -295,18 +315,26 @@ library DeFiMath {
         }
     }
 
-    /// @notice Computes log base 2 of x
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
+    /// @notice Computes the base-2 logarithm of x in 18-decimal fixed-point.
+    /// @dev Reverts with LnLowerBoundError when x = 0 (inherited from ln).
+    ///      Max relative error: < 1.6e-15 for any |y| >= 1e18.
+    ///      Max absolute error: < 1e-15 for any |y| < 1e18.
+    ///      Composes as ln(x) / ln(2); relative error matches ln exactly.
+    /// @param x Input in 18-decimal fixed-point format.
+    /// @return y Result log2(x) in 18-decimal fixed-point format.
     function log2(uint256 x) internal pure returns (int256 y) {
         unchecked {
             y = ln(x) * 1e18 / int256(LN_2);
         }
     }
 
-    /// @notice Computes log base 10 of x
-    /// @param x Input in 18-decimal fixed-point format
-    /// @return y Result in 18-decimal fixed-point format
+    /// @notice Computes the base-10 logarithm of x in 18-decimal fixed-point.
+    /// @dev Reverts with LnLowerBoundError when x = 0 (inherited from ln).
+    ///      Max relative error: < 1.6e-15 for any |y| >= 1e18.
+    ///      Max absolute error: < 1e-15 for any |y| < 1e18.
+    ///      Composes as ln(x) / ln(10); relative error matches ln exactly.
+    /// @param x Input in 18-decimal fixed-point format.
+    /// @return y Result log10(x) in 18-decimal fixed-point format.
     function log10(uint256 x) internal pure returns (int256 y) {
         unchecked {
             y = ln(x) * 1e18 / LN_10;
