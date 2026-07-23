@@ -4,7 +4,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import bs from "black-scholes";
 import greeks from "greeks";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_ABS_ERROR_GAMMA, MAX_ABS_ERROR_THETA, MAX_ABS_ERROR_VEGA, MAX_REL_ERROR_IV } from "./Tolerances.test.mjs";
+import { MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_ABS_ERROR_GAMMA, MAX_ABS_ERROR_THETA, MAX_ABS_ERROR_VEGA, MAX_REL_ERROR_IV } from "../../constants/Constants.mjs";
 
 const fastTest = true;
 

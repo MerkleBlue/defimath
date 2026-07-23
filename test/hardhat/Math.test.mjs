@@ -8,7 +8,7 @@ import Decimal from "decimal.js";
 import {
     MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_EXPM1, MAX_ABS_ERROR_EXPM1, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_ABS_ERROR_SQRT,
     MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW, MAX_REL_ERROR_LOG1P, MAX_ABS_ERROR_LOG1P, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
-} from "./Tolerances.test.mjs";
+} from "../../constants/Constants.mjs";
 
 // ── Full-precision sqrt accuracy check (decimal.js) ────────────────────────────
 // Float64 Math.sqrt caps measurable error at ~3e-16 (machine epsilon). decimal.js

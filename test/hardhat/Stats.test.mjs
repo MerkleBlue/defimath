@@ -3,7 +3,7 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import * as ss from "simple-statistics";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, tokens } from "./Common.test.mjs";
-import { MAX_REL_ERROR_STATS, MAX_REL_ERROR_AGG } from "./Tolerances.test.mjs";
+import { MAX_REL_ERROR_STATS, MAX_REL_ERROR_AGG } from "../../constants/Constants.mjs";
 
 // JS reference helpers
 function jsMean(arr) {

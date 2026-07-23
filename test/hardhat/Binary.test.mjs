@@ -3,7 +3,7 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import erf from "math-erf";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_ABS_ERROR_BINARY, MAX_ABS_ERROR_BINARY_DELTA, MAX_ABS_ERROR_BINARY_GAMMA, MAX_ABS_ERROR_BINARY_THETA, MAX_ABS_ERROR_BINARY_VEGA } from "./Tolerances.test.mjs";
+import { MAX_ABS_ERROR_BINARY, MAX_ABS_ERROR_BINARY_DELTA, MAX_ABS_ERROR_BINARY_GAMMA, MAX_ABS_ERROR_BINARY_THETA, MAX_ABS_ERROR_BINARY_VEGA } from "../../constants/Constants.mjs";
 
 const fastTest = true;
 

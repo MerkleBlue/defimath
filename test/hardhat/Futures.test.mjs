@@ -2,7 +2,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert } from "chai";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_ABS_ERROR_FUTURE } from "./Tolerances.test.mjs";
+import { MAX_ABS_ERROR_FUTURE } from "../../constants/Constants.mjs";
 
 describe("DeFiMathFutures", function () {
 
