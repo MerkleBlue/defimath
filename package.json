@@ -24,7 +24,8 @@
   "files": [
     "contracts/derivatives/",
     "contracts/finance/",
-    "contracts/math/"
+    "contracts/math/",
+    "test/hardhat/*.mjs"
   ],
   "license": "MIT",
   "scripts": {
