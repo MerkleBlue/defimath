@@ -307,15 +307,16 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("exp when x in [-40, 130] — 285 gas", async function () {
+      it("exp when x in [-10, 10] — 289 gas", async function () {
+        // Grid synced with defimath-compare: 500 samples, both branches balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = -40; x <= 130; x += 0.85) {
+        for (let x = -10; x <= 10; x += 0.04) {
           totalGas += parseInt((await deFiMath.expMG(tokens(x))).gasUsed);
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 285, `gas changed: ${avg} ≠ 277 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 289, `gas changed: ${avg} ≠ 289 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -414,10 +415,11 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expPositive when x in [0, 130] — 223 gas", async function () {
+      it("expPositive when x in [0, 10] — 223 gas", async function () {
+        // Grid synced with defimath-compare: 500 samples, positive-half of exp band.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0; x <= 130; x += 0.65) {
+        for (let x = 0; x <= 10; x += 0.02) {
           totalGas += parseInt((await deFiMath.expPositiveMG(tokens(x))).gasUsed);
           count++;
         }
@@ -603,15 +605,16 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("expm1 when x in [-40, 130] — 291 gas", async function () {
+      it("expm1 when x in [-10, 10] — 295 gas", async function () {
+        // Grid synced with defimath-compare: 500 samples, both branches balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = -40; x <= 130; x += 0.85) {
+        for (let x = -10; x <= 10; x += 0.04) {
           totalGas += parseInt((await deFiMath.expm1MG(tokens(x))).gasUsed);
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 291, `gas changed: ${avg} ≠ 291 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 295, `gas changed: ${avg} ≠ 295 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -749,10 +752,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("ln when x in [1e-6, 1e6] — 390 gas", async function () {
+      it("ln when x in [1/16, 16] — 390 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 500 samples,
+        // both branches (x < 1 and x >= 1) balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
+        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 500)) {
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
@@ -978,15 +983,17 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log1p when x in [1e-6, 1e6] — 476 gas", async function () {
+      it("log1p when x in [-0.5, 0.5] — 494 gas", async function () {
+        // Grid synced with defimath-compare: symmetric around 0, 500 samples,
+        // both branches (naive/Taylor) balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
+        for (let x = -0.5; x <= 0.5; x += 0.002) {
           totalGas += parseInt((await deFiMath.log1pMG(tokens(x))).gasUsed);
           count++;
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 476, `gas changed: ${avg} ≠ 476 — deterministic, update threshold if intentional`);
+        assert.equal(avg, 494, `gas changed: ${avg} ≠ 494 — deterministic, update threshold if intentional`);
       });
     });
 
@@ -1128,10 +1135,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log2 when x in [1e-6, 1e6] — 406 gas", async function () {
+      it("log2 when x in [1/16, 16] — 406 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 500 samples,
+        // both branches (x < 1 and x >= 1) balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
+        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 500)) {
           totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
           count++;
         }
@@ -1278,10 +1287,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log10 when x in [1e-6, 1e6] — 406 gas", async function () {
+      it("log10 when x in [1/16, 16] — 406 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 500 samples,
+        // both branches (x < 1 and x >= 1) balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
+        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 500)) {
           totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
           count++;
         }
@@ -1577,11 +1588,13 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("pow when x in [1e-3, 1e3] × a in [-3, 3] — 761 gas", async function () {
+      it("pow when x in [1/16, 16] × a in [-3, 3] — 761 gas", async function () {
+        // Grid synced with defimath-compare: 22 log-x × 22 linear-a = 484 samples.
+        // x covers both ln branches (below/above 1), a covers both exp signs.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 1e-3; x <= 1e3; x *= 2.0691380811147901) {  // 20 steps over 6 decades
-          for (let a = -3; a <= 3; a += 6/9) {                    // 10 steps
+        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 21)) {
+          for (let a = -3; a <= 3; a += 6 / 21) {
             totalGas += parseInt((await deFiMath.powMG(tokens(x), tokens(a))).gasUsed);
             count++;
           }
@@ -1788,10 +1801,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("sqrt when x in [1e-6, 1e6] — 197 gas", async function () {
+      it("sqrt when x in [1/16, 16] — 197 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 500 samples,
+        // covers both below-1 and above-1 real values.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
+        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 500)) {
           totalGas += parseInt((await deFiMath.sqrtMG(tokens(x))).gasUsed);
           count++;
         }
@@ -1998,10 +2013,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("cbrt when x in [1e-6, 1e6] — 340 gas", async function () {
+      it("cbrt when x in [1/16, 16] — 340 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 500 samples,
+        // covers both below-1 and above-1 real values.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 0.000001; x <= 1000000; x *= 1.1481536) {
+        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 500)) {
           totalGas += parseInt((await deFiMath.cbrtMG(tokens(x))).gasUsed);
           count++;
         }
@@ -2875,10 +2892,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("stdNormCDF when x in [-11.63, 11.63] — 618 gas", async function () {
+      it("stdNormCDF when x in [-6, 6] — 618 gas", async function () {
+        // Grid synced with defimath-compare: symmetric around 0, 500 samples,
+        // both positive and negative branches balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = -11.63; x <= 11.63; x += 0.1163) {
+        for (let x = -6; x <= 6; x += 0.024) {
           totalGas += parseInt((await deFiMath.stdNormCDFMG(tokens(x))).gasUsed);
           count++;
         }
@@ -2999,10 +3018,12 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("erf when x in [-10, 10] — 649 gas", async function () {
+      it("erf when x in [-6, 6] — 649 gas", async function () {
+        // Grid synced with defimath-compare: symmetric around 0, 500 samples,
+        // both positive and negative branches balanced.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = -10; x <= 10; x += 0.1) {
+        for (let x = -6; x <= 6; x += 0.024) {
           totalGas += parseInt((await deFiMath.erfMG(tokens(x))).gasUsed);
           count++;
         }
