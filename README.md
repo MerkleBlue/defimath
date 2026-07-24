@@ -17,7 +17,7 @@
 - **Unlocks new use cases.** Gas-efficient enough to make real-time options pricing, on-chain IV solving on every quote, and risk-adjusted vault fees economically viable. Use cases that were previously off-chain workarounds now fit in a single transaction.
 - **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
 - **Pure Solidity.** ~16KB published, zero runtime dependencies, easy to audit.
-- **Validated precision.** Sub-1e-10 absolute error on options pricing. Every math primitive carries an explicit, enforced error bound — from 2e-18 (`sqrt`) to 1e-11 (`pow`) — measured as relative error where the result is ≥ 1 and absolute error near a root or for bounded functions like `stdNormCDF` and `erf`; see the per-function tables below. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
+- **Validated precision.** Sub-1e-10 absolute error on options pricing. Every math primitive carries an explicit, enforced error bound — from 2e-18 (`sqrt`) to 1e-12 (`pow`) — measured as relative error where the result is ≥ 1 and absolute error near a root or for bounded functions like `stdNormCDF` and `erf`; see the per-function tables below. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
 
 ## Benchmarks
 
@@ -88,17 +88,17 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `exp`        | 289  | 5.0e-14 | 7.2e-14 | Exponential function `e^x` |
+| `exp`        | 289  | 3.0e-16 | 2.2e-14 | Exponential function `e^x` |
 | `ln`         | 390  | 1.0e-15 | 1.6e-15 | Natural logarithm |
 | `log2`       | 406  | 1.0e-15 | 1.6e-15 | Base-2 logarithm |
 | `log10`      | 406  | 1.0e-15 | 1.6e-15 | Base-10 logarithm |
-| `pow`        | 761  |       — | 1.0e-11 | Power function `x^a` |
+| `pow`        | 761  | 1.0e-14 | 1.0e-12 | Power function `x^a` |
 | `sqrt`       | 197  | 1.0e-18 | 2.0e-18 | Square root |
-| `cbrt`       | 340  | 3.0e-16 | 2.0e-13 | Cube root |
-| `expm1`      | 295  | 1.5e-13 | 1.0e-13 | `e^x − 1` (precision-preserving for small x) |
-| `log1p`      | 494  | 1.0e-15 | 1.6e-15 | `ln(1 + x)` (precision-preserving for small x) |
-| `stdNormCDF` | 618  | 6.4e-15 |       — | Standard normal CDF Φ(x) |
-| `erf`        | 649  | 2.0e-14 |       — | Error function |
+| `cbrt`       | 340  | 1.0e-16 | 2.0e-13 | Cube root |
+| `expm1`      | 295  | 5.0e-16 | 2.2e-14 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | 494  | 1.0e-15 | 3.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
+| `stdNormCDF` | 618  | 3.0e-15 |       — | Standard normal CDF Φ(x) |
+| `erf`        | 649  | 2.0e-15 |       — | Error function |
 | `mulDiv`     | 155  |   exact |   exact | `(a · b) / d` with full 512-bit intermediate precision |
 | `mul`        | 130  |   exact |   exact | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
 | `abs`        | 17   |   exact |   exact | Branchless `\|int256\|` (handles `int256.min` cleanly) |
@@ -107,7 +107,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `clamp`      | 78   |   exact |   exact | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
 | `avg`        | 21   |   exact |   exact | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
 
-*Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful; `pow` is relative-only for now. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
+*Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
 ### Derivatives — `DeFiMathOptions`, `DeFiMathBinary`, `DeFiMathFutures`
 
