@@ -8,7 +8,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/defimath-lib.svg)](https://www.npmjs.com/package/defimath-lib)
 [![Solidity](https://img.shields.io/badge/Solidity-%5E0.8.31-blue.svg)](https://soliditylang.org)
 
-> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,708 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
+> Gas-optimized Solidity library for DeFi math. Black-Scholes option pricing at **2,582 gas**, with a broad set of primitives across math, interest rates, statistics, and derivatives.
 
 [DeFiMath](https://defimath.com) is a pure-Solidity library of DeFi math primitives. 40+ functions across four modules: low-level math, derivatives, interest rates, and statistics. No external runtime dependencies. MIT-licensed.
 
@@ -25,15 +25,15 @@ Every function is benchmarked against existing on-chain implementations. A repre
 
 | Function | DeFiMath | Next best | Multiple |
 | :------- | -------: | --------: | -------: |
-| `callOptionPrice` | **2,708** | 13,360 (Derivexyz) | **4.9×** |
-| `putOptionPrice`  | **2,718** | 13,363 (Derivexyz) | **4.9×** |
-| `binaryCallPrice` | **1,997** | 16,218 (Haptic)    | **8.1×** |
-| `delta`           | **1,703** | 8,621 (Derivexyz)  | **5.1×** |
-| `vega`            | **1,415** | 7,490 (Derivexyz)  | **5.3×** |
-| `ln`              | **373**   | 518 (Solady)       | 1.4× |
+| `callOptionPrice` | **2,582** | 13,360 (Derivexyz) | **5.2×** |
+| `putOptionPrice`  | **2,592** | 13,363 (Derivexyz) | **5.2×** |
+| `binaryCallPrice` | **1,913** | 16,218 (Haptic)    | **8.5×** |
+| `delta`           | **1,661** | 8,621 (Derivexyz)  | **5.2×** |
+| `vega`            | **1,373** | 7,490 (Derivexyz)  | **5.5×** |
+| `ln`              | **390**   | 518 (Solady)       | 1.3× |
 | `sqrt`            | **197**   | 384 (Solady)       | **1.9×** |
 | `cbrt`            | **340**   | 550 (Solady)       | **1.6×** |
-| `stdNormCDF`      | **660**   | 2,794 (SolStat)    | **4.2×** |
+| `stdNormCDF`      | **618**   | 3,103 (SolStat)    | **5.0×** |
 
 Full per-function tables in the [defimath-compare README](https://github.com/MerkleBlue/defimath-compare#readme).
 
@@ -88,17 +88,17 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `exp`        | 327  | 5.0e-14 | 7.2e-14 | Exponential function `e^x` |
+| `exp`        | 289  | 5.0e-14 | 7.2e-14 | Exponential function `e^x` |
 | `ln`         | 390  | 1.0e-15 | 1.6e-15 | Natural logarithm |
 | `log2`       | 406  | 1.0e-15 | 1.6e-15 | Base-2 logarithm |
 | `log10`      | 406  | 1.0e-15 | 1.6e-15 | Base-10 logarithm |
-| `pow`        | 803  |       — | 1.0e-11 | Power function `x^a` |
+| `pow`        | 761  |       — | 1.0e-11 | Power function `x^a` |
 | `sqrt`       | 197  | 1.0e-18 | 2.0e-18 | Square root |
 | `cbrt`       | 340  | 3.0e-16 | 2.0e-13 | Cube root |
-| `expm1`      | 407  | 1.5e-13 | 1.0e-13 | `e^x − 1` (precision-preserving for small x) |
-| `log1p`      | 476  | 1.0e-15 | 1.6e-15 | `ln(1 + x)` (precision-preserving for small x) |
-| `stdNormCDF` | 660  | 6.4e-15 |       — | Standard normal CDF Φ(x) |
-| `erf`        | 691  | 2.0e-14 |       — | Error function |
+| `expm1`      | 295  | 1.5e-13 | 1.0e-13 | `e^x − 1` (precision-preserving for small x) |
+| `log1p`      | 494  | 1.0e-15 | 1.6e-15 | `ln(1 + x)` (precision-preserving for small x) |
+| `stdNormCDF` | 618  | 6.4e-15 |       — | Standard normal CDF Φ(x) |
+| `erf`        | 649  | 2.0e-14 |       — | Error function |
 | `mulDiv`     | 155  |   exact |   exact | `(a · b) / d` with full 512-bit intermediate precision |
 | `mul`        | 130  |   exact |   exact | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
 | `abs`        | 17   |   exact |   exact | Branchless `\|int256\|` (handles `int256.min` cleanly) |
@@ -113,20 +113,20 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `callOptionPrice`     | 2,708  | 1.3e-10 |       — | European call (Black-Scholes) |
-| `putOptionPrice`      | 2,718  | 1.3e-10 |       — | European put (Black-Scholes) |
-| `delta`               | 1,703  | 1.2e-13 |       — | First derivative w.r.t. spot |
-| `gamma`               | 1,475  | 3.2e-15 |       — | Second derivative w.r.t. spot |
-| `theta`               | 3,269  | 1.9e-12 |       — | Time decay (per day) |
-| `vega`                | 1,415  |   4e-13 |       — | Sensitivity to volatility |
-| `impliedVolatility`   | 12,334 |       — |  1.0e-6 | IV via Newton-Raphson |
-| `binaryCallPrice`     | 1,997  |   2e-12 |       — | Cash-or-nothing call |
-| `binaryPutPrice`      | 2,002  |   2e-12 |       — | Cash-or-nothing put |
-| `binaryDelta`         | 1,801  |   1e-13 |       — | Binary delta (signed) |
-| `binaryGamma`         | 1,943  |   1e-15 |       — | Binary gamma (signed) |
-| `binaryTheta`         | 3,329  |   1e-14 |       — | Binary theta (per day) |
-| `binaryVega`          | 1,889  |   1e-14 |       — | Binary vega (signed) |
-| `futurePrice`         | 442    |  1.2e-9 |       — | `spot · e^(rt)` |
+| `callOptionPrice`     | 2,582  | 1.3e-10 |       — | European call (Black-Scholes) |
+| `putOptionPrice`      | 2,592  | 1.3e-10 |       — | European put (Black-Scholes) |
+| `delta`               | 1,661  | 1.2e-13 |       — | First derivative w.r.t. spot |
+| `gamma`               | 1,433  | 3.2e-15 |       — | Second derivative w.r.t. spot |
+| `theta`               | 3,101  | 1.9e-12 |       — | Time decay (per day) |
+| `vega`                | 1,373  |   4e-13 |       — | Sensitivity to volatility |
+| `impliedVolatility`   | 11,668 / 11,743 |  — |  1.0e-6 | IV via Newton-Raphson (call / put) |
+| `binaryCallPrice`     | 1,913  |   2e-12 |       — | Cash-or-nothing call |
+| `binaryPutPrice`      | 1,918  |   2e-12 |       — | Cash-or-nothing put |
+| `binaryDelta`         | 1,717  |   1e-13 |       — | Binary delta (signed) |
+| `binaryGamma`         | 1,859  |   1e-15 |       — | Binary gamma (signed) |
+| `binaryTheta`         | 3,161  |   1e-14 |       — | Binary theta (per day) |
+| `binaryVega`          | 1,805  |   1e-14 |       — | Binary vega (signed) |
+| `futurePrice`         | 400    |  1.2e-9 |       — | `spot · e^(rt)` |
 
 *Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Absolute error is the metric throughout: option prices are quoted at a $1,000 spot (so `1.3e-10` is in dollars), binaries at unit payout, `theta` per day and `vega` per 1% vol. `impliedVolatility` is the exception — it is bounded by round-trip **relative** error against its Newton-Raphson convergence target.*
 
@@ -134,13 +134,13 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `compoundInterest`       | 467     |       — | 5.4e-14 | Continuous compounding: `P · e^(rt)` |
-| `presentValue`           | 519     |       — | 5.4e-14 | Discounting: `FV · e^(−rt)` |
+| `compoundInterest`       | 425     |       — | 5.4e-14 | Continuous compounding: `P · e^(rt)` |
+| `presentValue`           | 477     |       — | 5.4e-14 | Discounting: `FV · e^(−rt)` |
 | `logReturn`              | 600     |       — | 1.6e-15 | `ln(currentPrice / previousPrice)` |
-| `continuousToDiscrete`   | 491     |   1e-15 |       — | `e^apr − 1` (APR → APY) |
+| `continuousToDiscrete`   | 375     |   1e-15 |       — | `e^apr − 1` (APR → APY) |
 | `discreteToContinuous`   | 574     |   1e-15 |       — | `ln(1 + apy)` (APY → APR) |
 | `yieldToMaturity`        | 736     |       — | 5.4e-14 | Zero-coupon YTM (closed form) |
-| `internalRateOfReturn`   | 17k–49k |       — |    1e-9 | IRR via Newton-Raphson (cost scales with cashflow count) |
+| `internalRateOfReturn`   | 16k–47k |       — |    1e-9 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
 *Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Compounding and discounting inherit `exp`'s relative bound, `logReturn` inherits `ln`'s. The two rate conversions are bounded **absolutely** (`1e-15`) because they run a Taylor branch through their root at `r = 0`, where relative error is undefined. `internalRateOfReturn` is bounded by its Newton-Raphson convergence tolerance.*
 
@@ -150,7 +150,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | :------- | --: | ------------: | ------------: | :---------- |
 | `geometricMean`            | 284                |       — | 2.2e-14 | `sqrt(a · b)` — Uniswap V2 invariant |
 | `mean`                     | 6,980 @ 30 elem    |       — |   1e-15 | Arithmetic mean |
-| `stdDev`                   | 15,298 @ 30 elem   |       — | 2.2e-14 | Sample std. dev. (Bessel-corrected) |
+| `stdDev`                   | 15,252 @ 30 elem   |       — | 2.2e-14 | Sample std. dev. (Bessel-corrected) |
 | `weightedAverage`          | 15,687 @ 30 elem   |       — |   1e-15 | Σ(v·w) / Σ(w) |
 | `historicalVolatility`     | 25,820 @ 30 prices |       — | 2.2e-14 | Annualized vol from log returns |
 | `sharpeRatio`              | 25,958 @ 30 prices |       — | 2.2e-14 | Risk-adjusted return |
