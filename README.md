@@ -164,10 +164,10 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 Two independent layers:
 
-- **Hardhat** — 623 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
+- **Hardhat** — 640 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
 - **Foundry** — 92 mathematical properties × 32,000 random runs each = **2,944,000 random executions per CI run**. Validates the algebraic structure (round-trips, monotonicity, identities, output bounds, symmetries) with automatic counterexample shrinking.
 
-715 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
+732 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
 
 ## Precision
 
