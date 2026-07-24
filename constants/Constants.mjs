@@ -1,38 +1,63 @@
-// Shared error-tolerance constants for hardhat tests.
+// Shared constants for hardhat tests.
 //
-// One source of truth for the maximum acceptable difference between the Solidity
-// implementation and the JS reference, per module / function. Tightening or loosening
-// happens in this file — the test grids follow.
+// One source of truth for error tolerances (max acceptable difference between the
+// Solidity implementation and the JS reference) and gas benchmarks (average gas
+// per call across the sync'd grid, measured against defimath-compare). Tightening
+// or loosening happens in this file — the test grids follow.
 //
 // Naming convention:
 //   MAX_REL_ERROR_*  — relative error bound (|actual − expected| / |expected|)
 //   MAX_ABS_ERROR_*  — absolute error bound (|actual − expected|)
+//   AVG_GAS_*        — average gas per call on the module's perf-test grid
 
 // ── Math primitives ──────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_EXP        = 2.2e-14;   // when y = exp(x) ≥ 1
 export const MAX_ABS_ERROR_EXP        = 3.0e-16;   // when y = exp(x) < 1 (near the root x=0)
+export const AVG_GAS_EXP              = 289;
+
+export const AVG_GAS_EXP_POSITIVE     = 223;       // internal fast path, no error metric (matches exp positive branch)
 
 export const MAX_REL_ERROR_EXPM1      = 2.2e-14;   // when y = expm1(x) ≥ 1  (x ≥ ln2)
 export const MAX_ABS_ERROR_EXPM1      = 5.0e-16;   // when y = expm1(x) < 1  (x < ln2, incl. the root x=0)
+export const AVG_GAS_EXPM1            = 295;
 
 export const MAX_REL_ERROR_LN         = 1.6e-15;   // when y = |ln(x)| ≥ 1
 export const MAX_ABS_ERROR_LN         = 1.0e-15;   // when y = |ln(x)| < 1 (near the root x=1)
+export const AVG_GAS_LN               = 390;
 
 export const MAX_REL_ERROR_LOG1P      = 3.0e-15;   // when y = |log1p(x)| >= 1
 export const MAX_ABS_ERROR_LOG1P      = 1.0e-15;   // when y = |log1p(x)| < 1
+export const AVG_GAS_LOG1P            = 494;
+
+export const AVG_GAS_LOG2             = 406;       // inherits ln's error metrics via ln(x) / ln(2)
+export const AVG_GAS_LOG10            = 406;       // inherits ln's error metrics via ln(x) / ln(10)
 
 export const MAX_REL_ERROR_SQRT       = 2.0e-18;   // when y = sqrt(x) ≥ 1, measured vs decimal.js (exact)
 export const MAX_ABS_ERROR_SQRT       = 1.0e-18;   // when y = sqrt(x) < 1 — correctly rounded, i.e. off by at most 1 wei
+export const AVG_GAS_SQRT             = 197;
 
 export const MAX_REL_ERROR_CBRT       = 2.0e-13;   // when y = cbrt(x) ≥ 1
-export const MAX_ABS_ERROR_CBRT       = 1.0e-16;   // when y = cbrt(x) < 1 
+export const MAX_ABS_ERROR_CBRT       = 1.0e-16;   // when y = cbrt(x) < 1
+export const AVG_GAS_CBRT             = 340;
 
 export const MAX_REL_ERROR_POW        = 1.0e-12;   // when y = pow(x, a), |y| >= 1
 export const MAX_ABS_ERROR_POW        = 1.0e-14;   // when y = pow(x, a), |y| < 1
+export const AVG_GAS_POW              = 761;
 
 export const MAX_ABS_ERROR_ERF        = 2.0e-15;   // always |y| <= 1, no relative error
+export const AVG_GAS_ERF              = 649;
 
 export const MAX_ABS_ERROR_CDF        = 3.0e-15;   // always y <= 1, no relative error
+export const AVG_GAS_CDF              = 618;
+
+// ── Math utilities (bit-level ops, no error metric) ──────────────────────────────────────
+export const AVG_GAS_MULDIV           = 155;
+export const AVG_GAS_ABS              = 17;
+export const AVG_GAS_MIN              = 23;
+export const AVG_GAS_MAX              = 23;
+export const AVG_GAS_CLAMP            = 78;
+export const AVG_GAS_AVG              = 21;
+export const AVG_GAS_SQRT_TIME        = 163;
 
 // ── Options (vanilla, on a $1000 underlying) ─────────────────────────────────────────────
 export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // in $, for call/put price
