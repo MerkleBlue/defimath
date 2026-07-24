@@ -754,12 +754,14 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("ln when x in [1/16, 16] — 390 gas", async function () {
-        // Grid synced with defimath-compare: log-symmetric around 1, 1000 samples,
-        // both branches (x < 1 and x >= 1) balanced.
+      it("ln when x in [1/e², e²] — AVG_GAS_LN gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 1000 samples.
+        // Sweep bounds chosen so abs band [1/e, e] takes exactly half the log range,
+        // giving a 50/50 split between rel and abs samples.
         const { deFiMath } = await loadFixture(deploy);
+        const LO = 1 / Math.E ** 2, HI = Math.E ** 2;
         let totalGas = 0, count = 0;
-        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 1000)) {
+        for (let x = LO; x <= HI; x *= (HI / LO) ** (1 / 1000)) {
           totalGas += parseInt((await deFiMath.lnMG(tokens(x))).gasUsed);
           count++;
         }
@@ -1137,12 +1139,13 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log2 when x in [1/16, 16] — 406 gas", async function () {
-        // Grid synced with defimath-compare: log-symmetric around 1, 1000 samples,
-        // both branches (x < 1 and x >= 1) balanced.
+      it("log2 when x in [1/4, 4] — AVG_GAS_LOG2 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 1000 samples.
+        // Sweep bounds chosen so abs band [0.5, 2] takes exactly half the log range,
+        // giving a 50/50 split between rel and abs samples.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 1000)) {
+        for (let x = 1 / 4; x <= 4; x *= 16 ** (1 / 1000)) {
           totalGas += parseInt((await deFiMath.log2MG(tokens(x))).gasUsed);
           count++;
         }
@@ -1289,12 +1292,13 @@ describe("DeFiMath", function () {
     });
 
     describe("performance", function () {
-      it("log10 when x in [1/16, 16] — 406 gas", async function () {
-        // Grid synced with defimath-compare: log-symmetric around 1, 1000 samples,
-        // both branches (x < 1 and x >= 1) balanced.
+      it("log10 when x in [1/100, 100] — AVG_GAS_LOG10 gas", async function () {
+        // Grid synced with defimath-compare: log-symmetric around 1, 1000 samples.
+        // Sweep bounds chosen so abs band [0.1, 10] takes exactly half the log range,
+        // giving a 50/50 split between rel and abs samples.
         const { deFiMath } = await loadFixture(deploy);
         let totalGas = 0, count = 0;
-        for (let x = 1 / 16; x <= 16; x *= 256 ** (1 / 1000)) {
+        for (let x = 1 / 100; x <= 100; x *= 10000 ** (1 / 1000)) {
           totalGas += parseInt((await deFiMath.log10MG(tokens(x))).gasUsed);
           count++;
         }
