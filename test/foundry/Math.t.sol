@@ -166,6 +166,44 @@ contract MathPropertyTest is Test {
         assertLe(DeFiMath.erf(a), DeFiMath.erf(b), "erf not monotone");
     }
 
+    /// cbrt is monotone non-decreasing. Full uint256 domain (v3.6.0+).
+    function test_MONO_cbrt(uint256 a, uint256 b) public pure {
+        if (a > b) (a, b) = (b, a);
+        assertLe(DeFiMath.cbrt(a), DeFiMath.cbrt(b), "cbrt not monotone");
+    }
+
+    /// expm1 is monotone non-decreasing (same domain as exp).
+    function test_MONO_expm1(int256 a, int256 b) public pure {
+        a = bound(a, -41e18, 130e18);
+        b = bound(b, -41e18, 130e18);
+        if (a > b) (a, b) = (b, a);
+        assertLe(DeFiMath.expm1(a), DeFiMath.expm1(b), "expm1 not monotone non-decreasing");
+    }
+
+    /// log1p is monotone non-decreasing on its domain x > -1e18 (i.e. 1 + x > 0).
+    function test_MONO_log1p(int256 a, int256 b) public pure {
+        a = bound(a, -1e18 + 1, int256(type(int128).max));
+        b = bound(b, -1e18 + 1, int256(type(int128).max));
+        if (a > b) (a, b) = (b, a);
+        assertLe(DeFiMath.log1p(a), DeFiMath.log1p(b), "log1p not monotone non-decreasing");
+    }
+
+    /// log2 is monotone non-decreasing for x > 0 (ln(x) / ln(2)).
+    function test_MONO_log2(uint256 a, uint256 b) public pure {
+        a = bound(a, 1, type(uint128).max);
+        b = bound(b, 1, type(uint128).max);
+        if (a > b) (a, b) = (b, a);
+        assertLe(DeFiMath.log2(a), DeFiMath.log2(b), "log2 not monotone non-decreasing");
+    }
+
+    /// log10 is monotone non-decreasing for x > 0 (ln(x) / ln(10)).
+    function test_MONO_log10(uint256 a, uint256 b) public pure {
+        a = bound(a, 1, type(uint128).max);
+        b = bound(b, 1, type(uint128).max);
+        if (a > b) (a, b) = (b, a);
+        assertLe(DeFiMath.log10(a), DeFiMath.log10(b), "log10 not monotone non-decreasing");
+    }
+
     // ====================================================================
     // Known identities — algebraic equations the functions must satisfy
     // ====================================================================
