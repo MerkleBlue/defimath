@@ -83,7 +83,7 @@ library DeFiMathRates {
 
             uint256 timeYear = uint256(timeInterval) * 1e18 / SECONDS_IN_YEAR;
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;
-            amount = uint256(principal) * DeFiMath.expPositive(scaledRate) / 1e18;
+            amount = uint256(principal) * Math.expPositive(scaledRate) / 1e18;
         }
     }
 
@@ -102,7 +102,7 @@ library DeFiMathRates {
 
             uint256 timeYear = uint256(timeInterval) * 1e18 / SECONDS_IN_YEAR;
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;
-            amount = uint256(futureValue) * 1e18 / DeFiMath.expPositive(scaledRate);
+            amount = uint256(futureValue) * 1e18 / Math.expPositive(scaledRate);
         }
     }
 
@@ -121,7 +121,7 @@ library DeFiMathRates {
             if (previousPrice <= MIN_PRINCIPAL) revert PriceLowerBoundError();
             if (MAX_PRINCIPAL <= previousPrice) revert PriceUpperBoundError();
 
-            rate = DeFiMath.ln(uint256(currentPrice) * 1e18 / uint256(previousPrice));
+            rate = Math.ln(uint256(currentPrice) * 1e18 / uint256(previousPrice));
         }
     }
 
@@ -135,7 +135,7 @@ library DeFiMathRates {
             if (apr >= int256(MAX_RATE)) revert RateUpperBoundError();
             if (apr <= -int256(MAX_RATE)) revert RateLowerBoundError();
 
-            apy = DeFiMath.expm1(apr);
+            apy = Math.expm1(apr);
         }
     }
 
@@ -149,7 +149,7 @@ library DeFiMathRates {
             if (apy >= int256(MAX_RATE)) revert RateUpperBoundError();
             if (apy <= -1e18) revert RateLowerBoundError();
 
-            apr = DeFiMath.log1p(apy);
+            apr = Math.log1p(apy);
         }
     }
 
@@ -172,7 +172,7 @@ library DeFiMathRates {
             if (MAX_TIME_INTERVAL <= timeToMaturity) revert TimeIntervalUpperBoundError();
 
             // ln(F/P) returns signed; for F > P, this is positive
-            int256 lnRatio = DeFiMath.ln(uint256(faceValue) * 1e18 / uint256(price));
+            int256 lnRatio = Math.ln(uint256(faceValue) * 1e18 / uint256(price));
             // timeYear in 1e18 base
             uint256 timeYear = uint256(timeToMaturity) * 1e18 / SECONDS_IN_YEAR;
             // ytm = lnRatio / timeYear, both 1e18-base → multiply by 1e18 to preserve scale
@@ -207,8 +207,8 @@ library DeFiMathRates {
                     uint256 timeYear = uint256(times[i]) * 1e18 / SECONDS_IN_YEAR;
                     // exponent = -irr · timeYear in 1e18 base (signed)
                     int256 exponent = -irr * int256(timeYear) / 1e18;
-                    // exp(-irr·t); DeFiMath.exp handles signed input and reverts on overflow
-                    int256 expValue = int256(DeFiMath.exp(exponent));
+                    // exp(-irr·t); Math.exp handles signed input and reverts on overflow
+                    int256 expValue = int256(Math.exp(exponent));
                     // f += Cᵢ · exp(-irr·tᵢ); keep 1e18-scaled
                     f += cashflows[i] * expValue / 1e18;
                     // fPrime -= Cᵢ · tᵢ · exp(-irr·tᵢ); using timeYear in 1e18 base

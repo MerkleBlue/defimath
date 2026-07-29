@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.31;
 
-import "../derivatives/Options.sol";
+import "../derivatives/BlackScholes.sol";
 
-contract OptionsWrapper {
+contract BlackScholesWrapper {
 
     function callOptionPrice(
         uint128 spot,
@@ -12,7 +12,7 @@ contract OptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return DeFiMathOptions.callOptionPrice(spot, strike, timeToExp, volatility, rate);
+        return DeFiMathBlackScholes.callOptionPrice(spot, strike, timeToExp, volatility, rate);
     }
 
     function putOptionPrice(
@@ -22,7 +22,7 @@ contract OptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return DeFiMathOptions.putOptionPrice(spot, strike, timeToExp, volatility, rate);
+        return DeFiMathBlackScholes.putOptionPrice(spot, strike, timeToExp, volatility, rate);
     }
 
     function delta(
@@ -32,7 +32,7 @@ contract OptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 deltaCall, int128 deltaPut) {
-        return DeFiMathOptions.delta(spot, strike, timeToExp, volatility, rate);
+        return DeFiMathBlackScholes.delta(spot, strike, timeToExp, volatility, rate);
     }
 
     function gamma(
@@ -42,7 +42,7 @@ contract OptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 gammaOut) {
-        return DeFiMathOptions.gamma(spot, strike, timeToExp, volatility, rate);
+        return DeFiMathBlackScholes.gamma(spot, strike, timeToExp, volatility, rate);
     }
 
     function theta(
@@ -52,7 +52,7 @@ contract OptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 thetaCall, int128 thetaPut) {
-        return DeFiMathOptions.theta(spot, strike, timeToExp, volatility, rate);
+        return DeFiMathBlackScholes.theta(spot, strike, timeToExp, volatility, rate);
     }
 
     function vega(
@@ -62,7 +62,7 @@ contract OptionsWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 vegaOut) {
-        return DeFiMathOptions.vega(spot, strike, timeToExp, volatility, rate);
+        return DeFiMathBlackScholes.vega(spot, strike, timeToExp, volatility, rate);
     }
 
     function callOptionPriceMG(
@@ -77,7 +77,7 @@ contract OptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = DeFiMathOptions.callOptionPrice(spot, strike, timeToExp, volatility, rate);
+        result = DeFiMathBlackScholes.callOptionPrice(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
         
@@ -96,7 +96,7 @@ contract OptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = DeFiMathOptions.putOptionPrice(spot, strike, timeToExp, volatility, rate);
+        result = DeFiMathBlackScholes.putOptionPrice(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
         
@@ -114,7 +114,7 @@ contract OptionsWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        (deltaCall, deltaPut) = DeFiMathOptions.delta(spot, strike, timeToExp, volatility, rate);
+        (deltaCall, deltaPut) = DeFiMathBlackScholes.delta(spot, strike, timeToExp, volatility, rate);
         endGas = gasleft();
         
         return (deltaCall, deltaPut, startGas - endGas);
@@ -131,7 +131,7 @@ contract OptionsWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        gammaOut = DeFiMathOptions.gamma(spot, strike, timeToExp, volatility, rate);
+        gammaOut = DeFiMathBlackScholes.gamma(spot, strike, timeToExp, volatility, rate);
         endGas = gasleft();
 
         return (gammaOut, startGas - endGas);
@@ -148,7 +148,7 @@ contract OptionsWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        (thetaCall, thetaPut) = DeFiMathOptions.theta(spot, strike, timeToExp, volatility, rate);
+        (thetaCall, thetaPut) = DeFiMathBlackScholes.theta(spot, strike, timeToExp, volatility, rate);
         endGas = gasleft();
         
         return (thetaCall, thetaPut, startGas - endGas);
@@ -165,7 +165,7 @@ contract OptionsWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        vegaOut = DeFiMathOptions.vega(spot, strike, timeToExp, volatility, rate);
+        vegaOut = DeFiMathBlackScholes.vega(spot, strike, timeToExp, volatility, rate);
         endGas = gasleft();
 
         return (vegaOut, startGas - endGas);
@@ -179,7 +179,7 @@ contract OptionsWrapper {
         uint128 optionPrice,
         bool isCall
     ) external pure returns (uint256 volatility) {
-        return DeFiMathOptions.impliedVolatility(spot, strike, timeToExp, rate, optionPrice, isCall);
+        return DeFiMathBlackScholes.impliedVolatility(spot, strike, timeToExp, rate, optionPrice, isCall);
     }
 
     function impliedVolatilityMG(
@@ -194,7 +194,7 @@ contract OptionsWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        volatility = DeFiMathOptions.impliedVolatility(spot, strike, timeToExp, rate, optionPrice, isCall);
+        volatility = DeFiMathBlackScholes.impliedVolatility(spot, strike, timeToExp, rate, optionPrice, isCall);
         endGas = gasleft();
 
         return (volatility, startGas - endGas);

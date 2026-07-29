@@ -2,7 +2,7 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {DeFiMath} from "../../contracts/math/Math.sol";
+import {Math} from "../../contracts/math/Math.sol";
 
 /// @notice Property-based fuzz tests for DeFiMath. Validates mathematical identities
 ///         across the operational domain — round-trips, monotonicity, identities,
@@ -26,7 +26,7 @@ import {DeFiMath} from "../../contracts/math/Math.sol";
 ///      Property tests use slightly looser tolerances than behaviour tests because
 ///      they sweep the full input space, including precision-edge corners.
 contract MathPropertyTest is Test {
-    using DeFiMath for *;
+    using Math for *;
 
     uint256 private constant FP_ONE = 1e18;
     int256  private constant FP_ONE_INT = 1e18;
@@ -44,9 +44,9 @@ contract MathPropertyTest is Test {
     /// ln(exp(x)) ≈ x for x ∈ [-20, 130] (below -20, exp underflows in FP precision).
     function test_RT_lnExp(int256 x) public pure {
         x = bound(x, -20e18, 130e18);
-        uint256 ePos = DeFiMath.exp(x);
+        uint256 ePos = Math.exp(x);
         if (ePos == 0) return;
-        int256 back = DeFiMath.ln(ePos);
+        int256 back = Math.ln(ePos);
         assertApproxEqAbs(back, x, 1e9, "ln(exp(x)) != x");  // 1e-9 absolute
     }
 
@@ -59,9 +59,9 @@ contract MathPropertyTest is Test {
         // round-trip miss that's a fundamental fixed-point ULP effect, not a bug.
         // Upper bound 1e30 (1e12 FP) keeps ln output safely under exp's upper bound (135e18).
         x = bound(x, 1e11, 1e30);
-        int256 logged = DeFiMath.ln(x);
+        int256 logged = Math.ln(x);
         if (logged >= 135e18) return;
-        uint256 back = DeFiMath.exp(logged);
+        uint256 back = Math.exp(logged);
         assertApproxEqRel(back, x, REL_1e_10, "exp(ln(x)) != x");
     }
 
@@ -80,13 +80,13 @@ contract MathPropertyTest is Test {
         // s * s and (s+1) * (s+1) fit in uint256 (even with a 1-ULP Newton overshoot).
         // This still covers ~99.6% of the log-scale domain and exercises both branches.
         x = bound(x, 1e12, (1 << 254) - 1);
-        uint256 r = DeFiMath.sqrt(x);
+        uint256 r = Math.sqrt(x);
         if (x <= type(uint128).max) {
             // Small branch: r is FP18 sqrt(x). r² / 1e18 ≈ x within FP18 tolerance.
             // Worst case is the domain floor x = 1e12: the ±1-wei mulDiv rounding is a
             // 1/x ≈ 1e-12 relative miss, so REL_1e_11 holds with ~10× margin. (Above the
             // floor the relative rounding shrinks as 1/x, so error only improves.)
-            uint256 back = DeFiMath.mulDiv(r, r, FP_ONE);
+            uint256 back = Math.mulDiv(r, r, FP_ONE);
             assertApproxEqRel(back, x, REL_1e_11, "sqrt(x)^2 != x");
         } else {
             // Large branch: r ≈ floor(sqrt(x)) · 1e9. Sqrt guarantees FP18 relative
@@ -103,9 +103,9 @@ contract MathPropertyTest is Test {
     /// cbrt(x)³ ≈ x. Same wei-precision floor as sqrt; bounded above by cbrt's 2^76 limit.
     function test_RT_cbrtCubed(uint256 x) public pure {
         x = bound(x, 1e12, 1e22);
-        uint256 r = DeFiMath.cbrt(x);
-        uint256 r2 = DeFiMath.mulDiv(r, r, FP_ONE);
-        uint256 r3 = DeFiMath.mulDiv(r2, r, FP_ONE);
+        uint256 r = Math.cbrt(x);
+        uint256 r2 = Math.mulDiv(r, r, FP_ONE);
+        uint256 r3 = Math.mulDiv(r2, r, FP_ONE);
         assertApproxEqRel(r3, x, REL_1e_10, "cbrt(x)^3 != x");
     }
 
@@ -113,9 +113,9 @@ contract MathPropertyTest is Test {
     /// |x| > ~15 starts losing sig digits on the negative branch; tolerance is 1e-8.
     function test_RT_expReciprocalProduct(int256 x) public pure {
         x = bound(x, -20e18, 20e18);
-        uint256 ePos = DeFiMath.exp(x);
-        uint256 eNeg = DeFiMath.exp(-x);
-        uint256 product = DeFiMath.mulDiv(ePos, eNeg, FP_ONE);
+        uint256 ePos = Math.exp(x);
+        uint256 eNeg = Math.exp(-x);
+        uint256 product = Math.mulDiv(ePos, eNeg, FP_ONE);
         assertApproxEqRel(product, FP_ONE, REL_1e_8, "exp(x) * exp(-x) != 1");
     }
 
@@ -129,8 +129,8 @@ contract MathPropertyTest is Test {
         a = bound(a, -41e18, 130e18);
         b = bound(b, -41e18, 130e18);
         if (a > b) (a, b) = (b, a);  // ensure a ≤ b
-        uint256 eA = DeFiMath.exp(a);
-        uint256 eB = DeFiMath.exp(b);
+        uint256 eA = Math.exp(a);
+        uint256 eB = Math.exp(b);
         assertLe(eA, eB, "exp not monotone non-decreasing");
     }
 
@@ -139,15 +139,15 @@ contract MathPropertyTest is Test {
         a = bound(a, 1, type(uint128).max);
         b = bound(b, 1, type(uint128).max);
         if (a > b) (a, b) = (b, a);
-        int256 lA = DeFiMath.ln(a);
-        int256 lB = DeFiMath.ln(b);
+        int256 lA = Math.ln(a);
+        int256 lB = Math.ln(b);
         assertLe(lA, lB, "ln not monotone non-decreasing");
     }
 
     /// sqrt is monotone non-decreasing. Full uint256 domain (v3.6.0+).
     function test_MONO_sqrt(uint256 a, uint256 b) public pure {
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.sqrt(a), DeFiMath.sqrt(b), "sqrt not monotone");
+        assertLe(Math.sqrt(a), Math.sqrt(b), "sqrt not monotone");
     }
 
     /// stdNormCDF is monotone non-decreasing (the cumulative distribution property).
@@ -155,7 +155,7 @@ contract MathPropertyTest is Test {
         a = bound(a, -16.447e18, 16.447e18);
         b = bound(b, -16.447e18, 16.447e18);
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.stdNormCDF(a), DeFiMath.stdNormCDF(b), "Phi not monotone");
+        assertLe(Math.stdNormCDF(a), Math.stdNormCDF(b), "Phi not monotone");
     }
 
     /// erf is monotone non-decreasing.
@@ -163,13 +163,13 @@ contract MathPropertyTest is Test {
         a = bound(a, -11.63e18, 11.63e18);
         b = bound(b, -11.63e18, 11.63e18);
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.erf(a), DeFiMath.erf(b), "erf not monotone");
+        assertLe(Math.erf(a), Math.erf(b), "erf not monotone");
     }
 
     /// cbrt is monotone non-decreasing. Full uint256 domain (v3.6.0+).
     function test_MONO_cbrt(uint256 a, uint256 b) public pure {
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.cbrt(a), DeFiMath.cbrt(b), "cbrt not monotone");
+        assertLe(Math.cbrt(a), Math.cbrt(b), "cbrt not monotone");
     }
 
     /// expm1 is monotone non-decreasing (same domain as exp).
@@ -177,7 +177,7 @@ contract MathPropertyTest is Test {
         a = bound(a, -41e18, 130e18);
         b = bound(b, -41e18, 130e18);
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.expm1(a), DeFiMath.expm1(b), "expm1 not monotone non-decreasing");
+        assertLe(Math.expm1(a), Math.expm1(b), "expm1 not monotone non-decreasing");
     }
 
     /// log1p is monotone non-decreasing on its domain x > -1e18 (i.e. 1 + x > 0).
@@ -185,7 +185,7 @@ contract MathPropertyTest is Test {
         a = bound(a, -1e18 + 1, int256(type(int128).max));
         b = bound(b, -1e18 + 1, int256(type(int128).max));
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.log1p(a), DeFiMath.log1p(b), "log1p not monotone non-decreasing");
+        assertLe(Math.log1p(a), Math.log1p(b), "log1p not monotone non-decreasing");
     }
 
     /// log2 is monotone non-decreasing for x > 0 (ln(x) / ln(2)).
@@ -193,7 +193,7 @@ contract MathPropertyTest is Test {
         a = bound(a, 1, type(uint128).max);
         b = bound(b, 1, type(uint128).max);
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.log2(a), DeFiMath.log2(b), "log2 not monotone non-decreasing");
+        assertLe(Math.log2(a), Math.log2(b), "log2 not monotone non-decreasing");
     }
 
     /// log10 is monotone non-decreasing for x > 0 (ln(x) / ln(10)).
@@ -201,7 +201,7 @@ contract MathPropertyTest is Test {
         a = bound(a, 1, type(uint128).max);
         b = bound(b, 1, type(uint128).max);
         if (a > b) (a, b) = (b, a);
-        assertLe(DeFiMath.log10(a), DeFiMath.log10(b), "log10 not monotone non-decreasing");
+        assertLe(Math.log10(a), Math.log10(b), "log10 not monotone non-decreasing");
     }
 
     // ====================================================================
@@ -211,38 +211,38 @@ contract MathPropertyTest is Test {
     /// For |x| ≥ 0.01, expm1(x) ≈ exp(x) - 1e18 (the naive branch).
     function test_ID_expm1MatchesExpMinus1(int256 x) public pure {
         x = bound(x, int256(0.01e18), int256(135e18) - 1);
-        int256 viaExpm1 = DeFiMath.expm1(x);
-        int256 viaExpMinus1 = int256(DeFiMath.exp(x)) - FP_ONE_INT;
+        int256 viaExpm1 = Math.expm1(x);
+        int256 viaExpMinus1 = int256(Math.exp(x)) - FP_ONE_INT;
         assertApproxEqRel(viaExpm1, viaExpMinus1, REL_1e_12, "expm1 != exp - 1 (large +x)");
     }
 
     /// For x ≥ 0.01, log1p(x) ≈ ln(1e18 + x).
     function test_ID_log1pMatchesLnOf1PlusX(int256 x) public pure {
         x = bound(x, int256(0.01e18), int256(1e36));
-        int256 viaLog1p = DeFiMath.log1p(x);
-        int256 viaLn = DeFiMath.ln(uint256(FP_ONE_INT + x));
+        int256 viaLog1p = Math.log1p(x);
+        int256 viaLn = Math.ln(uint256(FP_ONE_INT + x));
         assertApproxEqRel(viaLog1p, viaLn, REL_1e_12, "log1p != ln(1 + x) (large +x)");
     }
 
     /// pow(x, 0) == 1 exactly (multiplicative identity at zero exponent).
     function test_ID_powZeroIsOne(uint256 x) public pure {
         x = bound(x, 1, 1e30);
-        assertEq(DeFiMath.pow(x, 0), FP_ONE, "pow(x, 0) != 1");
+        assertEq(Math.pow(x, 0), FP_ONE, "pow(x, 0) != 1");
     }
 
     /// pow(x, 1) ≈ x. Internally `pow` computes `exp(a · ln(x))`; bound x to where
     /// |ln(x)| ≤ ~14 to avoid exp's underflow boundary.
     function test_ID_powOneIsX(uint256 x) public pure {
         x = bound(x, 1e12, 1e30);
-        uint256 r = DeFiMath.pow(x, int256(FP_ONE));
+        uint256 r = Math.pow(x, int256(FP_ONE));
         assertApproxEqRel(r, x, REL_1e_10, "pow(x, 1) != x");
     }
 
     /// pow(x, 2) ≈ x² (via mulDiv).
     function test_ID_powTwoIsXSquared(uint256 x) public pure {
         x = bound(x, FP_ONE, 1e30);
-        uint256 r = DeFiMath.pow(x, int256(2 * FP_ONE));
-        uint256 xSq = DeFiMath.mulDiv(x, x, FP_ONE);
+        uint256 r = Math.pow(x, int256(2 * FP_ONE));
+        uint256 xSq = Math.mulDiv(x, x, FP_ONE);
         assertApproxEqRel(r, xSq, REL_1e_8, "pow(x, 2) != x*x");
     }
 
@@ -250,7 +250,7 @@ contract MathPropertyTest is Test {
     function test_ID_mulMatchesMulDiv1e18(uint256 a, uint256 b) public pure {
         a = bound(a, 0, 1e30);
         b = bound(b, 0, 1e30);
-        assertEq(DeFiMath.mul(a, b), DeFiMath.mulDiv(a, b, FP_ONE), "mul != mulDiv with d=1e18");
+        assertEq(Math.mul(a, b), Math.mulDiv(a, b, FP_ONE), "mul != mulDiv with d=1e18");
     }
 
     /// mulDiv result equals a·b/d when no overflow possible (fast path) — exact match
@@ -259,21 +259,21 @@ contract MathPropertyTest is Test {
         a = bound(a, 0, 1e30);
         b = bound(b, 0, 1e30);
         d = bound(d, 1, 1e30);
-        assertEq(DeFiMath.mulDiv(a, b, d), (a * b) / d, "mulDiv fast-path != a*b/d");
+        assertEq(Math.mulDiv(a, b, d), (a * b) / d, "mulDiv fast-path != a*b/d");
     }
 
     /// min(a, b) + max(a, b) == a + b — exact inverse of one another.
     function test_ID_minMaxSumIsSum(uint256 a, uint256 b) public pure {
         a = bound(a, 0, type(uint256).max / 2);
         b = bound(b, 0, type(uint256).max / 2);
-        assertEq(DeFiMath.min(a, b) + DeFiMath.max(a, b), a + b, "min + max != a + b");
+        assertEq(Math.min(a, b) + Math.max(a, b), a + b, "min + max != a + b");
     }
 
     /// avg is exact for sums that fit: (a + b) / 2 when a + b doesn't overflow.
     function test_ID_avgExactWhenNoOverflow(uint256 a, uint256 b) public pure {
         a = bound(a, 0, type(uint256).max / 2);
         b = bound(b, 0, type(uint256).max / 2);
-        assertEq(DeFiMath.avg(a, b), (a + b) / 2, "avg != (a+b)/2 in safe range");
+        assertEq(Math.avg(a, b), (a + b) / 2, "avg != (a+b)/2 in safe range");
     }
 
     // ====================================================================
@@ -283,7 +283,7 @@ contract MathPropertyTest is Test {
     /// Φ(x) ∈ [0, 1e18] for any int256 input — CDF always in [0, 1].
     function test_BNDS_stdNormCDFInZeroOne(int256 x) public pure {
         x = bound(x, type(int256).min, type(int256).max);
-        uint256 phi = DeFiMath.stdNormCDF(x);
+        uint256 phi = Math.stdNormCDF(x);
         assertLe(phi, FP_ONE, "Phi(x) > 1");
         // phi is uint256 → already ≥ 0
     }
@@ -291,7 +291,7 @@ contract MathPropertyTest is Test {
     /// erf(x) ∈ [-1e18, 1e18] for any int256 input.
     function test_BNDS_erfInRange(int256 x) public pure {
         x = bound(x, type(int256).min, type(int256).max);
-        int256 e = DeFiMath.erf(x);
+        int256 e = Math.erf(x);
         assertLe(e, FP_ONE_INT, "erf(x) > 1");
         assertGe(e, -FP_ONE_INT, "erf(x) < -1");
     }
@@ -305,7 +305,7 @@ contract MathPropertyTest is Test {
     function test_BNDS_powPositiveOnPositive(uint256 x, int256 a) public pure {
         x = bound(x, 0.1e18, 10e18);
         a = bound(a, -50e18, 50e18);
-        uint256 r = DeFiMath.pow(x, a);
+        uint256 r = Math.pow(x, a);
         // For x > 0 the result is always non-negative; underflow → 0 is allowed.
         // The property is just that pow doesn't return some impossible value.
         if (r != 0) assertGt(r, 0, "pow result is 0 unexpectedly");
@@ -313,22 +313,22 @@ contract MathPropertyTest is Test {
 
     /// min ≤ max (precondition holds for any input pair).
     function test_BNDS_minLessThanOrEqualMax(uint256 a, uint256 b) public pure {
-        assertLe(DeFiMath.min(a, b), DeFiMath.max(a, b), "min > max");
+        assertLe(Math.min(a, b), Math.max(a, b), "min > max");
     }
 
     /// clamp(x, lo, hi) lands inside [lo, hi] when lo ≤ hi.
     function test_BNDS_clampInRange(uint256 x, uint256 lo, uint256 hi) public pure {
         if (lo > hi) (lo, hi) = (hi, lo);
-        uint256 c = DeFiMath.clamp(x, lo, hi);
+        uint256 c = Math.clamp(x, lo, hi);
         assertGe(c, lo, "clamp result below lo");
         assertLe(c, hi, "clamp result above hi");
     }
 
     /// avg(a, b) lies in [min(a,b), max(a,b)] and never overflows.
     function test_BNDS_avgInRange(uint256 a, uint256 b) public pure {
-        uint256 av = DeFiMath.avg(a, b);
-        assertGe(av, DeFiMath.min(a, b), "avg below min");
-        assertLe(av, DeFiMath.max(a, b), "avg above max");
+        uint256 av = Math.avg(a, b);
+        assertGe(av, Math.min(a, b), "avg below min");
+        assertLe(av, Math.max(a, b), "avg above max");
     }
 
     // ====================================================================
@@ -338,16 +338,16 @@ contract MathPropertyTest is Test {
     /// Φ(x) + Φ(-x) == 1 (standard-normal CDF reflection symmetry).
     function test_SYM_stdNormCDF(int256 x) public pure {
         x = bound(x, -16.447e18, 16.447e18);
-        uint256 phiPos = DeFiMath.stdNormCDF(x);
-        uint256 phiNeg = DeFiMath.stdNormCDF(-x);
+        uint256 phiPos = Math.stdNormCDF(x);
+        uint256 phiNeg = Math.stdNormCDF(-x);
         assertApproxEqAbs(phiPos + phiNeg, FP_ONE, 100, "Phi(x) + Phi(-x) != 1");
     }
 
     /// erf(-x) == -erf(x) (erf is an odd function).
     function test_SYM_erfIsOdd(int256 x) public pure {
         x = bound(x, -11.63e18, 11.63e18);
-        int256 erfPos = DeFiMath.erf(x);
-        int256 erfNeg = DeFiMath.erf(-x);
+        int256 erfPos = Math.erf(x);
+        int256 erfNeg = Math.erf(-x);
         assertApproxEqAbs(erfPos + erfNeg, int256(0), 100, "erf(-x) != -erf(x)");
     }
 
@@ -355,6 +355,6 @@ contract MathPropertyTest is Test {
     /// `abs(int256.min)` returns 2^255 unchecked by design (see NatSpec).
     function test_SYM_abs(int256 x) public pure {
         vm.assume(x != type(int256).min);
-        assertEq(DeFiMath.abs(x), DeFiMath.abs(-x), "abs(x) != abs(-x)");
+        assertEq(Math.abs(x), Math.abs(-x), "abs(x) != abs(-x)");
     }
 }

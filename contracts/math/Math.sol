@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.31;
 
-/// @title DeFiMath: High-precision Math Library for Solidity
+/// @title Math: High-precision Math Library for Solidity
 /// @author DeFiMath (https://defimath.com)
 /// @notice Provides optimized implementations of mathematical functions such as exp, ln, sqrt, erf, and standard normal CDF.
 /// @dev All functions use fixed-point arithmetic with 18 decimals (1e18) and are optimized for gas efficiency.
-library DeFiMath {
+library Math {
 
     // limits
     /// @notice Positive-input ceiling for exp — reverts at or above this.

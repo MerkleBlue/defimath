@@ -3,13 +3,13 @@ pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
 import {DeFiMathBinary} from "../../contracts/derivatives/Binary.sol";
-import {DeFiMath} from "../../contracts/math/Math.sol";
+import {Math} from "../../contracts/math/Math.sol";
 
 /// @notice Property-based fuzz tests for DeFiMathBinary. Validates the binary-options
 ///         identities (binary put-call parity, Greek sum-to-zero), monotonicity in
 ///         spot and strike, and no-arbitrage bounds across the input domain.
 ///
-/// @dev Tests are grouped into the same five categories as the Math/Options suites.
+/// @dev Tests are grouped into the same five categories as the Math/Black-Scholes suites.
 ///      Filter by category prefix:
 ///          forge test --match-test test_MONO_   (monotonicity)
 ///          forge test --match-test test_ID_     (known identities)
@@ -38,7 +38,7 @@ contract BinaryPropertyTest is Test {
     /// Proportional slack absorbed in monotonicity asserts at the FP-precision floor.
     /// Binary prices are bounded in [0, 1] (in FP wei: [0, 1e18]) so ≤ 1e18 max, but
     /// dust-OTM/ITM prices can be ~1e8 wei. Hybrid slack scales appropriately. The 1e7
-    /// absolute floor (vs Options' previous 1e6) accommodates the same dust-price
+    /// absolute floor (vs Black-Scholes' previous 1e6) accommodates the same dust-price
     /// rounding corner — keeps the two suites in lockstep.
     function _slack(uint256 priceMagnitude) private pure returns (uint256) {
         return priceMagnitude / 1e10 + 1e7;
@@ -129,7 +129,7 @@ contract BinaryPropertyTest is Test {
         uint256 bp = DeFiMathBinary.binaryPutPrice(spot, strike, t, vol, rate);
         // e^(-r·T) in FP18
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
-        uint256 discount = FP_ONE * FP_ONE / DeFiMath.expPositive(uint256(rate) * timeYear / FP_ONE);
+        uint256 discount = FP_ONE * FP_ONE / Math.expPositive(uint256(rate) * timeYear / FP_ONE);
         assertApproxEqRel(bc + bp, discount, REL_1e_10, "binary parity violated: BC + BP != e^(-rT)");
     }
 
@@ -147,7 +147,7 @@ contract BinaryPropertyTest is Test {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
         (int128 thC, int128 thP) = DeFiMathBinary.binaryTheta(spot, strike, t, vol, rate);
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
-        uint256 discount = FP_ONE * FP_ONE / DeFiMath.expPositive(uint256(rate) * timeYear / FP_ONE);
+        uint256 discount = FP_ONE * FP_ONE / Math.expPositive(uint256(rate) * timeYear / FP_ONE);
         // expected = rate · e^(-rT) / 365 (per-day)
         int256 expected = int256(uint256(rate) * discount / FP_ONE) / 365;
         int256 actual = int256(thC) + int256(thP);

@@ -64,7 +64,7 @@ library DeFiMathStats {
             if (MAX_VALUE <= a) revert ValueUpperBoundError();
             if (MAX_VALUE <= b) revert ValueUpperBoundError();
 
-            result = DeFiMath.sqrt(a * b / 1e18);
+            result = Math.sqrt(a * b / 1e18);
         }
     }
 
@@ -145,7 +145,7 @@ library DeFiMathStats {
             }
 
             // variance_1e36 / 1e18 = variance in 1e18 base; sqrt brings it to stdDev in 1e18 base
-            result = DeFiMath.sqrt(sumOfSquares / ((n - 1) * 1e18));
+            result = Math.sqrt(sumOfSquares / ((n - 1) * 1e18));
         }
     }
 
@@ -166,7 +166,7 @@ library DeFiMathStats {
             // annualize: σ_year = σ_period · sqrt(SECONDS_IN_YEAR / intervalSec)
             // factor1e18 in 1e18 base supports fractional annualization (intervalSec > 1 year)
             uint256 factor1e18 = SECONDS_IN_YEAR * 1e18 / uint256(intervalSec);
-            uint256 sqrtFactor = DeFiMath.sqrt(factor1e18);
+            uint256 sqrtFactor = Math.sqrt(factor1e18);
             annualizedVol = periodStdDev * sqrtFactor / 1e18;
         }
     }
@@ -190,7 +190,7 @@ library DeFiMathStats {
 
             // factor1e18 = periods-per-year (in 1e18 base) for fractional support
             uint256 factor1e18 = SECONDS_IN_YEAR * 1e18 / uint256(intervalSec);
-            uint256 sqrtFactor = DeFiMath.sqrt(factor1e18);
+            uint256 sqrtFactor = Math.sqrt(factor1e18);
 
             // annualize mean (signed): mean_annual = mean_period × factor
             int256 meanAnnual = periodMean * int256(factor1e18) / 1e18;
@@ -308,7 +308,7 @@ library DeFiMathStats {
             for (uint256 i = 0; i <= k; i++) {
                 if (prices[i + 1] == 0) revert PriceLowerBoundError();
                 if (MAX_VALUE <= prices[i + 1]) revert ValueUpperBoundError();
-                buf[i] = DeFiMath.ln(uint256(prices[i + 1]) * 1e18 / uint256(prices[i]));
+                buf[i] = Math.ln(uint256(prices[i + 1]) * 1e18 / uint256(prices[i]));
             }
 
             // insertion-sort the seed (one-time cost O(k²))
@@ -327,7 +327,7 @@ library DeFiMathStats {
             for (uint256 i = k + 1; i < nReturns; i++) {
                 if (prices[i + 1] == 0) revert PriceLowerBoundError();
                 if (MAX_VALUE <= prices[i + 1]) revert ValueUpperBoundError();
-                int256 candidate = DeFiMath.ln(uint256(prices[i + 1]) * 1e18 / uint256(prices[i]));
+                int256 candidate = Math.ln(uint256(prices[i + 1]) * 1e18 / uint256(prices[i]));
                 if (candidate < buf[k]) {
                     // insert into sorted buf, displacing buf[k]
                     uint256 j = k;
@@ -369,7 +369,7 @@ library DeFiMathStats {
                 if (MAX_VALUE <= prices[i]) revert ValueUpperBoundError();
 
                 // log return r_i = ln(p_i / p_{i-1}), signed (negative on price drop)
-                int256 r = DeFiMath.ln(uint256(prices[i]) * 1e18 / uint256(prices[i - 1]));
+                int256 r = Math.ln(uint256(prices[i]) * 1e18 / uint256(prices[i - 1]));
                 sumReturns += r;
                 sumSquaredReturns += uint256(r * r); // r² is always non-negative
             }
@@ -386,7 +386,7 @@ library DeFiMathStats {
                 : 0;
 
             // period stddev = sqrt(variance_1e18) where variance_1e18 = varianceTimes1e36 / 1e18
-            periodStdDev = DeFiMath.sqrt(varianceTimes1e36 / 1e18);
+            periodStdDev = Math.sqrt(varianceTimes1e36 / 1e18);
         }
     }
 }

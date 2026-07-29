@@ -3,11 +3,11 @@ pragma solidity ^0.8.31;
 
 import "../math/Math.sol";
 
-/// @title DeFiMathOptions: Options Pricing and Greeks Library for Solidity
+/// @title DeFiMathBlackScholes: Black-Scholes Pricing and Greeks Library for Solidity
 /// @author DeFiMath (https://defimath.com)
 /// @notice Computes Black-Scholes option prices and Greeks (Delta, Gamma, Theta, Vega)
 /// @dev All values are in 18-decimal fixed-point format unless otherwise stated
-library DeFiMathOptions {
+library DeFiMathBlackScholes {
 
     // constants
     /// @notice Number of seconds in a year (365 days)
@@ -90,16 +90,16 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate); // todo try with exp, could be cheaper
+            uint256 discountedStrike = uint256(strike) * 1e18 / Math.expPositive(scaledRate); // todo try with exp, could be cheaper
 
-            uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(d1);              // spot * N(d1)
-            uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(d2);         // strike * N(d2)
+            uint256 spotNd1 = uint256(spot) * Math.stdNormCDF(d1);              // spot * N(d1)
+            uint256 strikeNd2 = discountedStrike * Math.stdNormCDF(d2);         // strike * N(d2)
 
             price = spotNd1 >= strikeNd2 ? (spotNd1 - strikeNd2) / 1e18 : 0;
         }
@@ -134,16 +134,16 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
+            uint256 discountedStrike = uint256(strike) * 1e18 / Math.expPositive(scaledRate);
 
-            uint256 spotNd1 = uint256(spot) * DeFiMath.stdNormCDF(-d1);             // spot * N(-d1)
-            uint256 strikeNd2 = discountedStrike * DeFiMath.stdNormCDF(-d2);        // strike * N(-d2)
+            uint256 spotNd1 = uint256(spot) * Math.stdNormCDF(-d1);             // spot * N(-d1)
+            uint256 strikeNd2 = discountedStrike * Math.stdNormCDF(-d2);        // strike * N(-d2)
 
             price = strikeNd2 >= spotNd1 ? (strikeNd2 - spotNd1) / 1e18 : 0;
         }
@@ -182,12 +182,12 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
 
-            deltaCall = int128(int256(DeFiMath.stdNormCDF(d1)));
+            deltaCall = int128(int256(Math.stdNormCDF(d1)));
             deltaPut = deltaCall - 1e18;
         }
     }
@@ -221,11 +221,11 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
-            uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
+            int256 d1 = (Math.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            uint256 phi = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
             gammaOut = phi * 1e18 / (spot * scaledVol / 1e18);                                       // N'(d1) / (spot * scaledVol)
         }
     }
@@ -260,23 +260,23 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;                   // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;                   // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
             uint256 _spot = uint256(spot);
             uint256 _rate = rate;
 
-            int256 d1 = (DeFiMath.ln(uint256(_spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(_spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(scaledRate);
+            uint256 discountedStrike = uint256(strike) * 1e18 / Math.expPositive(scaledRate);
 
-            uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
+            uint256 phi = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
 
             int256 timeDecay = int256(_spot * phi * scaledVol / (2e18 * timeYear));             // spot * N'(d1) * sigma / (2 * sqrt(T))
 
-            int256 carryCall = int256(_rate * discountedStrike * DeFiMath.stdNormCDF(d2) / 1e36); 
+            int256 carryCall = int256(_rate * discountedStrike * Math.stdNormCDF(d2) / 1e36); 
 
-            int256 carryPut = int256(_rate * discountedStrike * DeFiMath.stdNormCDF(-d2) / 1e36);
+            int256 carryPut = int256(_rate * discountedStrike * Math.stdNormCDF(-d2) / 1e36);
 
             return (int128(-timeDecay - carryCall) / 365, int128(-timeDecay + carryPut) / 365);
         }
@@ -311,13 +311,13 @@ library DeFiMathOptions {
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
-            uint256 sqrtTimeYear = DeFiMath.sqrtTime(timeYear);
-            uint256 scaledVol = volatility * DeFiMath.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
+            uint256 sqrtTimeYear = Math.sqrtTime(timeYear);
+            uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
 
-            int256 d1 = (DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(spot) * 1e18 / uint256(strike)) + int256(scaledRate + (scaledVol * scaledVol / 2e18))) * 1e18 / int256(scaledVol);
 
-            uint256 phi = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
+            uint256 phi = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
             vegaOut = spot * sqrtTimeYear * phi / 100e36;                           // N'(d1) * spot * sqrt(T) / 100
         }
     }
@@ -379,11 +379,11 @@ library DeFiMathOptions {
             s.isCall = isCall;
             {
                 uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;
-                s.sqrtTimeYear = DeFiMath.sqrtTime(timeYear);
+                s.sqrtTimeYear = Math.sqrtTime(timeYear);
                 s.scaledRate = uint256(rate) * timeYear / 1e18;
             }
-            s.discountedStrike = uint256(strike) * 1e18 / DeFiMath.expPositive(s.scaledRate);
-            s.lnSK = DeFiMath.ln(uint256(spot) * 1e18 / uint256(strike));
+            s.discountedStrike = uint256(strike) * 1e18 / Math.expPositive(s.scaledRate);
+            s.lnSK = Math.ln(uint256(spot) * 1e18 / uint256(strike));
             s.vegaBase = uint256(spot) * s.sqrtTimeYear / 1e18;
 
             if (isCall) {
@@ -472,12 +472,12 @@ library DeFiMathOptions {
             int256 d2 = d1 - int256(scaledVol);
 
             // vega per unit vol = S · sqrt(T) · φ(d1) = vegaBase · φ(d1)
-            uint256 phiD1 = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
+            uint256 phiD1 = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
             vegaOut = s.vegaBase * phiD1 / 1e18;
 
             // price
-            uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(d1);
-            uint256 strikeNd2 = s.discountedStrike * DeFiMath.stdNormCDF(d2);
+            uint256 spotNd1 = s.spot * Math.stdNormCDF(d1);
+            uint256 strikeNd2 = s.discountedStrike * Math.stdNormCDF(d2);
             price = spotNd1 > strikeNd2 ? (spotNd1 - strikeNd2) / 1e18 : 0;
         }
     }
@@ -490,12 +490,12 @@ library DeFiMathOptions {
             int256 d2 = d1 - int256(scaledVol);
 
             // vega per unit vol = S · sqrt(T) · φ(d1) = vegaBase · φ(d1)
-            uint256 phiD1 = DeFiMath.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
+            uint256 phiD1 = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;
             vegaOut = s.vegaBase * phiD1 / 1e18;
 
             // price
-            uint256 spotNd1 = s.spot * DeFiMath.stdNormCDF(-d1);
-            uint256 strikeNd2 = s.discountedStrike * DeFiMath.stdNormCDF(-d2);
+            uint256 spotNd1 = s.spot * Math.stdNormCDF(-d1);
+            uint256 strikeNd2 = s.discountedStrike * Math.stdNormCDF(-d2);
             price = strikeNd2 > spotNd1 ? (strikeNd2 - spotNd1) / 1e18 : 0;
         }
     }

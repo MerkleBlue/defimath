@@ -59,7 +59,7 @@ export const AVG_GAS_CLAMP            = 78;
 export const AVG_GAS_AVG              = 21;
 export const AVG_GAS_SQRT_TIME        = 163;
 
-// ── Options (vanilla, on a $1000 underlying) ─────────────────────────────────────────────
+// ── Black-Scholes (vanilla, on a $1000 underlying) ─────────────────────────────────────────────
 export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // in $, for call/put price
 export const MAX_ABS_ERROR_DELTA      = 1.2e-13;
 export const MAX_ABS_ERROR_GAMMA      = 3.2e-15;

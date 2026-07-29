@@ -3,7 +3,7 @@ pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
 import {DeFiMathFutures} from "../../contracts/derivatives/Futures.sol";
-import {DeFiMath} from "../../contracts/math/Math.sol";
+import {Math} from "../../contracts/math/Math.sol";
 
 /// @notice Property-based fuzz tests for DeFiMathFutures. Validates linearity in spot,
 ///         monotonicity in spot/time/rate, identity cases (zero-time, zero-rate),
@@ -112,13 +112,13 @@ contract FuturesPropertyTest is Test {
         assertApproxEqRel(f2, 2 * f1, REL_1e_10, "F(2S) != 2 * F(S)");
     }
 
-    /// F(S, t, r) ≈ S · e^(r·t) — verified against DeFiMath.exp directly.
+    /// F(S, t, r) ≈ S · e^(r·t) — verified against Math.exp directly.
     function test_ID_matchesSpotTimesExp(uint128 spot, uint32 t, uint64 rate) public pure {
         (spot, t, rate) = _boundInputs(spot, t, rate);
         uint256 actual = DeFiMathFutures.futurePrice(spot, t, rate);
         uint256 timeYear = uint256(t) * FP_ONE / SECONDS_IN_YEAR;
         uint256 scaledRate = uint256(rate) * timeYear / FP_ONE;
-        uint256 expected = uint256(spot) * DeFiMath.expPositive(scaledRate) / FP_ONE;
+        uint256 expected = uint256(spot) * Math.expPositive(scaledRate) / FP_ONE;
         assertEq(actual, expected, "F != S * e^(r*t) computed directly");
     }
 

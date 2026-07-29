@@ -54,7 +54,7 @@ library DeFiMathFutures {
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                   // time-adjusted rate
-            price = uint256(spot) * DeFiMath.expPositive(scaledRate) / 1e18;
+            price = uint256(spot) * Math.expPositive(scaledRate) / 1e18;
         }
     }
 }

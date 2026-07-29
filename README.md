@@ -57,7 +57,7 @@ Then add to `remappings.txt`:
 defimath-lib/=lib/defimath-lib/
 ```
 
-The `defimath-lib=` install alias plus this remapping make the same `import "defimath-lib/contracts/derivatives/Options.sol"` line work under both Foundry and Hardhat. Without the remapping, Foundry auto-detects `contracts/` as the src directory and produces `defimath-lib/=lib/defimath-lib/contracts/`, which collides with the leading `contracts/` segment in the import path.
+The `defimath-lib=` install alias plus this remapping make the same `import "defimath-lib/contracts/derivatives/BlackScholes.sol"` line work under both Foundry and Hardhat. Without the remapping, Foundry auto-detects `contracts/` as the src directory and produces `defimath-lib/=lib/defimath-lib/contracts/`, which collides with the leading `contracts/` segment in the import path.
 
 Either way, your project must target **Solidity `^0.8.31`** and **`evmVersion: "osaka"`** (Fusaka). The library uses the `clz` Yul builtin (added in Solidity 0.8.31) which emits the `CLZ` opcode introduced in Osaka — both the compiler version and EVM target are hard requirements.
 
@@ -67,15 +67,15 @@ Either way, your project must target **Solidity `^0.8.31`** and **`evmVersion: "
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.31;
 
-import "defimath-lib/contracts/derivatives/Options.sol";
+import "defimath-lib/contracts/derivatives/BlackScholes.sol";
 
 contract OptionsExchange {
     function quote(
         uint128 spot, uint128 strike, uint32 timeToExp,
         uint64 vol, uint64 rate
     ) external pure returns (uint256 callPx, uint256 putPx) {
-        callPx = DeFiMathOptions.callOptionPrice(spot, strike, timeToExp, vol, rate);
-        putPx  = DeFiMathOptions.putOptionPrice(spot, strike, timeToExp, vol, rate);
+        callPx = DeFiMathBlackScholes.callOptionPrice(spot, strike, timeToExp, vol, rate);
+        putPx  = DeFiMathBlackScholes.putOptionPrice(spot, strike, timeToExp, vol, rate);
     }
 }
 ```
@@ -84,7 +84,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 ## Functions
 
-### Math primitives — `DeFiMath` (Math.sol)
+### Math primitives — `Math` (Math.sol)
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
@@ -109,7 +109,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 *Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
-### Derivatives — `DeFiMathOptions`, `DeFiMathBinary`, `DeFiMathFutures`
+### Derivatives — `DeFiMathBlackScholes`, `DeFiMathBinary`, `DeFiMathFutures`
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |

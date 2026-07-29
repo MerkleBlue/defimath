@@ -21,7 +21,7 @@ no_match_path = "contracts/mocks/**"
 # Suppress two noisy lints that don't apply to a precision-tuned math library:
 #  - unsafe-typecast: every int↔uint cast is preceded by an input-bound check
 #    (e.g. MAX_RATE, MAX_VALUE). The linter can't see the proof.
-#  - divide-before-multiply: a few CDF / Greeks sites in Options.sol divide first
+#  - divide-before-multiply: a few CDF / Greeks sites in BlackScholes.sol divide first
 #    on purpose, to keep intermediates from overflowing uint256.
 exclude_lints = ["unsafe-typecast", "divide-before-multiply"]
 

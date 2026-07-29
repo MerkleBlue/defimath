@@ -58,7 +58,7 @@ function assertCbrtAbsolute(actual, expected) {
   assert.ok(absErr.lte(MAX_ABS_ERROR_CBRT), `cbrt off by ${absErr.toExponential(2)} (> ${MAX_ABS_ERROR_CBRT.toExponential(0)})`);
 }
 
-describe("DeFiMath", function () {
+describe("Math", function () {
 
   async function deploy() {
     const MathWrapper = await ethers.getContractFactory("MathWrapper");

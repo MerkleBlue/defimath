@@ -2,10 +2,10 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {DeFiMathOptions} from "../../contracts/derivatives/Options.sol";
-import {DeFiMath} from "../../contracts/math/Math.sol";
+import {DeFiMathBlackScholes} from "../../contracts/derivatives/BlackScholes.sol";
+import {Math} from "../../contracts/math/Math.sol";
 
-/// @notice Property-based fuzz tests for DeFiMathOptions. Validates the Black-Scholes
+/// @notice Property-based fuzz tests for DeFiMathBlackScholes. Validates the Black-Scholes
 ///         pricing identities, Greeks symmetries, and no-arbitrage bounds across the
 ///         operational input domain.
 ///
@@ -26,25 +26,25 @@ import {DeFiMath} from "../../contracts/math/Math.sol";
 /// The Newton-Raphson IV solver reverts (documented behavior) for input combos where it
 /// can't converge — we filter those out at the test boundary rather than over-narrowing
 /// the input domain.
-contract OptionsHarness {
+contract BlackScholesHarness {
     function callIV(uint128 spot, uint128 strike, uint32 t, uint64 rate, uint128 price)
         external pure returns (uint256)
     {
-        return DeFiMathOptions.impliedVolatility(spot, strike, t, rate, price, true);
+        return DeFiMathBlackScholes.impliedVolatility(spot, strike, t, rate, price, true);
     }
     function putIV(uint128 spot, uint128 strike, uint32 t, uint64 rate, uint128 price)
         external pure returns (uint256)
     {
-        return DeFiMathOptions.impliedVolatility(spot, strike, t, rate, price, false);
+        return DeFiMathBlackScholes.impliedVolatility(spot, strike, t, rate, price, false);
     }
 }
 
-contract OptionsPropertyTest is Test {
+contract BlackScholesPropertyTest is Test {
 
-    OptionsHarness private harness;
+    BlackScholesHarness private harness;
 
     function setUp() public {
-        harness = new OptionsHarness();
+        harness = new BlackScholesHarness();
     }
 
 
@@ -120,7 +120,7 @@ contract OptionsPropertyTest is Test {
     /// not a property failure.
     function test_RT_callIVRecoversVol(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public view {
         (spot, strike, t, vol, rate) = _boundIVInputs(spot, strike, t, vol, rate);
-        uint256 price = DeFiMathOptions.callOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = DeFiMathBlackScholes.callOptionPrice(spot, strike, t, vol, rate);
         try harness.callIV(spot, strike, t, rate, uint128(price)) returns (uint256 ivRecovered) {
             assertApproxEqRel(ivRecovered, vol, REL_1e_6 * 100, "IV(callPrice(vol)) != vol");
         } catch {
@@ -132,7 +132,7 @@ contract OptionsPropertyTest is Test {
     /// IV recovers the volatility used to compute a put price.
     function test_RT_putIVRecoversVol(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public view {
         (spot, strike, t, vol, rate) = _boundIVInputs(spot, strike, t, vol, rate);
-        uint256 price = DeFiMathOptions.putOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = DeFiMathBlackScholes.putOptionPrice(spot, strike, t, vol, rate);
         try harness.putIV(spot, strike, t, rate, uint128(price)) returns (uint256 ivRecovered) {
             assertApproxEqRel(ivRecovered, vol, REL_1e_6 * 100, "IV(putPrice(vol)) != vol");
         } catch {
@@ -155,8 +155,8 @@ contract OptionsPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));   // ≤ 200% vol
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 cLo = DeFiMathOptions.callOptionPrice(spotLo, strike, t, vol, rate);
-        uint256 cHi = DeFiMathOptions.callOptionPrice(spotHi, strike, t, vol, rate);
+        uint256 cLo = DeFiMathBlackScholes.callOptionPrice(spotLo, strike, t, vol, rate);
+        uint256 cHi = DeFiMathBlackScholes.callOptionPrice(spotHi, strike, t, vol, rate);
         assertLe(cLo, cHi + _slack(cHi), "call not monotone increasing in spot");
     }
 
@@ -168,8 +168,8 @@ contract OptionsPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 pLo = DeFiMathOptions.putOptionPrice(spotLo, strike, t, vol, rate);
-        uint256 pHi = DeFiMathOptions.putOptionPrice(spotHi, strike, t, vol, rate);
+        uint256 pLo = DeFiMathBlackScholes.putOptionPrice(spotLo, strike, t, vol, rate);
+        uint256 pHi = DeFiMathBlackScholes.putOptionPrice(spotHi, strike, t, vol, rate);
         assertGe(pLo + _slack(pLo), pHi, "put not monotone decreasing in spot");
     }
 
@@ -183,8 +183,8 @@ contract OptionsPropertyTest is Test {
         volLo = uint64(bound(volLo, VOL_TYPICAL_LO, uint64(VOL_TYPICAL_HI - 0.01e18)));
         volHi = uint64(bound(volHi, volLo + uint64(0.01e18), VOL_TYPICAL_HI));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 cLo = DeFiMathOptions.callOptionPrice(spot, strike, t, volLo, rate);
-        uint256 cHi = DeFiMathOptions.callOptionPrice(spot, strike, t, volHi, rate);
+        uint256 cLo = DeFiMathBlackScholes.callOptionPrice(spot, strike, t, volLo, rate);
+        uint256 cHi = DeFiMathBlackScholes.callOptionPrice(spot, strike, t, volHi, rate);
         assertLe(cLo, cHi + _slack(cHi), "call not monotone increasing in vol");
     }
 
@@ -196,8 +196,8 @@ contract OptionsPropertyTest is Test {
         volLo = uint64(bound(volLo, VOL_TYPICAL_LO, uint64(VOL_TYPICAL_HI - 0.01e18)));
         volHi = uint64(bound(volHi, volLo + uint64(0.01e18), VOL_TYPICAL_HI));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 pLo = DeFiMathOptions.putOptionPrice(spot, strike, t, volLo, rate);
-        uint256 pHi = DeFiMathOptions.putOptionPrice(spot, strike, t, volHi, rate);
+        uint256 pLo = DeFiMathBlackScholes.putOptionPrice(spot, strike, t, volLo, rate);
+        uint256 pHi = DeFiMathBlackScholes.putOptionPrice(spot, strike, t, volHi, rate);
         assertLe(pLo, pHi + _slack(pHi), "put not monotone increasing in vol");
     }
 
@@ -210,11 +210,11 @@ contract OptionsPropertyTest is Test {
     /// of any model — must hold to high precision regardless of volatility.
     function test_ID_putCallParity(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 callPx = DeFiMathOptions.callOptionPrice(spot, strike, t, vol, rate);
-        uint256 putPx  = DeFiMathOptions.putOptionPrice(spot, strike, t, vol, rate);
+        uint256 callPx = DeFiMathBlackScholes.callOptionPrice(spot, strike, t, vol, rate);
+        uint256 putPx  = DeFiMathBlackScholes.putOptionPrice(spot, strike, t, vol, rate);
         // S − K·e^(−rT)
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
-        uint256 discount = DeFiMath.expPositive(uint256(rate) * timeYear / FP_ONE);  // e^(rT)
+        uint256 discount = Math.expPositive(uint256(rate) * timeYear / FP_ONE);  // e^(rT)
         // discounted strike: K / discount  (i.e., K·e^(-rT))
         int256 lhs = int256(callPx) - int256(putPx);
         int256 rhs = int256(uint256(spot)) - int256(uint256(strike) * FP_ONE / discount);
@@ -226,7 +226,7 @@ contract OptionsPropertyTest is Test {
     /// Delta call − Delta put == 1 (no-dividend identity).
     function test_ID_deltaParity(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 dCall, int128 dPut) = DeFiMathOptions.delta(spot, strike, t, vol, rate);
+        (int128 dCall, int128 dPut) = DeFiMathBlackScholes.delta(spot, strike, t, vol, rate);
         // dCall - dPut should equal 1e18 exactly (the contract enforces dPut = dCall - 1e18).
         assertEq(int256(dCall) - int256(dPut), int256(FP_ONE), "delta_call - delta_put != 1");
     }
@@ -236,10 +236,10 @@ contract OptionsPropertyTest is Test {
     /// differentiating with respect to time.
     function test_ID_thetaParity(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 thCall, int128 thPut) = DeFiMathOptions.theta(spot, strike, t, vol, rate);
+        (int128 thCall, int128 thPut) = DeFiMathBlackScholes.theta(spot, strike, t, vol, rate);
         // d(C-P)/dt = d(S - K·e^(-rT))/dt = -r·K·e^(-rT) → divide by 365 for per-day units
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
-        uint256 discount = DeFiMath.expPositive(uint256(rate) * timeYear / FP_ONE);
+        uint256 discount = Math.expPositive(uint256(rate) * timeYear / FP_ONE);
         // expected = -rate · (strike / e^(rT)) / 365 [all in FP wei]
         int256 expected = -int256(uint256(rate) * (uint256(strike) * FP_ONE / discount) / FP_ONE) / 365;
         int256 actual = int256(thCall) - int256(thPut);
@@ -255,16 +255,16 @@ contract OptionsPropertyTest is Test {
     /// 0 ≤ call price ≤ spot — fundamental no-arbitrage upper bound (call payoff capped).
     function test_BNDS_callPriceInSpotRange(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 price = DeFiMathOptions.callOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = DeFiMathBlackScholes.callOptionPrice(spot, strike, t, vol, rate);
         assertLe(price, spot, "call > spot (arb violation)");
     }
 
     /// 0 ≤ put price ≤ K·e^(−rT) — discounted strike ceiling (put payoff capped at strike).
     function test_BNDS_putPriceInDiscountedStrikeRange(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 price = DeFiMathOptions.putOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = DeFiMathBlackScholes.putOptionPrice(spot, strike, t, vol, rate);
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
-        uint256 discount = DeFiMath.expPositive(uint256(rate) * timeYear / FP_ONE);
+        uint256 discount = Math.expPositive(uint256(rate) * timeYear / FP_ONE);
         uint256 discountedK = uint256(strike) * FP_ONE / discount;
         // Allow 1 wei slack for rounding at extreme inputs.
         assertLe(price, discountedK + 1, "put > discounted strike (arb violation)");
@@ -273,7 +273,7 @@ contract OptionsPropertyTest is Test {
     /// Delta call ∈ [0, 1] (a call's price-sensitivity to spot is bounded).
     function test_BNDS_deltaCallInZeroOne(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 dCall, ) = DeFiMathOptions.delta(spot, strike, t, vol, rate);
+        (int128 dCall, ) = DeFiMathBlackScholes.delta(spot, strike, t, vol, rate);
         assertGe(int256(dCall), int256(0), "delta_call < 0");
         assertLe(int256(dCall), int256(FP_ONE), "delta_call > 1");
     }
@@ -281,7 +281,7 @@ contract OptionsPropertyTest is Test {
     /// Delta put ∈ [−1, 0].
     function test_BNDS_deltaPutInMinusOneZero(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (, int128 dPut) = DeFiMathOptions.delta(spot, strike, t, vol, rate);
+        (, int128 dPut) = DeFiMathBlackScholes.delta(spot, strike, t, vol, rate);
         assertGe(int256(dPut), -int256(FP_ONE), "delta_put < -1");
         assertLe(int256(dPut), int256(0), "delta_put > 0");
     }
@@ -289,7 +289,7 @@ contract OptionsPropertyTest is Test {
     /// Gamma ≥ 0 (convexity of the option price wrt spot).
     function test_BNDS_gammaNonNegative(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 g = DeFiMathOptions.gamma(spot, strike, t, vol, rate);
+        uint256 g = DeFiMathBlackScholes.gamma(spot, strike, t, vol, rate);
         // uint256 is non-negative by type; this assertion is structural — confirms
         // the function returns the unsigned representation without underflow shenanigans.
         assertGe(g, 0, "gamma encoded negative (impossible for uint256)");
@@ -298,7 +298,7 @@ contract OptionsPropertyTest is Test {
     /// Vega ≥ 0 (call/put price is non-decreasing in volatility).
     function test_BNDS_vegaNonNegative(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 v = DeFiMathOptions.vega(spot, strike, t, vol, rate);
+        uint256 v = DeFiMathBlackScholes.vega(spot, strike, t, vol, rate);
         assertGe(v, 0, "vega encoded negative");
     }
 }

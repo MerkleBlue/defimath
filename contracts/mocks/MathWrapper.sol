@@ -6,83 +6,83 @@ import "../math/Math.sol";
 contract MathWrapper {
 
     function exp(int256 x) external pure returns (uint256) {
-        return DeFiMath.exp(x);
+        return Math.exp(x);
     }
 
     function ln(uint256 x) external pure returns (int256) {
-        return DeFiMath.ln(x);
+        return Math.ln(x);
     }
 
     function log2(uint256 x) external pure returns (int256) {
-        return DeFiMath.log2(x);
+        return Math.log2(x);
     }
 
     function log10(uint256 x) external pure returns (int256) {
-        return DeFiMath.log10(x);
+        return Math.log10(x);
     }
 
     function pow(uint256 x, int256 a) external pure returns (uint256) {
-        return DeFiMath.pow(x, a);
+        return Math.pow(x, a);
     }
 
     function sqrtTime(uint256 x) external pure returns (uint256) {
-        return DeFiMath.sqrtTime(x);
+        return Math.sqrtTime(x);
     }
 
     function sqrt(uint256 x) external pure returns (uint256) {
-        return DeFiMath.sqrt(x);
+        return Math.sqrt(x);
     }
 
     function cbrt(uint256 x) external pure returns (uint256) {
-        return DeFiMath.cbrt(x);
+        return Math.cbrt(x);
     }
 
     function mulDiv(uint256 a, uint256 b, uint256 d) external pure returns (uint256) {
-        return DeFiMath.mulDiv(a, b, d);
+        return Math.mulDiv(a, b, d);
     }
 
     function mul(uint256 a, uint256 b) external pure returns (uint256) {
-        return DeFiMath.mul(a, b);
+        return Math.mul(a, b);
     }
 
     function abs(int256 x) external pure returns (uint256) {
-        return DeFiMath.abs(x);
+        return Math.abs(x);
     }
 
     function min(uint256 x, uint256 y) external pure returns (uint256) {
-        return DeFiMath.min(x, y);
+        return Math.min(x, y);
     }
 
     function max(uint256 x, uint256 y) external pure returns (uint256) {
-        return DeFiMath.max(x, y);
+        return Math.max(x, y);
     }
 
     function clamp(uint256 x, uint256 lo, uint256 hi) external pure returns (uint256) {
-        return DeFiMath.clamp(x, lo, hi);
+        return Math.clamp(x, lo, hi);
     }
 
     function avg(uint256 x, uint256 y) external pure returns (uint256) {
-        return DeFiMath.avg(x, y);
+        return Math.avg(x, y);
     }
 
     function stdNormCDF(int256 x) external pure returns (uint256) {
-        return DeFiMath.stdNormCDF(x);
+        return Math.stdNormCDF(x);
     }
 
     function erf(int256 x) external pure returns (int256) {
-        return DeFiMath.erf(x);
+        return Math.erf(x);
     }
 
     function expPositive(uint256 x) external pure returns (uint256) {
-        return DeFiMath.expPositive(x);
+        return Math.expPositive(x);
     }
 
     function expm1(int256 x) external pure returns (int256) {
-        return DeFiMath.expm1(x);
+        return Math.expm1(x);
     }
 
     function log1p(int256 x) external pure returns (int256) {
-        return DeFiMath.log1p(x);
+        return Math.log1p(x);
     }
 
     // measure gas
@@ -94,7 +94,7 @@ contract MathWrapper {
 
         startGas = gasleft();
 
-        result = DeFiMath.exp(x);
+        result = Math.exp(x);
 
         endGas = gasleft();
 
@@ -108,7 +108,7 @@ contract MathWrapper {
 
         startGas = gasleft();
 
-        result = DeFiMath.expPositive(x);
+        result = Math.expPositive(x);
 
         endGas = gasleft();
 
@@ -120,7 +120,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.ln(x);
+        y = Math.ln(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);
@@ -132,7 +132,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.log2(x);
+        y = Math.log2(x);
         endGas = gasleft();
         
         return (y, startGas - endGas);
@@ -143,7 +143,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.log10(x);
+        y = Math.log10(x);
         endGas = gasleft();
 
         return (y, startGas - endGas);
@@ -154,7 +154,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.pow(x, a);
+        y = Math.pow(x, a);
         endGas = gasleft();
 
         return (y, startGas - endGas);
@@ -165,7 +165,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.sqrt(x);
+        y = Math.sqrt(x);
         endGas = gasleft();
 
         return (y, startGas - endGas);
@@ -177,7 +177,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.cbrt(x);
+        y = Math.cbrt(x);
         endGas = gasleft();
 
         return (y, startGas - endGas);
@@ -188,7 +188,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.mulDiv(a, b, d);
+        z = Math.mulDiv(a, b, d);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -199,7 +199,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.mul(a, b);
+        z = Math.mul(a, b);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -210,7 +210,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.abs(x);
+        z = Math.abs(x);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -221,7 +221,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.min(x, y);
+        z = Math.min(x, y);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -232,7 +232,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.max(x, y);
+        z = Math.max(x, y);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -243,7 +243,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.clamp(x, lo, hi);
+        z = Math.clamp(x, lo, hi);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -254,7 +254,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        z = DeFiMath.avg(x, y);
+        z = Math.avg(x, y);
         endGas = gasleft();
 
         return (z, startGas - endGas);
@@ -291,7 +291,7 @@ contract MathWrapper {
         acc = xs[0];
         unchecked {
             for (uint256 i = 1; i < xs.length; i++) {
-                acc = DeFiMath.min(acc, xs[i]);
+                acc = Math.min(acc, xs[i]);
             }
         }
         uint256 endGas = gasleft();
@@ -303,7 +303,7 @@ contract MathWrapper {
         acc = xs[0];
         unchecked {
             for (uint256 i = 1; i < xs.length; i++) {
-                acc = DeFiMath.max(acc, xs[i]);
+                acc = Math.max(acc, xs[i]);
             }
         }
         uint256 endGas = gasleft();
@@ -315,7 +315,7 @@ contract MathWrapper {
         acc = xs[0];
         unchecked {
             for (uint256 i = 1; i < xs.length; i++) {
-                acc = DeFiMath.avg(acc, xs[i]);
+                acc = Math.avg(acc, xs[i]);
             }
         }
         uint256 endGas = gasleft();
@@ -327,7 +327,7 @@ contract MathWrapper {
         uint256 endGas;
 
         startGas = gasleft();
-        y = DeFiMath.sqrtTime(x);
+        y = Math.sqrtTime(x);
         endGas = gasleft();
 
         return (y, startGas - endGas);
@@ -338,7 +338,7 @@ contract MathWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        y = DeFiMath.stdNormCDF(x);
+        y = Math.stdNormCDF(x);
 
         endGas = gasleft();
         
@@ -350,7 +350,7 @@ contract MathWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        y = DeFiMath.erf(x);
+        y = Math.erf(x);
 
         endGas = gasleft();
 
@@ -359,13 +359,13 @@ contract MathWrapper {
 
     function expm1MG(int256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        y = DeFiMath.expm1(x);
+        y = Math.expm1(x);
         return (y, startGas - gasleft());
     }
 
     function log1pMG(int256 x) external view returns (int256 y, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        y = DeFiMath.log1p(x);
+        y = Math.log1p(x);
         return (y, startGas - gasleft());
     }
 }
