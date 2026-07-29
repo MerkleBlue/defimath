@@ -2,9 +2,9 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {DeFiMathRates} from "../../contracts/finance/Rates.sol";
+import {Rates} from "../../contracts/finance/Rates.sol";
 
-/// @notice Property-based fuzz tests for DeFiMathRates. Validates inverse-function
+/// @notice Property-based fuzz tests for Rates. Validates inverse-function
 ///         round-trips (compound/discount, continuous/discrete rate conversions),
 ///         monotonicity in principal/rate, identity cases (zero-time, zero-rate),
 ///         and the bond YTM closed-form round-trip.
@@ -49,9 +49,9 @@ contract RatesPropertyTest is Test {
         principal = uint128(bound(principal, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         rate      = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         t         = uint32(bound(t, 1, TIME_TYPICAL_HI));
-        uint256 fv = DeFiMathRates.compoundInterest(principal, rate, t);
+        uint256 fv = Rates.compoundInterest(principal, rate, t);
         if (fv >= type(uint128).max) return;     // skip if intermediate overflows uint128
-        uint256 back = DeFiMathRates.presentValue(uint128(fv), rate, t);
+        uint256 back = Rates.presentValue(uint128(fv), rate, t);
         assertApproxEqRel(back, principal, REL_1e_10, "PV(CI(P, r, t), r, t) != P");
     }
 
@@ -60,9 +60,9 @@ contract RatesPropertyTest is Test {
         futureValue = uint128(bound(futureValue, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         rate        = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         t           = uint32(bound(t, 1, TIME_TYPICAL_HI));
-        uint256 pv = DeFiMathRates.presentValue(futureValue, rate, t);
+        uint256 pv = Rates.presentValue(futureValue, rate, t);
         if (pv >= type(uint128).max) return;
-        uint256 back = DeFiMathRates.compoundInterest(uint128(pv), rate, t);
+        uint256 back = Rates.compoundInterest(uint128(pv), rate, t);
         assertApproxEqRel(back, futureValue, REL_1e_10, "CI(PV(FV, r, t), r, t) != FV");
     }
 
@@ -70,16 +70,16 @@ contract RatesPropertyTest is Test {
     function test_RT_aprApyInverse(int256 apr) public pure {
         // continuousToDiscrete bounds: |apr| < MAX_RATE (4e18); narrow for round-trip precision.
         apr = bound(apr, int256(-0.5e18), int256(0.5e18));
-        int256 apy = DeFiMathRates.continuousToDiscrete(apr);
-        int256 back = DeFiMathRates.discreteToContinuous(apy);
+        int256 apy = Rates.continuousToDiscrete(apr);
+        int256 back = Rates.discreteToContinuous(apy);
         assertApproxEqAbs(back, apr, 1e9, "d2c(c2d(r)) != r");   // 1e-9 absolute
     }
 
     /// continuousToDiscrete(discreteToContinuous(r)) ≈ r — reverse direction.
     function test_RT_apyAprInverse(int256 apy) public pure {
         apy = bound(apy, int256(-0.5e18), int256(0.5e18));
-        int256 apr = DeFiMathRates.discreteToContinuous(apy);
-        int256 back = DeFiMathRates.continuousToDiscrete(apr);
+        int256 apr = Rates.discreteToContinuous(apy);
+        int256 back = Rates.continuousToDiscrete(apr);
         assertApproxEqAbs(back, apy, 1e9, "c2d(d2c(r)) != r");
     }
 
@@ -93,9 +93,9 @@ contract RatesPropertyTest is Test {
         faceValue = uint128(bound(faceValue, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         price     = uint128(bound(price, uint256(faceValue) / 100, uint256(faceValue) - 1));
         t         = uint32(bound(t, 1 days, TIME_TYPICAL_HI));
-        int256 ytm = DeFiMathRates.yieldToMaturity(price, faceValue, t);
+        int256 ytm = Rates.yieldToMaturity(price, faceValue, t);
         if (ytm < 0 || ytm >= int256(4e18)) return;   // MAX_RATE guard
-        uint256 back = DeFiMathRates.presentValue(faceValue, uint64(uint256(ytm)), t);
+        uint256 back = Rates.presentValue(faceValue, uint64(uint256(ytm)), t);
         assertApproxEqRel(back, price, REL_1e_8, "PV(F, YTM(P, F, t), t) != P");
     }
 
@@ -109,8 +109,8 @@ contract RatesPropertyTest is Test {
         pHi  = uint128(bound(pHi, uint256(pLo) + 1, PRINCIPAL_TYPICAL_HI));
         rate = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         t    = uint32(bound(t, 1, TIME_TYPICAL_HI));
-        uint256 fLo = DeFiMathRates.compoundInterest(pLo, rate, t);
-        uint256 fHi = DeFiMathRates.compoundInterest(pHi, rate, t);
+        uint256 fLo = Rates.compoundInterest(pLo, rate, t);
+        uint256 fHi = Rates.compoundInterest(pHi, rate, t);
         assertLe(fLo, fHi + _slack(fHi), "CI not monotone increasing in principal");
     }
 
@@ -120,8 +120,8 @@ contract RatesPropertyTest is Test {
         fvHi = uint128(bound(fvHi, uint256(fvLo) + 1, PRINCIPAL_TYPICAL_HI));
         rate = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         t    = uint32(bound(t, 1, TIME_TYPICAL_HI));
-        uint256 pvLo = DeFiMathRates.presentValue(fvLo, rate, t);
-        uint256 pvHi = DeFiMathRates.presentValue(fvHi, rate, t);
+        uint256 pvLo = Rates.presentValue(fvLo, rate, t);
+        uint256 pvHi = Rates.presentValue(fvHi, rate, t);
         assertLe(pvLo, pvHi + _slack(pvHi), "PV not monotone increasing in futureValue");
     }
 
@@ -131,8 +131,8 @@ contract RatesPropertyTest is Test {
         rLo = uint64(bound(rLo, 0, RATE_TYPICAL_HI / 2));
         rHi = uint64(bound(rHi, uint256(rLo) + 1, RATE_TYPICAL_HI));
         t   = uint32(bound(t, 1 days, TIME_TYPICAL_HI));
-        uint256 pvLo = DeFiMathRates.presentValue(futureValue, rLo, t);
-        uint256 pvHi = DeFiMathRates.presentValue(futureValue, rHi, t);
+        uint256 pvLo = Rates.presentValue(futureValue, rLo, t);
+        uint256 pvHi = Rates.presentValue(futureValue, rHi, t);
         assertGe(pvLo + _slack(pvLo), pvHi, "PV not monotone decreasing in rate");
     }
 
@@ -142,8 +142,8 @@ contract RatesPropertyTest is Test {
     function test_MONO_continuousToDiscreteIncreasing(int256 aprLo, int256 aprHi) public pure {
         aprLo = bound(aprLo, int256(-1e18), int256(1e18));
         aprHi = bound(aprHi, aprLo + int256(1e12), int256(2e18));
-        int256 apyLo = DeFiMathRates.continuousToDiscrete(aprLo);
-        int256 apyHi = DeFiMathRates.continuousToDiscrete(aprHi);
+        int256 apyLo = Rates.continuousToDiscrete(aprLo);
+        int256 apyHi = Rates.continuousToDiscrete(aprHi);
         assertLe(apyLo, apyHi, "continuousToDiscrete not monotone");
     }
 
@@ -155,20 +155,20 @@ contract RatesPropertyTest is Test {
     function test_ID_zeroRateReturnsP(uint128 principal, uint32 t) public pure {
         principal = uint128(bound(principal, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         t         = uint32(bound(t, 0, TIME_TYPICAL_HI));
-        assertEq(DeFiMathRates.compoundInterest(principal, 0, t), principal, "CI(P, 0, t) != P");
+        assertEq(Rates.compoundInterest(principal, 0, t), principal, "CI(P, 0, t) != P");
     }
 
     /// compoundInterest(P, r, 0) == P — no time, no carry.
     function test_ID_zeroTimeReturnsP(uint128 principal, uint64 rate) public pure {
         principal = uint128(bound(principal, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         rate      = uint64(bound(rate, 0, RATE_TYPICAL_HI));
-        assertEq(DeFiMathRates.compoundInterest(principal, rate, 0), principal, "CI(P, r, 0) != P");
+        assertEq(Rates.compoundInterest(principal, rate, 0), principal, "CI(P, r, 0) != P");
     }
 
     /// logReturn(p, p) == 0 — same price means zero return.
     function test_ID_logReturnSelfIsZero(uint128 price) public pure {
         price = uint128(bound(price, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
-        assertEq(DeFiMathRates.logReturn(price, price), int256(0), "logReturn(p, p) != 0");
+        assertEq(Rates.logReturn(price, price), int256(0), "logReturn(p, p) != 0");
     }
 
     // ====================================================================
@@ -180,7 +180,7 @@ contract RatesPropertyTest is Test {
         principal = uint128(bound(principal, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         rate      = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         t         = uint32(bound(t, 0, TIME_TYPICAL_HI));
-        uint256 fv = DeFiMathRates.compoundInterest(principal, rate, t);
+        uint256 fv = Rates.compoundInterest(principal, rate, t);
         // 1 wei slack for FP rounding at zero rate/time.
         assertGe(fv + 1, principal, "CI < principal (impossible for r >= 0)");
     }
@@ -190,7 +190,7 @@ contract RatesPropertyTest is Test {
         futureValue = uint128(bound(futureValue, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         rate        = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         t           = uint32(bound(t, 0, TIME_TYPICAL_HI));
-        uint256 pv = DeFiMathRates.presentValue(futureValue, rate, t);
+        uint256 pv = Rates.presentValue(futureValue, rate, t);
         assertLe(pv, uint256(futureValue) + 1, "PV > futureValue (impossible for r >= 0)");
     }
 
@@ -203,8 +203,8 @@ contract RatesPropertyTest is Test {
     function test_SYM_logReturnAntiSymmetric(uint128 p1, uint128 p0) public pure {
         p1 = uint128(bound(p1, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
         p0 = uint128(bound(p0, PRINCIPAL_TYPICAL_LO, PRINCIPAL_TYPICAL_HI));
-        int256 forward  = DeFiMathRates.logReturn(p1, p0);
-        int256 backward = DeFiMathRates.logReturn(p0, p1);
+        int256 forward  = Rates.logReturn(p1, p0);
+        int256 backward = Rates.logReturn(p0, p1);
         // Tolerance 1e10 wei (≈ 1e-8 absolute) — for p1/p0 ratios spanning multiple
         // orders of magnitude, the two ln calls operate on FP values of opposite
         // sign and very different magnitudes; their integer-arithmetic rounding

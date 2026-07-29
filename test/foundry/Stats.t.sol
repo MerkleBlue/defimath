@@ -2,29 +2,29 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {DeFiMathStats} from "../../contracts/finance/Stats.sol";
+import {Stats} from "../../contracts/finance/Stats.sol";
 
 /// @notice External harness exposing Stats library functions as `external` so test
 ///         code can build arrays in memory and pass them via `try` semantics.
 contract StatsHarness {
     function geometricMean(uint256 a, uint256 b) external pure returns (uint256) {
-        return DeFiMathStats.geometricMean(a, b);
+        return Stats.geometricMean(a, b);
     }
     function mean(uint256[] calldata values) external pure returns (uint256) {
-        return DeFiMathStats.mean(values);
+        return Stats.mean(values);
     }
     function stdDev(uint256[] calldata values) external pure returns (uint256) {
-        return DeFiMathStats.stdDev(values);
+        return Stats.stdDev(values);
     }
     function weightedAverage(uint256[] calldata values, uint256[] calldata weights) external pure returns (uint256) {
-        return DeFiMathStats.weightedAverage(values, weights);
+        return Stats.weightedAverage(values, weights);
     }
     function maxDrawdown(uint256[] calldata equity) external pure returns (uint256) {
-        return DeFiMathStats.maxDrawdown(equity);
+        return Stats.maxDrawdown(equity);
     }
 }
 
-/// @notice Property-based fuzz tests for DeFiMathStats. Validates the algebraic
+/// @notice Property-based fuzz tests for Stats. Validates the algebraic
 ///         identities of statistical primitives — geometric-mean symmetry, mean/stddev
 ///         linearity, mean and weighted-average bounds, constant-array invariants,
 ///         and the monotone-equity zero-drawdown property.

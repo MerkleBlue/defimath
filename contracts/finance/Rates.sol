@@ -3,11 +3,11 @@ pragma solidity ^0.8.31;
 
 import "../math/Math.sol";
 
-/// @title DeFiMathRates: Continuous-compounding interest, present value, and rate conversions
+/// @title Rates: Continuous-compounding interest, present value, and rate conversions
 /// @author DeFiMath (https://defimath.com)
 /// @notice Scalar finance primitives built on top of DeFiMath's exp / ln / expm1 / log1p.
 /// @dev All values are in 18-decimal fixed-point format unless otherwise noted. Time is in seconds.
-library DeFiMathRates {
+library Rates {
 
     /// @notice Number of seconds in a year (365 days)
     uint256 internal constant SECONDS_IN_YEAR = 31536000;

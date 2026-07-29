@@ -111,7 +111,7 @@ function mulberry32(seed) {
   };
 }
 
-describe("DeFiMathBinary", function () {
+describe("BinaryOptions", function () {
   let testTimePoints;
   let testStrikePoints;
 
@@ -122,8 +122,8 @@ describe("DeFiMathBinary", function () {
   after(() => { Math.random = _realRandom; });
 
   async function deploy() {
-    const BinaryWrapper = await ethers.getContractFactory("BinaryWrapper");
-    const binary = await BinaryWrapper.deploy();
+    const BinaryOptionsWrapper = await ethers.getContractFactory("BinaryOptionsWrapper");
+    const binary = await BinaryOptionsWrapper.deploy();
     return { binary };
   }
 

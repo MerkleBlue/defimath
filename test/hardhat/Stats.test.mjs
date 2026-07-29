@@ -82,7 +82,7 @@ function jsSharpeRatio(prices, intervalSec, rfAnnual) {
   return (meanAnnual - rfAnnual) / stdDevAnnual;
 }
 
-describe("DeFiMathStats", function () {
+describe("Stats", function () {
 
   before(async function () {
     // Pay the deploy + snapshot cost once so the first it() isn't charged with cold-start.

@@ -2,10 +2,10 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {DeFiMathFutures} from "../../contracts/derivatives/Futures.sol";
+import {Futures} from "../../contracts/derivatives/Futures.sol";
 import {Math} from "../../contracts/math/Math.sol";
 
-/// @notice Property-based fuzz tests for DeFiMathFutures. Validates linearity in spot,
+/// @notice Property-based fuzz tests for Futures. Validates linearity in spot,
 ///         monotonicity in spot/time/rate, identity cases (zero-time, zero-rate),
 ///         the semigroup composition property, and the no-arbitrage lower bound.
 ///
@@ -54,8 +54,8 @@ contract FuturesPropertyTest is Test {
         spotHi = uint128(bound(spotHi, uint256(spotLo) + 1, SPOT_TYPICAL_HI));
         t      = uint32(bound(t, 1, TIME_TYPICAL_HI));
         rate   = uint64(bound(rate, 0, RATE_TYPICAL_HI));
-        uint256 fLo = DeFiMathFutures.futurePrice(spotLo, t, rate);
-        uint256 fHi = DeFiMathFutures.futurePrice(spotHi, t, rate);
+        uint256 fLo = Futures.futurePrice(spotLo, t, rate);
+        uint256 fHi = Futures.futurePrice(spotHi, t, rate);
         assertLe(fLo, fHi + _slack(fHi), "F not monotone increasing in spot");
     }
 
@@ -66,8 +66,8 @@ contract FuturesPropertyTest is Test {
         tLo  = uint32(bound(tLo, 1, TIME_TYPICAL_HI / 2));
         tHi  = uint32(bound(tHi, uint256(tLo) + 1, TIME_TYPICAL_HI));
         rate = uint64(bound(rate, 1, RATE_TYPICAL_HI));   // rate > 0 to make monotone strict
-        uint256 fLo = DeFiMathFutures.futurePrice(spot, tLo, rate);
-        uint256 fHi = DeFiMathFutures.futurePrice(spot, tHi, rate);
+        uint256 fLo = Futures.futurePrice(spot, tLo, rate);
+        uint256 fHi = Futures.futurePrice(spot, tHi, rate);
         assertLe(fLo, fHi + _slack(fHi), "F not monotone increasing in time");
     }
 
@@ -77,8 +77,8 @@ contract FuturesPropertyTest is Test {
         t    = uint32(bound(t, 1 days, TIME_TYPICAL_HI));
         rLo  = uint64(bound(rLo, 0, RATE_TYPICAL_HI / 2));
         rHi  = uint64(bound(rHi, uint256(rLo) + 1, RATE_TYPICAL_HI));
-        uint256 fLo = DeFiMathFutures.futurePrice(spot, t, rLo);
-        uint256 fHi = DeFiMathFutures.futurePrice(spot, t, rHi);
+        uint256 fLo = Futures.futurePrice(spot, t, rLo);
+        uint256 fHi = Futures.futurePrice(spot, t, rHi);
         assertLe(fLo, fHi + _slack(fHi), "F not monotone increasing in rate");
     }
 
@@ -90,14 +90,14 @@ contract FuturesPropertyTest is Test {
     function test_ID_zeroTimeReturnsSpot(uint128 spot, uint64 rate) public pure {
         spot = uint128(bound(spot, SPOT_TYPICAL_LO, SPOT_TYPICAL_HI));
         rate = uint64(bound(rate, 0, RATE_TYPICAL_HI));
-        assertEq(DeFiMathFutures.futurePrice(spot, 0, rate), spot, "F(S, 0, r) != S");
+        assertEq(Futures.futurePrice(spot, 0, rate), spot, "F(S, 0, r) != S");
     }
 
     /// F(S, t, 0) == S — no rate, no carry.
     function test_ID_zeroRateReturnsSpot(uint128 spot, uint32 t) public pure {
         spot = uint128(bound(spot, SPOT_TYPICAL_LO, SPOT_TYPICAL_HI));
         t    = uint32(bound(t, 0, TIME_TYPICAL_HI));
-        assertEq(DeFiMathFutures.futurePrice(spot, t, 0), spot, "F(S, t, 0) != S");
+        assertEq(Futures.futurePrice(spot, t, 0), spot, "F(S, t, 0) != S");
     }
 
     /// Spot homogeneity: F(k·S, t, r) == k · F(S, t, r). The future price is linear
@@ -107,15 +107,15 @@ contract FuturesPropertyTest is Test {
         spot = uint128(bound(spot, SPOT_TYPICAL_LO, SPOT_TYPICAL_HI / 2));
         t    = uint32(bound(t, 1, TIME_TYPICAL_HI));
         rate = uint64(bound(rate, 0, RATE_TYPICAL_HI));
-        uint256 f1 = DeFiMathFutures.futurePrice(spot, t, rate);
-        uint256 f2 = DeFiMathFutures.futurePrice(spot * 2, t, rate);
+        uint256 f1 = Futures.futurePrice(spot, t, rate);
+        uint256 f2 = Futures.futurePrice(spot * 2, t, rate);
         assertApproxEqRel(f2, 2 * f1, REL_1e_10, "F(2S) != 2 * F(S)");
     }
 
     /// F(S, t, r) ≈ S · e^(r·t) — verified against Math.exp directly.
     function test_ID_matchesSpotTimesExp(uint128 spot, uint32 t, uint64 rate) public pure {
         (spot, t, rate) = _boundInputs(spot, t, rate);
-        uint256 actual = DeFiMathFutures.futurePrice(spot, t, rate);
+        uint256 actual = Futures.futurePrice(spot, t, rate);
         uint256 timeYear = uint256(t) * FP_ONE / SECONDS_IN_YEAR;
         uint256 scaledRate = uint256(rate) * timeYear / FP_ONE;
         uint256 expected = uint256(spot) * Math.expPositive(scaledRate) / FP_ONE;
@@ -132,11 +132,11 @@ contract FuturesPropertyTest is Test {
         t2   = uint32(bound(t2, 1, TIME_TYPICAL_HI / 2));
         rate = uint64(bound(rate, 0, RATE_TYPICAL_HI));
         // F(S, t1+t2, r)
-        uint256 oneStep = DeFiMathFutures.futurePrice(spot, t1 + t2, rate);
+        uint256 oneStep = Futures.futurePrice(spot, t1 + t2, rate);
         // F(F(S, t1, r), t2, r) — intermediate result must fit in uint128 for the second call
-        uint256 firstStep = DeFiMathFutures.futurePrice(spot, t1, rate);
+        uint256 firstStep = Futures.futurePrice(spot, t1, rate);
         if (firstStep >= type(uint128).max) return;   // skip if intermediate overflows
-        uint256 twoStep = DeFiMathFutures.futurePrice(uint128(firstStep), t2, rate);
+        uint256 twoStep = Futures.futurePrice(uint128(firstStep), t2, rate);
         assertApproxEqRel(twoStep, oneStep, REL_1e_10, "F(S, t1+t2, r) != F(F(S, t1, r), t2, r)");
     }
 
@@ -148,7 +148,7 @@ contract FuturesPropertyTest is Test {
     /// spot (no arbitrage: you can always sell the future and hold cash earning ≥ 0%).
     function test_BNDS_atLeastSpot(uint128 spot, uint32 t, uint64 rate) public pure {
         (spot, t, rate) = _boundInputs(spot, t, rate);
-        uint256 f = DeFiMathFutures.futurePrice(spot, t, rate);
+        uint256 f = Futures.futurePrice(spot, t, rate);
         // Allow 1 wei slack for FP rounding at near-zero rate·time products.
         assertGe(f + 1, spot, "F < spot (impossible for r*t >= 0)");
     }

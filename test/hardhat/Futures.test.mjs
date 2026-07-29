@@ -4,7 +4,7 @@ import { assert } from "chai";
 import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
 import { MAX_ABS_ERROR_FUTURE } from "../../constants/Constants.mjs";
 
-describe("DeFiMathFutures", function () {
+describe("Futures", function () {
 
   async function deploy() {
     const FuturesWrapper = await ethers.getContractFactory("FuturesWrapper");

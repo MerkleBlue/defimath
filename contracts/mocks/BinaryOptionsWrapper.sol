@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.31;
 
-import "../derivatives/Binary.sol";
+import "../derivatives/BinaryOptions.sol";
 
-contract BinaryWrapper {
+contract BinaryOptionsWrapper {
 
     function binaryCallPrice(
         uint128 spot,
@@ -12,7 +12,7 @@ contract BinaryWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return DeFiMathBinary.binaryCallPrice(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.binaryCallPrice(spot, strike, timeToExp, volatility, rate);
     }
 
     function binaryCallPriceMG(
@@ -27,7 +27,7 @@ contract BinaryWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = DeFiMathBinary.binaryCallPrice(spot, strike, timeToExp, volatility, rate);
+        result = BinaryOptions.binaryCallPrice(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
@@ -41,7 +41,7 @@ contract BinaryWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return DeFiMathBinary.binaryPutPrice(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.binaryPutPrice(spot, strike, timeToExp, volatility, rate);
     }
 
     function binaryPutPriceMG(
@@ -56,7 +56,7 @@ contract BinaryWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = DeFiMathBinary.binaryPutPrice(spot, strike, timeToExp, volatility, rate);
+        result = BinaryOptions.binaryPutPrice(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
@@ -70,7 +70,7 @@ contract BinaryWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 deltaCall, int128 deltaPut) {
-        return DeFiMathBinary.binaryDelta(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.binaryDelta(spot, strike, timeToExp, volatility, rate);
     }
 
     function binaryDeltaMG(
@@ -84,7 +84,7 @@ contract BinaryWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (deltaCall, deltaPut) = DeFiMathBinary.binaryDelta(spot, strike, timeToExp, volatility, rate);
+        (deltaCall, deltaPut) = BinaryOptions.binaryDelta(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
@@ -98,7 +98,7 @@ contract BinaryWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 gammaCall, int128 gammaPut) {
-        return DeFiMathBinary.binaryGamma(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.binaryGamma(spot, strike, timeToExp, volatility, rate);
     }
 
     function binaryGammaMG(
@@ -112,7 +112,7 @@ contract BinaryWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (gammaCall, gammaPut) = DeFiMathBinary.binaryGamma(spot, strike, timeToExp, volatility, rate);
+        (gammaCall, gammaPut) = BinaryOptions.binaryGamma(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
@@ -126,7 +126,7 @@ contract BinaryWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 thetaCall, int128 thetaPut) {
-        return DeFiMathBinary.binaryTheta(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.binaryTheta(spot, strike, timeToExp, volatility, rate);
     }
 
     function binaryThetaMG(
@@ -140,7 +140,7 @@ contract BinaryWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (thetaCall, thetaPut) = DeFiMathBinary.binaryTheta(spot, strike, timeToExp, volatility, rate);
+        (thetaCall, thetaPut) = BinaryOptions.binaryTheta(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
@@ -154,7 +154,7 @@ contract BinaryWrapper {
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 vegaCall, int128 vegaPut) {
-        return DeFiMathBinary.binaryVega(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.binaryVega(spot, strike, timeToExp, volatility, rate);
     }
 
     function binaryVegaMG(
@@ -168,7 +168,7 @@ contract BinaryWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (vegaCall, vegaPut) = DeFiMathBinary.binaryVega(spot, strike, timeToExp, volatility, rate);
+        (vegaCall, vegaPut) = BinaryOptions.binaryVega(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 

@@ -3,11 +3,11 @@ pragma solidity ^0.8.31;
 
 import "../math/Math.sol";
 
-/// @title DeFiMathBlackScholes: Black-Scholes Pricing and Greeks Library for Solidity
+/// @title BlackScholes: Black-Scholes Pricing and Greeks Library for Solidity
 /// @author DeFiMath (https://defimath.com)
 /// @notice Computes Black-Scholes option prices and Greeks (Delta, Gamma, Theta, Vega)
 /// @dev All values are in 18-decimal fixed-point format unless otherwise stated
-library DeFiMathBlackScholes {
+library BlackScholes {
 
     // constants
     /// @notice Number of seconds in a year (365 days)

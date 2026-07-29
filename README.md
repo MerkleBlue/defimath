@@ -74,8 +74,8 @@ contract OptionsExchange {
         uint128 spot, uint128 strike, uint32 timeToExp,
         uint64 vol, uint64 rate
     ) external pure returns (uint256 callPx, uint256 putPx) {
-        callPx = DeFiMathBlackScholes.callOptionPrice(spot, strike, timeToExp, vol, rate);
-        putPx  = DeFiMathBlackScholes.putOptionPrice(spot, strike, timeToExp, vol, rate);
+        callPx = BlackScholes.callOptionPrice(spot, strike, timeToExp, vol, rate);
+        putPx  = BlackScholes.putOptionPrice(spot, strike, timeToExp, vol, rate);
     }
 }
 ```
@@ -109,7 +109,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 *Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
-### Derivatives — `DeFiMathBlackScholes`, `DeFiMathBinary`, `DeFiMathFutures`
+### Derivatives — `BlackScholes`, `BinaryOptions`, `Futures`
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
@@ -130,7 +130,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 *Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Absolute error is the metric throughout: option prices are quoted at a $1,000 spot (so `1.3e-10` is in dollars), binaries at unit payout, `theta` per day and `vega` per 1% vol. `impliedVolatility` is the exception — it is bounded by round-trip **relative** error against its Newton-Raphson convergence target.*
 
-### Interest & rates — `DeFiMathRates` (Rates.sol)
+### Interest & rates — `Rates` (Rates.sol)
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
@@ -144,7 +144,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 *Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Compounding and discounting inherit `exp`'s relative bound, `logReturn` inherits `ln`'s. The two rate conversions are bounded **absolutely** (`1e-15`) because they run a Taylor branch through their root at `r = 0`, where relative error is undefined. `internalRateOfReturn` is bounded by its Newton-Raphson convergence tolerance.*
 
-### Statistics — `DeFiMathStats` (Stats.sol)
+### Statistics — `Stats` (Stats.sol)
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |

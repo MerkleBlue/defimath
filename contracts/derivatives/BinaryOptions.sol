@@ -3,11 +3,11 @@ pragma solidity ^0.8.31;
 
 import "../math/Math.sol";
 
-/// @title DeFiMathBinary: Binary Options Pricing Library for Solidity
+/// @title BinaryOptions: Binary Options Pricing Library for Solidity
 /// @author DeFiMath (https://defimath.com)
 /// @notice Computes binary (cash-or-nothing) option prices using the Black-Scholes model
 /// @dev All values are in 18-decimal fixed-point format unless otherwise stated. Payout is fixed at 1.
-library DeFiMathBinary {
+library BinaryOptions {
 
     // constants
     /// @notice Number of seconds in a year (365 days)

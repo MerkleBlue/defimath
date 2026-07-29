@@ -3,11 +3,11 @@ pragma solidity ^0.8.31;
 
 import "../math/Math.sol";
 
-/// @title DeFiMathFutures: Futures Pricing Library for Solidity
+/// @title Futures: Futures Pricing Library for Solidity
 /// @author DeFiMath (https://defimath.com)
 /// @notice Provides a gas-efficient method for calculating futures contract prices using continuous compounding
 /// @dev All values are in 18-decimal fixed-point format unless otherwise noted
-library DeFiMathFutures {
+library Futures {
 
     /// @notice Number of seconds in a year (365 days)
     uint256 internal constant SECONDS_IN_YEAR = 31536000;
