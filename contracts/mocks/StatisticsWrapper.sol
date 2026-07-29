@@ -1,99 +1,99 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.31;
 
-import "../finance/Stats.sol";
+import "../statistics/Statistics.sol";
 
-contract StatsWrapper {
+contract StatisticsWrapper {
 
     function geometricMean(uint256 a, uint256 b) external pure returns (uint256) {
-        return Stats.geometricMean(a, b);
+        return Statistics.geometricMean(a, b);
     }
 
     function weightedAverage(uint256[] calldata values, uint256[] calldata weights) external pure returns (uint256) {
-        return Stats.weightedAverage(values, weights);
+        return Statistics.weightedAverage(values, weights);
     }
 
     function mean(uint256[] calldata values) external pure returns (uint256) {
-        return Stats.mean(values);
+        return Statistics.mean(values);
     }
 
     function stdDev(uint256[] calldata values) external pure returns (uint256) {
-        return Stats.stdDev(values);
+        return Statistics.stdDev(values);
     }
 
     function historicalVolatility(uint256[] calldata prices, uint32 intervalSec) external pure returns (uint256) {
-        return Stats.historicalVolatility(prices, intervalSec);
+        return Statistics.historicalVolatility(prices, intervalSec);
     }
 
     function sharpeRatio(uint256[] calldata prices, uint32 intervalSec, uint64 riskFreeRateAnnual) external pure returns (int256) {
-        return Stats.sharpeRatio(prices, intervalSec, riskFreeRateAnnual);
+        return Statistics.sharpeRatio(prices, intervalSec, riskFreeRateAnnual);
     }
 
     function maxDrawdown(uint256[] calldata equity) external pure returns (uint256) {
-        return Stats.maxDrawdown(equity);
+        return Statistics.maxDrawdown(equity);
     }
 
     function valueAtRisk(uint256[] calldata prices, uint64 confidence) external pure returns (int256) {
-        return Stats.valueAtRisk(prices, confidence);
+        return Statistics.valueAtRisk(prices, confidence);
     }
 
     function conditionalValueAtRisk(uint256[] calldata prices, uint64 confidence) external pure returns (int256) {
-        return Stats.conditionalValueAtRisk(prices, confidence);
+        return Statistics.conditionalValueAtRisk(prices, confidence);
     }
 
     // measure gas
 
     function geometricMeanMG(uint256 a, uint256 b) external view returns (uint256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.geometricMean(a, b);
+        result = Statistics.geometricMean(a, b);
         return (result, startGas - gasleft());
     }
 
     function weightedAverageMG(uint256[] calldata values, uint256[] calldata weights) external view returns (uint256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.weightedAverage(values, weights);
+        result = Statistics.weightedAverage(values, weights);
         return (result, startGas - gasleft());
     }
 
     function meanMG(uint256[] calldata values) external view returns (uint256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.mean(values);
+        result = Statistics.mean(values);
         return (result, startGas - gasleft());
     }
 
     function stdDevMG(uint256[] calldata values) external view returns (uint256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.stdDev(values);
+        result = Statistics.stdDev(values);
         return (result, startGas - gasleft());
     }
 
     function historicalVolatilityMG(uint256[] calldata prices, uint32 intervalSec) external view returns (uint256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.historicalVolatility(prices, intervalSec);
+        result = Statistics.historicalVolatility(prices, intervalSec);
         return (result, startGas - gasleft());
     }
 
     function sharpeRatioMG(uint256[] calldata prices, uint32 intervalSec, uint64 riskFreeRateAnnual) external view returns (int256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.sharpeRatio(prices, intervalSec, riskFreeRateAnnual);
+        result = Statistics.sharpeRatio(prices, intervalSec, riskFreeRateAnnual);
         return (result, startGas - gasleft());
     }
 
     function maxDrawdownMG(uint256[] calldata equity) external view returns (uint256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.maxDrawdown(equity);
+        result = Statistics.maxDrawdown(equity);
         return (result, startGas - gasleft());
     }
 
     function valueAtRiskMG(uint256[] calldata prices, uint64 confidence) external view returns (int256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.valueAtRisk(prices, confidence);
+        result = Statistics.valueAtRisk(prices, confidence);
         return (result, startGas - gasleft());
     }
 
     function conditionalValueAtRiskMG(uint256[] calldata prices, uint64 confidence) external view returns (int256 result, uint256 gasUsed) {
         uint256 startGas = gasleft();
-        result = Stats.conditionalValueAtRisk(prices, confidence);
+        result = Statistics.conditionalValueAtRisk(prices, confidence);
         return (result, startGas - gasleft());
     }
 }

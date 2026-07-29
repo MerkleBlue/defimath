@@ -23,7 +23,8 @@
   },
   "files": [
     "contracts/derivatives/",
-    "contracts/finance/",
+    "contracts/rates/",
+    "contracts/statistics/",
     "contracts/math/",
     "constants/"
   ],

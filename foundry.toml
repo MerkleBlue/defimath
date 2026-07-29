@@ -13,7 +13,7 @@ optimizer = true
 optimizer_runs = 4_294_967_295
 
 # Treat the existing JS-test wrappers as out-of-scope for forge so it doesn't
-# try to deploy them in tests. The library code under contracts/{math,finance,options}
+# try to deploy them in tests. The library code under contracts/{math,derivatives,rates,statistics}
 # is what we want to fuzz.
 no_match_path = "contracts/mocks/**"
 

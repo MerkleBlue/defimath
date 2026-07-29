@@ -82,7 +82,7 @@ function jsSharpeRatio(prices, intervalSec, rfAnnual) {
   return (meanAnnual - rfAnnual) / stdDevAnnual;
 }
 
-describe("Stats", function () {
+describe("Statistics", function () {
 
   before(async function () {
     // Pay the deploy + snapshot cost once so the first it() isn't charged with cold-start.
@@ -91,8 +91,8 @@ describe("Stats", function () {
 
 
   async function deploy() {
-    const StatsWrapper = await ethers.getContractFactory("StatsWrapper");
-    const stats = await StatsWrapper.deploy();
+    const StatisticsWrapper = await ethers.getContractFactory("StatisticsWrapper");
+    const stats = await StatisticsWrapper.deploy();
     return { stats };
   }
 

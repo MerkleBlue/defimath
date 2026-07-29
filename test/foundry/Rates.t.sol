@@ -2,7 +2,7 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {Rates} from "../../contracts/finance/Rates.sol";
+import {Rates} from "../../contracts/rates/Rates.sol";
 
 /// @notice Property-based fuzz tests for Rates. Validates inverse-function
 ///         round-trips (compound/discount, continuous/discrete rate conversions),

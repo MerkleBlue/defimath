@@ -3,11 +3,11 @@ pragma solidity ^0.8.31;
 
 import "../math/Math.sol";
 
-/// @title Stats: Array-based statistical primitives for DeFi
+/// @title Statistics: Array-based statistical primitives for DeFi
 /// @author DeFiMath (https://defimath.com)
 /// @notice Time-series statistics built on top of DeFiMath's sqrt.
 /// @dev All values are in 18-decimal fixed-point format unless otherwise noted.
-library Stats {
+library Statistics {
 
     // constants
     /// @notice Number of seconds in a year (365 days)

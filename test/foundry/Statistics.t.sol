@@ -2,25 +2,25 @@
 pragma solidity ^0.8.31;
 
 import {Test} from "forge-std/Test.sol";
-import {Stats} from "../../contracts/finance/Stats.sol";
+import {Statistics} from "../../contracts/statistics/Statistics.sol";
 
 /// @notice External harness exposing Stats library functions as `external` so test
 ///         code can build arrays in memory and pass them via `try` semantics.
-contract StatsHarness {
+contract StatisticsHarness {
     function geometricMean(uint256 a, uint256 b) external pure returns (uint256) {
-        return Stats.geometricMean(a, b);
+        return Statistics.geometricMean(a, b);
     }
     function mean(uint256[] calldata values) external pure returns (uint256) {
-        return Stats.mean(values);
+        return Statistics.mean(values);
     }
     function stdDev(uint256[] calldata values) external pure returns (uint256) {
-        return Stats.stdDev(values);
+        return Statistics.stdDev(values);
     }
     function weightedAverage(uint256[] calldata values, uint256[] calldata weights) external pure returns (uint256) {
-        return Stats.weightedAverage(values, weights);
+        return Statistics.weightedAverage(values, weights);
     }
     function maxDrawdown(uint256[] calldata equity) external pure returns (uint256) {
-        return Stats.maxDrawdown(equity);
+        return Statistics.maxDrawdown(equity);
     }
 }
 
@@ -34,9 +34,9 @@ contract StatsHarness {
 ///          forge test --match-test test_ID_     (known identities)
 ///          forge test --match-test test_BNDS_   (output bounds)
 ///          forge test --match-test test_SYM_    (symmetries)
-contract StatsPropertyTest is Test {
+contract StatisticsPropertyTest is Test {
 
-    StatsHarness private harness;
+    StatisticsHarness private harness;
 
     uint256 private constant FP_ONE = 1e18;
     uint256 private constant REL_1e_10 = 1e8;
@@ -47,7 +47,7 @@ contract StatsPropertyTest is Test {
     uint256 private constant ELEM_HI = 1_000_000e18;  // $1M
 
     function setUp() public {
-        harness = new StatsHarness();
+        harness = new StatisticsHarness();
     }
 
     // ---- helpers --------------------------------------------------------
