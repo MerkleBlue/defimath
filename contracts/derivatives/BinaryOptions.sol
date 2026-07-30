@@ -60,7 +60,7 @@ library BinaryOptions {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Binary call option price for unit payout (scaled by 1e18)
-    function binaryCallPrice(
+    function call(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -100,7 +100,7 @@ library BinaryOptions {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Binary put option price for unit payout (scaled by 1e18)
-    function binaryPutPrice(
+    function put(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -141,7 +141,7 @@ library BinaryOptions {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return deltaCall Binary call option delta for unit payout (scaled by 1e18)
     /// @return deltaPut Binary put option delta for unit payout (scaled by 1e18)
-    function binaryDelta(
+    function delta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -189,7 +189,7 @@ library BinaryOptions {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return gammaCall Binary call option gamma for unit payout (scaled by 1e18)
     /// @return gammaPut Binary put option gamma for unit payout (scaled by 1e18)
-    function binaryGamma(
+    function gamma(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -243,7 +243,7 @@ library BinaryOptions {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return thetaCall Binary call option theta per day for unit payout (scaled by 1e18)
     /// @return thetaPut Binary put option theta per day for unit payout (scaled by 1e18)
-    function binaryTheta(
+    function theta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -267,12 +267,12 @@ library BinaryOptions {
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
 
-            return _binaryThetaCore(spot, strike, scaledVol, uint256(rate) * timeYear / 1e18, timeYear, rate);
+            return _thetaCore(spot, strike, scaledVol, uint256(rate) * timeYear / 1e18, timeYear, rate);
         }
     }
 
     /// @dev Core binary theta math, separated to keep stack shallow
-    function _binaryThetaCore(
+    function _thetaCore(
         uint128 spot,
         uint128 strike,
         uint256 scaledVol,
@@ -311,7 +311,7 @@ library BinaryOptions {
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return vegaCall Binary call option vega per 1% vol for unit payout (scaled by 1e18)
     /// @return vegaPut Binary put option vega per 1% vol for unit payout (scaled by 1e18)
-    function binaryVega(
+    function vega(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,

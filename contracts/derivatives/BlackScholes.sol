@@ -68,7 +68,7 @@ library BlackScholes {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Call option price (scaled by 1e18)
-    function callOptionPrice(
+    function call(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -112,7 +112,7 @@ library BlackScholes {
     /// @param volatility Annualized implied volatility (scaled by 1e18)
     /// @param rate Annualized risk-free interest rate (scaled by 1e18)
     /// @return price Put option price (scaled by 1e18)
-    function putOptionPrice(
+    function put(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,

@@ -120,7 +120,7 @@ contract BlackScholesPropertyTest is Test {
     /// not a property failure.
     function test_RT_callIVRecoversVol(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public view {
         (spot, strike, t, vol, rate) = _boundIVInputs(spot, strike, t, vol, rate);
-        uint256 price = BlackScholes.callOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = BlackScholes.call(spot, strike, t, vol, rate);
         try harness.callIV(spot, strike, t, rate, uint128(price)) returns (uint256 ivRecovered) {
             assertApproxEqRel(ivRecovered, vol, REL_1e_6 * 100, "IV(callPrice(vol)) != vol");
         } catch {
@@ -132,7 +132,7 @@ contract BlackScholesPropertyTest is Test {
     /// IV recovers the volatility used to compute a put price.
     function test_RT_putIVRecoversVol(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public view {
         (spot, strike, t, vol, rate) = _boundIVInputs(spot, strike, t, vol, rate);
-        uint256 price = BlackScholes.putOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = BlackScholes.put(spot, strike, t, vol, rate);
         try harness.putIV(spot, strike, t, rate, uint128(price)) returns (uint256 ivRecovered) {
             assertApproxEqRel(ivRecovered, vol, REL_1e_6 * 100, "IV(putPrice(vol)) != vol");
         } catch {
@@ -155,8 +155,8 @@ contract BlackScholesPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));   // ≤ 200% vol
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 cLo = BlackScholes.callOptionPrice(spotLo, strike, t, vol, rate);
-        uint256 cHi = BlackScholes.callOptionPrice(spotHi, strike, t, vol, rate);
+        uint256 cLo = BlackScholes.call(spotLo, strike, t, vol, rate);
+        uint256 cHi = BlackScholes.call(spotHi, strike, t, vol, rate);
         assertLe(cLo, cHi + _slack(cHi), "call not monotone increasing in spot");
     }
 
@@ -168,8 +168,8 @@ contract BlackScholesPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 pLo = BlackScholes.putOptionPrice(spotLo, strike, t, vol, rate);
-        uint256 pHi = BlackScholes.putOptionPrice(spotHi, strike, t, vol, rate);
+        uint256 pLo = BlackScholes.put(spotLo, strike, t, vol, rate);
+        uint256 pHi = BlackScholes.put(spotHi, strike, t, vol, rate);
         assertGe(pLo + _slack(pLo), pHi, "put not monotone decreasing in spot");
     }
 
@@ -183,8 +183,8 @@ contract BlackScholesPropertyTest is Test {
         volLo = uint64(bound(volLo, VOL_TYPICAL_LO, uint64(VOL_TYPICAL_HI - 0.01e18)));
         volHi = uint64(bound(volHi, volLo + uint64(0.01e18), VOL_TYPICAL_HI));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 cLo = BlackScholes.callOptionPrice(spot, strike, t, volLo, rate);
-        uint256 cHi = BlackScholes.callOptionPrice(spot, strike, t, volHi, rate);
+        uint256 cLo = BlackScholes.call(spot, strike, t, volLo, rate);
+        uint256 cHi = BlackScholes.call(spot, strike, t, volHi, rate);
         assertLe(cLo, cHi + _slack(cHi), "call not monotone increasing in vol");
     }
 
@@ -196,8 +196,8 @@ contract BlackScholesPropertyTest is Test {
         volLo = uint64(bound(volLo, VOL_TYPICAL_LO, uint64(VOL_TYPICAL_HI - 0.01e18)));
         volHi = uint64(bound(volHi, volLo + uint64(0.01e18), VOL_TYPICAL_HI));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 pLo = BlackScholes.putOptionPrice(spot, strike, t, volLo, rate);
-        uint256 pHi = BlackScholes.putOptionPrice(spot, strike, t, volHi, rate);
+        uint256 pLo = BlackScholes.put(spot, strike, t, volLo, rate);
+        uint256 pHi = BlackScholes.put(spot, strike, t, volHi, rate);
         assertLe(pLo, pHi + _slack(pHi), "put not monotone increasing in vol");
     }
 
@@ -210,8 +210,8 @@ contract BlackScholesPropertyTest is Test {
     /// of any model — must hold to high precision regardless of volatility.
     function test_ID_putCallParity(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 callPx = BlackScholes.callOptionPrice(spot, strike, t, vol, rate);
-        uint256 putPx  = BlackScholes.putOptionPrice(spot, strike, t, vol, rate);
+        uint256 callPx = BlackScholes.call(spot, strike, t, vol, rate);
+        uint256 putPx  = BlackScholes.put(spot, strike, t, vol, rate);
         // S − K·e^(−rT)
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
         uint256 discount = Math.expPositive(uint256(rate) * timeYear / FP_ONE);  // e^(rT)
@@ -255,14 +255,14 @@ contract BlackScholesPropertyTest is Test {
     /// 0 ≤ call price ≤ spot — fundamental no-arbitrage upper bound (call payoff capped).
     function test_BNDS_callPriceInSpotRange(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 price = BlackScholes.callOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = BlackScholes.call(spot, strike, t, vol, rate);
         assertLe(price, spot, "call > spot (arb violation)");
     }
 
     /// 0 ≤ put price ≤ K·e^(−rT) — discounted strike ceiling (put payoff capped at strike).
     function test_BNDS_putPriceInDiscountedStrikeRange(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 price = BlackScholes.putOptionPrice(spot, strike, t, vol, rate);
+        uint256 price = BlackScholes.put(spot, strike, t, vol, rate);
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
         uint256 discount = Math.expPositive(uint256(rate) * timeYear / FP_ONE);
         uint256 discountedK = uint256(strike) * FP_ONE / discount;

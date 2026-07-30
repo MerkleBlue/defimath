@@ -5,24 +5,24 @@ import "../derivatives/BlackScholes.sol";
 
 contract BlackScholesWrapper {
 
-    function callOptionPrice(
+    function call(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BlackScholes.callOptionPrice(spot, strike, timeToExp, volatility, rate);
+        return BlackScholes.call(spot, strike, timeToExp, volatility, rate);
     }
 
-    function putOptionPrice(
+    function put(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BlackScholes.putOptionPrice(spot, strike, timeToExp, volatility, rate);
+        return BlackScholes.put(spot, strike, timeToExp, volatility, rate);
     }
 
     function delta(
@@ -65,7 +65,7 @@ contract BlackScholesWrapper {
         return BlackScholes.vega(spot, strike, timeToExp, volatility, rate);
     }
 
-    function callOptionPriceMG(
+    function callMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -77,14 +77,14 @@ contract BlackScholesWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BlackScholes.callOptionPrice(spot, strike, timeToExp, volatility, rate);
+        result = BlackScholes.call(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
         
         return (result, startGas - endGas);
     }
 
-    function putOptionPriceMG(
+    function putMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -96,7 +96,7 @@ contract BlackScholesWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BlackScholes.putOptionPrice(spot, strike, timeToExp, volatility, rate);
+        result = BlackScholes.put(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
         

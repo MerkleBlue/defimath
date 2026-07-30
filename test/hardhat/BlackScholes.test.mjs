@@ -52,9 +52,9 @@ describe("BlackScholes", function () {
             // SOL
             let actualSOL = 0;
             if (isCall) {
-              actualSOL = (await options.callOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
+              actualSOL = (await options.call(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
             } else {
-              actualSOL = (await options.putOptionPrice(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
+              actualSOL = (await options.put(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
             }
 
             const absErrorSOL = Math.abs(actualSOL - expected);
@@ -170,7 +170,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
-        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.call(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
 
@@ -188,7 +188,7 @@ describe("BlackScholes", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
 
-                const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.call(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
               }
             }
@@ -210,7 +210,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "call");
 
-        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.call(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
       });
 
@@ -218,7 +218,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "call");
 
-        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.call(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
       });
 
@@ -226,7 +226,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "call");
 
-        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.call(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
       });
 
@@ -242,7 +242,7 @@ describe("BlackScholes", function () {
             for (let rate of rates) {
               const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
       
-              const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+              const actualSOL = (await options.call(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
               assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
             }
           }
@@ -253,7 +253,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1200, 1 / 365, 0.40, 0.05, "call");
 
-        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.call(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
 
@@ -261,7 +261,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
 
-        const actualSOL = (await options.callOptionPrice(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.call(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
     });
@@ -288,49 +288,49 @@ describe("BlackScholes", function () {
       it("rejects when spot < min spot", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-        await options.callOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.callOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+        await assertRevertError(options, options.call("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+        await options.call("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+        await assertRevertError(options, options.call(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
       });
 
       it("rejects when spot > max spot", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-        await options.callOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.callOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+        await assertRevertError(options, options.call("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+        await options.call("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+        await assertRevertError(options, options.call("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
       });
 
       it("rejects when strike < spot / 5", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-        await options.callOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+        await assertRevertError(options, options.call(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+        await options.call(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+        await assertRevertError(options, options.call(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
       it("rejects when strike > spot * 5", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-        await options.callOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+        await assertRevertError(options, options.call(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+        await options.call(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+        await assertRevertError(options, options.call(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
       });
 
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.callOptionPrice(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await assertRevertError(options, options.call(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.call(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.call(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
       it("rejects when rate > max rate", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-        await options.callOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-        await assertRevertError(options, options.callOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+        await assertRevertError(options, options.call(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+        await options.call(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+        await assertRevertError(options, options.call(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
       });
     });
 
@@ -348,7 +348,7 @@ describe("BlackScholes", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.callOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.callMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -367,7 +367,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
 
-        const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.put(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
       });
 
@@ -385,7 +385,7 @@ describe("BlackScholes", function () {
               for (const rate of rates) {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
 
-                const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
+                const actualSOL = (await options.put(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
               }
             }
@@ -407,7 +407,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1020, 0, 0.60, 0.05, "put");
 
-        const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.put(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
       });
 
@@ -415,7 +415,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 1000, 0, 0.60, 0.05, "put");
 
-        const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.put(tokens(1000), tokens(1000), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
       });
 
@@ -423,7 +423,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         const expected = blackScholesWrapped(1000, 980, 0, 0.60, 0.05, "put");
 
-        const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
+        const actualSOL = (await options.put(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05))).toString() / 1e18;
         assertAbsoluteBelow(actualSOL, expected, MIN_ERROR);
       });
 
@@ -439,7 +439,7 @@ describe("BlackScholes", function () {
             for (let rate of rates) {
               const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
       
-              const actualSOL = (await options.putOptionPrice(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
+              const actualSOL = (await options.put(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
               assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
             }
           }
@@ -450,7 +450,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
         // Deep-OTM put (spot $1000, strike $700): the true value is sub-wei, so
         // integer rounding tips strikeNd2 below spotNd1 — exercises the `: 0` clamp.
-        const actualSOL = await options.putOptionPrice(tokens(1000), tokens(700), 7 * SEC_IN_DAY, tokens(0.3), tokens(0.05));
+        const actualSOL = await options.put(tokens(1000), tokens(700), 7 * SEC_IN_DAY, tokens(0.3), tokens(0.05));
         assert.equal(actualSOL.toString(), "0");
       });
     });
@@ -477,49 +477,49 @@ describe("BlackScholes", function () {
       it("rejects when spot < min spot", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
-        await options.putOptionPrice("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.putOptionPrice(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+        await assertRevertError(options, options.put("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
+        await options.put("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
+        await assertRevertError(options, options.put(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "SpotLowerBoundError");
       });
 
       it("rejects when spot > max spot", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
-        await options.putOptionPrice("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.putOptionPrice("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+        await assertRevertError(options, options.put("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
+        await options.put("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+        await assertRevertError(options, options.put("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "SpotUpperBoundError");
       });
 
       it("rejects when strike < spot / 5", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
-        await options.putOptionPrice(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+        await assertRevertError(options, options.put(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
+        await options.put(tokens(1000), "200000000000000000000", 50000, tokens(0.6), tokens(0.05))
+        await assertRevertError(options, options.put(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
       it("rejects when strike > spot * 5", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
-        await options.putOptionPrice(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+        await assertRevertError(options, options.put(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
+        await options.put(tokens(1000), "5000000000000000000000", 50000, tokens(0.6), tokens(0.05));
+        await assertRevertError(options, options.put(tokens(1000), tokens(100000), 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
       });
 
       it("rejects when time > max time", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
-        await options.putOptionPrice(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await assertRevertError(options, options.put(tokens(1000), tokens(930), 1009152001, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
+        await options.put(tokens(1000), tokens(930), 1009152000, tokens(0.60), tokens(0.05));
+        await assertRevertError(options, options.put(tokens(1000), tokens(930), 4294967295, tokens(0.60), tokens(0.05)), "TimeToExpiryUpperBoundError");
       });
 
       it("rejects when rate > max rate", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
-        await options.putOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
-        await assertRevertError(options, options.putOptionPrice(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
+        await assertRevertError(options, options.put(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4 + 1e-15)), "RateUpperBoundError");
+        await options.put(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(4));
+        await assertRevertError(options, options.put(tokens(1000), tokens(930), 50000, tokens(0.6), tokens(18)), "RateUpperBoundError");
       });
     });
 
@@ -537,7 +537,7 @@ describe("BlackScholes", function () {
           for (const time of times) {
             for (const vol of vols) {
               for (const rate of rates) {
-                totalGas += parseInt((await options.putOptionPriceMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
+                totalGas += parseInt((await options.putMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).gasUsed);
                 count++;
               }
             }
@@ -1079,7 +1079,7 @@ describe("BlackScholes", function () {
 
     async function roundTripIV(spot, strike, timeSec, vol, rate, isCall) {
       const { options } = await loadFixture(deploy);
-      const price = await options[isCall ? "callOptionPrice" : "putOptionPrice"](tokens(spot), tokens(strike), timeSec, tokens(vol), tokens(rate));
+      const price = await options[isCall ? "call" : "put"](tokens(spot), tokens(strike), timeSec, tokens(vol), tokens(rate));
       const iv = (await options.impliedVolatility(tokens(spot), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
       const relError = Math.abs(iv - vol) / vol;
       assert.isBelow(relError, MAX_REL_ERROR_IV, `IV mismatch: expected ${vol}, got ${iv}`);
@@ -1231,7 +1231,7 @@ describe("BlackScholes", function () {
             for (const time of times) {
               for (const vol of vols) {
                 for (const rate of rates) {
-                  const price = await options[isCall ? "callOptionPrice" : "putOptionPrice"](tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
+                  const price = await options[isCall ? "call" : "put"](tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
                   const gas = parseInt((await options.impliedVolatilityMG(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(rate), price, isCall)).gasUsed);
                   if (isCall) callGas += gas; else putGas += gas;
                 }

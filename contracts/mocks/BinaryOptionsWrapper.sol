@@ -5,17 +5,17 @@ import "../derivatives/BinaryOptions.sol";
 
 contract BinaryOptionsWrapper {
 
-    function binaryCallPrice(
+    function call(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BinaryOptions.binaryCallPrice(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.call(spot, strike, timeToExp, volatility, rate);
     }
 
-    function binaryCallPriceMG(
+    function callMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -27,24 +27,24 @@ contract BinaryOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BinaryOptions.binaryCallPrice(spot, strike, timeToExp, volatility, rate);
+        result = BinaryOptions.call(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
         return (result, startGas - endGas);
     }
 
-    function binaryPutPrice(
+    function put(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (uint256 price) {
-        return BinaryOptions.binaryPutPrice(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.put(spot, strike, timeToExp, volatility, rate);
     }
 
-    function binaryPutPriceMG(
+    function putMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -56,24 +56,24 @@ contract BinaryOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        result = BinaryOptions.binaryPutPrice(spot, strike, timeToExp, volatility, rate);
+        result = BinaryOptions.put(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
         return (result, startGas - endGas);
     }
 
-    function binaryDelta(
+    function delta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 deltaCall, int128 deltaPut) {
-        return BinaryOptions.binaryDelta(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.delta(spot, strike, timeToExp, volatility, rate);
     }
 
-    function binaryDeltaMG(
+    function deltaMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -84,24 +84,24 @@ contract BinaryOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (deltaCall, deltaPut) = BinaryOptions.binaryDelta(spot, strike, timeToExp, volatility, rate);
+        (deltaCall, deltaPut) = BinaryOptions.delta(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
         return (deltaCall, deltaPut, startGas - endGas);
     }
 
-    function binaryGamma(
+    function gamma(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 gammaCall, int128 gammaPut) {
-        return BinaryOptions.binaryGamma(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.gamma(spot, strike, timeToExp, volatility, rate);
     }
 
-    function binaryGammaMG(
+    function gammaMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -112,24 +112,24 @@ contract BinaryOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (gammaCall, gammaPut) = BinaryOptions.binaryGamma(spot, strike, timeToExp, volatility, rate);
+        (gammaCall, gammaPut) = BinaryOptions.gamma(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
         return (gammaCall, gammaPut, startGas - endGas);
     }
 
-    function binaryTheta(
+    function theta(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 thetaCall, int128 thetaPut) {
-        return BinaryOptions.binaryTheta(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.theta(spot, strike, timeToExp, volatility, rate);
     }
 
-    function binaryThetaMG(
+    function thetaMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -140,24 +140,24 @@ contract BinaryOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (thetaCall, thetaPut) = BinaryOptions.binaryTheta(spot, strike, timeToExp, volatility, rate);
+        (thetaCall, thetaPut) = BinaryOptions.theta(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 
         return (thetaCall, thetaPut, startGas - endGas);
     }
 
-    function binaryVega(
+    function vega(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
         uint64 rate
     ) external pure returns (int128 vegaCall, int128 vegaPut) {
-        return BinaryOptions.binaryVega(spot, strike, timeToExp, volatility, rate);
+        return BinaryOptions.vega(spot, strike, timeToExp, volatility, rate);
     }
 
-    function binaryVegaMG(
+    function vegaMG(
         uint128 spot,
         uint128 strike,
         uint32 timeToExp,
@@ -168,7 +168,7 @@ contract BinaryOptionsWrapper {
         uint256 endGas;
         startGas = gasleft();
 
-        (vegaCall, vegaPut) = BinaryOptions.binaryVega(spot, strike, timeToExp, volatility, rate);
+        (vegaCall, vegaPut) = BinaryOptions.vega(spot, strike, timeToExp, volatility, rate);
 
         endGas = gasleft();
 

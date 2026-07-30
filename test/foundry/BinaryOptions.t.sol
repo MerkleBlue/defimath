@@ -71,8 +71,8 @@ contract BinaryOptionsPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));   // cap at 200% to avoid CDF saturation
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 cLo = BinaryOptions.binaryCallPrice(spotLo, strike, t, vol, rate);
-        uint256 cHi = BinaryOptions.binaryCallPrice(spotHi, strike, t, vol, rate);
+        uint256 cLo = BinaryOptions.call(spotLo, strike, t, vol, rate);
+        uint256 cHi = BinaryOptions.call(spotHi, strike, t, vol, rate);
         assertLe(cLo, cHi + _slack(cHi), "binary call not monotone increasing in spot");
     }
 
@@ -84,8 +84,8 @@ contract BinaryOptionsPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 pLo = BinaryOptions.binaryPutPrice(spotLo, strike, t, vol, rate);
-        uint256 pHi = BinaryOptions.binaryPutPrice(spotHi, strike, t, vol, rate);
+        uint256 pLo = BinaryOptions.put(spotLo, strike, t, vol, rate);
+        uint256 pHi = BinaryOptions.put(spotHi, strike, t, vol, rate);
         assertGe(pLo + _slack(pLo), pHi, "binary put not monotone decreasing in spot");
     }
 
@@ -98,8 +98,8 @@ contract BinaryOptionsPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 cLo = BinaryOptions.binaryCallPrice(spot, strikeLo, t, vol, rate);
-        uint256 cHi = BinaryOptions.binaryCallPrice(spot, strikeHi, t, vol, rate);
+        uint256 cLo = BinaryOptions.call(spot, strikeLo, t, vol, rate);
+        uint256 cHi = BinaryOptions.call(spot, strikeHi, t, vol, rate);
         assertGe(cLo + _slack(cLo), cHi, "binary call not monotone decreasing in strike");
     }
 
@@ -111,8 +111,8 @@ contract BinaryOptionsPropertyTest is Test {
         t = uint32(bound(t, TIME_TYPICAL_LO, TIME_TYPICAL_HI));
         vol = uint64(bound(vol, VOL_TYPICAL_LO, uint64(2e18)));
         rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
-        uint256 pLo = BinaryOptions.binaryPutPrice(spot, strikeLo, t, vol, rate);
-        uint256 pHi = BinaryOptions.binaryPutPrice(spot, strikeHi, t, vol, rate);
+        uint256 pLo = BinaryOptions.put(spot, strikeLo, t, vol, rate);
+        uint256 pHi = BinaryOptions.put(spot, strikeHi, t, vol, rate);
         assertLe(pLo, pHi + _slack(pHi), "binary put not monotone increasing in strike");
     }
 
@@ -125,8 +125,8 @@ contract BinaryOptionsPropertyTest is Test {
     /// either the call OR put pays out (mutually exclusive, summing to the discount).
     function test_ID_binaryParity(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 bc = BinaryOptions.binaryCallPrice(spot, strike, t, vol, rate);
-        uint256 bp = BinaryOptions.binaryPutPrice(spot, strike, t, vol, rate);
+        uint256 bc = BinaryOptions.call(spot, strike, t, vol, rate);
+        uint256 bp = BinaryOptions.put(spot, strike, t, vol, rate);
         // e^(-r·T) in FP18
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
         uint256 discount = FP_ONE * FP_ONE / Math.expPositive(uint256(rate) * timeYear / FP_ONE);
@@ -136,7 +136,7 @@ contract BinaryOptionsPropertyTest is Test {
     /// δcall + δput == 0 (since BC + BP is constant in spot).
     function test_ID_deltaSumZero(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 dC, int128 dP) = BinaryOptions.binaryDelta(spot, strike, t, vol, rate);
+        (int128 dC, int128 dP) = BinaryOptions.delta(spot, strike, t, vol, rate);
         // Library directly enforces deltaPut = -deltaCall; sum must be exact zero.
         assertEq(int256(dC) + int256(dP), int256(0), "binary delta sum != 0");
     }
@@ -145,7 +145,7 @@ contract BinaryOptionsPropertyTest is Test {
     /// binary parity's time-derivative is r·e^(-rT)/year).
     function test_ID_thetaCarryIdentity(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 thC, int128 thP) = BinaryOptions.binaryTheta(spot, strike, t, vol, rate);
+        (int128 thC, int128 thP) = BinaryOptions.theta(spot, strike, t, vol, rate);
         uint256 timeYear = uint256(t) * FP_ONE / 31536000;
         uint256 discount = FP_ONE * FP_ONE / Math.expPositive(uint256(rate) * timeYear / FP_ONE);
         // expected = rate · e^(-rT) / 365 (per-day)
@@ -162,28 +162,28 @@ contract BinaryOptionsPropertyTest is Test {
     /// 0 ≤ binary call ≤ 1 (unit payout cap; tighter: ≤ e^(-rT) ≤ 1 for r ≥ 0).
     function test_BNDS_callPriceInUnitRange(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 bc = BinaryOptions.binaryCallPrice(spot, strike, t, vol, rate);
+        uint256 bc = BinaryOptions.call(spot, strike, t, vol, rate);
         assertLe(bc, FP_ONE, "binary call > 1 (unit payout violation)");
     }
 
     /// 0 ≤ binary put ≤ 1.
     function test_BNDS_putPriceInUnitRange(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        uint256 bp = BinaryOptions.binaryPutPrice(spot, strike, t, vol, rate);
+        uint256 bp = BinaryOptions.put(spot, strike, t, vol, rate);
         assertLe(bp, FP_ONE, "binary put > 1");
     }
 
     /// δcall ≥ 0 — binary call delta is non-negative (more spot → more likely ITM).
     function test_BNDS_deltaCallNonNegative(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 dC, ) = BinaryOptions.binaryDelta(spot, strike, t, vol, rate);
+        (int128 dC, ) = BinaryOptions.delta(spot, strike, t, vol, rate);
         assertGe(int256(dC), int256(0), "binary delta_call < 0");
     }
 
     /// δput ≤ 0 — binary put delta is non-positive (more spot → less likely ITM for put).
     function test_BNDS_deltaPutNonPositive(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (, int128 dP) = BinaryOptions.binaryDelta(spot, strike, t, vol, rate);
+        (, int128 dP) = BinaryOptions.delta(spot, strike, t, vol, rate);
         assertLe(int256(dP), int256(0), "binary delta_put > 0");
     }
 
@@ -195,14 +195,14 @@ contract BinaryOptionsPropertyTest is Test {
     /// wrt spot sums to zero. Unlike vanilla options where γcall == γput.
     function test_SYM_gammaOppositeSigns(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 gC, int128 gP) = BinaryOptions.binaryGamma(spot, strike, t, vol, rate);
+        (int128 gC, int128 gP) = BinaryOptions.gamma(spot, strike, t, vol, rate);
         assertEq(int256(gC) + int256(gP), int256(0), "binary gamma sum != 0");
     }
 
     /// νcall == -νput. Since BC + BP is independent of vol, dvegasum = 0.
     function test_SYM_vegaOppositeSigns(uint128 spot, uint128 strike, uint32 t, uint64 vol, uint64 rate) public pure {
         (spot, strike, t, vol, rate) = _boundInputs(spot, strike, t, vol, rate);
-        (int128 vC, int128 vP) = BinaryOptions.binaryVega(spot, strike, t, vol, rate);
+        (int128 vC, int128 vP) = BinaryOptions.vega(spot, strike, t, vol, rate);
         assertEq(int256(vC) + int256(vP), int256(0), "binary vega sum != 0");
     }
 }

@@ -25,9 +25,9 @@ Every function is benchmarked against existing on-chain implementations. A repre
 
 | Function | DeFiMath | Next best | Multiple |
 | :------- | -------: | --------: | -------: |
-| `callOptionPrice` | **2,582** | 13,360 (Derivexyz) | **5.2×** |
-| `putOptionPrice`  | **2,592** | 13,363 (Derivexyz) | **5.2×** |
-| `binaryCallPrice` | **1,913** | 16,218 (Haptic)    | **8.5×** |
+| `call` | **2,582** | 13,360 (Derivexyz) | **5.2×** |
+| `put`  | **2,592** | 13,363 (Derivexyz) | **5.2×** |
+| `call` | **1,913** | 16,218 (Haptic)    | **8.5×** |
 | `delta`           | **1,661** | 8,621 (Derivexyz)  | **5.2×** |
 | `vega`            | **1,373** | 7,490 (Derivexyz)  | **5.5×** |
 | `ln`              | **390**   | 518 (Solady)       | 1.3× |
@@ -74,8 +74,8 @@ contract OptionsExchange {
         uint128 spot, uint128 strike, uint32 timeToExp,
         uint64 vol, uint64 rate
     ) external pure returns (uint256 callPx, uint256 putPx) {
-        callPx = BlackScholes.callOptionPrice(spot, strike, timeToExp, vol, rate);
-        putPx  = BlackScholes.putOptionPrice(spot, strike, timeToExp, vol, rate);
+        callPx = BlackScholes.call(spot, strike, timeToExp, vol, rate);
+        putPx  = BlackScholes.put(spot, strike, timeToExp, vol, rate);
     }
 }
 ```
@@ -113,19 +113,19 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `callOptionPrice`     | 2,582  | 1.3e-10 |       — | European call (Black-Scholes) |
-| `putOptionPrice`      | 2,592  | 1.3e-10 |       — | European put (Black-Scholes) |
+| `call`     | 2,582  | 1.3e-10 |       — | European call (Black-Scholes) |
+| `put`      | 2,592  | 1.3e-10 |       — | European put (Black-Scholes) |
 | `delta`               | 1,661  | 1.2e-13 |       — | First derivative w.r.t. spot |
 | `gamma`               | 1,433  | 3.2e-15 |       — | Second derivative w.r.t. spot |
 | `theta`               | 3,101  | 1.9e-12 |       — | Time decay (per day) |
 | `vega`                | 1,373  |   4e-13 |       — | Sensitivity to volatility |
 | `impliedVolatility`   | 11,668 / 11,743 |  — |  1.0e-6 | IV via Newton-Raphson (call / put) |
-| `binaryCallPrice`     | 1,913  |   2e-12 |       — | Cash-or-nothing call |
-| `binaryPutPrice`      | 1,918  |   2e-12 |       — | Cash-or-nothing put |
-| `binaryDelta`         | 1,717  |   1e-13 |       — | Binary delta (signed) |
-| `binaryGamma`         | 1,859  |   1e-15 |       — | Binary gamma (signed) |
-| `binaryTheta`         | 3,161  |   1e-14 |       — | Binary theta (per day) |
-| `binaryVega`          | 1,805  |   1e-14 |       — | Binary vega (signed) |
+| `call`     | 1,913  |   2e-12 |       — | Cash-or-nothing call |
+| `put`      | 1,918  |   2e-12 |       — | Cash-or-nothing put |
+| `delta`         | 1,717  |   1e-13 |       — | Binary delta (signed) |
+| `gamma`         | 1,859  |   1e-15 |       — | Binary gamma (signed) |
+| `theta`         | 3,161  |   1e-14 |       — | Binary theta (per day) |
+| `vega`          | 1,805  |   1e-14 |       — | Binary vega (signed) |
 | `futurePrice`         | 400    |  1.2e-9 |       — | `spot · e^(rt)` |
 
 *Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Absolute error is the metric throughout: option prices are quoted at a $1,000 spot (so `1.3e-10` is in dollars), binaries at unit payout, `theta` per day and `vega` per 1% vol. `impliedVolatility` is the exception — it is bounded by round-trip **relative** error against its Newton-Raphson convergence target.*
