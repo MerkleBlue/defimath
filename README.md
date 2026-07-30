@@ -111,22 +111,34 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 ### Derivatives — `BlackScholes`, `BinaryOptions`, `Futures`
 
+**Black-Scholes** (`BlackScholes.sol`) — European options, spot / lognormal:
+
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `call`     | 2,582  | 1.3e-10 |       — | European call (Black-Scholes) |
-| `put`      | 2,592  | 1.3e-10 |       — | European put (Black-Scholes) |
-| `delta`               | 1,661  | 1.2e-13 |       — | First derivative w.r.t. spot |
-| `gamma`               | 1,433  | 3.2e-15 |       — | Second derivative w.r.t. spot |
-| `theta`               | 3,101  | 1.9e-12 |       — | Time decay (per day) |
-| `vega`                | 1,373  |   4e-13 |       — | Sensitivity to volatility |
-| `impliedVolatility`   | 11,668 / 11,743 |  — |  1.0e-6 | IV via Newton-Raphson (call / put) |
-| `call`     | 1,913  |   2e-12 |       — | Cash-or-nothing call |
-| `put`      | 1,918  |   2e-12 |       — | Cash-or-nothing put |
-| `delta`         | 1,717  |   1e-13 |       — | Binary delta (signed) |
-| `gamma`         | 1,859  |   1e-15 |       — | Binary gamma (signed) |
-| `theta`         | 3,161  |   1e-14 |       — | Binary theta (per day) |
-| `vega`          | 1,805  |   1e-14 |       — | Binary vega (signed) |
-| `futurePrice`         | 400    |  1.2e-9 |       — | `spot · e^(rt)` |
+| `call`              | 2,582           | 1.3e-10 |       — | European call price |
+| `put`               | 2,592           | 1.3e-10 |       — | European put price |
+| `delta`             | 1,661           | 1.2e-13 |       — | First derivative w.r.t. spot |
+| `gamma`             | 1,433           | 3.2e-15 |       — | Second derivative w.r.t. spot |
+| `theta`             | 3,101           | 1.9e-12 |       — | Time decay (per day) |
+| `vega`              | 1,373           |   4e-13 |       — | Sensitivity to volatility |
+| `impliedVolatility` | 11,668 / 11,743 |       — |  1.0e-6 | IV via Newton-Raphson (call / put) |
+
+**Binary options** (`BinaryOptions.sol`) — cash-or-nothing, unit payout:
+
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `call`  | 1,913 | 2e-12 | — | Cash-or-nothing call |
+| `put`   | 1,918 | 2e-12 | — | Cash-or-nothing put |
+| `delta` | 1,717 | 1e-13 | — | Binary delta (signed) |
+| `gamma` | 1,859 | 1e-15 | — | Binary gamma (signed) |
+| `theta` | 3,161 | 1e-14 | — | Binary theta (per day) |
+| `vega`  | 1,805 | 1e-14 | — | Binary vega (signed) |
+
+**Futures** (`Futures.sol`):
+
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `futurePrice` | 400 | 1.2e-9 | — | `spot · e^(rt)` |
 
 *Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Absolute error is the metric throughout: option prices are quoted at a $1,000 spot (so `1.3e-10` is in dollars), binaries at unit payout, `theta` per day and `vega` per 1% vol. `impliedVolatility` is the exception — it is bounded by round-trip **relative** error against its Newton-Raphson convergence target.*
 
