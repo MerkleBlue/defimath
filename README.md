@@ -115,13 +115,13 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `call`              | 2,582           | 1.3e-10 |       — | European call price |
-| `put`               | 2,592           | 1.3e-10 |       — | European put price |
-| `delta`             | 1,661           | 1.2e-13 |       — | First derivative w.r.t. spot |
-| `gamma`             | 1,433           | 3.2e-15 |       — | Second derivative w.r.t. spot |
-| `theta`             | 3,101           | 1.9e-12 |       — | Time decay (per day) |
-| `vega`              | 1,373           |   4e-13 |       — | Sensitivity to volatility |
-| `impliedVolatility` | 11,668 / 11,743 |       — |  1.0e-6 | IV via Newton-Raphson (call / put) |
+| `call`              | 2,582           | 1.3e-10 |   5e-12 | European call price |
+| `put`               | 2,592           | 1.3e-10 |   5e-12 | European put price |
+| `delta`             | 1,661           | 1.2e-13 |       — | First derivative w.r.t. spot (|δ| ≤ 1) |
+| `gamma`             | 1,433           | 3.2e-15 |   5e-12 | Second derivative w.r.t. spot |
+| `theta`             | 3,101           | 1.9e-12 |   5e-12 | Time decay (per day) |
+| `vega`              | 1,373           |   4e-13 |   5e-12 | Sensitivity to volatility |
+| `impliedVolatility` | 11,668 / 11,743 |    2e-6 |  1.0e-6 | IV via Newton-Raphson (call / put) |
 
 **Binary options** (`BinaryOptions.sol`) — cash-or-nothing, unit payout:
 
@@ -140,7 +140,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | :------- | --: | ------------: | ------------: | :---------- |
 | `futurePrice` | 400 | 1.2e-9 | — | `spot · e^(rt)` |
 
-*Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Absolute error is the metric throughout: option prices are quoted at a $1,000 spot (so `1.3e-10` is in dollars), binaries at unit payout, `theta` per day and `vega` per 1% vol. `impliedVolatility` is the exception — it is bounded by round-trip **relative** error against its Newton-Raphson convergence target.*
+*Bounds enforced by the test suite — the `MAX_*_ERROR_*` constants in [`constants/Constants.mjs`](constants/Constants.mjs). **Black-Scholes** uses the same dual metric as the math primitives: **relative** where `|result| ≥ 1`, **absolute** where `< 1` — so each function carries a rel bound plus an abs bound for its sub-1 tail (e.g. deep-OTM prices below $1). `delta ∈ [−1, 1]` is abs-only, and `impliedVolatility` is a round-trip whose rel bound is its Newton-Raphson convergence target. Option prices are on a $1,000 spot, `theta` per day, `vega` per 1% vol. **Binaries** (unit payout, every value ≤ 1) and **futures** are abs-only.*
 
 ### Interest & rates — `Rates` (Rates.sol)
 

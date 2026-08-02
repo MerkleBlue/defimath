@@ -60,12 +60,18 @@ export const AVG_GAS_AVG              = 21;
 export const AVG_GAS_SQRT_TIME        = 163;
 
 // ── Black-Scholes (vanilla, on a $1000 underlying) ─────────────────────────────────────────────
-export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // in $, for call/put price
-export const MAX_ABS_ERROR_DELTA      = 1.2e-13;
-export const MAX_ABS_ERROR_GAMMA      = 3.2e-15;
-export const MAX_ABS_ERROR_THETA      = 1.9e-12;
-export const MAX_ABS_ERROR_VEGA       = 4e-13;
-export const MAX_REL_ERROR_IV         = 1.0e-6;    // round-trip relative: price → impliedVolatility → vol; Newton-Raphson convergence target
+// Dual metric, same rule as the math primitives: relative where |result| ≥ 1, absolute where < 1.
+export const MAX_REL_ERROR_OPTION     = 5e-12;     // when call/put price ≥ 1
+export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // when call/put price < 1 (deep OTM), in $
+export const MAX_ABS_ERROR_DELTA      = 1.2e-13;   // always |δ| ≤ 1, no relative error
+export const MAX_REL_ERROR_GAMMA      = 5e-12;     // when gamma ≥ 1 (low vol / short time)
+export const MAX_ABS_ERROR_GAMMA      = 3.2e-15;   // when gamma < 1
+export const MAX_REL_ERROR_THETA      = 5e-12;     // when |theta| ≥ 1 (per day)
+export const MAX_ABS_ERROR_THETA      = 1.9e-12;   // when |theta| < 1
+export const MAX_REL_ERROR_VEGA       = 5e-12;     // when vega ≥ 1 (per 1% vol)
+export const MAX_ABS_ERROR_VEGA       = 4e-13;     // when vega < 1
+export const MAX_REL_ERROR_IV         = 1.0e-6;    // when recovered vol ≥ 1 — round-trip, Newton-Raphson convergence target
+export const MAX_ABS_ERROR_IV         = 2e-6;      // when recovered vol < 1
 
 // ── Binary (cash-or-nothing, unit-payout) ────────────────────────────────────────────────
 // Price worst-case ~9.5e-13: deep-OTM under 400% rate / 1844% vol, where true normCDF

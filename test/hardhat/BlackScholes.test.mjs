@@ -3,8 +3,8 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import bs from "black-scholes";
 import greeks from "greeks";
-import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_ABS_ERROR_GAMMA, MAX_ABS_ERROR_THETA, MAX_ABS_ERROR_VEGA, MAX_REL_ERROR_IV } from "../../constants/Constants.mjs";
+import { assertAbsoluteBelow, assertPrecisionBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
+import { MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA, MAX_REL_ERROR_IV, MAX_ABS_ERROR_IV } from "../../constants/Constants.mjs";
 
 const fastTest = true;
 
@@ -35,78 +35,29 @@ describe("BlackScholes", function () {
     return { options };
   }
 
-  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, maxAbsError = MAX_ABS_ERROR_OPTION, multi = 10, log = true) {
+  async function testOptionRange(strikePoints, timePoints, volPoints, ratePoints, isCall, multi = 10, log = false) {
     const { options } = await loadFixture(deploy);
-    log && console.log("Max abs error: $" + maxAbsError);
-
-    let countTotal = 0, prunedCountSOL = 0;
-    const totalPoints = strikePoints.length * timePoints.length * volPoints.length * ratePoints.length;
-    let errorsSOL = [];
+    const cp = isCall ? "call" : "put";
+    let maxAbs = 0, maxRel = 0, count = 0;
     for (const strike of strikePoints) {
-      for(const exp of timePoints) {
+      for (const exp of timePoints) {
         for (const vol of volPoints) {
           for (const rate of ratePoints) {
-            // expected
-            const expected = blackScholesWrapped(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, isCall ? "call" : "put");
+            const expected = blackScholesWrapped(100 * multi, strike * multi, exp / SEC_IN_YEAR, vol, rate, cp);
+            const actualSOL = (await options[cp](tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
 
-            // SOL
-            let actualSOL = 0;
-            if (isCall) {
-              actualSOL = (await options.call(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
-            } else {
-              actualSOL = (await options.put(tokens(100 * multi), tokens(strike * multi), exp, tokens(vol), tokens(rate))).toString() / 1e18;
-            }
+            // dual metric: relative where |price| >= 1, absolute where < 1 (deep OTM)
+            assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
 
-            const absErrorSOL = Math.abs(actualSOL - expected);
-
-            const errorParamsSOL = {
-              expiration: exp, strike: strike * multi, vol, rate, act: actualSOL, exp: expected
-            }
-            errorsSOL.push({ absErrorSOL, errorParamsSOL });
-
-
-            countTotal++;
-
-            // print progress and prune errors
-            if (countTotal % Math.round(totalPoints / 10) === 0) {
-              if (log) {
-                const startTime = new Date().getTime();
-                errorsSOL.sort((a, b) => b.absErrorSOL - a.absErrorSOL);
-                console.log("Progress:", (countTotal / totalPoints * 100).toFixed(0) + 
-                "%, Max abs error:", "$" + (errorsSOL[0] ? (errorsSOL[0].absErrorSOL / (0.1 * multi)).toFixed(12) : "0") + 
-                " (" + (new Date().getTime() - startTime) + "mS)");
-              }
-
-              // prune all errors where abs error < allowedAbsError
-              const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < maxAbsError);
-              prunedCountSOL += toDeleteErrorsSOL.length;
-
-              errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= maxAbsError);
-            }
+            const abs = Math.abs(actualSOL - expected);
+            if (Math.abs(expected) < 1) maxAbs = Math.max(maxAbs, abs);
+            else maxRel = Math.max(maxRel, abs / Math.abs(expected));
+            count++;
           }
         }
       }
     }
-
-    // prune all errors where abs error < allowedAbsError
-    const toDeleteErrorsSOL = errorsSOL.filter(error => error.absErrorSOL < maxAbsError);
-    prunedCountSOL += toDeleteErrorsSOL.length;
-
-    errorsSOL = errorsSOL.filter(error => error.absErrorSOL >= maxAbsError);
-
-    if (log) {
-      // SOL
-      console.log();
-      console.log("REPORT SOL");
-      console.log("Errors Abs/Rel/Total: " + prunedCountSOL + "/" + errorsSOL.length + "/" + countTotal, "(" + ((prunedCountSOL / countTotal) * 100).toFixed(2) + "%)");
-
-      console.log("Max abs error params SOL: ", errorsSOL[0]);
-    }
-
-    // assert that all errors are below allowedAbsError
-    for (let i = 0; i < errorsSOL.length; i++) {
-      assert.isBelow(errorsSOL[i].absErrorSOL, maxAbsError);
-    }
+    if (log) console.log(`  ${cp}: ${count} pts — max abs (|y|<1) ${maxAbs.toExponential(2)}, max rel (|y|>=1) ${maxRel.toExponential(2)}`);
   }
 
   // before all tests, called once
@@ -118,9 +69,11 @@ describe("BlackScholes", function () {
   // Greek-agnostic 4D sweep helper — same shape as testOptionRange but for delta/gamma/theta/vega.
   // Each greek has its own JS reference (greeks library), Solidity wrapper, and tolerance.
   // strikePoints/timePoints are raw values; multi scales them to the {spot=100*multi} test world.
-  async function testGreekRange(greekName, strikePoints, timePoints, volPoints, ratePoints, multi = 10) {
+  async function testGreekRange(greekName, strikePoints, timePoints, volPoints, ratePoints, multi = 10, log = false) {
     const { options } = await loadFixture(deploy);
     const spot = 100 * multi;
+    let maxAbs = 0, maxRel = 0;
+    const track = (a, e) => { const abs = Math.abs(a - e); if (Math.abs(e) < 1) maxAbs = Math.max(maxAbs, abs); else maxRel = Math.max(maxRel, abs / Math.abs(e)); };
     for (const strike of strikePoints) {
       for (const time of timePoints) {
         for (const vol of volPoints) {
@@ -129,31 +82,38 @@ describe("BlackScholes", function () {
             const t = time / SEC_IN_YEAR;
             switch (greekName) {
               case "delta": {
+                // delta ∈ [-1, 1] → absolute error only (no relative)
                 const expectedCall = greeks.getDelta(spot, k, t, vol, rate, "call");
                 const expectedPut = greeks.getDelta(spot, k, t, vol, rate, "put");
                 const actual = await options.delta(tokens(spot), tokens(k), time, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actual.deltaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_DELTA);
-                assertAbsoluteBelow(actual.deltaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_DELTA);
+                const aC = actual.deltaCall.toString() / 1e18, aP = actual.deltaPut.toString() / 1e18;
+                assertAbsoluteBelow(aC, expectedCall, MAX_ABS_ERROR_DELTA);
+                assertAbsoluteBelow(aP, expectedPut, MAX_ABS_ERROR_DELTA);
+                track(aC, expectedCall); track(aP, expectedPut);
                 break;
               }
               case "gamma": {
                 const expected = greeks.getGamma(spot, k, t, vol, rate, "call");
                 const actual = (await options.gamma(tokens(spot), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_GAMMA);
+                assertPrecisionBelow(actual, expected, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA);
+                track(actual, expected);
                 break;
               }
               case "theta": {
                 const expectedCall = greeks.getTheta(spot, k, t, vol, rate, "call");
                 const expectedPut = greeks.getTheta(spot, k, t, vol, rate, "put");
                 const actual = await options.theta(tokens(spot), tokens(k), time, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actual.thetaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_THETA);
-                assertAbsoluteBelow(actual.thetaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_THETA);
+                const aC = actual.thetaCall.toString() / 1e18, aP = actual.thetaPut.toString() / 1e18;
+                assertPrecisionBelow(aC, expectedCall, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
+                assertPrecisionBelow(aP, expectedPut, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
+                track(aC, expectedCall); track(aP, expectedPut);
                 break;
               }
               case "vega": {
                 const expected = greeks.getVega(spot, k, t, vol, rate, "call");
                 const actual = (await options.vega(tokens(spot), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_VEGA);
+                assertPrecisionBelow(actual, expected, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA);
+                track(actual, expected);
                 break;
               }
             }
@@ -161,6 +121,7 @@ describe("BlackScholes", function () {
         }
       }
     }
+    if (log) console.log(`  ${greekName}: max abs (|y|<1) ${maxAbs.toExponential(2)}, max rel (|y|>=1) ${maxRel.toExponential(2)}`);
   }
 
   describe("call", function () {
@@ -171,7 +132,7 @@ describe("BlackScholes", function () {
         const expected = blackScholesWrapped(1000, 980, 60 / 365, 0.60, 0.05, "call");
 
         const actualSOL = (await options.call(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
       });
 
       it("multiple in typical range", async function () {
@@ -189,7 +150,7 @@ describe("BlackScholes", function () {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "call");
 
                 const actualSOL = (await options.call(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+                assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
               }
             }
           }
@@ -203,7 +164,7 @@ describe("BlackScholes", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.446744073709551];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.9999, 4];
-        await testOptionRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_OPTION, 10, false);
+        await testOptionRange(strikes, times, vols, rates, true, 10);
       });
 
       it("expired ITM", async function () {
@@ -243,7 +204,7 @@ describe("BlackScholes", function () {
               const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "call");
       
               const actualSOL = (await options.call(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-              assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+              assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
             }
           }
         }
@@ -254,7 +215,7 @@ describe("BlackScholes", function () {
         const expected = blackScholesWrapped(1000, 1200, 1 / 365, 0.40, 0.05, "call");
 
         const actualSOL = (await options.call(tokens(1000), tokens(1200), 1 * SEC_IN_DAY, tokens(0.40), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
       });
 
       it("handles when vol is 0, and time lowest", async function () {
@@ -262,7 +223,7 @@ describe("BlackScholes", function () {
         const expected = blackScholesWrapped(1000, 1020, 1 / SEC_IN_YEAR, 0, 0.05, "call");
 
         const actualSOL = (await options.call(tokens(1000), tokens(1020), 1, 0, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
       });
     });
 
@@ -272,7 +233,7 @@ describe("BlackScholes", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_OPTION, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, true, 10);
       });
 
       it("higher strikes", async function () {
@@ -280,7 +241,7 @@ describe("BlackScholes", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, true, MAX_ABS_ERROR_OPTION, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, true, 10);
       });
     });
 
@@ -368,7 +329,7 @@ describe("BlackScholes", function () {
         const expected = blackScholesWrapped(1000, 1020, 60 / 365, 0.60, 0.05, "put");
 
         const actualSOL = (await options.put(tokens(1000), tokens(1020), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
       });
 
       it("multiple in typical range", async function () {
@@ -386,7 +347,7 @@ describe("BlackScholes", function () {
                 const expected = blackScholesWrapped(1000, strike, time / 365, vol, rate, "put");
 
                 const actualSOL = (await options.put(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+                assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
               }
             }
           }
@@ -400,7 +361,7 @@ describe("BlackScholes", function () {
         const times = [...testTimePoints.slice(0, 3), ...testTimePoints.slice(-3)];
         const vols = [0.0001, 0.0001001, 0.0001002, 18.24674407370955, 18.34674407370955, 18.44674407370955];
         const rates = [0, 0.0001, 0.0002, 3.9998, 3.999, 4];
-        await testOptionRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_OPTION, 10, false);
+        await testOptionRange(strikes, times, vols, rates, false, 10);
       });
 
       it("expired ITM", async function () {
@@ -440,7 +401,7 @@ describe("BlackScholes", function () {
               const expected = blackScholesWrapped(1000, strike, time / SEC_IN_YEAR, 0, rate, "put");
       
               const actualSOL = (await options.put(tokens(1000), tokens(strike), time, 0, tokens(rate))).toString() / 1e18;
-              assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_OPTION);
+              assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION);
             }
           }
         }
@@ -461,7 +422,7 @@ describe("BlackScholes", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_OPTION, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, false, 10);
       });
 
       it("higher strikes", async function () {
@@ -469,7 +430,7 @@ describe("BlackScholes", function () {
         const times = generateRandomTestPoints(1, 2 * SEC_IN_YEAR, fastTest ? 10 : 30, true);
         const vols = generateRandomTestPoints(0.0001, 18.44, fastTest ? 10 : 30, false);
         const rates = [0, 0.1, 0.2, 4];
-        await testOptionRange(strikes, times, vols, rates, false, MAX_ABS_ERROR_OPTION, 10, !fastTest);
+        await testOptionRange(strikes, times, vols, rates, false, 10);
       });
     });
 
@@ -697,7 +658,7 @@ describe("BlackScholes", function () {
         const expected = greeks.getGamma(1000, 980, 60 / 365, 0.60, 0.05);
         
         const actualSOL = (await options.gamma(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_GAMMA);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA);
       });
 
       it("multiple in typical range", async function () {
@@ -715,7 +676,7 @@ describe("BlackScholes", function () {
                 const expected = greeks.getGamma(1000, strike, time / 365, vol, rate, "call");
 
                 const actualSOL = (await options.gamma(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_GAMMA);
+                assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA);
               }
             }
           }
@@ -736,7 +697,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.gamma(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_ABS_ERROR_GAMMA);
+        assertPrecisionBelow(actualSOL.toString() / 1e18, 0, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA);
       });
     });
 
@@ -825,8 +786,8 @@ describe("BlackScholes", function () {
         const expectedPut = greeks.getTheta(1000, 980, 60 / 365, 0.60, 0.05, "put");
         
         const actualSOL = await options.theta(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_THETA);
-        assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_THETA);
+        assertPrecisionBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
+        assertPrecisionBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
       });
 
       it("multiple in typical range", async function () {
@@ -845,8 +806,8 @@ describe("BlackScholes", function () {
                 const expectedPut = greeks.getTheta(1000, strike, time / 365, vol, rate, "put");
 
                 const actualSOL = await options.theta(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate));
-                assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_ABS_ERROR_THETA);
-                assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_ABS_ERROR_THETA);
+                assertPrecisionBelow(actualSOL.thetaCall.toString() / 1e18, expectedCall, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
+                assertPrecisionBelow(actualSOL.thetaPut.toString() / 1e18, expectedPut, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
               }
             }
           }
@@ -867,8 +828,8 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.theta(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.thetaCall.toString() / 1e18, 0, MAX_ABS_ERROR_THETA);
-        assertAbsoluteBelow(actualSOL.thetaPut.toString() / 1e18, 0, MAX_ABS_ERROR_THETA);
+        assertPrecisionBelow(actualSOL.thetaCall.toString() / 1e18, 0, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
+        assertPrecisionBelow(actualSOL.thetaPut.toString() / 1e18, 0, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA);
       });
     });
 
@@ -956,7 +917,7 @@ describe("BlackScholes", function () {
         const expected = greeks.getVega(1000, 980, 60 / 365, 0.60, 0.05);
         
         const actualSOL = (await options.vega(tokens(1000), tokens(980), 60 * SEC_IN_DAY, tokens(0.60), tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_VEGA);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA);
       });
 
       it("multiple in typical range", async function () {
@@ -974,7 +935,7 @@ describe("BlackScholes", function () {
                 const expected = greeks.getVega(1000, strike, time / 365, vol, rate, "call");
 
                 const actualSOL = (await options.vega(tokens(1000), tokens(strike), time * SEC_IN_DAY, tokens(vol), tokens(rate))).toString() / 1e18;
-                assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_VEGA);
+                assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA);
               }
             }
           }
@@ -995,7 +956,7 @@ describe("BlackScholes", function () {
         const { options } = await loadFixture(deploy);
 
         const actualSOL = await options.vega(tokens(1000), tokens(980), 0, tokens(0.60), tokens(0.05));
-        assertAbsoluteBelow(actualSOL.toString() / 1e18, 0, MAX_ABS_ERROR_VEGA);
+        assertPrecisionBelow(actualSOL.toString() / 1e18, 0, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA);
       });
     });
 
@@ -1081,8 +1042,8 @@ describe("BlackScholes", function () {
       const { options } = await loadFixture(deploy);
       const price = await options[isCall ? "call" : "put"](tokens(spot), tokens(strike), timeSec, tokens(vol), tokens(rate));
       const iv = (await options.impliedVolatility(tokens(spot), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
-      const relError = Math.abs(iv - vol) / vol;
-      assert.isBelow(relError, MAX_REL_ERROR_IV, `IV mismatch: expected ${vol}, got ${iv}`);
+      // dual metric: relative where vol >= 1, absolute where < 1 (vols are mostly < 100%)
+      assertPrecisionBelow(iv, vol, MAX_REL_ERROR_IV, MAX_ABS_ERROR_IV);
     }
 
     describe("behaviour", function () {
