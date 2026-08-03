@@ -59,10 +59,10 @@ export const AVG_GAS_CLAMP            = 78;
 export const AVG_GAS_AVG              = 21;
 export const AVG_GAS_SQRT_TIME        = 163;
 
-// ── Black-Scholes (vanilla, on a $1000 underlying) ─────────────────────────────────────────────
+// ── Black-Scholes (vanilla) ──────────────────────────────────────────────────────────────
 // Dual metric, same rule as the math primitives: relative where |result| ≥ 1, absolute where < 1.
 export const MAX_REL_ERROR_OPTION     = 5e-12;     // when call/put price ≥ 1
-export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // when call/put price < 1 (deep OTM), in $
+export const MAX_ABS_ERROR_OPTION     = 1.3e-10;   // when call/put price < 1 (deep OTM), in $ at $1000 spot
 export const AVG_GAS_CALL             = 2582;
 export const AVG_GAS_PUT              = 2592;
 
