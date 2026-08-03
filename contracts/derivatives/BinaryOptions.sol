@@ -58,7 +58,7 @@ library BinaryOptions {
     ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
     ///      returns 1 if in-the-money (spot > strike), else 0.
     ///      Price is a discounted probability in [0, 1], so only an absolute error applies.
-    ///      Max absolute error: < 2e-12.
+    ///      Max absolute error: < 2e-12 for any price < 1e18.
     /// @param spot Current spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
@@ -103,7 +103,7 @@ library BinaryOptions {
     ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
     ///      returns 1 if in-the-money (strike > spot), else 0.
     ///      Price is a discounted probability in [0, 1], so only an absolute error applies.
-    ///      Max absolute error: < 2e-12.
+    ///      Max absolute error: < 2e-12 for any price < 1e18.
     /// @param spot Current spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
@@ -148,7 +148,7 @@ library BinaryOptions {
     ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
     ///      returns (0, 0).
     ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
-    ///      Max absolute error: < 1e-13.
+    ///      Max absolute error: < 1e-13 for any |delta| < 1e18.
     /// @param spot Spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
@@ -201,7 +201,7 @@ library BinaryOptions {
     ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
     ///      returns (0, 0).
     ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
-    ///      Max absolute error: < 1e-15.
+    ///      Max absolute error: < 1e-15 for any |gamma| < 1e18.
     /// @param spot Spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
@@ -260,7 +260,7 @@ library BinaryOptions {
     ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
     ///      returns (0, 0).
     ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
-    ///      Max absolute error: < 1e-14 (per day).
+    ///      Max absolute error: < 1e-14 for any |theta| < 1e18 (per day).
     /// @param spot Spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
@@ -333,7 +333,7 @@ library BinaryOptions {
     ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
     ///      returns (0, 0).
     ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
-    ///      Max absolute error: < 1e-14 (per 1% vol).
+    ///      Max absolute error: < 1e-14 for any |vega| < 1e18 (per 1% vol).
     /// @param spot Spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.

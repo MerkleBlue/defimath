@@ -111,7 +111,9 @@ export const MAX_ABS_ERROR_BINARY_VEGA  = 1e-14;   // per 1% vol
 export const AVG_GAS_BINARY_VEGA        = 1805;
 
 // ── Futures ──────────────────────────────────────────────────────────────────────────────
-export const MAX_ABS_ERROR_FUTURE     = 1.2e-9;
+// price = spot · e^(rτ): the error is fundamentally relative (inherits exp, scale-invariant).
+export const MAX_REL_ERROR_FUTURE     = 2e-12;    // primary bound, enforced on the broad sweep
+export const MAX_ABS_ERROR_FUTURE     = 1.2e-9;   // absolute error at a $1000 spot (scales with spot)
 
 // ── Rates ────────────────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_COMPOUND   = 5.4e-14;   // inherits exp's relative error

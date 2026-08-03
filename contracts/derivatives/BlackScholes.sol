@@ -163,7 +163,7 @@ library BlackScholes {
     /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
     ///      either way, time to expiration < 32 years, and rate < 400%. Delta is bounded to [-1, 1],
     ///      so only an absolute error applies.
-    ///      Max absolute error: < 1.2e-13.
+    ///      Max absolute error: < 1.2e-13 for any |delta| < 1e18.
     /// @param spot Spot price of the asset in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.

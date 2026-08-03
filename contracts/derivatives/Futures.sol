@@ -39,11 +39,17 @@ library Futures {
     error RateUpperBoundError();
 
 
-    /// @notice Computes the fair price of a futures contract using continuous compounding
-    /// @param spot Current spot price of the underlying asset (scaled by 1e18)
-    /// @param timeToExp Time to contract expiration in seconds
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return price Futures price (scaled by 1e18)
+    /// @notice Computes the fair price of a futures contract using continuous compounding.
+    /// @dev Formula: price = spot · e^(r·τ). Reverts outside the supported domain: spot in
+    ///      (1e-6, 1e15) USD, time to expiration < 2 years, and rate < 400%. When expired
+    ///      (timeToExp == 0), returns spot. The price scales with the spot, so the relative error
+    ///      is scale-invariant.
+    ///      Max relative error: < 2e-12 for any price >= 1e18.
+    ///      Max absolute error: < 2e-12 for any price < 1e18.
+    /// @param spot Current spot price of the underlying asset in 18-decimal fixed-point format.
+    /// @param timeToExp Time to contract expiration in seconds.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return price Futures price in 18-decimal fixed-point format.
     function futurePrice(uint128 spot, uint32 timeToExp, uint64 rate) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
