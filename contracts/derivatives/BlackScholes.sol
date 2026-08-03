@@ -159,7 +159,7 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Delta for both call and put options (sensitivity to spot price change).
+    /// @notice Computes Delta for both call and put options using the Black-Scholes model (sensitivity to spot price change).
     /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
     ///      either way, time to expiration < 32 years, and rate < 400%. Delta is bounded to [-1, 1],
     ///      so only an absolute error applies.
@@ -206,7 +206,7 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Gamma of the option (sensitivity to delta change).
+    /// @notice Computes Gamma of the option using the Black-Scholes model (sensitivity to delta change).
     /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
     ///      either way, time to expiration < 32 years, and rate < 400%.
     ///      Max relative error: < 5e-12 for any gamma >= 1e18.
@@ -248,7 +248,7 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Theta of the option (time decay per day).
+    /// @notice Computes Theta of the option using the Black-Scholes model (time decay per day).
     /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
     ///      either way, time to expiration < 32 years, and rate < 400%. Theta is expressed per day.
     ///      Max relative error: < 5e-12 for any |theta| >= 1e18.
@@ -304,7 +304,7 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Vega of the option (sensitivity to volatility change).
+    /// @notice Computes Vega of the option using the Black-Scholes model (sensitivity to volatility change).
     /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
     ///      either way, time to expiration < 32 years, and rate < 400%. Vega is expressed per 1% change in volatility.
     ///      Max relative error: < 5e-12 for any vega >= 1e18.
