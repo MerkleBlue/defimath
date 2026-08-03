@@ -61,13 +61,18 @@ library BlackScholes {
     error NoConvergenceError();
 
 
-    /// @notice Computes the price of a European call option using the Black-Scholes model
-    /// @param spot Current spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return price Call option price (scaled by 1e18)
+    /// @notice Computes the price of a European call option using the Black-Scholes model.
+    /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns the intrinsic value max(spot - strike, 0).
+    ///      Max relative error: < 5e-12 for any price >= 1e18.
+    ///      Max absolute error: < 1.3e-10 for any price < 1e18.
+    /// @param spot Current spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return price Call option price in 18-decimal fixed-point format.
     function call(
         uint128 spot,
         uint128 strike,
@@ -105,13 +110,18 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes the price of a European put option using the Black-Scholes model
-    /// @param spot Current spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return price Put option price (scaled by 1e18)
+    /// @notice Computes the price of a European put option using the Black-Scholes model.
+    /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns the intrinsic value max(strike - spot, 0).
+    ///      Max relative error: < 5e-12 for any price >= 1e18.
+    ///      Max absolute error: < 1.3e-10 for any price < 1e18.
+    /// @param spot Current spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return price Put option price in 18-decimal fixed-point format.
     function put(
         uint128 spot,
         uint128 strike,
@@ -149,14 +159,18 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Delta for both call and put options (sensitivity to spot price change)
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return deltaCall Call option delta (scaled by 1e18)
-    /// @return deltaPut Put option delta (scaled by 1e18)
+    /// @notice Computes Delta for both call and put options (sensitivity to spot price change).
+    /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. Delta is bounded to [-1, 1],
+    ///      so only an absolute error applies.
+    ///      Max absolute error: < 1.2e-13.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return deltaCall Call option delta in 18-decimal fixed-point format.
+    /// @return deltaPut Put option delta in 18-decimal fixed-point format.
     function delta(
         uint128 spot,
         uint128 strike,
@@ -192,13 +206,17 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Gamma of the option (sensitivity to delta change)
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return gammaOut Option Gamma (scaled by 1e18)
+    /// @notice Computes Gamma of the option (sensitivity to delta change).
+    /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%.
+    ///      Max relative error: < 5e-12 for any gamma >= 1e18.
+    ///      Max absolute error: < 3.2e-15 for any gamma < 1e18.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return gammaOut Option Gamma in 18-decimal fixed-point format.
     function gamma(
         uint128 spot,
         uint128 strike,
@@ -230,14 +248,18 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Theta of the option (time decay per day)
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return thetaCall Call option theta per day (scaled by 1e18)
-    /// @return thetaPut Put option theta per day (scaled by 1e18)
+    /// @notice Computes Theta of the option (time decay per day).
+    /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. Theta is expressed per day.
+    ///      Max relative error: < 5e-12 for any |theta| >= 1e18.
+    ///      Max absolute error: < 1.9e-12 for any |theta| < 1e18.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return thetaCall Call option theta per day in 18-decimal fixed-point format.
+    /// @return thetaPut Put option theta per day in 18-decimal fixed-point format.
     function theta(
         uint128 spot,
         uint128 strike,
@@ -282,13 +304,17 @@ library BlackScholes {
         }
     }
 
-    /// @notice Computes Vega of the option (sensitivity to volatility change)
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return vegaOut Option Vega (scaled by 1e18)
+    /// @notice Computes Vega of the option (sensitivity to volatility change).
+    /// @dev Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. Vega is expressed per 1% change in volatility.
+    ///      Max relative error: < 5e-12 for any vega >= 1e18.
+    ///      Max absolute error: < 4e-13 for any vega < 1e18.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return vegaOut Option Vega in 18-decimal fixed-point format.
     function vega(
         uint128 spot,
         uint128 strike,
@@ -346,15 +372,21 @@ library BlackScholes {
         bool isCall;
     }
 
-    /// @notice Computes implied volatility from a market option price using Newton-Raphson
-    /// @dev Solves for σ such that BS(σ) = optionPrice. Requires optionPrice to be in no-arbitrage range.
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds (must be > 0)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @param optionPrice Observed market price of the option (scaled by 1e18)
-    /// @param isCall True for call option, false for put
-    /// @return volatility Implied volatility (scaled by 1e18)
+    /// @notice Computes implied volatility from a market option price using Newton-Raphson.
+    /// @dev Solves for σ such that BS(σ) = optionPrice via Newton-Raphson (fixed 55% seed, up to 30
+    ///      iterations, price tolerance ~1e6 wei), clamping the result to [0.01%, 1800%] volatility.
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration in (0, 32 years), and rate < 400%. Also reverts if optionPrice
+    ///      is outside the no-arbitrage range, or if the solver fails to converge within 30 iterations.
+    ///      Max relative error: < 1e-6 for any volatility >= 1e18.
+    ///      Max absolute error: < 2e-6 for any volatility < 1e18.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds (must be > 0).
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @param optionPrice Observed market price of the option in 18-decimal fixed-point format.
+    /// @param isCall True for call option, false for put.
+    /// @return volatility Implied volatility in 18-decimal fixed-point format.
     function impliedVolatility(
         uint128 spot,
         uint128 strike,
