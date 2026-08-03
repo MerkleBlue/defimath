@@ -1,7 +1,7 @@
 
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert } from "chai";
-import { assertAbsoluteBelow, assertRelativeBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
+import { assertAbsoluteBelow, assertPrecisionBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
 import { MAX_ABS_ERROR_FUTURE, MAX_REL_ERROR_FUTURE } from "../../constants/Constants.mjs";
 
 describe("Futures", function () {
@@ -36,7 +36,7 @@ describe("Futures", function () {
           for (let rate = 0; rate < 4; rate += rateStep) {
             const expected = futurePrice(1000, timeSec, rate);
             const actualSOL = (await futures.futurePrice(tokens(1000), Math.floor(timeSec), tokens(rate))).toString() / 1e18;
-            assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_FUTURE);
+            assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_FUTURE, MAX_ABS_ERROR_FUTURE);
           }
         }
       });
@@ -62,7 +62,7 @@ describe("Futures", function () {
         const spot = 1e-6;
         const expected = futurePrice(spot, 30 * SEC_IN_DAY, 0.05);
         const actualSOL = (await futures.futurePrice("1000000000000", 30 * SEC_IN_DAY, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_FUTURE);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_FUTURE, MAX_ABS_ERROR_FUTURE);
       });
 
       it("spot at SPOT_MAX (1e15 in FP, largest non-reverting)", async function () {
@@ -70,21 +70,21 @@ describe("Futures", function () {
         const spot = 1e15;
         const expected = futurePrice(spot, 30 * SEC_IN_DAY, 0.05);
         const actualSOL = (await futures.futurePrice("1000000000000000000000000000000000", 30 * SEC_IN_DAY, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, spot * MAX_ABS_ERROR_FUTURE);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_FUTURE, MAX_ABS_ERROR_FUTURE);
       });
 
       it("time at TIME_MAX (2 years, largest non-reverting)", async function () {
         const { futures } = await loadFixture(deploy);
         const expected = futurePrice(1000, 63072000, 0.05);
         const actualSOL = (await futures.futurePrice(tokens(1000), 63072000, tokens(0.05))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_FUTURE);
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_FUTURE, MAX_ABS_ERROR_FUTURE);
       });
 
       it("rate at RATE_MAX (400%, largest non-reverting)", async function () {
         const { futures } = await loadFixture(deploy);
         const expected = futurePrice(1000, 30 * SEC_IN_DAY, 4);
         const actualSOL = (await futures.futurePrice(tokens(1000), 30 * SEC_IN_DAY, tokens(4))).toString() / 1e18;
-        assertAbsoluteBelow(actualSOL, expected, expected * 1e-12);  // looser since e^(4·1/12) ≈ 1.39
+        assertPrecisionBelow(actualSOL, expected, MAX_REL_ERROR_FUTURE, MAX_ABS_ERROR_FUTURE);
       });
     });
 
@@ -104,7 +104,7 @@ describe("Futures", function () {
 
           const expected = futurePrice(spot, timeSec, rate);
           const actual = (await futures.futurePrice(tokens(spot), timeSec, tokens(rate))).toString() / 1e18;
-          assertRelativeBelow(actual, expected, MAX_REL_ERROR_FUTURE);
+          assertPrecisionBelow(actual, expected, MAX_REL_ERROR_FUTURE, MAX_ABS_ERROR_FUTURE);
         }
       });
     });
