@@ -3,7 +3,7 @@ import { assert } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import erf from "math-erf";
 import { assertAbsoluteBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_ABS_ERROR_BINARY, MAX_ABS_ERROR_BINARY_DELTA, MAX_ABS_ERROR_BINARY_GAMMA, MAX_ABS_ERROR_BINARY_THETA, MAX_ABS_ERROR_BINARY_VEGA } from "../../constants/Constants.mjs";
+import { MAX_ABS_ERROR_BINARY, MAX_ABS_ERROR_BINARY_DELTA, MAX_ABS_ERROR_BINARY_GAMMA, MAX_ABS_ERROR_BINARY_THETA, MAX_ABS_ERROR_BINARY_VEGA, AVG_GAS_BINARY_CALL, AVG_GAS_BINARY_PUT, AVG_GAS_BINARY_DELTA, AVG_GAS_BINARY_GAMMA, AVG_GAS_BINARY_THETA, AVG_GAS_BINARY_VEGA } from "../../constants/Constants.mjs";
 
 const fastTest = true;
 
@@ -570,7 +570,7 @@ describe("BinaryOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1913, `gas changed: ${avg} ≠ 1913 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_BINARY_CALL, `gas changed: ${avg} ≠ ${AVG_GAS_BINARY_CALL} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -779,7 +779,7 @@ describe("BinaryOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1918, `gas changed: ${avg} ≠ 1918 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_BINARY_PUT, `gas changed: ${avg} ≠ ${AVG_GAS_BINARY_PUT} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -980,7 +980,7 @@ describe("BinaryOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1717, `gas changed: ${avg} ≠ 1717 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_BINARY_DELTA, `gas changed: ${avg} ≠ ${AVG_GAS_BINARY_DELTA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1191,7 +1191,7 @@ describe("BinaryOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1859, `gas changed: ${avg} ≠ 1859 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_BINARY_GAMMA, `gas changed: ${avg} ≠ ${AVG_GAS_BINARY_GAMMA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1383,7 +1383,7 @@ describe("BinaryOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 3161, `gas changed: ${avg} ≠ 3161 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_BINARY_THETA, `gas changed: ${avg} ≠ ${AVG_GAS_BINARY_THETA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1584,7 +1584,7 @@ describe("BinaryOptions", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1805, `gas changed: ${avg} ≠ 1805 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_BINARY_VEGA, `gas changed: ${avg} ≠ ${AVG_GAS_BINARY_VEGA} — deterministic, update threshold if intentional`);
       });
     });
   });

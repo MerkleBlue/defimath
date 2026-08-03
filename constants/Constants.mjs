@@ -87,13 +87,28 @@ export const AVG_GAS_IV_CALL          = 11668;
 export const AVG_GAS_IV_PUT           = 11743;
 
 // ── Binary (cash-or-nothing, unit-payout) ────────────────────────────────────────────────
+// Abs-only, no relative metric: nothing here reaches the |result| ≥ 1 regime. Price is a
+// discounted probability ∈ [0,1] (tops out at 1 only at the exact deep-ITM r=0 boundary),
+// and the greeks stay ≪ 1 on the $1000-spot grid — delta/gamma carry 1/S and 1/S² factors,
+// and the grid only pairs ultra-low vol / 1s time with far-OTM strikes where φ(d2) → 0.
+// (Contrast Black-Scholes, where price and gamma/theta/vega cross 1 and need the dual rule.)
 // Price worst-case ~9.5e-13: deep-OTM under 400% rate / 1844% vol, where true normCDF
 // underflows to 0 but Solidity stdNormCDF leaves a tiny residual.
-export const MAX_ABS_ERROR_BINARY       = 2e-12;
+export const MAX_ABS_ERROR_BINARY       = 2e-12;   // call/put price (shared bound)
+export const AVG_GAS_BINARY_CALL        = 1913;
+export const AVG_GAS_BINARY_PUT         = 1918;
+
 export const MAX_ABS_ERROR_BINARY_DELTA = 1e-13;
+export const AVG_GAS_BINARY_DELTA       = 1717;
+
 export const MAX_ABS_ERROR_BINARY_GAMMA = 1e-15;
+export const AVG_GAS_BINARY_GAMMA       = 1859;
+
 export const MAX_ABS_ERROR_BINARY_THETA = 1e-14;   // per day
+export const AVG_GAS_BINARY_THETA       = 3161;
+
 export const MAX_ABS_ERROR_BINARY_VEGA  = 1e-14;   // per 1% vol
+export const AVG_GAS_BINARY_VEGA        = 1805;
 
 // ── Futures ──────────────────────────────────────────────────────────────────────────────
 export const MAX_ABS_ERROR_FUTURE     = 1.2e-9;
