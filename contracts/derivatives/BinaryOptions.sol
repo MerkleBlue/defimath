@@ -52,14 +52,19 @@ library BinaryOptions {
     error RateUpperBoundError();
 
 
-    /// @notice Computes the price of a binary cash-or-nothing call option using the Black-Scholes model
+    /// @notice Computes the price of a binary cash-or-nothing call option using the Black-Scholes model.
     /// @dev Formula: price = e^(-r*τ) * Φ(d2). Payout is fixed at 1; multiply externally for other payouts.
-    /// @param spot Current spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return price Binary call option price for unit payout (scaled by 1e18)
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns 1 if in-the-money (spot > strike), else 0.
+    ///      Price is a discounted probability in [0, 1], so only an absolute error applies.
+    ///      Max absolute error: < 2e-12.
+    /// @param spot Current spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return price Binary call option price for unit payout in 18-decimal fixed-point format.
     function call(
         uint128 spot,
         uint128 strike,
@@ -92,14 +97,19 @@ library BinaryOptions {
         }
     }
 
-    /// @notice Computes the price of a binary cash-or-nothing put option using the Black-Scholes model
+    /// @notice Computes the price of a binary cash-or-nothing put option using the Black-Scholes model.
     /// @dev Formula: price = e^(-r*τ) * Φ(-d2). Payout is fixed at 1; multiply externally for other payouts.
-    /// @param spot Current spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return price Binary put option price for unit payout (scaled by 1e18)
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns 1 if in-the-money (strike > spot), else 0.
+    ///      Price is a discounted probability in [0, 1], so only an absolute error applies.
+    ///      Max absolute error: < 2e-12.
+    /// @param spot Current spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return price Binary put option price for unit payout in 18-decimal fixed-point format.
     function put(
         uint128 spot,
         uint128 strike,
@@ -132,15 +142,20 @@ library BinaryOptions {
         }
     }
 
-    /// @notice Computes Delta for binary cash-or-nothing call and put options
+    /// @notice Computes Delta for binary cash-or-nothing call and put options using the Black-Scholes model.
     /// @dev Formula: ΔCall = e^(-r*τ) * φ(d2) / (S*σ*√τ); ΔPut = -ΔCall. Payout is fixed at 1.
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return deltaCall Binary call option delta for unit payout (scaled by 1e18)
-    /// @return deltaPut Binary put option delta for unit payout (scaled by 1e18)
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns (0, 0).
+    ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
+    ///      Max absolute error: < 1e-13.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return deltaCall Binary call option delta for unit payout in 18-decimal fixed-point format.
+    /// @return deltaPut Binary put option delta for unit payout in 18-decimal fixed-point format.
     function delta(
         uint128 spot,
         uint128 strike,
@@ -179,16 +194,21 @@ library BinaryOptions {
         }
     }
 
-    /// @notice Computes Gamma for binary cash-or-nothing call and put options
+    /// @notice Computes Gamma for binary cash-or-nothing call and put options using the Black-Scholes model.
     /// @dev Formula: ΓCall = -e^(-r*τ) * φ(d2) * d1 / (S² * σ²*τ); ΓPut = -ΓCall. Payout is fixed at 1.
-    /// @dev Note: binary gamma is signed and changes sign at ATM (d1 = 0)
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return gammaCall Binary call option gamma for unit payout (scaled by 1e18)
-    /// @return gammaPut Binary put option gamma for unit payout (scaled by 1e18)
+    ///      Note: binary gamma is signed and changes sign at ATM (d1 = 0).
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns (0, 0).
+    ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
+    ///      Max absolute error: < 1e-15.
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return gammaCall Binary call option gamma for unit payout in 18-decimal fixed-point format.
+    /// @return gammaPut Binary put option gamma for unit payout in 18-decimal fixed-point format.
     function gamma(
         uint128 spot,
         uint128 strike,
@@ -231,18 +251,23 @@ library BinaryOptions {
         }
     }
 
-    /// @notice Computes Theta for binary cash-or-nothing call and put options (per day)
+    /// @notice Computes Theta for binary cash-or-nothing call and put options using the Black-Scholes model (per day).
     /// @dev Formula (per year):
     ///      Θ_call = r·e^(-r*τ)·Φ(d2) + e^(-r*τ)·φ(d2)·(d1/(2τ) - r/(σ√τ))
     ///      Θ_put  = r·e^(-r*τ)·Φ(-d2) - e^(-r*τ)·φ(d2)·(d1/(2τ) - r/(σ√τ))
     ///      Returned values are per-day (divided by 365). Payout is fixed at 1.
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return thetaCall Binary call option theta per day for unit payout (scaled by 1e18)
-    /// @return thetaPut Binary put option theta per day for unit payout (scaled by 1e18)
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns (0, 0).
+    ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
+    ///      Max absolute error: < 1e-14 (per day).
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return thetaCall Binary call option theta per day for unit payout in 18-decimal fixed-point format.
+    /// @return thetaPut Binary put option theta per day for unit payout in 18-decimal fixed-point format.
     function theta(
         uint128 spot,
         uint128 strike,
@@ -301,16 +326,21 @@ library BinaryOptions {
         }
     }
 
-    /// @notice Computes Vega for binary cash-or-nothing call and put options (per 1% vol move)
+    /// @notice Computes Vega for binary cash-or-nothing call and put options using the Black-Scholes model (per 1% vol move).
     /// @dev Formula: ν_call = -(1/100) · e^(-r*τ) · φ(d2) · d1/σ; ν_put = -ν_call. Payout is fixed at 1.
-    /// @dev Note: binary vega is signed and changes sign at d1 = 0 (around the strike)
-    /// @param spot Spot price of the asset (scaled by 1e18)
-    /// @param strike Strike price of the option (scaled by 1e18)
-    /// @param timeToExp Time to expiration in seconds
-    /// @param volatility Annualized implied volatility (scaled by 1e18)
-    /// @param rate Annualized risk-free interest rate (scaled by 1e18)
-    /// @return vegaCall Binary call option vega per 1% vol for unit payout (scaled by 1e18)
-    /// @return vegaPut Binary put option vega per 1% vol for unit payout (scaled by 1e18)
+    ///      Note: binary vega is signed and changes sign at d1 = 0 (around the strike).
+    ///      Reverts outside the supported domain: spot in (1e-6, 1e15) USD, strike within 5x of spot
+    ///      either way, time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0),
+    ///      returns (0, 0).
+    ///      Magnitude stays well below 1 on the supported domain, so only an absolute error applies.
+    ///      Max absolute error: < 1e-14 (per 1% vol).
+    /// @param spot Spot price of the asset in 18-decimal fixed-point format.
+    /// @param strike Strike price of the option in 18-decimal fixed-point format.
+    /// @param timeToExp Time to expiration in seconds.
+    /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
+    /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
+    /// @return vegaCall Binary call option vega per 1% vol for unit payout in 18-decimal fixed-point format.
+    /// @return vegaPut Binary put option vega per 1% vol for unit payout in 18-decimal fixed-point format.
     function vega(
         uint128 spot,
         uint128 strike,
