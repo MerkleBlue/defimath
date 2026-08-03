@@ -4,7 +4,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js
 import bs from "black-scholes";
 import greeks from "greeks";
 import { assertAbsoluteBelow, assertPrecisionBelow, assertRevertError, generateRandomTestPoints, generateTestStrikePoints, generateTestTimePoints, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA, MAX_REL_ERROR_IV, MAX_ABS_ERROR_IV } from "../../constants/Constants.mjs";
+import { MAX_REL_ERROR_OPTION, MAX_ABS_ERROR_OPTION, MAX_ABS_ERROR_DELTA, MAX_REL_ERROR_GAMMA, MAX_ABS_ERROR_GAMMA, MAX_REL_ERROR_THETA, MAX_ABS_ERROR_THETA, MAX_REL_ERROR_VEGA, MAX_ABS_ERROR_VEGA, MAX_REL_ERROR_IV, MAX_ABS_ERROR_IV, AVG_GAS_CALL, AVG_GAS_PUT, AVG_GAS_DELTA, AVG_GAS_GAMMA, AVG_GAS_THETA, AVG_GAS_VEGA, AVG_GAS_IV_CALL, AVG_GAS_IV_PUT } from "../../constants/Constants.mjs";
 
 const fastTest = true;
 
@@ -316,7 +316,7 @@ describe("BlackScholes", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 2582, `gas changed: ${avg} ≠ 2582 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_CALL, `gas changed: ${avg} ≠ ${AVG_GAS_CALL} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -505,7 +505,7 @@ describe("BlackScholes", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 2592, `gas changed: ${avg} ≠ 2592 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_PUT, `gas changed: ${avg} ≠ ${AVG_GAS_PUT} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -645,7 +645,7 @@ describe("BlackScholes", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1661, `gas changed: ${avg} ≠ 1661 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_DELTA, `gas changed: ${avg} ≠ ${AVG_GAS_DELTA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -772,7 +772,7 @@ describe("BlackScholes", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1433, `gas changed: ${avg} ≠ 1433 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_GAMMA, `gas changed: ${avg} ≠ ${AVG_GAS_GAMMA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -904,7 +904,7 @@ describe("BlackScholes", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 3101, `gas changed: ${avg} ≠ 3101 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_THETA, `gas changed: ${avg} ≠ ${AVG_GAS_THETA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1031,7 +1031,7 @@ describe("BlackScholes", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 1373, `gas changed: ${avg} ≠ 1373 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_VEGA, `gas changed: ${avg} ≠ ${AVG_GAS_VEGA} — deterministic, update threshold if intentional`);
       });
     });
   });
@@ -1202,8 +1202,8 @@ describe("BlackScholes", function () {
         }
         const avgCall = Math.round(callGas / N);
         const avgPut  = Math.round(putGas / N);
-        assert.equal(avgCall, 11668, `gas changed: ${avgCall} ≠ 11668 — deterministic, update threshold if intentional`);
-        assert.equal(avgPut, 11743, `gas changed: ${avgPut} ≠ 11743 — deterministic, update threshold if intentional`);
+        assert.equal(avgCall, AVG_GAS_IV_CALL, `gas changed: ${avgCall} ≠ ${AVG_GAS_IV_CALL} — deterministic, update threshold if intentional`);
+        assert.equal(avgPut, AVG_GAS_IV_PUT, `gas changed: ${avgPut} ≠ ${AVG_GAS_IV_PUT} — deterministic, update threshold if intentional`);
       });
     });
   });
