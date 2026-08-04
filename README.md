@@ -17,7 +17,7 @@
 - **Unlocks new use cases.** Gas-efficient enough to make real-time options pricing, on-chain IV solving on every quote, and risk-adjusted vault fees economically viable. Use cases that were previously off-chain workarounds now fit in a single transaction.
 - **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
 - **Pure Solidity.** ~16KB published, zero runtime dependencies, easy to audit.
-- **Validated precision.** Sub-1e-10 absolute error on options pricing. Every math primitive carries an explicit, enforced error bound — from 2e-18 (`sqrt`) to 1e-12 (`pow`) — measured as relative error where the result is ≥ 1 and absolute error near a root or for bounded functions like `stdNormCDF` and `erf`; see the per-function tables below. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
+- **Validated precision.** Sub-5e-12 relative error on options pricing. Every math primitive carries an explicit, enforced error bound — from 2e-18 (`sqrt`) to 1e-12 (`pow`) — measured as relative error where the result is ≥ 1 and absolute error near a root or for bounded functions like `stdNormCDF` and `erf`; see the per-function tables below. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
 
 ## Benchmarks
 
@@ -138,9 +138,9 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 | Function | Gas | Max abs error | Max rel error | Description |
 | :------- | --: | ------------: | ------------: | :---------- |
-| `futurePrice` | 400 | 1.2e-9 | — | `spot · e^(rt)` |
+| `futurePrice` | 400 | 1.2e-9 | 2e-12 | `spot · e^(rt)` |
 
-*Bounds enforced by the test suite — the `MAX_*_ERROR_*` constants in [`constants/Constants.mjs`](constants/Constants.mjs). **Black-Scholes** uses the same dual metric as the math primitives: **relative** where `|result| ≥ 1`, **absolute** where `< 1` — so each function carries a rel bound plus an abs bound for its sub-1 tail (e.g. deep-OTM prices below $1). `delta ∈ [−1, 1]` is abs-only, and `impliedVolatility` is a round-trip whose rel bound is its Newton-Raphson convergence target. Option prices are on a $1,000 spot, `theta` per day, `vega` per 1% vol. **Binaries** (unit payout, every value ≤ 1) and **futures** are abs-only.*
+*Bounds enforced by the test suite — the `MAX_*_ERROR_*` constants in [`constants/Constants.mjs`](constants/Constants.mjs). **Black-Scholes** uses the same dual metric as the math primitives: **relative** where `|result| ≥ 1`, **absolute** where `< 1` — so each function carries a rel bound plus an abs bound for its sub-1 tail (e.g. deep-OTM prices below $1). `delta ∈ [−1, 1]` is abs-only, and `impliedVolatility` is a round-trip whose rel bound is its Newton-Raphson convergence target. Option prices are on a $1,000 spot, `theta` per day, `vega` per 1% vol. **Binaries** (unit payout, every value ≤ 1) are abs-only. **Futures** price scales with spot, so the bound is **relative** (`2e-12`, scale-invariant); the absolute figure is quoted at a $1,000 spot.*
 
 ### Interest & rates — `Rates` (Rates.sol)
 
