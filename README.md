@@ -107,7 +107,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `clamp`      | 78   |   exact |   exact | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
 | `avg`        | 21   |   exact |   exact | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
 
-*Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
+*Figures are the error bounds the test suite enforces — the constants in [`constants/Constants.mjs`](constants/Constants.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
 ### Derivatives — `BlackScholes`, `Black76`, `BinaryOptions`, `Futures`
 
@@ -166,7 +166,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `yieldToMaturity`        | 736     |       — | 5.4e-14 | Zero-coupon YTM (closed form) |
 | `internalRateOfReturn`   | 16k–47k |       — |    1e-9 | IRR via Newton-Raphson (cost scales with cashflow count) |
 
-*Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). Compounding and discounting inherit `exp`'s relative bound, `logReturn` inherits `ln`'s. The two rate conversions are bounded **absolutely** (`1e-15`) because they run a Taylor branch through their root at `r = 0`, where relative error is undefined. `internalRateOfReturn` is bounded by its Newton-Raphson convergence tolerance.*
+*Bounds enforced by the test suite — the constants in [`constants/Constants.mjs`](constants/Constants.mjs). Compounding and discounting inherit `exp`'s relative bound, `logReturn` inherits `ln`'s. The two rate conversions are bounded **absolutely** (`1e-15`) because they run a Taylor branch through their root at `r = 0`, where relative error is undefined. `internalRateOfReturn` is bounded by its Newton-Raphson convergence tolerance.*
 
 ### Statistics — `Statistics` (Statistics.sol)
 
@@ -182,7 +182,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `valueAtRisk`              | 34,531 @ 30 prices |       — | 2.2e-14 | NumPy-compatible linear interpolation |
 | `conditionalValueAtRisk`   | 31,889 @ 30 prices |       — | 2.2e-14 | Expected shortfall (left tail mean) |
 
-*Bounds enforced by the test suite — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs). All results are ≥ 1 in practice, so relative error is the metric throughout. `1e-15` marks arithmetic-only aggregation (essentially exact, at IEEE 754 machine epsilon); `2.2e-14` covers the multi-step paths (variance → vol → Sharpe) that accumulate rounding. `valueAtRisk` is validated against `simple-statistics`.*
+*Bounds enforced by the test suite — the constants in [`constants/Constants.mjs`](constants/Constants.mjs). All results are ≥ 1 in practice, so relative error is the metric throughout. `1e-15` marks arithmetic-only aggregation (essentially exact, at IEEE 754 machine epsilon); `2.2e-14` covers the multi-step paths (variance → vol → Sharpe) that accumulate rounding. `valueAtRisk` is validated against `simple-statistics`.*
 
 ## Testing
 
