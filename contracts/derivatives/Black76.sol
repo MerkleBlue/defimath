@@ -5,10 +5,11 @@ import "../math/Math.sol";
 
 /// @title Black76: Black-76 Pricing and Greeks Library for Solidity
 /// @author DeFiMath (https://defimath.com)
-/// @notice Computes Black-76 option prices and Greeks (Delta, Gamma, Theta, Vega) on a forward/futures underlying
+/// @notice Computes Black-76 option prices and Greeks (Delta, Gamma, Theta, Vega) on a future underlying
 /// @dev All values are in 18-decimal fixed-point format unless otherwise stated. Black-76 prices options on a
-///      forward price F (not spot): d₁ carries no rate term and the whole payoff is discounted by e^(−r·τ),
-///      since the forward already embeds the cost of carry. Equivalently, Black-76 = e^(−r·τ) · Black-Scholes(spot = F, rate = 0).
+///      future price F (not spot): d₁ carries no rate term and the whole payoff is discounted by e^(−r·τ),
+///      since the future already embeds the cost of carry. Equivalently, Black-76 = e^(−r·τ) · Black-Scholes(spot = F, rate = 0).
+///      Prices dated European options with a fixed expiry τ — i.e. options on a dated future, not a perpetual.
 library Black76 {
 
     // constants
@@ -19,13 +20,13 @@ library Black76 {
     uint256 internal constant SQRT_2PI = 2506628274631000502;
 
     // limits
-    /// @notice Minimum allowed forward price: 0.000001 USD
-    uint256 internal constant MIN_FORWARD = 1e12 - 1;
+    /// @notice Minimum allowed future price: 0.000001 USD
+    uint256 internal constant MIN_FUTURE = 1e12 - 1;
 
-    /// @notice Maximum allowed forward price: 1 quadrillion USD
-    uint256 internal constant MAX_FORWARD = 1e33 + 1;
+    /// @notice Maximum allowed future price: 1 quadrillion USD
+    uint256 internal constant MAX_FUTURE = 1e33 + 1;
 
-    /// @notice Maximum strike/forward ratio (5x and 1/5x range)
+    /// @notice Maximum strike/future ratio (5x and 1/5x range)
     uint256 internal constant MAX_STSP_RATIO = 5;
 
     /// @notice Maximum allowed time to expiration: 32 years in seconds
@@ -35,16 +36,16 @@ library Black76 {
     uint256 internal constant MAX_RATE = 4e18 + 1;
 
     // errors
-    /// @notice Reverts when forward price is below the allowed minimum
-    error ForwardLowerBoundError();
+    /// @notice Reverts when future price is below the allowed minimum
+    error FutureLowerBoundError();
 
-    /// @notice Reverts when forward price exceeds the allowed maximum
-    error ForwardUpperBoundError();
+    /// @notice Reverts when future price exceeds the allowed maximum
+    error FutureUpperBoundError();
 
-    /// @notice Reverts when strike is too low relative to forward
+    /// @notice Reverts when strike is too low relative to future
     error StrikeLowerBoundError();
 
-    /// @notice Reverts when strike is too high relative to forward
+    /// @notice Reverts when strike is too high relative to future
     error StrikeUpperBoundError();
 
     /// @notice Reverts when time to expiration exceeds 32 years
@@ -63,20 +64,20 @@ library Black76 {
     error NoConvergenceError();
 
 
-    /// @notice Computes the price of a European call option on a forward using the Black-76 model.
-    /// @dev Formula: price = e^(−r·τ) · [F·Φ(d₁) − K·Φ(d₂)]. Reverts outside the supported domain: forward in
-    ///      (1e-6, 1e15) USD, strike within 5x of forward either way, time to expiration < 32 years, and rate < 400%.
-    ///      When expired (timeToExp == 0), returns the intrinsic value max(forward − strike, 0).
+    /// @notice Computes the price of a European call option on a future using the Black-76 model.
+    /// @dev Formula: price = e^(−r·τ) · [F·Φ(d₁) − K·Φ(d₂)]. Reverts outside the supported domain: future in
+    ///      (1e-6, 1e15) USD, strike within 5x of future either way, time to expiration < 32 years, and rate < 400%.
+    ///      When expired (timeToExp == 0), returns the intrinsic value max(future − strike, 0).
     ///      Max relative error: < 5e-12 for any price >= 1e18.
     ///      Max absolute error: < 1.3e-10 for any price < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
     /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
     /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
     /// @return price Call option price in 18-decimal fixed-point format.
     function call(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
@@ -84,16 +85,16 @@ library Black76 {
     ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired call
             if (timeToExp == 0) {
-                return forward > strike ? forward - strike : 0;
+                return future > strike ? future - strike : 0;
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
@@ -101,32 +102,32 @@ library Black76 {
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
             // Black-76 d₁ carries no rate term: d₁ = [ln(F/K) + σ²τ/2] / (σ√τ)
-            int256 d1 = (Math.ln(uint256(forward) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(future) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
-            uint256 fwdNd1 = uint256(forward) * Math.stdNormCDF(d1);            // F · N(d1), scaled 1e36
+            uint256 futNd1 = uint256(future) * Math.stdNormCDF(d1);            // F · N(d1), scaled 1e36
             uint256 strikeNd2 = uint256(strike) * Math.stdNormCDF(d2);         // K · N(d2), scaled 1e36
-            uint256 bracket = fwdNd1 > strikeNd2 ? fwdNd1 - strikeNd2 : 0;     // F·N(d1) − K·N(d2), scaled 1e36
+            uint256 bracket = futNd1 > strikeNd2 ? futNd1 - strikeNd2 : 0;     // F·N(d1) − K·N(d2), scaled 1e36
 
             // discount the whole payoff by e^(−r·τ): bracket / e^(r·τ)  →  1e36 / 1e18 = 1e18
             price = bracket / Math.expPositive(scaledRate);
         }
     }
 
-    /// @notice Computes the price of a European put option on a forward using the Black-76 model.
-    /// @dev Formula: price = e^(−r·τ) · [K·Φ(−d₂) − F·Φ(−d₁)]. Reverts outside the supported domain: forward in
-    ///      (1e-6, 1e15) USD, strike within 5x of forward either way, time to expiration < 32 years, and rate < 400%.
-    ///      When expired (timeToExp == 0), returns the intrinsic value max(strike − forward, 0).
+    /// @notice Computes the price of a European put option on a future using the Black-76 model.
+    /// @dev Formula: price = e^(−r·τ) · [K·Φ(−d₂) − F·Φ(−d₁)]. Reverts outside the supported domain: future in
+    ///      (1e-6, 1e15) USD, strike within 5x of future either way, time to expiration < 32 years, and rate < 400%.
+    ///      When expired (timeToExp == 0), returns the intrinsic value max(strike − future, 0).
     ///      Max relative error: < 5e-12 for any price >= 1e18.
     ///      Max absolute error: < 1.3e-10 for any price < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
     /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
     /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
     /// @return price Put option price in 18-decimal fixed-point format.
     function put(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
@@ -134,40 +135,40 @@ library Black76 {
     ) internal pure returns (uint256 price) {
         unchecked {
             // check inputs
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired put
             if (timeToExp == 0) {
-                return strike > forward ? strike - forward : 0;
+                return strike > future ? strike - future : 0;
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
-            int256 d1 = (Math.ln(uint256(forward) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(future) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
             uint256 strikeNd2 = uint256(strike) * Math.stdNormCDF(-d2);        // K · N(−d2), scaled 1e36
-            uint256 fwdNd1 = uint256(forward) * Math.stdNormCDF(-d1);          // F · N(−d1), scaled 1e36
-            uint256 bracket = strikeNd2 > fwdNd1 ? strikeNd2 - fwdNd1 : 0;     // K·N(−d2) − F·N(−d1), scaled 1e36
+            uint256 futNd1 = uint256(future) * Math.stdNormCDF(-d1);          // F · N(−d1), scaled 1e36
+            uint256 bracket = strikeNd2 > futNd1 ? strikeNd2 - futNd1 : 0;     // K·N(−d2) − F·N(−d1), scaled 1e36
 
             price = bracket / Math.expPositive(scaledRate);
         }
     }
 
-    /// @notice Computes Delta for both call and put options on a forward using the Black-76 model (sensitivity to forward price change).
+    /// @notice Computes Delta for both call and put options on a future using the Black-76 model (sensitivity to future price change).
     /// @dev Formula: δcall = e^(−r·τ)·Φ(d₁); δput = e^(−r·τ)·(Φ(d₁) − 1). Reverts outside the supported domain:
-    ///      forward in (1e-6, 1e15) USD, strike within 5x of forward either way, time to expiration < 32 years, and rate < 400%.
+    ///      future in (1e-6, 1e15) USD, strike within 5x of future either way, time to expiration < 32 years, and rate < 400%.
     ///      When expired (timeToExp == 0), delta collapses to its degenerate expiry value (0 or ±1 by moneyness).
     ///      Delta is bounded to [−1, 1], so only an absolute error applies.
     ///      Max absolute error: < 1.2e-13 for any |delta| < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
     /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
@@ -175,7 +176,7 @@ library Black76 {
     /// @return deltaCall Call option delta in 18-decimal fixed-point format.
     /// @return deltaPut Put option delta in 18-decimal fixed-point format.
     function delta(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
@@ -183,16 +184,16 @@ library Black76 {
     ) internal pure returns (int128 deltaCall, int128 deltaPut) {
         unchecked {
             // check inputs
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
             // handle expired option
             if (timeToExp == 0) {
-                if (forward > strike) {
+                if (future > strike) {
                     return (1e18, 0);
                 }
                 return (0, -1e18);
@@ -202,7 +203,7 @@ library Black76 {
             uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
-            int256 d1 = (Math.ln(uint256(forward) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(future) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
 
             uint256 discount = 1e36 / Math.expPositive(scaledRate);            // e^(−r·τ), scaled 1e18
 
@@ -211,19 +212,19 @@ library Black76 {
         }
     }
 
-    /// @notice Computes Gamma of the option on a forward using the Black-76 model (sensitivity to delta change).
-    /// @dev Formula: Γ = e^(−r·τ)·φ(d₁) / (F·σ·√τ). Reverts outside the supported domain: forward in
-    ///      (1e-6, 1e15) USD, strike within 5x of forward either way, time to expiration < 32 years, and rate < 400%.
+    /// @notice Computes Gamma of the option on a future using the Black-76 model (sensitivity to delta change).
+    /// @dev Formula: Γ = e^(−r·τ)·φ(d₁) / (F·σ·√τ). Reverts outside the supported domain: future in
+    ///      (1e-6, 1e15) USD, strike within 5x of future either way, time to expiration < 32 years, and rate < 400%.
     ///      Max relative error: < 5e-12 for any gamma >= 1e18.
     ///      Max absolute error: < 3.2e-15 for any gamma < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
     /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
     /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
     /// @return gammaOut Option Gamma in 18-decimal fixed-point format.
     function gamma(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
@@ -231,10 +232,10 @@ library Black76 {
     ) internal pure returns (uint256 gammaOut) {
         unchecked {
             // check inputs
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -247,22 +248,22 @@ library Black76 {
             uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
-            int256 d1 = (Math.ln(uint256(forward) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(future) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
             uint256 phi = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
 
             // e^(−r·τ) · φ(d1) / (F · σ√τ)
-            uint256 gammaUndisc = phi * 1e18 / (uint256(forward) * scaledVol / 1e18);
+            uint256 gammaUndisc = phi * 1e18 / (uint256(future) * scaledVol / 1e18);
             gammaOut = gammaUndisc * 1e18 / Math.expPositive(scaledRate);
         }
     }
 
-    /// @notice Computes Theta of the option on a forward using the Black-76 model (time decay per day).
+    /// @notice Computes Theta of the option on a future using the Black-76 model (time decay per day).
     /// @dev Formula (per year): Θ = r·price − e^(−r·τ)·F·φ(d₁)·σ / (2√τ). Returned values are per-day (÷365).
-    ///      Reverts outside the supported domain: forward in (1e-6, 1e15) USD, strike within 5x of forward either way,
+    ///      Reverts outside the supported domain: future in (1e-6, 1e15) USD, strike within 5x of future either way,
     ///      time to expiration < 32 years, and rate < 400%. When expired (timeToExp == 0), returns (0, 0). Theta is expressed per day.
     ///      Max relative error: < 5e-12 for any |theta| >= 1e18.
     ///      Max absolute error: < 1.9e-12 for any |theta| < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
     /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
@@ -270,7 +271,7 @@ library Black76 {
     /// @return thetaCall Call option theta per day in 18-decimal fixed-point format.
     /// @return thetaPut Put option theta per day in 18-decimal fixed-point format.
     function theta(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
@@ -278,10 +279,10 @@ library Black76 {
     ) internal pure returns (int128 thetaCall, int128 thetaPut) {
         unchecked {
             // check inputs
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -293,13 +294,13 @@ library Black76 {
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;       // annualized time to expiration
             uint256 scaledVol = volatility * Math.sqrtTime(timeYear) / 1e18 + 1;    // time-adjusted volatility (+ 1 to avoid division by zero)
 
-            return _thetaCore(forward, strike, scaledVol, uint256(rate) * timeYear / 1e18, timeYear, rate);
+            return _thetaCore(future, strike, scaledVol, uint256(rate) * timeYear / 1e18, timeYear, rate);
         }
     }
 
     /// @dev Core Black-76 theta math, separated to keep stack shallow
     function _thetaCore(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint256 scaledVol,
         uint256 scaledRate,
@@ -307,44 +308,44 @@ library Black76 {
         uint64 rate
     ) private pure returns (int128 thetaCall, int128 thetaPut) {
         unchecked {
-            int256 d1 = (Math.ln(uint256(forward) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(future) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
             int256 d2 = d1 - int256(scaledVol);
 
             uint256 expRate = Math.expPositive(scaledRate);
-            uint256 discountedForward = uint256(forward) * 1e18 / expRate;     // F · e^(−r·τ)
+            uint256 discountedFuture = uint256(future) * 1e18 / expRate;     // F · e^(−r·τ)
             uint256 discountedStrike = uint256(strike) * 1e18 / expRate;       // K · e^(−r·τ)
             uint256 phi = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;         // φ(d1)
 
-            // timeDecay = e^(−r·τ)·F · φ(d1) · σ / (2√τ)  =  discountedForward · φ · σ√τ / (2τ)
-            int256 timeDecay = int256(discountedForward * phi * scaledVol / (2e18 * timeYear));
+            // timeDecay = e^(−r·τ)·F · φ(d1) · σ / (2√τ)  =  discountedFuture · φ · σ√τ / (2τ)
+            int256 timeDecay = int256(discountedFuture * phi * scaledVol / (2e18 * timeYear));
 
             uint256 nd1 = Math.stdNormCDF(d1);
             uint256 nd2 = Math.stdNormCDF(d2);
 
             // carry = r · price:  call price = DF·N(d1) − DK·N(d2);  put price = DK·N(−d2) − DF·N(−d1)
-            int256 carryCall = int256(uint256(rate) * (discountedForward * nd1 / 1e18) / 1e18)
+            int256 carryCall = int256(uint256(rate) * (discountedFuture * nd1 / 1e18) / 1e18)
                              - int256(uint256(rate) * (discountedStrike * nd2 / 1e18) / 1e18);
             int256 carryPut  = int256(uint256(rate) * (discountedStrike * (1e18 - nd2) / 1e18) / 1e18)
-                             - int256(uint256(rate) * (discountedForward * (1e18 - nd1) / 1e18) / 1e18);
+                             - int256(uint256(rate) * (discountedFuture * (1e18 - nd1) / 1e18) / 1e18);
 
             thetaCall = int128((carryCall - timeDecay) / 365);
             thetaPut  = int128((carryPut  - timeDecay) / 365);
         }
     }
 
-    /// @notice Computes Vega of the option on a forward using the Black-76 model (sensitivity to volatility change).
+    /// @notice Computes Vega of the option on a future using the Black-76 model (sensitivity to volatility change).
     /// @dev Formula: ν = e^(−r·τ)·F·φ(d₁)·√τ, returned per 1% vol move (÷100). Reverts outside the supported domain:
-    ///      forward in (1e-6, 1e15) USD, strike within 5x of forward either way, time to expiration < 32 years, and rate < 400%.
+    ///      future in (1e-6, 1e15) USD, strike within 5x of future either way, time to expiration < 32 years, and rate < 400%.
     ///      Max relative error: < 5e-12 for any vega >= 1e18.
     ///      Max absolute error: < 4e-13 for any vega < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds.
     /// @param volatility Annualized implied volatility in 18-decimal fixed-point format.
     /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
     /// @return vegaOut Option Vega in 18-decimal fixed-point format.
     function vega(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 volatility,
@@ -352,10 +353,10 @@ library Black76 {
     ) internal pure returns (uint256 vegaOut) {
         unchecked {
             // check inputs
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();           // NOTE: checking strike upper bound first, to avoid overflow
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
@@ -369,11 +370,11 @@ library Black76 {
             uint256 scaledVol = volatility * sqrtTimeYear / 1e18 + 1;               // time-adjusted volatility (+ 1 to avoid division by zero)
             uint256 scaledRate = uint256(rate) * timeYear / 1e18;                       // time-adjusted rate
 
-            int256 d1 = (Math.ln(uint256(forward) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
+            int256 d1 = (Math.ln(uint256(future) * 1e18 / uint256(strike)) + int256(scaledVol * scaledVol / 2e18)) * 1e18 / int256(scaledVol);
 
             uint256 phi = Math.exp(-d1 * d1 / 2e18) * 1e18 / SQRT_2PI;          // N'(d1)
             // e^(−r·τ) · F · √τ · φ(d1) / 100
-            uint256 vegaUndisc = uint256(forward) * sqrtTimeYear * phi / 100e36;
+            uint256 vegaUndisc = uint256(future) * sqrtTimeYear * phi / 100e36;
             vegaOut = vegaUndisc * 1e18 / Math.expPositive(scaledRate);
         }
     }
@@ -392,26 +393,26 @@ library Black76 {
 
     /// @notice Holds precomputed values used by IV iteration
     struct IVState {
-        uint256 forward;
+        uint256 future;
         uint256 sqrtTimeYear;
         uint256 scaledRate;
-        uint256 discountedForward;   // F · e^(−r·τ)
+        uint256 discountedFuture;   // F · e^(−r·τ)
         uint256 discountedStrike;    // K · e^(−r·τ)
         int256 lnFK;
-        uint256 vegaBase;            // discountedForward · sqrtTimeYear / 1e18 — leading factor of vega
+        uint256 vegaBase;            // discountedFuture · sqrtTimeYear / 1e18 — leading factor of vega
         uint256 optionPrice;
         bool isCall;
     }
 
-    /// @notice Computes implied volatility from a market option price on a forward using Newton-Raphson.
+    /// @notice Computes implied volatility from a market option price on a future using Newton-Raphson.
     /// @dev Solves for σ such that Black76(σ) = optionPrice via Newton-Raphson (fixed 55% seed, up to 30
     ///      iterations, price tolerance ~1e6 wei), clamping the result to [0.01%, 1800%] volatility.
-    ///      Reverts outside the supported domain: forward in (1e-6, 1e15) USD, strike within 5x of forward
+    ///      Reverts outside the supported domain: future in (1e-6, 1e15) USD, strike within 5x of future
     ///      either way, time to expiration in (0, 32 years), and rate < 400%. Also reverts if optionPrice
     ///      is outside the no-arbitrage range, or if the solver fails to converge within 30 iterations.
     ///      Max relative error: < 1e-6 for any volatility >= 1e18.
     ///      Max absolute error: < 2e-6 for any volatility < 1e18.
-    /// @param forward Current forward (futures) price in 18-decimal fixed-point format.
+    /// @param future Current future price in 18-decimal fixed-point format.
     /// @param strike Strike price of the option in 18-decimal fixed-point format.
     /// @param timeToExp Time to expiration in seconds (must be > 0).
     /// @param rate Annualized risk-free interest rate in 18-decimal fixed-point format.
@@ -419,7 +420,7 @@ library Black76 {
     /// @param isCall True for call option, false for put.
     /// @return volatility Implied volatility in 18-decimal fixed-point format.
     function impliedVolatility(
-        uint128 forward,
+        uint128 future,
         uint128 strike,
         uint32 timeToExp,
         uint64 rate,
@@ -428,16 +429,16 @@ library Black76 {
     ) internal pure returns (uint256 volatility) {
         unchecked {
             // input checks
-            if (forward <= MIN_FORWARD) revert ForwardLowerBoundError();
-            if (MAX_FORWARD <= forward) revert ForwardUpperBoundError();
-            if (forward * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();
-            if (uint256(strike) * MAX_STSP_RATIO < forward) revert StrikeLowerBoundError();
+            if (future <= MIN_FUTURE) revert FutureLowerBoundError();
+            if (MAX_FUTURE <= future) revert FutureUpperBoundError();
+            if (future * MAX_STSP_RATIO < strike) revert StrikeUpperBoundError();
+            if (uint256(strike) * MAX_STSP_RATIO < future) revert StrikeLowerBoundError();
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
             if (timeToExp == 0) revert TimeToExpiryLowerBoundError();
 
             IVState memory s;
-            s.forward = forward;
+            s.future = future;
             s.optionPrice = optionPrice;
             s.isCall = isCall;
             {
@@ -446,21 +447,21 @@ library Black76 {
                 s.scaledRate = uint256(rate) * timeYear / 1e18;
             }
             uint256 expRate = Math.expPositive(s.scaledRate);
-            s.discountedForward = uint256(forward) * 1e18 / expRate;
+            s.discountedFuture = uint256(future) * 1e18 / expRate;
             s.discountedStrike = uint256(strike) * 1e18 / expRate;
-            s.lnFK = Math.ln(uint256(forward) * 1e18 / uint256(strike));
-            s.vegaBase = s.discountedForward * s.sqrtTimeYear / 1e18;
+            s.lnFK = Math.ln(uint256(future) * 1e18 / uint256(strike));
+            s.vegaBase = s.discountedFuture * s.sqrtTimeYear / 1e18;
 
             if (isCall) {
                 // No-arbitrage bound check
-                uint256 lower = s.discountedForward > s.discountedStrike ? s.discountedForward - s.discountedStrike : 0;
-                uint256 upper = s.discountedForward;
+                uint256 lower = s.discountedFuture > s.discountedStrike ? s.discountedFuture - s.discountedStrike : 0;
+                uint256 upper = s.discountedFuture;
                 if (optionPrice <= lower || optionPrice >= upper) revert PriceOutOfBoundsError();
 
                 return _ivCallIterate(s);
             } else {
                 // No-arbitrage bound check
-                uint256 lower = s.discountedStrike > s.discountedForward ? s.discountedStrike - s.discountedForward : 0;
+                uint256 lower = s.discountedStrike > s.discountedFuture ? s.discountedStrike - s.discountedFuture : 0;
                 uint256 upper = s.discountedStrike;
                 if (optionPrice <= lower || optionPrice >= upper) revert PriceOutOfBoundsError();
 
@@ -531,9 +532,9 @@ library Black76 {
             vegaOut = s.vegaBase * phiD1 / 1e18;
 
             // price = DF·N(d1) − DK·N(d2)
-            uint256 fwdNd1 = s.discountedForward * Math.stdNormCDF(d1);
+            uint256 futNd1 = s.discountedFuture * Math.stdNormCDF(d1);
             uint256 strikeNd2 = s.discountedStrike * Math.stdNormCDF(d2);
-            price = fwdNd1 > strikeNd2 ? (fwdNd1 - strikeNd2) / 1e18 : 0;
+            price = futNd1 > strikeNd2 ? (futNd1 - strikeNd2) / 1e18 : 0;
         }
     }
 
@@ -549,8 +550,8 @@ library Black76 {
 
             // price = DK·N(−d2) − DF·N(−d1)
             uint256 strikeNd2 = s.discountedStrike * Math.stdNormCDF(-d2);
-            uint256 fwdNd1 = s.discountedForward * Math.stdNormCDF(-d1);
-            price = strikeNd2 > fwdNd1 ? (strikeNd2 - fwdNd1) / 1e18 : 0;
+            uint256 futNd1 = s.discountedFuture * Math.stdNormCDF(-d1);
+            price = strikeNd2 > futNd1 ? (strikeNd2 - futNd1) / 1e18 : 0;
         }
     }
 }

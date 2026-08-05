@@ -11,36 +11,36 @@ const fastTest = true;
 // Black-76 reference = e^(-rτ) · Black-Scholes(spot = F, rate = 0), driven by the same
 // `black-scholes` and `greeks` npm packages the BlackScholes suite uses — there is no Black-76
 // package, and the discount transform is exact. bs returns NaN at time = 0, so we wrap it.
-export function black76Wrapped(forward, strike, time, vol, rate, callOrPut) {
+export function black76Wrapped(future, strike, time, vol, rate, callOrPut) {
   // handle expired option
   if (time <= 0) {
     if (callOrPut === "call") {
-      return Math.max(0, forward - strike);
+      return Math.max(0, future - strike);
     } else {
-      return Math.max(0, strike - forward);
+      return Math.max(0, strike - future);
     }
   }
 
   vol += 1e-16;
 
-  return Math.exp(-rate * time) * Math.max(0, bs.blackScholes(forward, strike, time, vol, 0, callOrPut));
+  return Math.exp(-rate * time) * Math.max(0, bs.blackScholes(future, strike, time, vol, 0, callOrPut));
 }
 
 // Greek references: same transform. Price/delta/gamma/vega scale by the discount; theta gains a
 // carry term because the discount factor itself depends on time: θ₇₆ = r·price + e^(-rτ)·θ_BS.
-function b76Delta(forward, strike, time, vol, rate, callOrPut) {
-  return Math.exp(-rate * time) * greeks.getDelta(forward, strike, time, vol, 0, callOrPut);
+function b76Delta(future, strike, time, vol, rate, callOrPut) {
+  return Math.exp(-rate * time) * greeks.getDelta(future, strike, time, vol, 0, callOrPut);
 }
-function b76Gamma(forward, strike, time, vol, rate, callOrPut) {
-  return Math.exp(-rate * time) * greeks.getGamma(forward, strike, time, vol, 0, callOrPut);
+function b76Gamma(future, strike, time, vol, rate, callOrPut) {
+  return Math.exp(-rate * time) * greeks.getGamma(future, strike, time, vol, 0, callOrPut);
 }
-function b76Vega(forward, strike, time, vol, rate, callOrPut) {
-  return Math.exp(-rate * time) * greeks.getVega(forward, strike, time, vol, 0, callOrPut);
+function b76Vega(future, strike, time, vol, rate, callOrPut) {
+  return Math.exp(-rate * time) * greeks.getVega(future, strike, time, vol, 0, callOrPut);
 }
-function b76Theta(forward, strike, time, vol, rate, callOrPut) {
+function b76Theta(future, strike, time, vol, rate, callOrPut) {
   const disc = Math.exp(-rate * time);
-  const price = black76Wrapped(forward, strike, time, vol, rate, callOrPut);
-  return disc * greeks.getTheta(forward, strike, time, vol, 0, callOrPut) + rate * price / 365;
+  const price = black76Wrapped(future, strike, time, vol, rate, callOrPut);
+  return disc * greeks.getTheta(future, strike, time, vol, 0, callOrPut) + rate * price / 365;
 }
 
 describe.only("Black76", function () {
@@ -87,10 +87,10 @@ describe.only("Black76", function () {
 
   // Greek-agnostic 4D sweep helper — same shape as testOptionRange but for delta/gamma/theta/vega.
   // Each greek has its own JS reference (greeks library), Solidity wrapper, and tolerance.
-  // strikePoints/timePoints are raw values; multi scales them to the {forward=100*multi} test world.
+  // strikePoints/timePoints are raw values; multi scales them to the {future=100*multi} test world.
   async function testGreekRange(greekName, strikePoints, timePoints, volPoints, ratePoints, multi = 10, log = false) {
     const { options } = await loadFixture(deploy);
-    const forward = 100 * multi;
+    const future = 100 * multi;
     let maxAbs = 0, maxRel = 0;
     const track = (a, e) => { const abs = Math.abs(a - e); if (Math.abs(e) < 1) maxAbs = Math.max(maxAbs, abs); else maxRel = Math.max(maxRel, abs / Math.abs(e)); };
     for (const strike of strikePoints) {
@@ -102,9 +102,9 @@ describe.only("Black76", function () {
             switch (greekName) {
               case "delta": {
                 // delta ∈ [-1, 1] → absolute error only (no relative)
-                const expectedCall = b76Delta(forward, k, t, vol, rate, "call");
-                const expectedPut = b76Delta(forward, k, t, vol, rate, "put");
-                const actual = await options.delta(tokens(forward), tokens(k), time, tokens(vol), tokens(rate));
+                const expectedCall = b76Delta(future, k, t, vol, rate, "call");
+                const expectedPut = b76Delta(future, k, t, vol, rate, "put");
+                const actual = await options.delta(tokens(future), tokens(k), time, tokens(vol), tokens(rate));
                 const aC = actual.deltaCall.toString() / 1e18, aP = actual.deltaPut.toString() / 1e18;
                 assertAbsoluteBelow(aC, expectedCall, MAX_ABS_ERROR_B76_DELTA);
                 assertAbsoluteBelow(aP, expectedPut, MAX_ABS_ERROR_B76_DELTA);
@@ -112,16 +112,16 @@ describe.only("Black76", function () {
                 break;
               }
               case "gamma": {
-                const expected = b76Gamma(forward, k, t, vol, rate, "call");
-                const actual = (await options.gamma(tokens(forward), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
+                const expected = b76Gamma(future, k, t, vol, rate, "call");
+                const actual = (await options.gamma(tokens(future), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertPrecisionBelow(actual, expected, MAX_REL_ERROR_B76_GAMMA, MAX_ABS_ERROR_B76_GAMMA);
                 track(actual, expected);
                 break;
               }
               case "theta": {
-                const expectedCall = b76Theta(forward, k, t, vol, rate, "call");
-                const expectedPut = b76Theta(forward, k, t, vol, rate, "put");
-                const actual = await options.theta(tokens(forward), tokens(k), time, tokens(vol), tokens(rate));
+                const expectedCall = b76Theta(future, k, t, vol, rate, "call");
+                const expectedPut = b76Theta(future, k, t, vol, rate, "put");
+                const actual = await options.theta(tokens(future), tokens(k), time, tokens(vol), tokens(rate));
                 const aC = actual.thetaCall.toString() / 1e18, aP = actual.thetaPut.toString() / 1e18;
                 assertPrecisionBelow(aC, expectedCall, MAX_REL_ERROR_B76_THETA, MAX_ABS_ERROR_B76_THETA);
                 assertPrecisionBelow(aP, expectedPut, MAX_REL_ERROR_B76_THETA, MAX_ABS_ERROR_B76_THETA);
@@ -129,8 +129,8 @@ describe.only("Black76", function () {
                 break;
               }
               case "vega": {
-                const expected = b76Vega(forward, k, t, vol, rate, "call");
-                const actual = (await options.vega(tokens(forward), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
+                const expected = b76Vega(future, k, t, vol, rate, "call");
+                const actual = (await options.vega(tokens(future), tokens(k), time, tokens(vol), tokens(rate))).toString() / 1e18;
                 assertPrecisionBelow(actual, expected, MAX_REL_ERROR_B76_VEGA, MAX_ABS_ERROR_B76_VEGA);
                 track(actual, expected);
                 break;
@@ -265,23 +265,23 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward < min forward", async function () {
+      it("rejects when future < min future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.call("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.call("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
         await options.call("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.call(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.call(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
       });
 
-      it("rejects when forward > max forward", async function () {
+      it("rejects when future > max future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.call("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.call("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
         await options.call("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.call("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.call("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
       });
 
-      it("rejects when strike < forward / 5", async function () {
+      it("rejects when strike < future / 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.call(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
@@ -289,7 +289,7 @@ describe.only("Black76", function () {
         await assertRevertError(options, options.call(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
-      it("rejects when strike > forward * 5", async function () {
+      it("rejects when strike > future * 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.call(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
@@ -426,10 +426,10 @@ describe.only("Black76", function () {
         }
       });
 
-      it("clamps a deep-OTM put to 0 when discounted-strike·N(-d2) rounds below forward·N(-d1)", async function () {
+      it("clamps a deep-OTM put to 0 when discounted-strike·N(-d2) rounds below future·N(-d1)", async function () {
         const { options } = await loadFixture(deploy);
-        // Deep-OTM put (forward $1000, strike $250): the true value is sub-wei, so
-        // integer rounding tips strikeNd2 below forwardNd1 — exercises the `: 0` clamp.
+        // Deep-OTM put (future $1000, strike $250): the true value is sub-wei, so
+        // integer rounding tips strikeNd2 below futNd1 — exercises the `: 0` clamp.
         const actualSOL = await options.put(tokens(1000), tokens(250), 1 * SEC_IN_DAY, tokens(0.1), tokens(0.05));
         assert.equal(actualSOL.toString(), "0");
       });
@@ -454,23 +454,23 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward < min forward", async function () {
+      it("rejects when future < min future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.put("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.put("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
         await options.put("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.put(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.put(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
       });
 
-      it("rejects when forward > max forward", async function () {
+      it("rejects when future > max future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.put("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.put("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
         await options.put("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.put("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.put("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
       });
 
-      it("rejects when strike < forward / 5", async function () {
+      it("rejects when strike < future / 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.put(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
@@ -478,7 +478,7 @@ describe.only("Black76", function () {
         await assertRevertError(options, options.put(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
-      it("rejects when strike > forward * 5", async function () {
+      it("rejects when strike > future * 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.put(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
@@ -594,23 +594,23 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward < min forward", async function () {
+      it("rejects when future < min future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.delta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.delta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
         await options.delta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.delta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.delta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
       });
 
-      it("rejects when forward > max forward", async function () {
+      it("rejects when future > max future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.delta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.delta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
         await options.delta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.delta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.delta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
       });
 
-      it("rejects when strike < forward / 5", async function () {
+      it("rejects when strike < future / 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.delta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
@@ -618,7 +618,7 @@ describe.only("Black76", function () {
         await assertRevertError(options, options.delta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
-      it("rejects when strike > forward * 5", async function () {
+      it("rejects when strike > future * 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.delta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
@@ -721,23 +721,23 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward < min forward", async function () {
+      it("rejects when future < min future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.gamma("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.gamma("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
         await options.gamma("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.gamma(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.gamma(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
       });
 
-      it("rejects when forward > max forward", async function () {
+      it("rejects when future > max future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.gamma("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.gamma("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
         await options.gamma("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.gamma("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.gamma("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
       });
 
-      it("rejects when strike < forward / 5", async function () {
+      it("rejects when strike < future / 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.gamma(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
@@ -745,7 +745,7 @@ describe.only("Black76", function () {
         await assertRevertError(options, options.gamma(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
-      it("rejects when strike > forward * 5", async function () {
+      it("rejects when strike > future * 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.gamma(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
@@ -853,23 +853,23 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward < min forward", async function () {
+      it("rejects when future < min future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.theta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.theta("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
         await options.theta("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.theta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.theta(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
       });
 
-      it("rejects when forward > max forward", async function () {
+      it("rejects when future > max future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.theta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.theta("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
         await options.theta("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.theta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.theta("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
       });
 
-      it("rejects when strike < forward / 5", async function () {
+      it("rejects when strike < future / 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.theta(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
@@ -877,7 +877,7 @@ describe.only("Black76", function () {
         await assertRevertError(options, options.theta(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
-      it("rejects when strike > forward * 5", async function () {
+      it("rejects when strike > future * 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.theta(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
@@ -980,23 +980,23 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward < min forward", async function () {
+      it("rejects when future < min future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.vega("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.vega("999999999999", tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
         await options.vega("1000000000000", "1000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.vega(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "ForwardLowerBoundError");
+        await assertRevertError(options, options.vega(tokens(0), tokens(930), 50000, tokens(0.6), tokens(0.05)), "FutureLowerBoundError");
       });
 
-      it("rejects when forward > max forward", async function () {
+      it("rejects when future > max future", async function () {
         const { options } = await loadFixture(deploy);
 
-        await assertRevertError(options, options.vega("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.vega("1000000000000000000000000000000001", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
         await options.vega("1000000000000000000000000000000000", "1000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05));
-        await assertRevertError(options, options.vega("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "ForwardUpperBoundError");
+        await assertRevertError(options, options.vega("100000000000000000000000000000000000", "100000000000000000000000000000000000", 50000, tokens(0.6), tokens(0.05)), "FutureUpperBoundError");
       });
 
-      it("rejects when strike < forward / 5", async function () {
+      it("rejects when strike < future / 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.vega(tokens(1000), "199999999999999999999", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
@@ -1004,7 +1004,7 @@ describe.only("Black76", function () {
         await assertRevertError(options, options.vega(tokens(1000), "0", 50000, tokens(0.6), tokens(0.05)), "StrikeLowerBoundError");
       });
 
-      it("rejects when strike > forward * 5", async function () {
+      it("rejects when strike > future * 5", async function () {
         const { options } = await loadFixture(deploy);
 
         await assertRevertError(options, options.vega(tokens(1000), "5000000000000000000001", 50000, tokens(0.6), tokens(0.05)), "StrikeUpperBoundError");
@@ -1057,10 +1057,10 @@ describe.only("Black76", function () {
 
   describe("impliedVolatility", function () {
 
-    async function roundTripIV(forward, strike, timeSec, vol, rate, isCall) {
+    async function roundTripIV(future, strike, timeSec, vol, rate, isCall) {
       const { options } = await loadFixture(deploy);
-      const price = await options[isCall ? "call" : "put"](tokens(forward), tokens(strike), timeSec, tokens(vol), tokens(rate));
-      const iv = (await options.impliedVolatility(tokens(forward), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
+      const price = await options[isCall ? "call" : "put"](tokens(future), tokens(strike), timeSec, tokens(vol), tokens(rate));
+      const iv = (await options.impliedVolatility(tokens(future), tokens(strike), timeSec, tokens(rate), price, isCall)).toString() / 1e18;
       // dual metric: relative where vol >= 1, absolute where < 1 (vols are mostly < 100%)
       assertPrecisionBelow(iv, vol, MAX_REL_ERROR_B76_IV, MAX_ABS_ERROR_B76_IV);
     }
@@ -1121,10 +1121,10 @@ describe.only("Black76", function () {
     });
 
     describe("failure", function () {
-      it("rejects when forward is out of bounds", async function () {
+      it("rejects when future is out of bounds", async function () {
         const { options } = await loadFixture(deploy);
-        await assertRevertError(options, options.impliedVolatility("999999999999", tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "ForwardLowerBoundError");
-        await assertRevertError(options, options.impliedVolatility("1000000000000000000000000000000001", "1000000000000000000000000000000000", 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "ForwardUpperBoundError");
+        await assertRevertError(options, options.impliedVolatility("999999999999", tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "FutureLowerBoundError");
+        await assertRevertError(options, options.impliedVolatility("1000000000000000000000000000000001", "1000000000000000000000000000000000", 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "FutureUpperBoundError");
       });
 
       it("rejects when strike is out of bounds", async function () {
@@ -1150,11 +1150,11 @@ describe.only("Black76", function () {
 
       it("rejects when call price below intrinsic", async function () {
         const { options } = await loadFixture(deploy);
-        // ITM call: forward=1000, strike=900, intrinsic > 100·e^(-rτ); pricing 50 is below intrinsic
+        // ITM call: future=1000, strike=900, intrinsic > 100·e^(-rτ); pricing 50 is below intrinsic
         await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(900), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), true), "PriceOutOfBoundsError");
       });
 
-      it("rejects when call price >= forward", async function () {
+      it("rejects when call price >= future", async function () {
         const { options } = await loadFixture(deploy);
         await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(1000), true), "PriceOutOfBoundsError");
       });
@@ -1167,7 +1167,7 @@ describe.only("Black76", function () {
 
       it("rejects when put price below intrinsic", async function () {
         const { options } = await loadFixture(deploy);
-        // ITM put: forward=1000, strike=1100, lower no-arb bound K·e^(-rτ)-S ≈ 95.5; pricing 50 is below it
+        // ITM put: future=1000, strike=1100, lower no-arb bound K·e^(-rτ)-S ≈ 95.5; pricing 50 is below it
         await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1100), 30 * SEC_IN_DAY, tokens(0.05), tokens(50), false), "PriceOutOfBoundsError");
       });
 
@@ -1180,7 +1180,7 @@ describe.only("Black76", function () {
 
       it("rejects an unsolvable call near the upper no-arb bound", async function () {
         const { options } = await loadFixture(deploy);
-        // Price just shy of the discounted forward demands σ above MAX_VOL_IV: the solver caps σ and exhausts its iterations.
+        // Price just shy of the discounted future demands σ above MAX_VOL_IV: the solver caps σ and exhausts its iterations.
         await assertRevertError(options, options.impliedVolatility(tokens(1000), tokens(1000), 30 * SEC_IN_DAY, tokens(0.05), tokens(990), true), "NoConvergenceError");
       });
 
