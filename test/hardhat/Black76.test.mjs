@@ -43,7 +43,7 @@ function b76Theta(future, strike, time, vol, rate, callOrPut) {
   return disc * greeks.getTheta(future, strike, time, vol, 0, callOrPut) + rate * price / 365;
 }
 
-describe.only("Black76", function () {
+describe("Black76", function () {
   let testTimePoints;
   let testStrikePoints;
 

@@ -15,7 +15,7 @@
 ## Why DeFiMath
 
 - **Unlocks new use cases.** Gas-efficient enough to make real-time options pricing, on-chain IV solving on every quote, and risk-adjusted vault fees economically viable. Use cases that were previously off-chain workarounds now fit in a single transaction.
-- **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
+- **Breadth.** 40+ primitives spanning math (`exp`, `ln`, `sqrt`), derivatives (Black-Scholes & Black-76 + Greeks, binary options, IV solver), interest rates (compound, present value, IRR, YTM), and statistics (volatility, Sharpe, VaR, CVaR, max drawdown).
 - **Pure Solidity.** ~16KB published, zero runtime dependencies, easy to audit.
 - **Validated precision.** Sub-5e-12 relative error on options pricing. Every math primitive carries an explicit, enforced error bound — from 2e-18 (`sqrt`) to 1e-12 (`pow`) — measured as relative error where the result is ≥ 1 and absolute error near a root or for bounded functions like `stdNormCDF` and `erf`; see the per-function tables below. Validated against `simple-statistics`, `black-scholes`, `greeks`, and `math-erf` reference libraries.
 
@@ -109,7 +109,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 *Figures are the error bounds the test suite enforces — the constants in [`test/hardhat/Tolerances.test.mjs`](test/hardhat/Tolerances.test.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
-### Derivatives — `BlackScholes`, `BinaryOptions`, `Futures`
+### Derivatives — `BlackScholes`, `Black76`, `BinaryOptions`, `Futures`
 
 **Black-Scholes** (`BlackScholes.sol`) — European options, spot / lognormal:
 
@@ -122,6 +122,18 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `theta`             | 3,101           | 1.9e-12 |   5e-12 | Time decay (per day) |
 | `vega`              | 1,373           |   4e-13 |   5e-12 | Sensitivity to volatility |
 | `impliedVolatility` | 11,668 / 11,743 |    2e-6 |  1.0e-6 | IV via Newton-Raphson (call / put) |
+
+**Black-76** (`Black76.sol`) — European options on a future:
+
+| Function | Gas | Max abs error | Max rel error | Description |
+| :------- | --: | ------------: | ------------: | :---------- |
+| `call`              | 2,552           | 1.3e-10 |   5e-12 | European call on a future |
+| `put`               | 2,565           | 1.3e-10 |   5e-12 | European put on a future |
+| `delta`             | 1,915           | 1.2e-13 |       — | First derivative w.r.t. future (|δ| ≤ 1) |
+| `gamma`             | 1,704           | 3.2e-15 |   5e-12 | Second derivative w.r.t. future |
+| `theta`             | 3,255           | 1.9e-12 |   5e-12 | Time decay (per day) |
+| `vega`              | 1,659           |   4e-13 |   5e-12 | Sensitivity to volatility |
+| `impliedVolatility` | 11,760 / 11,802 |    2e-6 |  1.0e-6 | IV via Newton-Raphson (call / put) |
 
 **Binary options** (`BinaryOptions.sol`) — cash-or-nothing, unit payout:
 
@@ -140,7 +152,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | :------- | --: | ------------: | ------------: | :---------- |
 | `futurePrice` | 400 | 1.2e-9 | 2e-12 | `spot · e^(rt)` |
 
-*Bounds enforced by the test suite — the `MAX_*_ERROR_*` constants in [`constants/Constants.mjs`](constants/Constants.mjs). **Black-Scholes** uses the same dual metric as the math primitives: **relative** where `|result| ≥ 1`, **absolute** where `< 1` — so each function carries a rel bound plus an abs bound for its sub-1 tail (e.g. deep-OTM prices below $1). `delta ∈ [−1, 1]` is abs-only, and `impliedVolatility` is a round-trip whose rel bound is its Newton-Raphson convergence target. Option prices are on a $1,000 spot, `theta` per day, `vega` per 1% vol. **Binaries** (unit payout, every value ≤ 1) are abs-only. **Futures** price scales with spot, so the bound is **relative** (`2e-12`, scale-invariant); the absolute figure is quoted at a $1,000 spot.*
+*Bounds enforced by the test suite — the `MAX_*_ERROR_*` constants in [`constants/Constants.mjs`](constants/Constants.mjs). **Black-Scholes** uses the same dual metric as the math primitives: **relative** where `|result| ≥ 1`, **absolute** where `< 1` — so each function carries a rel bound plus an abs bound for its sub-1 tail (e.g. deep-OTM prices below $1). `delta ∈ [−1, 1]` is abs-only, and `impliedVolatility` is a round-trip whose rel bound is its Newton-Raphson convergence target. Option prices are on a $1,000 spot, `theta` per day, `vega` per 1% vol. **Black-76** (options on a future) mirrors Black-Scholes exactly — same dual metric and per-function conventions, on a $1,000 future. **Binaries** (unit payout, every value ≤ 1) are abs-only. **Futures** price scales with spot, so the bound is **relative** (`2e-12`, scale-invariant); the absolute figure is quoted at a $1,000 spot.*
 
 ### Interest & rates — `Rates` (Rates.sol)
 
@@ -176,10 +188,10 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 Two independent layers:
 
-- **Hardhat** — 640 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
-- **Foundry** — 92 mathematical properties × 32,000 random runs each = **2,944,000 random executions per CI run**. Validates the algebraic structure (round-trips, monotonicity, identities, output bounds, symmetries) with automatic counterexample shrinking.
+- **Hardhat** — 740 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
+- **Foundry** — 114 mathematical properties × 32,000 random runs each = **3,648,000 random executions per CI run**. Validates the algebraic structure (round-trips, monotonicity, identities, output bounds, symmetries) with automatic counterexample shrinking.
 
-732 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
+854 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
 
 ## Precision
 
