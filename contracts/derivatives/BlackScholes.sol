@@ -187,12 +187,12 @@ library BlackScholes {
             if (MAX_EXPIRATION <= timeToExp) revert TimeToExpiryUpperBoundError();
             if (MAX_RATE <= rate) revert RateUpperBoundError();
 
-            // handle expired option 
+            // handle expired option
             if (timeToExp == 0) {
                 if (spot > strike) {
                     return (1e18, 0);
                 }
-                return (0, 1e18);
+                return (0, -1e18);
             }
 
             uint256 timeYear = uint256(timeToExp) * 1e18 / SECONDS_IN_YEAR;   // annualized time to expiration

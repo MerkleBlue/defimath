@@ -570,7 +570,7 @@ describe("BlackScholes", function () {
 
         const actualSOL = await options.delta(tokens(1000), tokens(1020), 0, tokens(0.60), tokens(0.05));
         assertAbsoluteBelow(actualSOL.deltaCall.toString() / 1e18, 0, MAX_ABS_ERROR_DELTA);
-        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, 1, MAX_ABS_ERROR_DELTA);
+        assertAbsoluteBelow(actualSOL.deltaPut.toString() / 1e18, -1, MAX_ABS_ERROR_DELTA);
       });
     });
 

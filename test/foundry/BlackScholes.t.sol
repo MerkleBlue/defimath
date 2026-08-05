@@ -231,6 +231,22 @@ contract BlackScholesPropertyTest is Test {
         assertEq(int256(dCall) - int256(dPut), int256(FP_ONE), "delta_call - delta_put != 1");
     }
 
+    /// Delta sign & parity hold at expiry (timeToExp == 0) — the fast-path branch the fuzz domain
+    /// otherwise skips (TIME_TYPICAL_LO = 1 day). Regression guard: an ITM put must report delta −1,
+    /// not +1, and parity must still hold.
+    function test_ID_deltaSignAtExpiry(uint128 spot, uint128 strike, uint64 vol, uint64 rate) public pure {
+        spot = uint128(bound(spot, SPOT_TYPICAL_LO, SPOT_TYPICAL_HI));
+        strike = uint128(bound(strike, spot / 4, uint256(spot) * 4));
+        vol = uint64(bound(vol, VOL_TYPICAL_LO, VOL_TYPICAL_HI));
+        rate = uint64(bound(rate, RATE_TYPICAL_LO, RATE_TYPICAL_HI));
+        (int128 dCall, int128 dPut) = BlackScholes.delta(spot, strike, 0, vol, rate);
+        assertGe(int256(dCall), int256(0), "delta_call < 0 at expiry");
+        assertLe(int256(dCall), int256(FP_ONE), "delta_call > 1 at expiry");
+        assertGe(int256(dPut), -int256(FP_ONE), "delta_put < -1 at expiry");
+        assertLe(int256(dPut), int256(0), "delta_put > 0 at expiry");
+        assertEq(int256(dCall) - int256(dPut), int256(FP_ONE), "delta parity != 1 at expiry");
+    }
+
     /// Theta call − Theta put ≈ −rate · K · e^(−rT) / 365  (per-day theta carry identity).
     /// Verifies the closed-form derivative relation derived from put-call parity by
     /// differentiating with respect to time.
