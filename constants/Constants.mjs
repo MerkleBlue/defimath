@@ -115,6 +115,34 @@ export const AVG_GAS_BINARY_VEGA        = 1805;
 export const MAX_REL_ERROR_FUTURE     = 2e-12;    // primary bound, enforced on the broad sweep
 export const MAX_ABS_ERROR_FUTURE     = 1.2e-9;   // absolute error at a $1000 spot (scales with spot)
 
+// ── Black-76 (options on forwards/futures) ───────────────────────────────────────────────
+// Same dual metric and structure as Black-Scholes; prices a forward underlying (d1 carries no rate
+// term, whole payoff discounted by e^(-rτ)). Equivalently e^(-rτ) · Black-Scholes(spot = F, rate = 0).
+export const MAX_REL_ERROR_B76_OPTION   = 5e-12;   // when call/put price ≥ 1
+export const MAX_ABS_ERROR_B76_OPTION   = 1.3e-10; // when call/put price < 1 (deep OTM), in $ at $1000 forward
+export const AVG_GAS_B76_CALL           = 2552;
+export const AVG_GAS_B76_PUT            = 2565;
+
+export const MAX_ABS_ERROR_B76_DELTA    = 1.2e-13; // always |δ| ≤ 1, no relative error
+export const AVG_GAS_B76_DELTA          = 1915;
+
+export const MAX_REL_ERROR_B76_GAMMA    = 5e-12;   
+export const MAX_ABS_ERROR_B76_GAMMA    = 3.2e-15;
+export const AVG_GAS_B76_GAMMA          = 1704;
+
+export const MAX_REL_ERROR_B76_THETA    = 5e-12;
+export const MAX_ABS_ERROR_B76_THETA    = 1.9e-12;
+export const AVG_GAS_B76_THETA          = 3255;
+
+export const MAX_REL_ERROR_B76_VEGA     = 5e-12;
+export const MAX_ABS_ERROR_B76_VEGA     = 4e-13;
+export const AVG_GAS_B76_VEGA           = 1659;
+
+export const MAX_REL_ERROR_B76_IV       = 1.0e-6;
+export const MAX_ABS_ERROR_B76_IV       = 2e-6;
+export const AVG_GAS_B76_IV_CALL        = 11760;
+export const AVG_GAS_B76_IV_PUT         = 11802;
+
 // ── Rates ────────────────────────────────────────────────────────────────────────────────
 export const MAX_REL_ERROR_COMPOUND   = 5.4e-14;   // inherits exp's relative error
 export const MAX_REL_ERROR_LOG_RETURN = 1.6e-15;   // inherits ln's relative error
