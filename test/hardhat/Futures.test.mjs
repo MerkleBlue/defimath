@@ -2,7 +2,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers.js";
 import { assert } from "chai";
 import { assertAbsoluteBelow, assertPrecisionBelow, assertRevertError, MIN_ERROR, SEC_IN_DAY, SEC_IN_YEAR, tokens } from "./Common.test.mjs";
-import { MAX_ABS_ERROR_FUTURE, MAX_REL_ERROR_FUTURE } from "../../constants/Constants.mjs";
+import { MAX_ABS_ERROR_FUTURE, MAX_REL_ERROR_FUTURE, AVG_GAS_FUTURE } from "../../constants/Constants.mjs";
 
 describe("Futures", function () {
 
@@ -140,7 +140,7 @@ describe("Futures", function () {
     });
 
     describe("performance", function () {
-      it("future across 6×5×3 spots/times/rates — 400 gas", async function () {
+      it("future across 6×5×3 spots/times/rates — AVG_GAS_FUTURE gas", async function () {
         const { futures } = await loadFixture(deploy);
 
         const spots = [10, 100, 500, 1000, 100000, 1000000];
@@ -157,7 +157,7 @@ describe("Futures", function () {
           }
         }
         const avg = Math.round(totalGas / count);
-        assert.equal(avg, 400, `gas changed: ${avg} ≠ 400 — deterministic, update threshold if intentional`);
+        assert.equal(avg, AVG_GAS_FUTURE, `gas changed: ${avg} ≠ ${AVG_GAS_FUTURE} — deterministic, update threshold if intentional`);
       });
     });
   });

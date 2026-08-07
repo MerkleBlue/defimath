@@ -114,6 +114,7 @@ export const AVG_GAS_BINARY_VEGA        = 1805;
 // price = spot · e^(rτ): the error is fundamentally relative (inherits exp, scale-invariant).
 export const MAX_REL_ERROR_FUTURE     = 2e-12;    // primary bound, enforced on the broad sweep
 export const MAX_ABS_ERROR_FUTURE     = 1.2e-9;   // absolute error at a $1000 spot (scales with spot)
+export const AVG_GAS_FUTURE           = 400;      // futurePrice, swept 6×5×3 spots/times/rates
 
 // ── Black-76 (options on a future) ──────────────────────────────────────────────────────
 // Same dual metric and structure as Black-Scholes; prices a future underlying (d1 carries no rate
