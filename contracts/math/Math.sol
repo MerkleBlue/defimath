@@ -34,6 +34,13 @@ library Math {
     ///         At ±11.63, erf(x) is within 1e-18 of ±1 so the cap costs no observable precision.
     int256 internal constant ERF_BOUND = 11.63e18;
 
+    /// @notice Saturation magnitude for stdNormPDF — |x| ≥ this returns 0.
+    ///         φ(9.1) ≈ 4.2e-19, already below one wei, so the density has underflowed to 0
+    ///         before the cap bites and it costs no observable precision. The guard doubles as
+    ///         the overflow check for the `t · t` squaring.
+    ///         Typed as uint256 because it bounds the magnitude `|x|`, which is unsigned.
+    uint256 internal constant STD_NORM_PDF_BOUND = 9.1e18;
+
     // math constants
     /// @notice ln(2) in 18-decimal fixed-point — used by exp's range reduction (x → x − k·ln 2)
     ///         and by log2 (ln(x) / ln(2)).
@@ -46,6 +53,12 @@ library Math {
     ///         (compares x against √2 to fold into [1, √2]) and by stdNormCDF
     ///         as `t = |x| · √2` change-of-variable for the West approximation.
     uint256 internal constant SQRT_2 = 1414213562373095049;
+
+    /// @notice 1/√(2π) — the normalising factor of the standard normal density — carried at
+    ///         36 decimals instead of 18. stdNormPDF divides it by e^(x²/2) (an 18-decimal
+    ///         value), so the 1e36 scale makes that single DIV emit an 18-decimal result:
+    ///         no rescaling multiply, and the extra 18 digits keep the quotient exact to 1 wei.
+    uint256 internal constant INV_SQRT_2PI_E36 = 398942280401432677939946059934381868;
 
     // errors
     /// @notice Thrown when input to exp() exceeds the upper bound (~135)
@@ -691,6 +704,27 @@ library Math {
                     y := mul(y, num)
                     y := div(y, denom)                              // Φ(x) = res  (symmetric negative branch)
                 }
+            }
+        }
+    }
+
+    /// @notice Computes the standard normal probability density function of x in 18-decimal fixed-point.
+    /// @dev Accepts the full int256 domain, never reverts.
+    ///      Max absolute error: < 3e-16 for any x.
+    /// @param x Signed input in 18-decimal fixed-point format.
+    /// @return y Result φ(x) in 18-decimal fixed-point format.
+    function stdNormPDF(int256 x) internal pure returns (uint256 y) {
+        unchecked {
+            // handle large |x|
+            if (abs(x) >= STD_NORM_PDF_BOUND) {
+                return 0;
+            }
+
+            // Standard normal PDF is defined as: φ(x) = e^(−x²/2) / √(2π).
+            uint256 expRes = expPositive(uint256(x * x) / 2e18);
+
+            assembly ("memory-safe") {
+                y := div(INV_SQRT_2PI_E36, expRes)       // φ(x) = (1/√(2π)) / e^(x²/2)
             }
         }
     }

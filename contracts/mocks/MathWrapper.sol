@@ -69,6 +69,10 @@ contract MathWrapper {
         return Math.stdNormCDF(x);
     }
 
+    function stdNormPDF(int256 x) external pure returns (uint256) {
+        return Math.stdNormPDF(x);
+    }
+
     function erf(int256 x) external pure returns (int256) {
         return Math.erf(x);
     }
@@ -342,6 +346,18 @@ contract MathWrapper {
 
         endGas = gasleft();
         
+        return (y, startGas - endGas);
+    }
+
+    function stdNormPDFMG(int256 x) external view returns (uint256 y, uint256 gasUsed) {
+        uint256 startGas;
+        uint256 endGas;
+        startGas = gasleft();
+
+        y = Math.stdNormPDF(x);
+
+        endGas = gasleft();
+
         return (y, startGas - endGas);
     }
 

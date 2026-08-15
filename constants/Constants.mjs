@@ -50,6 +50,9 @@ export const AVG_GAS_ERF              = 649;
 export const MAX_ABS_ERROR_CDF        = 3.0e-15;   // always y <= 1, no relative error
 export const AVG_GAS_CDF              = 618;
 
+export const MAX_ABS_ERROR_PDF        = 3.0e-16;   // always y <= 1/√(2π) < 1, no relative error
+export const AVG_GAS_PDF              = 320;
+
 // ── Math utilities (bit-level ops, no error metric) ──────────────────────────────────────
 export const AVG_GAS_MULDIV           = 155;
 export const AVG_GAS_ABS              = 17;

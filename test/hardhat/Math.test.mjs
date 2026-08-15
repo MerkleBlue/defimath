@@ -7,8 +7,8 @@ import { assert } from "chai";
 import Decimal from "decimal.js";
 import {
     MAX_ABS_ERROR_EXP, MAX_REL_ERROR_EXP, MAX_REL_ERROR_EXPM1, MAX_ABS_ERROR_EXPM1, MAX_REL_ERROR_LN, MAX_ABS_ERROR_LN, MAX_REL_ERROR_SQRT, MAX_ABS_ERROR_SQRT,
-    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW, MAX_REL_ERROR_LOG1P, MAX_ABS_ERROR_LOG1P, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF,
-    AVG_GAS_EXP, AVG_GAS_EXP_POSITIVE, AVG_GAS_EXPM1, AVG_GAS_LN, AVG_GAS_LOG1P, AVG_GAS_LOG2, AVG_GAS_LOG10, AVG_GAS_POW, AVG_GAS_SQRT, AVG_GAS_CBRT, AVG_GAS_ERF, AVG_GAS_CDF,
+    MAX_REL_ERROR_CBRT, MAX_ABS_ERROR_CBRT, MAX_REL_ERROR_POW, MAX_ABS_ERROR_POW, MAX_REL_ERROR_LOG1P, MAX_ABS_ERROR_LOG1P, MAX_ABS_ERROR_ERF, MAX_ABS_ERROR_CDF, MAX_ABS_ERROR_PDF,
+    AVG_GAS_PDF, AVG_GAS_EXP, AVG_GAS_EXP_POSITIVE, AVG_GAS_EXPM1, AVG_GAS_LN, AVG_GAS_LOG1P, AVG_GAS_LOG2, AVG_GAS_LOG10, AVG_GAS_POW, AVG_GAS_SQRT, AVG_GAS_CBRT, AVG_GAS_ERF, AVG_GAS_CDF,
     AVG_GAS_MULDIV, AVG_GAS_ABS, AVG_GAS_MIN, AVG_GAS_MAX, AVG_GAS_CLAMP, AVG_GAS_AVG, AVG_GAS_SQRT_TIME,
 } from "../../constants/Constants.mjs";
 
@@ -57,6 +57,13 @@ function assertCbrtAbsolute(actual, expected) {
   const absErr = new Decimal(actual.toString()).minus(expected).abs().div("1e18");
   assert.ok(absErr.lte(MAX_ABS_ERROR_CBRT), `cbrt off by ${absErr.toExponential(2)} (> ${MAX_ABS_ERROR_CBRT.toExponential(0)})`);
 }
+
+// ── Standard normal density reference ─────────────────────────────────────────
+// black-scholes exposes stdNormCDF but no density, so φ(x) = e^(−x²/2)/√(2π) is
+// evaluated directly. Float64 caps the reference's own noise at ~1e-16 absolute
+// (φ ≤ 0.4, so relative ≈ absolute here) — an order of magnitude under
+// MAX_ABS_ERROR_PDF, so the measurement still reflects the Solidity side.
+const stdNormPDF = (x) => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
 
 describe("Math", function () {
 
@@ -2909,6 +2916,172 @@ describe("Math", function () {
         }
         const avg = Math.round(totalGas / count);
         assert.equal(avg, AVG_GAS_CDF, `gas changed: ${avg} ≠ ${AVG_GAS_CDF} — deterministic, update threshold if intentional`);
+      });
+    });
+
+  });
+
+  describe("stdNormPDF", function () {
+    describe("behaviour", function () {
+      it("stdNormPDF when x is 0", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // The peak, 1/√(2π), is the largest value the function can return.
+        const actualSOL = (await deFiMath.stdNormPDF(tokens(0))).toString() / 1e18;
+        assertAbsoluteBelow(actualSOL, stdNormPDF(0), MAX_ABS_ERROR_PDF);
+      });
+
+      it("stdNormPDF when x in [1e-18, 1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x <= 1; x += x / 1.976) {
+          const expected = stdNormPDF(x);
+          const actualSOL = (await deFiMath.stdNormPDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_PDF);
+        }
+      });
+
+      it("stdNormPDF when x in [1, 9.1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x <= 9.1; x += x * 0.02050317) {
+          const expected = stdNormPDF(x);
+          const actualSOL = (await deFiMath.stdNormPDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_PDF);
+        }
+      });
+
+      it("stdNormPDF when x in [-1e-18, -1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1e-18; x <= 1; x += x / 1.976) {
+          const expected = stdNormPDF(-x);
+          const actualSOL = (await deFiMath.stdNormPDF(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_PDF);
+        }
+      });
+
+      it("stdNormPDF when x in [-1, -9.1)", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        for (let x = 1; x <= 9.1; x += x * 0.02050317) {
+          const expected = stdNormPDF(-x);
+          const actualSOL = (await deFiMath.stdNormPDF(tokens(-x))).toString() / 1e18;
+          assertAbsoluteBelow(actualSOL, expected, MAX_ABS_ERROR_PDF);
+        }
+      });
+
+      it("stdNormPDF is exactly even — φ(-x) equals φ(x) to the wei", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // The branchless abs folds the sign before any arithmetic, so the two halves
+        // must agree bit-for-bit, not merely within tolerance.
+        for (let x = 1e-9; x <= 9.1; x *= 1.5) {
+          const pos = (await deFiMath.stdNormPDF(tokens(x))).toString();
+          const neg = (await deFiMath.stdNormPDF(tokens(-x))).toString();
+          assert.equal(neg, pos, `φ(${-x}) ≠ φ(${x})`);
+        }
+      });
+
+      it("stdNormPDF is strictly decreasing in |x|", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // Non-increasing everywhere. Strictness only holds while the result still has wei
+        // to lose — in the far tail (|x| ≳ 8.9) φ is down to a couple of wei and adjacent
+        // samples legitimately tie at 1, then at 0. Guarding on prev > 1000 wei keeps the
+        // strict claim on the region where 18-decimal quantization can't force a tie.
+        let prev = await deFiMath.stdNormPDF(tokens(0));
+        for (let x = 0.05; x <= 9.1; x += 0.05) {
+          const cur = await deFiMath.stdNormPDF(tokens(x));
+          assert.ok(cur <= prev, `φ(${x}) = ${cur} above previous ${prev}`);
+          if (prev > 1000n) assert.ok(cur < prev, `φ(${x}) = ${cur} not below previous ${prev}`);
+          prev = cur;
+        }
+      });
+    });
+
+    describe("limits", function () {
+      it("stdNormPDF when x is int max", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const actualSOL = (await deFiMath.stdNormPDF("57896044618658097711785492504343953926634992332820282019728792003956564819967")).toString();
+        assert.equal(actualSOL, "0");
+      });
+
+      it("stdNormPDF when x is int min", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // int256.min has no positive counterpart in two's complement — abs() wraps it to
+        // 2^255, which is still ≥ the bound, so the saturation branch catches it.
+        const actualSOL = (await deFiMath.stdNormPDF("-57896044618658097711785492504343953926634992332820282019728792003956564819968")).toString();
+        assert.equal(actualSOL, "0");
+      });
+
+      it("stdNormPDF when x is 9.1", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // At the saturation bound φ(9.1) ≈ 4.2e-19 — below one wei — so the cap
+        // returns the same 0 the unsaturated path would have produced.
+        const actualSOL = (await deFiMath.stdNormPDF(tokens(9.1))).toString();
+        assert.equal(actualSOL, "0");
+      });
+
+      it("stdNormPDF when x is -9.1", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        const actualSOL = (await deFiMath.stdNormPDF(tokens(-9.1))).toString();
+        assert.equal(actualSOL, "0");
+      });
+
+      it("stdNormPDF underflows to 0 just below the bound, not at it", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // φ(x) drops under 1 wei at x ≈ 9.00241, which is inside the computed branch —
+        // proving the saturation bound sits beyond the underflow point, so there is no
+        // discontinuity at the cap.
+        assert.equal((await deFiMath.stdNormPDF(tokens(9.0))).toString(), "1");
+        assert.equal((await deFiMath.stdNormPDF(tokens(9.01))).toString(), "0");
+        assert.equal((await deFiMath.stdNormPDF(tokens(-9.01))).toString(), "0");
+      });
+
+      it("stdNormPDF when x is 1 wei", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+
+        // The smallest nonzero input is indistinguishable from the peak at 18 decimals.
+        const actualSOL = (await deFiMath.stdNormPDF(1)).toString() / 1e18;
+        assertAbsoluteBelow(actualSOL, stdNormPDF(0), MAX_ABS_ERROR_PDF);
+      });
+    });
+
+    describe("random", function () {
+      it("matches the density reference on 500 random inputs", async function () {
+        const { deFiMath } = await loadFixture(deploy);
+        // Sample x ∈ [-9.1, 9.1] — the documented operational range. Outside this band
+        // the density has underflowed to 0, handled in limits.
+        for (let i = 0; i < 500; i++) {
+          const x = -9.1 + Math.random() * 18.2;
+          const expected = stdNormPDF(x);
+          const actual = (await deFiMath.stdNormPDF(tokens(x))).toString() / 1e18;
+          assertAbsoluteBelow(actual, expected, MAX_ABS_ERROR_PDF);
+        }
+      });
+    });
+
+    describe("failure", function () {
+    });
+
+    describe("performance", function () {
+      it("stdNormPDF when x in [-6, 6] — 320 gas", async function () {
+        // Grid mirrors stdNormCDF's: symmetric around 0, 1000 samples,
+        // both positive and negative inputs balanced.
+        const { deFiMath } = await loadFixture(deploy);
+        let totalGas = 0, count = 0;
+        for (let x = -6; x <= 6; x += 0.012) {
+          totalGas += parseInt((await deFiMath.stdNormPDFMG(tokens(x))).gasUsed);
+          count++;
+        }
+        const avg = Math.round(totalGas / count);
+        assert.equal(avg, AVG_GAS_PDF, `gas changed: ${avg} ≠ ${AVG_GAS_PDF} — deterministic, update threshold if intentional`);
       });
     });
 

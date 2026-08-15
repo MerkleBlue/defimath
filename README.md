@@ -98,6 +98,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `expm1`      | 295  | 5.0e-16 | 2.2e-14 | `e^x − 1` (precision-preserving for small x) |
 | `log1p`      | 494  | 1.0e-15 | 3.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 618  | 3.0e-15 |       — | Standard normal CDF Φ(x) |
+| `stdNormPDF` | 320  | 3.0e-16 |       — | Standard normal PDF φ(x) |
 | `erf`        | 649  | 2.0e-15 |       — | Error function |
 | `mulDiv`     | 155  |   exact |   exact | `(a · b) / d` with full 512-bit intermediate precision |
 | `mul`        | 130  |   exact |   exact | `(a · b) / 1e18` — fixed-point multiply with denominator baked in |
@@ -107,7 +108,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `clamp`      | 78   |   exact |   exact | Clamp `x` into `[lo, hi]` (composed `max` then `min`) |
 | `avg`        | 21   |   exact |   exact | Overflow-safe `(a + b) / 2` via `(a & b) + ((a ^ b) >> 1)` |
 
-*Figures are the error bounds the test suite enforces — the constants in [`constants/Constants.mjs`](constants/Constants.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf` and `stdNormCDF` are bounded in [−1, 1] and [0, 1] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
+*Figures are the error bounds the test suite enforces — the constants in [`constants/Constants.mjs`](constants/Constants.mjs), asserted against a JS / decimal.js reference across each function's full documented domain. The metric follows the **result** magnitude: **relative** where `|result| ≥ 1`, **absolute** where `|result| < 1`. Relative error is undefined at a function's root (`ln` at `x = 1`, `expm1`/`log1p` at `x = 0`), where any nonzero error divides by ~0 — absolute is the meaningful bound there. Both are published wherever the suite bounds both. `—` marks a metric the suite does not bound: `erf`, `stdNormCDF` and `stdNormPDF` are bounded in [−1, 1], [0, 1] and [0, 1/√(2π)] so only absolute is meaningful. `sqrt`'s absolute bound of `1.0e-18` is exactly 1 wei — it is correctly rounded below 1. `log2`, `log10` and `log1p` inherit `ln`'s bounds. `exact` denotes integer-arithmetic functions with no approximation error.*
 
 ### Derivatives — `BlackScholes`, `Black76`, `BinaryOptions`, `Futures`
 
@@ -188,10 +189,10 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 
 Two independent layers:
 
-- **Hardhat** — 740 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
+- **Hardhat** — 755 tests validating against external JavaScript references (`Math`, `math-erf`, `black-scholes`, `greeks`, `simple-statistics`) at concrete points across the operational domain, plus strict-equality gas-regression assertions on every performance test.
 - **Foundry** — 114 mathematical properties × 32,000 random runs each = **3,648,000 random executions per CI run**. Validates the algebraic structure (round-trips, monotonicity, identities, output bounds, symmetries) with automatic counterexample shrinking.
 
-854 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
+869 total tests. Run with `npm test`. Sources live at [`test/hardhat/`](test/hardhat/) and [`test/foundry/`](test/foundry/). Per-module test breakdowns on the [Documentation page](https://defimath.com/docs/#testing).
 
 ## Precision
 
