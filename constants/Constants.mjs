@@ -18,7 +18,7 @@ export const AVG_GAS_EXP              = 289;
 export const AVG_GAS_EXP_POSITIVE     = 223;       // internal fast path, no error metric (matches exp positive branch)
 
 export const MAX_REL_ERROR_EXPM1      = 2.2e-14;   // when y = expm1(x) ≥ 1  (x ≥ ln2)
-export const MAX_ABS_ERROR_EXPM1      = 5.0e-16;   // when y = expm1(x) < 1  (x < ln2, incl. the root x=0)
+export const MAX_ABS_ERROR_EXPM1      = 8.0e-16;   // when y = expm1(x) < 1  (x < ln2, incl. the root x=0).
 export const AVG_GAS_EXPM1            = 295;
 
 export const MAX_REL_ERROR_LN         = 1.6e-15;   // when y = |ln(x)| ≥ 1

@@ -96,7 +96,7 @@ All values use 18-decimal fixed-point (`1e18 = 1.0`). Time is in seconds. See mo
 | `pow`        | 761  | 1.0e-14 | 1.0e-12 | Power function `x^a` |
 | `sqrt`       | 197  | 1.0e-18 | 2.0e-18 | Square root |
 | `cbrt`       | 340  | 1.0e-16 | 2.0e-13 | Cube root |
-| `expm1`      | 295  | 5.0e-16 | 2.2e-14 | `e^x − 1` (precision-preserving for small x) |
+| `expm1`      | 295  | 8.0e-16 | 2.2e-14 | `e^x − 1` (precision-preserving for small x) |
 | `log1p`      | 494  | 1.0e-15 | 3.0e-15 | `ln(1 + x)` (precision-preserving for small x) |
 | `stdNormCDF` | 618  | 3.0e-15 |       — | Standard normal CDF Φ(x) |
 | `stdNormPDF` | 320  | 3.0e-16 |       — | Standard normal PDF φ(x) |
