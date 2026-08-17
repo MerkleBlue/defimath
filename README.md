@@ -33,7 +33,7 @@ Every function is benchmarked against existing on-chain implementations. A repre
 | `ln`              | **390**   | 518 (Solady)       | 1.3× |
 | `sqrt`            | **197**   | 384 (Solady)       | **1.9×** |
 | `cbrt`            | **340**   | 550 (Solady)       | **1.6×** |
-| `stdNormCDF`      | **618**   | 3,103 (SolStat)    | **5.0×** |
+| `stdNormCDF`      | **618**   | 3,115 (SolStat)    | **5.0×** |
 | `stdNormPDF`      | **320**   | 761 (SolStat)      | **2.4×** |
 
 Full per-function tables in the [defimath-compare README](https://github.com/MerkleBlue/defimath-compare#readme).
